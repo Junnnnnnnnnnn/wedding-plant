@@ -152,9 +152,13 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
     sparksRef.current.push(...newSparks);
   };
 
-  return (
+return (
     <div className="relative w-full h-full" onClick={handleClick}>
-      <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
+      <canvas 
+        ref={canvasRef} 
+        className="absolute inset-0 pointer-events-none z-50" 
+        style={{ zIndex: 50 }}
+      />
       {children}
     </div>
   );
