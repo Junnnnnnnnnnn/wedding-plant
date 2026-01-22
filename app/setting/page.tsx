@@ -6,6 +6,7 @@ import { CelebrationEffects } from "../components/CelebrationEffects";
 import { DatePickerWheel } from "../components/DatePickerWheel";
 import { useWedding } from "../contexts/WeddingContext";
 import CountUp from "../../components/CountUp";
+import Lanyard from "../../components/Lanyard";
 
 export default function SettingPage() {
   const { weddingData, setBudget, setName, setDate } = useWedding();
@@ -19,9 +20,10 @@ export default function SettingPage() {
   const [isBudgetFadingOut, setIsBudgetFadingOut] = useState(false);
   const [isNameFadingOut, setIsNameFadingOut] = useState(false);
   const [isNameShaking, setIsNameShaking] = useState(false);
-  const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
+const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
   const [isCountUpComplete, setIsCountUpComplete] = useState(false);
   const [countUpKey, setCountUpKey] = useState(0);
+  const [showLanyard, setShowLanyard] = useState(false);
 
   useEffect(() => {
     // 첫 번째 메시지가 3초 후 사라지고, 그 다음 두 번째 메시지가 나타남
@@ -40,15 +42,21 @@ export default function SettingPage() {
     };
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (showFifth) {
       // fade in 완료(500ms) 후 2초간 보여주고 fade out 시작
       const timer = setTimeout(() => {
         setIsFifthFadingOut(true);
       }, 4500); // 500ms (fade-in duration) + 2000ms (display time)
 
+      // fade out 시작 후 Lanyard 표시
+      const lanyardTimer = setTimeout(() => {
+        setShowLanyard(true);
+      }, 5000); // 500ms (fade-in) + 2000ms (display) + 500ms (fade-out)
+
       return () => {
         clearTimeout(timer);
+        clearTimeout(lanyardTimer);
       };
     }
   }, [showFifth]);
@@ -227,7 +235,7 @@ export default function SettingPage() {
             </div>
           </div>
         )}
-        {showFifth && (
+{showFifth && !showLanyard && (
           <div className={`flex flex-1 flex-col items-center justify-center ${isFifthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
             <LandingHero 
               title={`${weddingData.name} 님 환영합니다~`} 
@@ -235,6 +243,11 @@ export default function SettingPage() {
               titleSize="text-3xl sm:text-4xl" 
               subtitleSize="text-base sm:text-lg" 
             />
+          </div>
+        )}
+        {showLanyard && (
+          <div className="absolute inset-0 z-40">
+            <Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
           </div>
         )}
       </main>
