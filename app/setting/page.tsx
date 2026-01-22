@@ -191,7 +191,8 @@ export default function SettingPage() {
               </div>
               <button
                 onClick={handleNameNext}
-                className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
+                disabled={!weddingData.name || weddingData.name.trim() === ""}
+                className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
               >
                 다음
               </button>
