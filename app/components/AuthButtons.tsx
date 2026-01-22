@@ -38,7 +38,7 @@ export function AuthButtons({ guestLabel = "로그인 없이 둘러보기" }: Au
         <Link href="/setting">
           <button
             type="button"
-            className="mt-2 text-xs font-medium text-stone-600 underline underline-offset-4"
+            className="mt-2 text-xs font-medium text-stone-600 underline underline-offset-4 cursor-pointer"
           >
             {guestLabel}
           </button>

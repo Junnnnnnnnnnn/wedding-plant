@@ -18,6 +18,7 @@ export default function SettingPage() {
   const [isBudgetFadingOut, setIsBudgetFadingOut] = useState(false);
   const [isNameFadingOut, setIsNameFadingOut] = useState(false);
   const [isNameShaking, setIsNameShaking] = useState(false);
+  const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
 
   useEffect(() => {
     // 첫 번째 메시지가 3초 후 사라지고, 그 다음 두 번째 메시지가 나타남
@@ -35,6 +36,19 @@ export default function SettingPage() {
       clearTimeout(timer2);
     };
   }, []);
+
+  useEffect(() => {
+    if (showFifth) {
+      // fade in 완료(500ms) 후 2초간 보여주고 fade out 시작
+      const timer = setTimeout(() => {
+        setIsFifthFadingOut(true);
+      }, 4500); // 500ms (fade-in duration) + 2000ms (display time)
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [showFifth]);
 
   const handleDateChange = (date: { year: number; month: number; day: number }) => {
     setDate(date);
@@ -77,6 +91,7 @@ export default function SettingPage() {
       setShowFifth(false);
       setShowFourth(true);
       setIsNameFadingOut(false);
+      setIsFifthFadingOut(false);
     } else if (showFourth) {
       // 네 번째 화면에서 세 번째 화면으로
       setShowFourth(false);
@@ -119,7 +134,7 @@ export default function SettingPage() {
         )}
         {showSecond && (
           <div className={`flex flex-1 flex-col items-center justify-center ${isDatePickerFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
-            <LandingHero title="약속된 날짜가 언제인가요" subtitle="우신, 우랑님. 가장 빛날 그날까지 함께해요." titleSize="text-3xl sm:text-4xl" subtitleSize="text-base sm:text-lg" />
+            <LandingHero title="결혼 날짜가 언제인가요" subtitle="우신, 우랑님. 가장 빛날 그날까지 함께해요." titleSize="text-3xl sm:text-4xl" subtitleSize="text-base sm:text-lg" />
             <DatePickerWheel onDateChange={handleDateChange} onNext={handleDateNext} />
           </div>
         )}
@@ -184,7 +199,7 @@ export default function SettingPage() {
           </div>
         )}
         {showFifth && (
-          <div className="flex flex-1 flex-col items-center justify-center animate-fade-in">
+          <div className={`flex flex-1 flex-col items-center justify-center ${isFifthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
             <LandingHero 
               title={`${weddingData.name || "님"} 환영합니다~`} 
               subtitle="제가 작은 선물을 준비했어요" 
