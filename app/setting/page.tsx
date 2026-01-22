@@ -5,6 +5,7 @@ import { LandingHero } from "../components/LandingHero";
 import { CelebrationEffects } from "../components/CelebrationEffects";
 import { DatePickerWheel } from "../components/DatePickerWheel";
 import { useWedding } from "../contexts/WeddingContext";
+import CountUp from "../../components/CountUp";
 
 export default function SettingPage() {
   const { weddingData, setBudget, setName, setDate } = useWedding();
@@ -19,6 +20,8 @@ export default function SettingPage() {
   const [isNameFadingOut, setIsNameFadingOut] = useState(false);
   const [isNameShaking, setIsNameShaking] = useState(false);
   const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
+  const [isCountUpComplete, setIsCountUpComplete] = useState(false);
+  const [countUpKey, setCountUpKey] = useState(0);
 
   useEffect(() => {
     // 첫 번째 메시지가 3초 후 사라지고, 그 다음 두 번째 메시지가 나타남
@@ -62,6 +65,8 @@ export default function SettingPage() {
     setTimeout(() => {
       setShowSecond(false);
       setShowThird(true);
+      setIsCountUpComplete(false); // 카운트업 상태 리셋
+      setCountUpKey(prev => prev + 1); // CountUp 재시작을 위한 key 변경
     }, 500); // fade-out 애니메이션 시간과 동일
   };
 
@@ -97,11 +102,15 @@ export default function SettingPage() {
       setShowFourth(false);
       setShowThird(true);
       setIsBudgetFadingOut(false);
+      setIsCountUpComplete(false); // 카운트업 상태 리셋
+      setCountUpKey(prev => prev + 1); // CountUp 재시작을 위한 key 변경
     } else if (showThird) {
       // 세 번째 화면에서 두 번째 화면으로
       setShowThird(false);
       setShowSecond(true);
       setIsDatePickerFadingOut(false);
+      setIsCountUpComplete(false); // 카운트업 상태 리셋
+      setCountUpKey(prev => prev + 1); // CountUp 재시작을 위한 key 변경
     }
   };
 
@@ -140,17 +149,36 @@ export default function SettingPage() {
         )}
         {showThird && (
           <div className={`flex flex-1 flex-col items-center justify-center ${isBudgetFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
-            <LandingHero title="예산도 살짝 알려주세요!" subtitle="마음 편하시게 제가 꼼꼼히 챙겨드릴게요." titleSize="text-3xl sm:text-4xl" subtitleSize="text-base sm:text-lg" />
-            <div className="flex flex-col items-center mt-24 mb-20">
+<LandingHero title="예산도 살짝 알려주세요!" subtitle="마음 편하시게 제가 꼼꼼히 챙겨드릴게요." titleSize="text-3xl sm:text-4xl" subtitleSize="text-base sm:text-lg" />
+            <div className="flex flex-col items-center flex-1 justify-center">
               <div className="flex items-center justify-center gap-4 mb-4">
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={weddingData.budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    placeholder="0"
-                    className="px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-32 text-center"
-                  />
+                  {!isCountUpComplete ? (
+                    <div className="px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 w-32 text-center flex items-center justify-center">
+                      <CountUp
+                        key={`countup-${countUpKey}`}
+                        from={0}
+                        to={1000}
+                        separator=","
+                        direction="up"
+                        duration={3}
+                        className="count-up-text"
+                        startWhen={showThird && !isCountUpComplete}
+                        onEnd={() => {
+                          setIsCountUpComplete(true);
+                          setBudget("1000");
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <input
+                      type="number"
+                      value={weddingData.budget}
+                      onChange={(e) => setBudget(e.target.value)}
+                      placeholder="0"
+                      className="px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-32 text-center"
+                    />
+                  )}
                   <span className="text-lg font-semibold text-stone-700">만원</span>
                 </div>
               </div>
@@ -202,7 +230,7 @@ export default function SettingPage() {
         {showFifth && (
           <div className={`flex flex-1 flex-col items-center justify-center ${isFifthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
             <LandingHero 
-              title={`${weddingData.name || "님"} 환영합니다~`} 
+              title={`${weddingData.name} 님 환영합니다~`} 
               subtitle="제가 작은 선물을 준비했어요" 
               titleSize="text-3xl sm:text-4xl" 
               subtitleSize="text-base sm:text-lg" 
