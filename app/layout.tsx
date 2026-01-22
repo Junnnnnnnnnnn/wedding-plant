@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { WeddingProvider } from "./contexts/WeddingContext";
 
 const hakgyoansim = localFont({
   src: [
@@ -40,7 +41,7 @@ export default function RootLayout({
       <body
         className={`${hakgyoansim.className} ${hakgyoansim.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <WeddingProvider>{children}</WeddingProvider>
       </body>
     </html>
   );

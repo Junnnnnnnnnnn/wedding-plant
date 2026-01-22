@@ -23,10 +23,21 @@
   }
 }
 
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-dunggeunmiso), Arial, Helvetica, sans-serif;
+}
+
+main {
+  height: 100%;
 }
 
 @keyframes riseFade {
@@ -79,4 +90,152 @@ body {
 
 .animate-push-up {
   animation: pushUp 1100ms ease-out var(--rise-duration) forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-out {
+  animation: fadeOut 0.5s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* 폭죽 애니메이션 */
+@keyframes firework-explode {
+  0% {
+    transform: scale(0) translate(0, 0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translate(var(--x), var(--y));
+    opacity: 0;
+  }
+}
+
+.firework {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--firework-color);
+  top: var(--firework-top);
+  left: var(--firework-left);
+  animation: firework-explode 2s ease-out infinite;
+  animation-delay: var(--firework-delay);
+  box-shadow: 
+    0 0 10px var(--firework-color),
+    0 0 20px var(--firework-color),
+    0 0 30px var(--firework-color);
+}
+
+.firework::before,
+.firework::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--firework-color);
+  top: 0;
+  left: 0;
+  box-shadow: 
+    0 0 10px var(--firework-color),
+    0 0 20px var(--firework-color);
+}
+
+.firework::before {
+  animation: firework-explode 2s ease-out infinite;
+  animation-delay: var(--firework-delay);
+  --x: 60px;
+  --y: -30px;
+}
+
+.firework::after {
+  animation: firework-explode 2s ease-out infinite;
+  animation-delay: var(--firework-delay);
+  --x: -60px;
+  --y: -30px;
+}
+
+/* 종이 조각 애니메이션 */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100px) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  2% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(calc(50vh - 25px)) translateX(var(--confetti-drift)) rotate(360deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(calc(100vh + 50px)) translateX(calc(var(--confetti-drift) * 2)) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti {
+  position: absolute;
+  width: var(--confetti-size);
+  height: var(--confetti-size);
+  background: var(--confetti-color);
+  top: 0;
+  left: var(--confetti-left);
+  opacity: 0;
+  animation: confetti-fall var(--confetti-duration) linear infinite;
+  animation-delay: var(--confetti-delay);
+  border-radius: var(--confetti-shape);
+}
+
+/* 스크롤바 숨기기 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
 }
