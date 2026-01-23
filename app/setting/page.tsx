@@ -89,6 +89,7 @@ export default function SettingPage() {
         clearTimeout(lanyardTimer);
       };
     }
+    return undefined;
   }, [showFifth]);
 
   useEffect(() => {
@@ -109,11 +110,15 @@ export default function SettingPage() {
         clearTimeout(seventhTimer);
       };
     }
+    return undefined;
   }, [showSixth]);
 
-  const handleDateChange = (date: { year: number; month: number; day: number }) => {
+  const handleDateChange = (date: {
+    year: number;
+    month: number;
+    day: number;
+  }) => {
     setDate(date);
-    console.log("Selected date:", date);
   };
 
   const handleDateNext = () => {
@@ -205,6 +210,7 @@ export default function SettingPage() {
       <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#FFF5F2] px-6 py-8 overscroll-none">
         {(showThird || showFourth || showFifth || showSixth || showSeventh) && (
           <button
+            type="button"
             onClick={handleBack}
             className="absolute top-6 left-6 z-50 p-2 text-stone-700 hover:text-stone-900 transition-colors duration-200"
             aria-label="뒤로 가기"
@@ -217,7 +223,11 @@ export default function SettingPage() {
               stroke="currentColor"
               className="w-6 h-6"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
         )}
@@ -239,7 +249,10 @@ export default function SettingPage() {
               titleSize="text-3xl sm:text-4xl"
               subtitleSize="text-base sm:text-lg"
             />
-            <DatePickerWheel onDateChange={handleDateChange} onNext={handleDateNext} />
+            <DatePickerWheel
+              onDateChange={handleDateChange}
+              onNext={handleDateNext}
+            />
           </div>
         )}
         {showThird && (
@@ -275,16 +288,20 @@ export default function SettingPage() {
                   ) : (
                     <input
                       type="number"
+                      inputMode="numeric"
                       value={weddingData.budget}
                       onChange={(e) => setBudget(e.target.value)}
                       placeholder="0"
                       className="px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-32 text-center"
                     />
                   )}
-                  <span className="text-lg font-semibold text-stone-700">만원</span>
+                  <span className="text-lg font-semibold text-stone-700">
+                    만원
+                  </span>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={handleBudgetNext}
                 className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
               >
@@ -327,6 +344,7 @@ export default function SettingPage() {
                 />
               </div>
               <button
+                type="button"
                 onClick={handleNameNext}
                 disabled={!weddingData.name || weddingData.name.trim() === ""}
                 className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
@@ -349,11 +367,14 @@ export default function SettingPage() {
           </div>
         )}
         {showLanyard && (
-          <div className={`${isLanyardFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
+          <div
+            className={`${isLanyardFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+          >
             <div className="absolute inset-0 z-40">
               <Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
             </div>
             <button
+              type="button"
               onClick={handleLanyardNext}
               className="absolute top-6 right-6 z-50 px-5 py-2 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
             >
@@ -374,7 +395,7 @@ export default function SettingPage() {
           </div>
         )}
         {showSeventh && (
-          <div className={`flex flex-1 flex-col items-center justify-center animate-fade-in`}>
+          <div className="flex flex-1 flex-col items-center justify-center animate-fade-in">
             <LandingHero
               title="자 이제 시작해볼까요?"
               subtitle="우리식까지 든든한 플랜을 같이 짜보아요"
@@ -382,6 +403,7 @@ export default function SettingPage() {
               subtitleSize="text-base sm:text-lg"
             />
             <button
+              type="button"
               onClick={handleGoToMain}
               className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
             >

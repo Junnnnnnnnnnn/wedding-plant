@@ -1,10 +1,12 @@
 "use client";
 
-import { CircleDollarSign, User } from "lucide-react";
+import { useState } from "react";
+import { CircleDollarSign, User, Calendar, Check } from "lucide-react";
 import { useWedding } from "../contexts/WeddingContext";
 import CountUp from "@/components/CountUp";
+import BottomTabBar from "../components/BottomTabBar";
 
-export default function Home() {
+export default function MainPage() {
   const { weddingData, user } = useWedding();
 
   // 예산 관리 변수
@@ -37,6 +39,68 @@ export default function Home() {
   };
 
   const budgetGradient = getGradientColors(budgetUsagePercentage);
+
+  // 날짜 포맷팅 함수 (YYYY년 MM월 DD일 + 요일)
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const weekdays = [
+      "일요일",
+      "월요일",
+      "화요일",
+      "수요일",
+      "목요일",
+      "금요일",
+      "토요일",
+    ];
+    const weekday = weekdays[date.getDay()];
+    return {
+      dateText: `${year}년 ${month}월 ${day}일`,
+      weekday,
+    };
+  };
+
+  // 샘플 예산 계획 데이터 (추후 API로 받아올 예정)
+  const budgetPlans = [
+    {
+      id: 1,
+      title: "디자인 목업 검토하기",
+      date: "2026-12-26",
+      price: 1000000,
+    },
+    { id: 2, title: "웨딩홀 투어 예약", date: "2026-12-27", price: 0 },
+    { id: 3, title: "드레스 피팅", date: "2026-12-28", price: 500000 },
+    { id: 4, title: "예식장 꽃장식 상담", date: "2026-12-29", price: 2000000 },
+    { id: 5, title: "사진작가 미팅", date: "2026-12-30", price: 3000000 },
+    { id: 6, title: "청첩장 디자인 확인", date: "2027-01-02", price: 800000 },
+    { id: 7, title: "혼주 선물 준비", date: "2027-01-03", price: 1500000 },
+    { id: 8, title: "예식 음악 선정", date: "2027-01-04", price: 0 },
+    { id: 9, title: "신혼여행 일정 확인", date: "2027-01-05", price: 5000000 },
+    {
+      id: 10,
+      title: "예식장 계약금 입금",
+      date: "2027-01-06",
+      price: 10000000,
+    },
+  ];
+
+  // 각 계획의 체크 상태 관리
+  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+
+  // 체크박스 토글 핸들러
+  const handleToggleCheck = (id: number) => {
+    setCheckedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   // User 버튼 클릭 핸들러
   const handleUserClick = () => {
@@ -136,11 +200,92 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="w-full bg-green-200 ">
+        <div className="w-full mt-8 pb-24">
           {/* 하단 영역 */}
-          <span className="text-lg font-semibold">하단 영역</span>
+          <div className="flex flex-col items-start justify-start">
+            <span className="text-lg font-semibold">예산 가이드</span>
+            <span className="text-lg text-gray-500">
+              {budgetPlans.length}개의 계획이 있어요
+            </span>
+          </div>
+          <ul className="mt-4 w-full flex flex-col gap-3">
+            {budgetPlans.map((plan) => {
+              const isChecked = checkedItems.has(plan.id);
+              return (
+                <li
+                  key={plan.id}
+                  className="flex items-center gap-4 rounded-[20px] bg-white p-4"
+                >
+                  {/* 체크박스 버튼 */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleCheck(plan.id)}
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:opacity-80 ${
+                      isChecked
+                        ? "bg-[#ffaab8] border-[#ffaab8]"
+                        : "bg-white border-[#ffaab8]"
+                    }`}
+                  >
+                    {isChecked && (
+                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                    )}
+                  </button>
+                  {/* 텍스트 영역 */}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`text-[15px] font-normal leading-[22.5px] ${
+                        isChecked ? "line-through" : ""
+                      }`}
+                      style={{
+                        color: isChecked ? "#99a1af" : "#2D5016",
+                      }}
+                    >
+                      {plan.title}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5 text-[#6a7282]" />
+                      {(() => {
+                        const { dateText, weekday } = formatDate(plan.date);
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[13px] font-normal leading-[19.5px] text-[#6a7282]">
+                              {dateText}
+                            </span>
+                            <span className="text-[13px] font-normal leading-[19.5px] text-[#99a1af]">
+                              ({weekday})
+                            </span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  {/* 가격과 작은 점 */}
+                  <div className="flex shrink-0 items-center gap-2">
+                    {plan.price > 0 ? (
+                      <span className="text-[15px] font-semibold leading-[22.5px] text-black whitespace-nowrap">
+                        {plan.price.toLocaleString()}원
+                      </span>
+                    ) : (
+                      <span className="text-[15px] font-normal leading-[22.5px] text-[#99a1af] whitespace-nowrap">
+                        미정
+                      </span>
+                    )}
+                    <div className="h-2 w-2 rounded-full bg-[#ffaab8]" />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </main>
+      {/* 하단 탭바 - Sticky로 최상단에 고정 */}
+      <BottomTabBar
+        activeTab="home"
+        onTabClick={() => {
+          // TODO: 각 탭에 맞는 페이지로 이동
+          // 예: router.push(`/${tab}`)
+        }}
+      />
     </div>
   );
 }
