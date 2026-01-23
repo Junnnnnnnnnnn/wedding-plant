@@ -45,7 +45,7 @@ export default function BottomTabBar({
             <button
               key={tab.id}
               type="button"
-              className="flex flex-col items-center gap-1"
+              className="flex flex-col items-center gap-1 px-4 py-2 -m-2"
               onClick={() => handleClick(tab.id)}
             >
               <Icon

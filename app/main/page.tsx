@@ -5,8 +5,10 @@ import { CircleDollarSign, User, Calendar, Check, CirclePlus } from "lucide-reac
 import { useWedding } from "../contexts/WeddingContext";
 import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
+import { useRouter } from "next/navigation";
 
 export default function MainPage() {
+  const router = useRouter();
   const { weddingData, user } = useWedding();
 
   // 예산 관리 변수
@@ -205,6 +207,7 @@ export default function MainPage() {
             </div>
             <button 
               type="button" 
+              onClick={() => router.push('/add-plen')}
               className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-semibold text-lg transition-colors shadow-md hover:opacity-90 active:opacity-80"
               style={{ backgroundColor: '#FFAAB8' }}
             >
@@ -285,9 +288,16 @@ export default function MainPage() {
       {/* 하단 탭바 - Sticky로 최상단에 고정 */}
       <BottomTabBar
         activeTab="home"
-        onTabClick={() => {
-          // TODO: 각 탭에 맞는 페이지로 이동
-          // 예: router.push(`/${tab}`)
+        onTabClick={(tab) => {
+          if (tab === "home") {
+            // 이미 /main 페이지에 있으면 새로고침, 아니면 이동
+            if (window.location.pathname === "/main") {
+              router.refresh();
+            } else {
+              router.push("/main");
+            }
+          }
+          // TODO: 나머지 탭들은 나중에 처리
         }}
       />
     </div>
