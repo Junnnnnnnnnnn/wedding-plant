@@ -15,15 +15,43 @@ export default function SettingPage() {
   const [showThird, setShowThird] = useState(false);
   const [showFourth, setShowFourth] = useState(false);
   const [showFifth, setShowFifth] = useState(false);
+  const [showSixth, setShowSixth] = useState(false);
+  const [showSeventh, setShowSeventh] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isDatePickerFadingOut, setIsDatePickerFadingOut] = useState(false);
   const [isBudgetFadingOut, setIsBudgetFadingOut] = useState(false);
   const [isNameFadingOut, setIsNameFadingOut] = useState(false);
   const [isNameShaking, setIsNameShaking] = useState(false);
 const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
+  const [isSixthFadingOut, setIsSixthFadingOut] = useState(false);
   const [isCountUpComplete, setIsCountUpComplete] = useState(false);
   const [countUpKey, setCountUpKey] = useState(0);
   const [showLanyard, setShowLanyard] = useState(false);
+  const [isLanyardFadingOut, setIsLanyardFadingOut] = useState(false);
+
+  useEffect(() => {
+    // 페이지 전체 스크롤 방지 및 오버스크롤 방지
+    const originalStyle = {
+      overflow: document.body.style.overflow,
+      overscrollBehavior: document.body.style.overscrollBehavior,
+      position: document.body.style.position,
+      width: document.body.style.width,
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.documentElement.style.overscrollBehavior = 'none';
+    
+    return () => {
+      document.body.style.overflow = originalStyle.overflow;
+      document.body.style.overscrollBehavior = originalStyle.overscrollBehavior;
+      document.body.style.position = originalStyle.position;
+      document.body.style.width = originalStyle.width;
+      document.documentElement.style.overscrollBehavior = 'auto';
+    };
+  }, []);
 
   useEffect(() => {
     // 첫 번째 메시지가 3초 후 사라지고, 그 다음 두 번째 메시지가 나타남
@@ -60,6 +88,26 @@ useEffect(() => {
       };
     }
   }, [showFifth]);
+
+  useEffect(() => {
+    if (showSixth) {
+      // fade in 완료(500ms) 후 2초간 보여주고 fade out 시작
+      const timer = setTimeout(() => {
+        setIsSixthFadingOut(true);
+      }, 4500); // 500ms (fade-in duration) + 2000ms (display time)
+
+      // fade out 시작 후 showSeventh 표시
+      const seventhTimer = setTimeout(() => {
+        setShowSixth(false);
+        setShowSeventh(true);
+      }, 5000); // 500ms (fade-in) + 4000ms (display) + 500ms (fade-out)
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(seventhTimer);
+      };
+    }
+  }, [showSixth]);
 
   const handleDateChange = (date: { year: number; month: number; day: number }) => {
     setDate(date);
@@ -98,14 +146,37 @@ useEffect(() => {
     }, 500); // fade-out 애니메이션 시간과 동일
   };
 
+  const handleLanyardNext = () => {
+    // fade out 시작
+    setIsLanyardFadingOut(true);
+    // 애니메이션 완료 후 다음 화면 표시
+    setTimeout(() => {
+      setShowLanyard(false);
+      setShowFifth(false);
+      setShowSixth(true);
+    }, 500); // fade-out 애니메이션 시간과 동일
+  };
+
   const handleBack = () => {
-    // 다섯 번째 화면에서 네 번째 화면으로
-    if (showFifth) {
+    // 일곱 번째 화면에서 여섯 번째 화면으로
+    if (showSeventh) {
+      setShowSeventh(false);
+      setShowSixth(true);
+      setIsSixthFadingOut(false);
+    } else if (showSixth) {
+      // 여섯 번째 화면에서 Lanyard로
+      setShowSixth(false);
+      setShowLanyard(true);
+      setIsLanyardFadingOut(false);
+      setIsSixthFadingOut(false);
+    } else if (showFifth) {
+      // 다섯 번째 화면에서 네 번째 화면으로
       setShowFifth(false);
       setShowFourth(true);
       setIsNameFadingOut(false);
       setIsFifthFadingOut(false);
       setShowLanyard(false);
+      setIsLanyardFadingOut(false);
     } else if (showFourth) {
       // 네 번째 화면에서 세 번째 화면으로
       setShowFourth(false);
@@ -124,9 +195,9 @@ useEffect(() => {
   };
 
   return (
-    <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6">
-      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#FFF5F2] px-6 py-8">
-        {(showThird || showFourth || showFifth) && (
+    <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6 overflow-hidden overscroll-none">
+      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#FFF5F2] px-6 py-8 overscroll-none">
+        {(showThird || showFourth || showFifth || showSixth || showSeventh) && (
           <button
             onClick={handleBack}
             className="absolute top-6 left-6 z-50 p-2 text-stone-700 hover:text-stone-900 transition-colors duration-200"
@@ -247,8 +318,43 @@ useEffect(() => {
           </div>
         )}
         {showLanyard && (
-          <div className="absolute inset-0 z-40">
-            <Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
+          <div className={`${isLanyardFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
+            <div className="absolute inset-0 z-40">
+              <Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
+            </div>
+            <button
+              onClick={handleLanyardNext}
+              className="absolute top-6 right-6 z-50 px-5 py-2 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
+            >
+              다음
+            </button>
+          </div>
+        )}
+        {showSixth && (
+          <div className={`flex flex-1 flex-col items-center justify-center ${isSixthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
+            <LandingHero 
+              title="앗.. 실망하셨다고요?" 
+              subtitle="열심히 준비 했지만 제 마음이 닿지 않았나봐요 ㅠ" 
+              titleSize="text-3xl sm:text-4xl" 
+              subtitleSize="text-base sm:text-lg" 
+            />
+          </div>
+        )}
+        {showSeventh && (
+          <div className={`flex flex-1 flex-col items-center justify-center animate-fade-in`}>
+            <LandingHero 
+              title="자 이제 시작해볼까요?" 
+              subtitle="우리식까지 든든한 플랜을 같이 짜보아요" 
+              titleSize="text-3xl sm:text-4xl" 
+              subtitleSize="text-base sm:text-lg" 
+            />
+          <button
+              onClick={handleNameNext}
+              disabled={!weddingData.name || weddingData.name.trim() === ""}
+              className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
+            >
+              계획 짜러 가기
+          </button>
           </div>
         )}
       </main>
