@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useMemo } from "react";
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface WeddingData {
   budget: string;
@@ -10,9 +16,11 @@ interface WeddingData {
 
 interface WeddingContextType {
   weddingData: WeddingData;
+  user: User | null;
   setBudget: (budget: string) => void;
   setName: (name: string) => void;
   setDate: (date: { year: number; month: number; day: number }) => void;
+  setUser: (user: User | null) => void;
   resetData: () => void;
 }
 
@@ -23,6 +31,9 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
     budget: "1000",
     name: "",
   });
+
+  // 추후 API로 관리할 user 정보
+  const [user, setUser] = useState<User | null>(null);
 
   const setBudget = (budget: string) => {
     setWeddingData((prev) => ({ ...prev, budget }));
@@ -43,18 +54,21 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const value = useMemo(
+    () => ({
+      weddingData,
+      user,
+      setBudget,
+      setName,
+      setDate,
+      setUser,
+      resetData,
+    }),
+    [weddingData, user],
+  );
+
   return (
-    <WeddingContext.Provider
-      value={{
-        weddingData,
-        setBudget,
-        setName,
-        setDate,
-        resetData,
-      }}
-    >
-      {children}
-    </WeddingContext.Provider>
+    <WeddingContext.Provider value={value}>{children}</WeddingContext.Provider>
   );
 }
 

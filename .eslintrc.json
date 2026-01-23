@@ -19,17 +19,9 @@
   "rules": {
     "react/react-in-jsx-scope": "off",
     "react/jsx-filename-extension": ["warn", { "extensions": [".ts", ".tsx"] }],
+    "react/require-default-props": "off",
     "@typescript-eslint/camelcase": "off",
-    "import/extensions": [
-      "error",
-      "ignorePackages",
-      {
-        "ts": "never",
-        "tsx": "never",
-        "js": "never",
-        "jsx": "never"
-      }
-    ],
+    "import/extensions": "off",
     "no-console": "error"
   },
   "parser": "@typescript-eslint/parser",

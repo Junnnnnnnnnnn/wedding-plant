@@ -1,3 +1,4 @@
+/* eslint-disable react/require-default-props */
 import { useInView, useMotionValue, useSpring } from "motion/react";
 import { useCallback, useEffect, useRef } from "react";
 
@@ -43,7 +44,7 @@ export default function CountUp({
     const str = num.toString();
     if (str.includes(".")) {
       const decimals = str.split(".")[1];
-      if (parseInt(decimals) !== 0) {
+      if (parseInt(decimals, 10) !== 0) {
         return decimals.length;
       }
     }
@@ -62,11 +63,15 @@ export default function CountUp({
         maximumFractionDigits: hasDecimals ? maxDecimals : 0,
       };
 
-      const formattedNumber = Intl.NumberFormat("en-US", options).format(latest);
+      const formattedNumber = Intl.NumberFormat("en-US", options).format(
+        latest,
+      );
 
-      return separator ? formattedNumber.replace(/,/g, separator) : formattedNumber;
+      return separator
+        ? formattedNumber.replace(/,/g, separator)
+        : formattedNumber;
     },
-    [maxDecimals, separator]
+    [maxDecimals, separator],
   );
 
   useEffect(() => {
@@ -91,7 +96,7 @@ export default function CountUp({
             onEnd();
           }
         },
-        delay * 1000 + duration * 1000
+        delay * 1000 + duration * 1000,
       );
 
       return () => {
@@ -99,7 +104,19 @@ export default function CountUp({
         clearTimeout(durationTimeoutId);
       };
     }
-  }, [isInView, startWhen, motionValue, direction, from, to, delay, onStart, onEnd, duration]);
+    return undefined;
+  }, [
+    isInView,
+    startWhen,
+    motionValue,
+    direction,
+    from,
+    to,
+    delay,
+    onStart,
+    onEnd,
+    duration,
+  ]);
 
   useEffect(() => {
     const unsubscribe = springValue.on("change", (latest: number) => {
