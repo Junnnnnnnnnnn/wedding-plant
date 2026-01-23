@@ -105,6 +105,7 @@ useEffect(() => {
       setShowFourth(true);
       setIsNameFadingOut(false);
       setIsFifthFadingOut(false);
+      setShowLanyard(false);
     } else if (showFourth) {
       // 네 번째 화면에서 세 번째 화면으로
       setShowFourth(false);
@@ -151,7 +152,7 @@ useEffect(() => {
         )}
         {showSecond && (
           <div className={`flex flex-1 flex-col items-center justify-center ${isDatePickerFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
-            <LandingHero title="결혼 날짜가 언제인가요" subtitle="우신, 우랑님. 가장 빛날 그날까지 함께해요." titleSize="text-3xl sm:text-4xl" subtitleSize="text-base sm:text-lg" />
+            <LandingHero title="우리 날짜가 언제인가요" subtitle="우신, 우랑님. 가장 빛날 그날까지 함께해요." titleSize="text-3xl sm:text-4xl" subtitleSize="text-base sm:text-lg" />
             <DatePickerWheel onDateChange={handleDateChange} onNext={handleDateNext} />
           </div>
         )}
