@@ -23,17 +23,17 @@
   font-size: 18px;
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, #FF69B4, #FF85C1);
+  background: linear-gradient(135deg, #ff69b4, #ff85c1);
   border: none;
   border-radius: 30px;
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
   transition: all 0.3s ease;
-  font-family: 'Hakgyoansim Dunggeunmiso TTF B', sans-serif;
+  font-family: "Hakgyoansim Dunggeunmiso TTF B", sans-serif;
 }
 
 .next-button:hover {
-  background: linear-gradient(135deg, #FF85C1, #FFA0D2);
+  background: linear-gradient(135deg, #ff85c1, #ffa0d2);
   box-shadow: 0 6px 20px rgba(255, 105, 180, 0.5);
   transform: translateY(-2px);
 }

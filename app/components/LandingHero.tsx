@@ -5,23 +5,22 @@ type LandingHeroProps = {
   subtitleSize?: string;
 };
 
-export function LandingHero({ 
-  title, 
-  subtitle, 
+export function LandingHero({
+  title,
+  subtitle,
   titleSize = "text-4xl sm:text-5xl",
-  subtitleSize = "text-lg sm:text-xl"
+  subtitleSize = "text-lg sm:text-xl",
 }: LandingHeroProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center">
       <div className="animate-rise mb-6 flex flex-col items-center gap-2">
-        <p className={`${titleSize} font-bold tracking-tight text-stone-900`}>
-          {title}
-        </p>
-        <p className={`animate-rise-delayed ${subtitleSize} font-bold tracking-tight text-stone-900`}>
+        <p className={`${titleSize} font-bold tracking-tight text-stone-900`}>{title}</p>
+        <p
+          className={`animate-rise-delayed ${subtitleSize} font-bold tracking-tight text-stone-900`}
+        >
           {subtitle}
         </p>
       </div>
     </div>
   );
 }
-

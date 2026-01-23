@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
- 
-'use client';
-import { useEffect, useRef, useState } from 'react';
-import { Canvas, extend, useFrame } from '@react-three/fiber';
-import { useGLTF, useTexture, Environment, Lightformer, Text } from '@react-three/drei';
+
+"use client";
+import { useEffect, useRef, useState } from "react";
+import { Canvas, extend, useFrame } from "@react-three/fiber";
+import { useGLTF, useTexture, Environment, Lightformer, Text } from "@react-three/drei";
 import {
   BallCollider,
   CuboidCollider,
@@ -11,15 +11,15 @@ import {
   RigidBody,
   useRopeJoint,
   useSphericalJoint,
-  RigidBodyProps
-} from '@react-three/rapier';
-import { MeshLineGeometry, MeshLineMaterial } from 'meshline';
-import * as THREE from 'three';
-import { useWedding } from '@/app/contexts/WeddingContext';
+  RigidBodyProps,
+} from "@react-three/rapier";
+import { MeshLineGeometry, MeshLineMaterial } from "meshline";
+import * as THREE from "three";
+import { useWedding } from "@/app/contexts/WeddingContext";
 
 // Simple card geometry and lanyard texture will be created programmatically
 
-import './Lanyard.css';
+import "./Lanyard.css";
 
 extend({ MeshLineGeometry, MeshLineMaterial });
 
@@ -28,9 +28,8 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-       
       meshLineGeometry: any;
-       
+
       meshLineMaterial: any;
     }
   }
@@ -46,7 +45,7 @@ THREE.ShaderLib.meshline = {
     color: { value: new THREE.Color(0xffffff) },
     opacity: { value: 1 },
     transparent: { value: true },
-    depthTest: { value: false }
+    depthTest: { value: false },
   },
   vertexShader: `
     uniform float lineWidth;
@@ -70,7 +69,7 @@ THREE.ShaderLib.meshline = {
       }
       gl_FragColor = texColor;
     }
-  `
+  `,
 };
 
 interface LanyardProps {
@@ -84,15 +83,17 @@ export default function Lanyard({
   position = [0, 0, 30],
   gravity = [0, -40, 0],
   fov = 20,
-  transparent = true
+  transparent = true,
 }: LanyardProps) {
-  const [isMobile, setIsMobile] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState<boolean>(
+    () => typeof window !== "undefined" && window.innerWidth < 768
+  );
   const { weddingData } = useWedding();
 
   useEffect(() => {
     const handleResize = (): void => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
@@ -168,42 +169,42 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
   const dir = new THREE.Vector3();
 
   const segmentProps: any = {
-    type: 'dynamic' as RigidBodyProps['type'],
+    type: "dynamic" as RigidBodyProps["type"],
     canSleep: true,
     colliders: false,
     angularDamping: 4,
-    linearDamping: 4
+    linearDamping: 4,
   };
 
-// Create simple card geometry programmatically
+  // Create simple card geometry programmatically
   const cardGeometry = new THREE.BoxGeometry(0.8, 1.125, 0.01);
   const borderGeometry = new THREE.BoxGeometry(0.84, 1.165, 0.009); // 2px margin (0.02 units)
-  
+
   // Create simple materials
   const cardMaterial = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     roughness: 0.9,
     metalness: 0.8,
     clearcoat: isMobile ? 0 : 1,
-    clearcoatRoughness: 0.15
+    clearcoatRoughness: 0.15,
   });
-  
+
   const borderMaterial = new THREE.MeshStandardMaterial({
-    color: 0xFFAAB8, // Same color as lanyard
+    color: 0xffaab8, // Same color as lanyard
     roughness: 0.5,
-    metalness: 0
+    metalness: 0,
   });
-  
+
   // Create simple lanyard texture
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 256;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   if (ctx) {
     // Create a simple pattern for lanyard
-    ctx.fillStyle = '#FFAAB8';
+    ctx.fillStyle = "#FFAAB8";
     ctx.fillRect(0, 0, 256, 256);
-    ctx.strokeStyle = '#ffffff';
+    ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 4;
     for (let i = 0; i < 256; i += 32) {
       ctx.beginPath();
@@ -213,30 +214,30 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
     }
   }
   const texture = new THREE.CanvasTexture(canvas);
-  
+
   // Create gradient texture for divider line
-  const gradientCanvas = document.createElement('canvas');
+  const gradientCanvas = document.createElement("canvas");
   gradientCanvas.width = 256;
   gradientCanvas.height = 64;
-  const gradientCtx = gradientCanvas.getContext('2d');
+  const gradientCtx = gradientCanvas.getContext("2d");
   if (gradientCtx) {
     const gradient = gradientCtx.createLinearGradient(0, 0, 256, 0);
-    gradient.addColorStop(0, '#FF69B4');
-    gradient.addColorStop(0.5, '#FF85C1');
-    gradient.addColorStop(1, '#FFA0D2');
+    gradient.addColorStop(0, "#FF69B4");
+    gradient.addColorStop(0.5, "#FF85C1");
+    gradient.addColorStop(1, "#FFA0D2");
     gradientCtx.fillStyle = gradient;
     gradientCtx.fillRect(0, 0, 256, 64);
   }
   const gradientTexture = new THREE.CanvasTexture(gradientCanvas);
-  
+
   const curve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 0, 0), 
-    new THREE.Vector3(0.5, 0, 0), 
-    new THREE.Vector3(1, 0, 0), 
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0.5, 0, 0),
+    new THREE.Vector3(1, 0, 0),
     new THREE.Vector3(1.5, 0, 0),
-    new THREE.Vector3(2, 0, 0)
+    new THREE.Vector3(2, 0, 0),
   ]);
-  curve.curveType = 'chordal';
+  curve.curveType = "chordal";
   const [dragged, drag] = useState<false | THREE.Vector3>(false);
   const [hovered, hover] = useState(false);
 
@@ -245,34 +246,38 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
   useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], 1]);
   useSphericalJoint(j3, card, [
     [0, 0, 0],
-    [0, 0.0375, 0] // clip 상단 위치: -1.2 + (0.4 + 0.15) * 2.25 = 0.0375
+    [0, 0.0375, 0], // clip 상단 위치: -1.2 + (0.4 + 0.15) * 2.25 = 0.0375
   ]);
 
   useEffect(() => {
     if (hovered) {
-      document.body.style.cursor = dragged ? 'grabbing' : 'grab';
+      document.body.style.cursor = dragged ? "grabbing" : "grab";
       return () => {
-        document.body.style.cursor = 'auto';
+        document.body.style.cursor = "auto";
       };
     }
   }, [hovered, dragged]);
 
   useFrame((state, delta) => {
-    if (dragged && typeof dragged !== 'boolean') {
+    if (dragged && typeof dragged !== "boolean") {
       vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
       dir.copy(vec).sub(state.camera.position).normalize();
       vec.add(dir.multiplyScalar(state.camera.position.length()));
-      [card, j1, j2, j3, fixed].forEach(ref => ref.current?.wakeUp());
+      [card, j1, j2, j3, fixed].forEach((ref) => ref.current?.wakeUp());
       card.current?.setNextKinematicTranslation({
         x: vec.x - dragged.x,
         y: vec.y - dragged.y,
-        z: vec.z - dragged.z
+        z: vec.z - dragged.z,
       });
     }
     if (fixed.current && card.current && j3.current) {
-      [j1, j2].forEach(ref => {
-        if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
-        const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
+      [j1, j2].forEach((ref) => {
+        if (!ref.current.lerped)
+          ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
+        const clampedDistance = Math.max(
+          0.1,
+          Math.min(1, ref.current.lerped.distanceTo(ref.current.translation()))
+        );
         ref.current.lerped.lerp(
           ref.current.translation(),
           delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed))
@@ -283,11 +288,16 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
       const cardTranslation = card.current.translation();
       const cardRotation = card.current.rotation();
       // Rapier returns rotation as quaternion {x, y, z, w}
-      const quat = new THREE.Quaternion(cardRotation.x, cardRotation.y, cardRotation.z, cardRotation.w);
+      const quat = new THREE.Quaternion(
+        cardRotation.x,
+        cardRotation.y,
+        cardRotation.z,
+        cardRotation.w
+      );
       const attachmentOffset = new THREE.Vector3(0, 0.0375, 0); // This matches the joint anchor - clip top
       attachmentOffset.applyQuaternion(quat);
       const cardAttachmentPoint = new THREE.Vector3().copy(cardTranslation).add(attachmentOffset);
-      
+
       // Curve goes from fixed (top) through all joints to card attachment point (bottom)
       curve.points[0].copy(fixed.current.translation());
       curve.points[1].copy(j1.current.lerped);
@@ -306,21 +316,40 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
   return (
     <>
       <group position={[0, 4, 0]}>
-        <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
-        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody ref={fixed} {...segmentProps} type={"fixed" as RigidBodyProps["type"]} />
+        <RigidBody
+          position={[0.5, 0, 0]}
+          ref={j1}
+          {...segmentProps}
+          type={"dynamic" as RigidBodyProps["type"]}
+        >
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody
+          position={[1, 0, 0]}
+          ref={j2}
+          {...segmentProps}
+          type={"dynamic" as RigidBodyProps["type"]}
+        >
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody
+          position={[1.5, 0, 0]}
+          ref={j3}
+          {...segmentProps}
+          type={"dynamic" as RigidBodyProps["type"]}
+        >
           <BallCollider args={[0.1]} />
         </RigidBody>
         <RigidBody
           position={[2, 0, 0]}
           ref={card}
           {...segmentProps}
-          type={dragged ? ('kinematicPosition' as RigidBodyProps['type']) : ('dynamic' as RigidBodyProps['type'])}
+          type={
+            dragged
+              ? ("kinematicPosition" as RigidBodyProps["type"])
+              : ("dynamic" as RigidBodyProps["type"])
+          }
         >
           <CuboidCollider args={[0.8, 1.125, 0.01]} />
           <group
@@ -340,23 +369,19 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
           >
             {/* Border */}
             <mesh geometry={borderGeometry} position={[0, 0, -0.001]}>
-              <meshStandardMaterial
-                color={0xFF69B4}
-                roughness={0.5}
-                metalness={0}
-              />
+              <meshStandardMaterial color={0xff69b4} roughness={0.5} metalness={0} />
             </mesh>
             {/* Card */}
             <mesh geometry={cardGeometry}>
               <meshPhysicalMaterial
-                color={0xFFFFFF}
+                color={0xffffff}
                 clearcoat={isMobile ? 0 : 1}
                 clearcoatRoughness={0.15}
                 roughness={0.3}
                 metalness={0}
               />
             </mesh>
-            
+
             {/* Text Content */}
             <Text
               position={[0, 0.4, 0.006]}
@@ -368,17 +393,13 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
             >
               출입증
             </Text>
-            
+
             {/* Divider Line */}
             <mesh position={[0, 0.26, 0.006]}>
               <boxGeometry args={[0.8, 0.02, 0.001]} />
-              <meshStandardMaterial 
-                color={0xFF69B4}
-                roughness={0.5}
-                metalness={0}
-              />
+              <meshStandardMaterial color={0xff69b4} roughness={0.5} metalness={0} />
             </mesh>
-            
+
             {/* Name */}
             <Text
               position={[-0.3, 0.15, 0.006]}
@@ -388,9 +409,9 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
               anchorY="middle"
               font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
             >
-              {`이름: ${weddingData.name || '미정'}`}
+              {`이름: ${weddingData.name || "미정"}`}
             </Text>
-            
+
             {/* Budget */}
             <Text
               position={[-0.3, 0.0, 0.006]}
@@ -400,9 +421,9 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
               anchorY="middle"
               font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
             >
-              {`예산: ${weddingData.budget || '0'}만원`}
+              {`예산: ${weddingData.budget || "0"}만원`}
             </Text>
-            
+
             {/* Date */}
             <Text
               position={[-0.3, -0.15, 0.006]}
@@ -412,9 +433,9 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
               anchorY="middle"
               font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
             >
-              {`날짜: ${weddingData.date ? `${weddingData.date.year}.${weddingData.date.month}.${weddingData.date.day}` : '미정'}`}
+              {`날짜: ${weddingData.date ? `${weddingData.date.year}.${weddingData.date.month}.${weddingData.date.day}` : "미정"}`}
             </Text>
-            
+
             {/* Watermark */}
             <Text
               position={[0.35, -0.5, 0.006]}
@@ -429,7 +450,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
           </group>
         </RigidBody>
       </group>
-<mesh ref={band} position={[0, 0, -0.2]} renderOrder={0}>
+      <mesh ref={band} position={[0, 0, -0.2]} renderOrder={0}>
         {/* @ts-expect-error - meshLineGeometry is extended via extend() */}
         <meshLineGeometry />
         {/* @ts-expect-error - meshLineMaterial is extended via extend() */}

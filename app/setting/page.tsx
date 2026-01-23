@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { LandingHero } from "../components/LandingHero";
 import { CelebrationEffects } from "../components/CelebrationEffects";
 import { DatePickerWheel } from "../components/DatePickerWheel";
@@ -9,6 +10,7 @@ import CountUp from "../../components/CountUp";
 import Lanyard from "../../components/Lanyard";
 
 export default function SettingPage() {
+  const router = useRouter();
   const { weddingData, setBudget, setName, setDate } = useWedding();
   const [showFirst, setShowFirst] = useState(true);
   const [showSecond, setShowSecond] = useState(false);
@@ -22,7 +24,7 @@ export default function SettingPage() {
   const [isBudgetFadingOut, setIsBudgetFadingOut] = useState(false);
   const [isNameFadingOut, setIsNameFadingOut] = useState(false);
   const [isNameShaking, setIsNameShaking] = useState(false);
-const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
+  const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
   const [isSixthFadingOut, setIsSixthFadingOut] = useState(false);
   const [isCountUpComplete, setIsCountUpComplete] = useState(false);
   const [countUpKey, setCountUpKey] = useState(0);
@@ -38,18 +40,18 @@ const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
       width: document.body.style.width,
     };
 
-    document.body.style.overflow = 'hidden';
-    document.body.style.overscrollBehavior = 'none';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.documentElement.style.overscrollBehavior = 'none';
-    
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+    document.documentElement.style.overscrollBehavior = "none";
+
     return () => {
       document.body.style.overflow = originalStyle.overflow;
       document.body.style.overscrollBehavior = originalStyle.overscrollBehavior;
       document.body.style.position = originalStyle.position;
       document.body.style.width = originalStyle.width;
-      document.documentElement.style.overscrollBehavior = 'auto';
+      document.documentElement.style.overscrollBehavior = "auto";
     };
   }, []);
 
@@ -70,7 +72,7 @@ const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
     };
   }, []);
 
-useEffect(() => {
+  useEffect(() => {
     if (showFifth) {
       // fade in 완료(500ms) 후 2초간 보여주고 fade out 시작
       const timer = setTimeout(() => {
@@ -122,7 +124,7 @@ useEffect(() => {
       setShowSecond(false);
       setShowThird(true);
       setIsCountUpComplete(false); // 카운트업 상태 리셋
-      setCountUpKey(prev => prev + 1); // CountUp 재시작을 위한 key 변경
+      setCountUpKey((prev) => prev + 1); // CountUp 재시작을 위한 key 변경
     }, 500); // fade-out 애니메이션 시간과 동일
   };
 
@@ -157,6 +159,10 @@ useEffect(() => {
     }, 500); // fade-out 애니메이션 시간과 동일
   };
 
+  const handleGoToMain = () => {
+    router.push("/main");
+  };
+
   const handleBack = () => {
     // 일곱 번째 화면에서 여섯 번째 화면으로
     if (showSeventh) {
@@ -183,14 +189,14 @@ useEffect(() => {
       setShowThird(true);
       setIsBudgetFadingOut(false);
       setIsCountUpComplete(false); // 카운트업 상태 리셋
-      setCountUpKey(prev => prev + 1); // CountUp 재시작을 위한 key 변경
+      setCountUpKey((prev) => prev + 1); // CountUp 재시작을 위한 key 변경
     } else if (showThird) {
       // 세 번째 화면에서 두 번째 화면으로
       setShowThird(false);
       setShowSecond(true);
       setIsDatePickerFadingOut(false);
       setIsCountUpComplete(false); // 카운트업 상태 리셋
-      setCountUpKey(prev => prev + 1); // CountUp 재시작을 위한 key 변경
+      setCountUpKey((prev) => prev + 1); // CountUp 재시작을 위한 key 변경
     }
   };
 
@@ -217,19 +223,35 @@ useEffect(() => {
         )}
         {showFirst && !isFadingOut && <CelebrationEffects />}
         {showFirst && (
-          <div className={`absolute inset-0 flex flex-1 flex-col items-center justify-center ${isFadingOut ? "animate-fade-out" : ""}`}>
+          <div
+            className={`absolute inset-0 flex flex-1 flex-col items-center justify-center ${isFadingOut ? "animate-fade-out" : ""}`}
+          >
             <LandingHero title="우리" subtitle="🎉 축하드려요 🎉" />
           </div>
         )}
         {showSecond && (
-          <div className={`flex flex-1 flex-col items-center justify-center ${isDatePickerFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
-            <LandingHero title="우리 날짜가 언제인가요" subtitle="우신, 우랑님. 가장 빛날 그날까지 함께해요." titleSize="text-3xl sm:text-4xl" subtitleSize="text-base sm:text-lg" />
+          <div
+            className={`flex flex-1 flex-col items-center justify-center ${isDatePickerFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+          >
+            <LandingHero
+              title="우리 날짜가 언제인가요"
+              subtitle="우신, 우랑님. 가장 빛날 그날까지 함께해요."
+              titleSize="text-3xl sm:text-4xl"
+              subtitleSize="text-base sm:text-lg"
+            />
             <DatePickerWheel onDateChange={handleDateChange} onNext={handleDateNext} />
           </div>
         )}
         {showThird && (
-          <div className={`flex flex-1 flex-col items-center justify-center ${isBudgetFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
-<LandingHero title="예산도 살짝 알려주세요!" subtitle="마음 편하시게 제가 꼼꼼히 챙겨드릴게요." titleSize="text-3xl sm:text-4xl" subtitleSize="text-base sm:text-lg" />
+          <div
+            className={`flex flex-1 flex-col items-center justify-center ${isBudgetFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+          >
+            <LandingHero
+              title="예산도 살짝 알려주세요!"
+              subtitle="마음 편하시게 제가 꼼꼼히 챙겨드릴게요."
+              titleSize="text-3xl sm:text-4xl"
+              subtitleSize="text-base sm:text-lg"
+            />
             <div className="flex flex-col items-center flex-1 justify-center">
               <div className="flex items-center justify-center gap-4 mb-4">
                 <div className="flex items-center gap-2">
@@ -272,8 +294,15 @@ useEffect(() => {
           </div>
         )}
         {showFourth && (
-          <div className={`flex flex-1 flex-col items-center justify-center ${isNameFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
-            <LandingHero title="혹시.. 이름도 괜찮을까요?" subtitle="닉네임도 괜찮아요!" titleSize="text-3xl sm:text-4xl" subtitleSize="text-base sm:text-lg" />
+          <div
+            className={`flex flex-1 flex-col items-center justify-center ${isNameFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+          >
+            <LandingHero
+              title="혹시.. 이름도 괜찮을까요?"
+              subtitle="닉네임도 괜찮아요!"
+              titleSize="text-3xl sm:text-4xl"
+              subtitleSize="text-base sm:text-lg"
+            />
             <div className="flex flex-col items-center mt-24 mb-20">
               <p className="text-sm text-stone-500 mb-2">최대 5 글자</p>
               <div className="flex items-center justify-center gap-4 mb-4">
@@ -307,13 +336,15 @@ useEffect(() => {
             </div>
           </div>
         )}
-{showFifth && !showLanyard && (
-          <div className={`flex flex-1 flex-col items-center justify-center ${isFifthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
-            <LandingHero 
-              title={`${weddingData.name} 님 환영합니다~`} 
-              subtitle="제가 작은 선물을 준비했어요" 
-              titleSize="text-3xl sm:text-4xl" 
-              subtitleSize="text-base sm:text-lg" 
+        {showFifth && !showLanyard && (
+          <div
+            className={`flex flex-1 flex-col items-center justify-center ${isFifthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+          >
+            <LandingHero
+              title={`${weddingData.name} 님 환영합니다~`}
+              subtitle="제가 작은 선물을 준비했어요"
+              titleSize="text-3xl sm:text-4xl"
+              subtitleSize="text-base sm:text-lg"
             />
           </div>
         )}
@@ -331,30 +362,31 @@ useEffect(() => {
           </div>
         )}
         {showSixth && (
-          <div className={`flex flex-1 flex-col items-center justify-center ${isSixthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}>
-            <LandingHero 
-              title="앗.. 실망하셨다고요?" 
-              subtitle="열심히 준비 했지만 제 마음이 닿지 않았나봐요 ㅠ" 
-              titleSize="text-3xl sm:text-4xl" 
-              subtitleSize="text-base sm:text-lg" 
+          <div
+            className={`flex flex-1 flex-col items-center justify-center ${isSixthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+          >
+            <LandingHero
+              title="앗.. 실망하셨다고요?"
+              subtitle="열심히 준비 했지만 제 마음이 닿지 않았나봐요 ㅠ"
+              titleSize="text-3xl sm:text-4xl"
+              subtitleSize="text-base sm:text-lg"
             />
           </div>
         )}
         {showSeventh && (
           <div className={`flex flex-1 flex-col items-center justify-center animate-fade-in`}>
-            <LandingHero 
-              title="자 이제 시작해볼까요?" 
-              subtitle="우리식까지 든든한 플랜을 같이 짜보아요" 
-              titleSize="text-3xl sm:text-4xl" 
-              subtitleSize="text-base sm:text-lg" 
+            <LandingHero
+              title="자 이제 시작해볼까요?"
+              subtitle="우리식까지 든든한 플랜을 같이 짜보아요"
+              titleSize="text-3xl sm:text-4xl"
+              subtitleSize="text-base sm:text-lg"
             />
-          <button
-              onClick={handleNameNext}
-              disabled={!weddingData.name || weddingData.name.trim() === ""}
-              className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
+            <button
+              onClick={handleGoToMain}
+              className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
             >
               계획 짜러 가기
-          </button>
+            </button>
           </div>
         )}
       </main>

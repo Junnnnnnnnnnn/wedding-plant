@@ -43,7 +43,7 @@ export default function RootLayout({
         className={`${hakgyoansim.className} ${hakgyoansim.variable} ${geistMono.variable} antialiased`}
       >
         <ClickSpark
-          sparkColor='#FFAAB8'
+          sparkColor="#FFAAB8"
           sparkSize={10}
           sparkRadius={15}
           sparkCount={8}
