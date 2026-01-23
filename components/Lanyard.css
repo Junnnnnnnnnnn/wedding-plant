@@ -9,3 +9,47 @@
   transform: scale(1);
   transform-origin: center;
 }
+.next-button-container {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.next-button {
+  padding: 14px 48px;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #FF69B4, #FF85C1);
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
+  transition: all 0.3s ease;
+  font-family: 'Hakgyoansim Dunggeunmiso TTF B', sans-serif;
+}
+
+.next-button:hover {
+  background: linear-gradient(135deg, #FF85C1, #FFA0D2);
+  box-shadow: 0 6px 20px rgba(255, 105, 180, 0.5);
+  transform: translateY(-2px);
+}
+
+.next-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(255, 105, 180, 0.3);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

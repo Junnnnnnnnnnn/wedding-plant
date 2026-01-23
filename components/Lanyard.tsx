@@ -1,8 +1,9 @@
-/* eslint-disable react/no-unknown-property */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, extend, useFrame } from '@react-three/fiber';
-import { useGLTF, useTexture, Environment, Lightformer } from '@react-three/drei';
+import { useGLTF, useTexture, Environment, Lightformer, Text } from '@react-three/drei';
 import {
   BallCollider,
   CuboidCollider,
@@ -14,6 +15,7 @@ import {
 } from '@react-three/rapier';
 import { MeshLineGeometry, MeshLineMaterial } from 'meshline';
 import * as THREE from 'three';
+import { useWedding } from '@/app/contexts/WeddingContext';
 
 // Simple card geometry and lanyard texture will be created programmatically
 
@@ -23,9 +25,12 @@ extend({ MeshLineGeometry, MeshLineMaterial });
 
 // Type declarations for extended components
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
+       
       meshLineGeometry: any;
+       
       meshLineMaterial: any;
     }
   }
@@ -82,6 +87,7 @@ export default function Lanyard({
   transparent = true
 }: LanyardProps) {
   const [isMobile, setIsMobile] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const { weddingData } = useWedding();
 
   useEffect(() => {
     const handleResize = (): void => setIsMobile(window.innerWidth < 768);
@@ -97,34 +103,34 @@ export default function Lanyard({
         gl={{ alpha: transparent }}
         onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
       >
-        <ambientLight intensity={Math.PI} />
+        <ambientLight intensity={Math.PI * 2} />
         <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
-          <Band isMobile={isMobile} />
+          <Band isMobile={isMobile} weddingData={weddingData} />
         </Physics>
         <Environment blur={0.75}>
           <Lightformer
-            intensity={2}
+            intensity={4}
             color="white"
             position={[0, -1, 5]}
             rotation={[0, 0, Math.PI / 3]}
             scale={[100, 0.1, 1]}
           />
           <Lightformer
-            intensity={3}
+            intensity={6}
             color="white"
             position={[-1, -1, 1]}
             rotation={[0, 0, Math.PI / 3]}
             scale={[100, 0.1, 1]}
           />
           <Lightformer
-            intensity={3}
+            intensity={6}
             color="white"
             position={[1, 1, 1]}
             rotation={[0, 0, Math.PI / 3]}
             scale={[100, 0.1, 1]}
           />
           <Lightformer
-            intensity={10}
+            intensity={15}
             color="white"
             position={[-10, 0, 14]}
             rotation={[0, Math.PI / 2, Math.PI / 3]}
@@ -140,9 +146,14 @@ interface BandProps {
   maxSpeed?: number;
   minSpeed?: number;
   isMobile?: boolean;
+  weddingData: {
+    budget: string;
+    name: string;
+    date?: { year: number; month: number; day: number };
+  };
 }
 
-function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
+function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: BandProps) {
   // Using "any" for refs since the exact types depend on Rapier's internals
   const band = useRef<any>(null);
   const fixed = useRef<any>(null);
@@ -166,8 +177,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
 
 // Create simple card geometry programmatically
   const cardGeometry = new THREE.BoxGeometry(0.8, 1.125, 0.01);
-  const clipGeometry = new THREE.BoxGeometry(0.1, 0.3, 0.02);
-  const clampGeometry = new THREE.BoxGeometry(0.15, 0.1, 0.02);
+  const borderGeometry = new THREE.BoxGeometry(0.84, 1.165, 0.009); // 2px margin (0.02 units)
   
   // Create simple materials
   const cardMaterial = new THREE.MeshPhysicalMaterial({
@@ -178,10 +188,10 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
     clearcoatRoughness: 0.15
   });
   
-  const metalMaterial = new THREE.MeshStandardMaterial({
-    color: 0x888888,
-    roughness: 0.3,
-    metalness: 1
+  const borderMaterial = new THREE.MeshStandardMaterial({
+    color: 0xFFAAB8, // Same color as lanyard
+    roughness: 0.5,
+    metalness: 0
   });
   
   // Create simple lanyard texture
@@ -203,23 +213,37 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
     }
   }
   const texture = new THREE.CanvasTexture(canvas);
-const [curve] = useState(
-    () =>
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, 0, 0), 
-        new THREE.Vector3(0.5, 0, 0), 
-        new THREE.Vector3(1, 0, 0), 
-        new THREE.Vector3(1.5, 0, 0),
-        new THREE.Vector3(2, 0, 0)
-      ])
-  );
+  
+  // Create gradient texture for divider line
+  const gradientCanvas = document.createElement('canvas');
+  gradientCanvas.width = 256;
+  gradientCanvas.height = 64;
+  const gradientCtx = gradientCanvas.getContext('2d');
+  if (gradientCtx) {
+    const gradient = gradientCtx.createLinearGradient(0, 0, 256, 0);
+    gradient.addColorStop(0, '#FF69B4');
+    gradient.addColorStop(0.5, '#FF85C1');
+    gradient.addColorStop(1, '#FFA0D2');
+    gradientCtx.fillStyle = gradient;
+    gradientCtx.fillRect(0, 0, 256, 64);
+  }
+  const gradientTexture = new THREE.CanvasTexture(gradientCanvas);
+  
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0), 
+    new THREE.Vector3(0.5, 0, 0), 
+    new THREE.Vector3(1, 0, 0), 
+    new THREE.Vector3(1.5, 0, 0),
+    new THREE.Vector3(2, 0, 0)
+  ]);
+  curve.curveType = 'chordal';
   const [dragged, drag] = useState<false | THREE.Vector3>(false);
   const [hovered, hover] = useState(false);
 
   useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
   useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], 1]);
   useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], 1]);
-useSphericalJoint(j3, card, [
+  useSphericalJoint(j3, card, [
     [0, 0, 0],
     [0, 0.0375, 0] // clip 상단 위치: -1.2 + (0.4 + 0.15) * 2.25 = 0.0375
   ]);
@@ -254,7 +278,7 @@ useSphericalJoint(j3, card, [
           delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed))
         );
       });
-// Calculate card's attachment point (clip top where lanyard connects)
+      // Calculate card's attachment point (clip top where lanyard connects)
       // The joint anchor is at [0, 0.0375, 0] in card's local space (clip top)
       const cardTranslation = card.current.translation();
       const cardRotation = card.current.rotation();
@@ -277,7 +301,6 @@ useSphericalJoint(j3, card, [
     }
   });
 
-  curve.curveType = 'chordal';
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 
   return (
@@ -315,16 +338,94 @@ useSphericalJoint(j3, card, [
               drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
             }}
           >
-<mesh geometry={cardGeometry}>
-              <meshPhysicalMaterial
-                clearcoat={isMobile ? 0 : 1}
-                clearcoatRoughness={0.15}
-                roughness={0.9}
-                metalness={0.8}
+            {/* Border */}
+            <mesh geometry={borderGeometry} position={[0, 0, -0.001]}>
+              <meshStandardMaterial
+                color={0xFF69B4}
+                roughness={0.5}
+                metalness={0}
               />
             </mesh>
-            <mesh geometry={clipGeometry} material={metalMaterial} material-roughness={0.3} position={[0, 0.4, 0.005]} />
-            <mesh geometry={clampGeometry} material={metalMaterial} position={[0, -0.5, 0.005]} />
+            {/* Card */}
+            <mesh geometry={cardGeometry}>
+              <meshPhysicalMaterial
+                color={0xFFFFFF}
+                clearcoat={isMobile ? 0 : 1}
+                clearcoatRoughness={0.15}
+                roughness={0.3}
+                metalness={0}
+              />
+            </mesh>
+            
+            {/* Text Content */}
+            <Text
+              position={[0, 0.4, 0.006]}
+              fontSize={0.1}
+              color="#333333"
+              anchorX="center"
+              anchorY="middle"
+              font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
+            >
+              출입증
+            </Text>
+            
+            {/* Divider Line */}
+            <mesh position={[0, 0.26, 0.006]}>
+              <boxGeometry args={[0.8, 0.02, 0.001]} />
+              <meshStandardMaterial 
+                color={0xFF69B4}
+                roughness={0.5}
+                metalness={0}
+              />
+            </mesh>
+            
+            {/* Name */}
+            <Text
+              position={[-0.3, 0.15, 0.006]}
+              fontSize={0.06}
+              color="#333333"
+              anchorX="left"
+              anchorY="middle"
+              font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
+            >
+              {`이름: ${weddingData.name || '미정'}`}
+            </Text>
+            
+            {/* Budget */}
+            <Text
+              position={[-0.3, 0.0, 0.006]}
+              fontSize={0.06}
+              color="#333333"
+              anchorX="left"
+              anchorY="middle"
+              font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
+            >
+              {`예산: ${weddingData.budget || '0'}만원`}
+            </Text>
+            
+            {/* Date */}
+            <Text
+              position={[-0.3, -0.15, 0.006]}
+              fontSize={0.06}
+              color="#333333"
+              anchorX="left"
+              anchorY="middle"
+              font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
+            >
+              {`날짜: ${weddingData.date ? `${weddingData.date.year}.${weddingData.date.month}.${weddingData.date.day}` : '미정'}`}
+            </Text>
+            
+            {/* Watermark */}
+            <Text
+              position={[0.35, -0.5, 0.006]}
+              fontSize={0.03}
+              color="#AAAAAA"
+              anchorX="right"
+              anchorY="bottom"
+              font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
+            >
+              우리 플랜트
+            </Text>
           </group>
         </RigidBody>
       </group>
