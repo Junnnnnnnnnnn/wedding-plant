@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { CircleDollarSign, User, Calendar, Check, CirclePlus } from "lucide-react";
-import { useWedding } from "../contexts/WeddingContext";
 import CountUp from "@/components/CountUp";
-import BottomTabBar from "../components/BottomTabBar";
+import { Calendar, Check, CircleDollarSign, CirclePlus, User } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import BottomTabBar from "../components/BottomTabBar";
+import { useWedding } from "../contexts/WeddingContext";
 
 export default function MainPage() {
   const router = useRouter();
@@ -165,7 +165,7 @@ export default function MainPage() {
                     <CountUp
                       to={remainingBudget}
                       separator=","
-                      duration={0.5}
+                      duration={0.1}
                       className="inline"
                     />
                     만 원
@@ -177,7 +177,7 @@ export default function MainPage() {
                 <CountUp
                   to={usedBudget}
                   separator=","
-                  duration={0.5}
+                  duration={0.1}
                   className="inline"
                 />
                 만 원 지출 예정
