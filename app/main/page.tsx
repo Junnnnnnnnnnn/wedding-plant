@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { CircleDollarSign, User, Calendar, Check } from "lucide-react";
+import { CircleDollarSign, User, Calendar, Check, CirclePlus } from "lucide-react";
 import { useWedding } from "../contexts/WeddingContext";
 import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
+import { useRouter } from "next/navigation";
 
 export default function MainPage() {
+  const router = useRouter();
   const { weddingData, user } = useWedding();
 
   // 예산 관리 변수
@@ -171,20 +173,14 @@ export default function MainPage() {
                 </div>
               </div>
               <p className="mt-1 pl-[52px] py-2 text-xl font-semibold leading-none text-white">
-                <CountUp
-                  to={initialBudget}
-                  separator=","
-                  duration={0.5}
-                  className="inline"
-                />
-                만 원 중{" "}
+                예산 중{" "}
                 <CountUp
                   to={usedBudget}
                   separator=","
                   duration={0.5}
                   className="inline"
                 />
-                만 원 계획
+                만 원 지출 예정
               </p>
               <div className="mt-4 flex items-center gap-2">
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
@@ -202,11 +198,22 @@ export default function MainPage() {
         </div>
         <div className="w-full mt-8 pb-24">
           {/* 하단 영역 */}
-          <div className="flex flex-col items-start justify-start">
-            <span className="text-lg font-semibold">예산 가이드</span>
-            <span className="text-lg text-gray-500">
-              {budgetPlans.length}개의 계획이 있어요
-            </span>
+          <div className="flex justify-between">
+            <div className="flex flex-col items-start justify-start">
+              <span className="text-lg font-semibold">플랜 가이드</span>
+              <span className="text-lg text-gray-500">
+                {budgetPlans.length}개의 플랜이 있어요
+              </span>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => router.push('/add-plen')}
+              className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-semibold text-lg transition-colors shadow-md hover:opacity-90 active:opacity-80"
+              style={{ backgroundColor: '#FFAAB8' }}
+            >
+              플랜 추가
+              <CirclePlus className="h-5 w-5 text-white" strokeWidth={2.5} />
+            </button>
           </div>
           <ul className="mt-4 w-full flex flex-col gap-3">
             {budgetPlans.map((plan) => {
@@ -281,9 +288,16 @@ export default function MainPage() {
       {/* 하단 탭바 - Sticky로 최상단에 고정 */}
       <BottomTabBar
         activeTab="home"
-        onTabClick={() => {
-          // TODO: 각 탭에 맞는 페이지로 이동
-          // 예: router.push(`/${tab}`)
+        onTabClick={(tab) => {
+          if (tab === "home") {
+            // 이미 /main 페이지에 있으면 새로고침, 아니면 이동
+            if (window.location.pathname === "/main") {
+              router.refresh();
+            } else {
+              router.push("/main");
+            }
+          }
+          // TODO: 나머지 탭들은 나중에 처리
         }}
       />
     </div>
