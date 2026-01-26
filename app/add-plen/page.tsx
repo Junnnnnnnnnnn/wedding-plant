@@ -15,6 +15,7 @@ export default function AddPlanPage() {
     label: string;
   } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [amount, setAmount] = useState("");
 
   /**
    * ============================================================================
@@ -218,6 +219,20 @@ export default function AddPlanPage() {
     setIsModalOpen(false);
   };
 
+  // 금액 포맷팅 (콤마 추가)
+  const formatNumber = (value: string) => {
+    // 숫자만 추출
+    const numbers = value.replace(/[^\d]/g, "");
+    // 콤마 추가
+    return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    const formatted = formatNumber(value);
+    setAmount(formatted);
+  };
+
   // 표시할 항목 결정 (Input에 값이 있을 때만)
   let displayItems: Array<{ id: string; color: string; label: string }> = [];
 
@@ -243,8 +258,30 @@ export default function AddPlanPage() {
 
   return (
     <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6">
-      <main className="flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6">
-        <div className="w-full pt-8">
+      <main className="relative flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6 py-6">
+        {/* 뒤로가기 버튼 */}
+        <button
+          type="button"
+          onClick={() => router.push("/main")}
+          className="absolute top-2 left-4 z-50 p-2 text-stone-700 hover:text-stone-900 transition-colors duration-200"
+          aria-label="뒤로 가기"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-6 h-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+        <div className="w-full pt-6">
           <div className="flex flex-col items-start justify-start">
             <span className="text-[32px] font-semibold text-[#FFAAB8] leading-none">
               계획을 추가해보세요
@@ -335,6 +372,28 @@ export default function AddPlanPage() {
                 +
               </span>
             </button>
+          </div>
+        </div>
+        {/* 금액 영역 */}
+        <div className="mt-4 w-full">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="bg-white px-10 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8]">
+              <span className="text-xl font-semibold text-[#FFAAB8]">금액</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="plan-amount"
+              type="text"
+              inputMode="numeric"
+              value={amount}
+              onChange={handleAmountChange}
+              placeholder="금액을 입력해주세요"
+              className="flex-1 px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
+            />
+            <span className="text-base font-semibold text-stone-700 whitespace-nowrap">
+              만 원
+            </span>
           </div>
         </div>
       </main>
