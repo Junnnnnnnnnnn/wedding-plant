@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import BottomTabBar from "../components/BottomTabBar";
+import { useWedding } from "../contexts/WeddingContext";
 
 // Kakao Maps API 타입 선언
 declare global {
@@ -14,6 +15,7 @@ declare global {
 
 export default function AddPlanPage() {
   const router = useRouter();
+  const { user } = useWedding();
   const [inputValue, setInputValue] = useState("");
   const [searchResults, setSearchResults] = useState<
     Array<{ color: string; label: string }>
@@ -23,10 +25,13 @@ export default function AddPlanPage() {
     label: string;
   } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const [amount, setAmount] = useState("");
   const [location, setLocation] = useState("");
   const [showMap, setShowMap] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const newCategoryInputRef = useRef<HTMLInputElement>(null);
 
   /**
    * ============================================================================
@@ -296,6 +301,8 @@ export default function AddPlanPage() {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setIsAddingCategory(false);
+    setNewCategoryName("");
   };
 
   const handleSelectFromModal = (category: {
@@ -305,6 +312,65 @@ export default function AddPlanPage() {
     setSelectedCategory(category);
     setIsModalOpen(false);
   };
+
+  const handleStartAddingCategory = () => {
+    // 로그인 여부 확인
+    if (!user) {
+      // eslint-disable-next-line no-alert
+      alert("로그인이 필요한 서비스입니다.");
+      return;
+    }
+    setIsAddingCategory(true);
+    setNewCategoryName("");
+  };
+
+  const handleCancelAddingCategory = () => {
+    setIsAddingCategory(false);
+    setNewCategoryName("");
+  };
+
+  const handleCompleteAddingCategory = () => {
+    if (newCategoryName.trim()) {
+      // 기존 카테고리 색상 중 랜덤 선택
+      const colors = [
+        "#FFE4E9",
+        "#FFE5D9",
+        "#E8DDF5",
+        "#D5F0E5",
+        "#FFF0D6",
+        "#D4EBF7",
+      ];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+      const newCategory = {
+        color: randomColor,
+        label: newCategoryName.trim(),
+      };
+      setSelectedCategory(newCategory);
+      setIsModalOpen(false);
+      setIsAddingCategory(false);
+      setNewCategoryName("");
+    }
+  };
+
+  const handleNewCategoryKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleCompleteAddingCategory();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      handleCancelAddingCategory();
+    }
+  };
+
+  // 카테고리 추가 모드일 때 input에 포커스
+  useEffect(() => {
+    if (isAddingCategory && newCategoryInputRef.current) {
+      newCategoryInputRef.current.focus();
+    }
+  }, [isAddingCategory]);
 
   // 금액 포맷팅 (콤마 추가)
   const formatNumber = (value: string) => {
@@ -343,16 +409,8 @@ export default function AddPlanPage() {
         ...item,
         id: `search-${idx}`,
       }));
-    } else {
-      // 결과가 없으면 회색 박스만 표시
-      displayItems = [
-        {
-          id: "user-input",
-          color: "#E5E7EB",
-          label: inputValue.trim(),
-        },
-      ];
     }
+    // 검색 결과가 없으면 아무것도 표시하지 않음
   }
 
   return (
@@ -401,21 +459,21 @@ export default function AddPlanPage() {
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="추가할 플랜 이름을 입력해주세요"
+            placeholder="추가할 플랜 제목을 입력해주세요"
             className="w-full px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
           />
         </div>
         {/* 카테고리 영역 - 항상 표시 */}
         <div className="mt-4 w-full">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="bg-white px-10 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8]">
+          <div className="flex items-center gap-2 mb-2 min-w-0">
+            <div className="bg-white px-10 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex-shrink-0">
               <span className="text-xl font-semibold text-[#FFAAB8]">
                 카테고리
               </span>
             </div>
             {/* 선택된 카테고리 표시 */}
             {selectedCategory && (
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 <div
                   className="h-10 px-4 flex-shrink-0 rounded-xl flex items-center justify-center"
                   style={{ backgroundColor: selectedCategory.color }}
@@ -435,6 +493,17 @@ export default function AddPlanPage() {
                 </button>
               </div>
             )}
+            {/* 플러스 버튼 - 카테고리 라벨 오른쪽에 위치 */}
+            <button
+              type="button"
+              onClick={handleOpenModal}
+              className="h-10 w-10 flex-shrink-0 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity bg-white border-2 border-[#FFAAB8]"
+              aria-label="카테고리 추가"
+            >
+              <span className="text-xl font-semibold text-[#FFAAB8] select-none">
+                +
+              </span>
+            </button>
           </div>
           {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/no-noninteractive-element-interactions */}
           <div
@@ -460,17 +529,6 @@ export default function AddPlanPage() {
                   </span>
                 </div>
               ))}
-            {/* 플러스 버튼 - 항상 표시 */}
-            <button
-              type="button"
-              onClick={handleOpenModal}
-              className="h-10 w-10 flex-shrink-0 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity bg-white border-2 border-[#FFAAB8]"
-              aria-label="카테고리 추가"
-            >
-              <span className="text-xl font-semibold text-[#FFAAB8] select-none">
-                +
-              </span>
-            </button>
           </div>
         </div>
         {/* 금액 영역 */}
@@ -480,7 +538,7 @@ export default function AddPlanPage() {
               <span className="text-xl font-semibold text-[#FFAAB8]">금액</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <input
               id="plan-amount"
               type="text"
@@ -488,9 +546,9 @@ export default function AddPlanPage() {
               value={amount}
               onChange={handleAmountChange}
               placeholder="금액을 입력해주세요"
-              className="flex-1 px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
+              className="flex-1 min-w-0 px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
             />
-            <span className="text-base font-semibold text-stone-700 whitespace-nowrap">
+            <span className="text-base font-semibold text-stone-700 whitespace-nowrap flex-shrink-0">
               만 원
             </span>
           </div>
@@ -502,14 +560,14 @@ export default function AddPlanPage() {
               <span className="text-xl font-semibold text-[#FFAAB8]">위치</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <input
               id="plan-location"
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="위치을 입력해주세요"
-              className="flex-1 px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
+              placeholder="위치를 입력해주세요"
+              className="flex-1 min-w-0 px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleSearchLocation();
@@ -520,7 +578,7 @@ export default function AddPlanPage() {
               type="button"
               onClick={handleSearchLocation}
               disabled={!location.trim()}
-              className={`px-6 py-3.5 font-semibold rounded-xl transition-colors whitespace-nowrap ${
+              className={`px-4 sm:px-6 py-3.5 font-semibold rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${
                 location.trim()
                   ? "bg-[#FFAAB8] text-white hover:bg-[#FF8FA3] cursor-pointer"
                   : "bg-stone-300 text-stone-500 cursor-not-allowed"
@@ -598,6 +656,39 @@ export default function AddPlanPage() {
                     </span>
                   </div>
                 ))}
+                {/* 카테고리 추가 박스 */}
+                {isAddingCategory ? (
+                  <div className="h-16 rounded-xl flex items-center justify-center border-2 border-[#FFAAB8] bg-white">
+                    <input
+                      ref={newCategoryInputRef}
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyDown={handleNewCategoryKeyDown}
+                      placeholder="카테고리 이름"
+                      className="w-full h-full px-3 text-sm font-semibold text-stone-700 text-center bg-transparent border-none outline-none placeholder:text-stone-400"
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="h-16 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity border-2 border-dashed border-[#FFAAB8] bg-[#FFF5F2]"
+                    onClick={handleStartAddingCategory}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleStartAddingCategory();
+                      }
+                    }}
+                  >
+                    <span className="text-2xl font-bold text-[#FFAAB8] mb-1">
+                      +
+                    </span>
+                    <span className="text-xs font-semibold text-[#FFAAB8] text-center px-2">
+                      카테고리 추가
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
