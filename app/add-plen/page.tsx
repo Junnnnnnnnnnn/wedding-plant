@@ -1,8 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import BottomTabBar from "../components/BottomTabBar";
+
+// Kakao Maps API 타입 선언
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    kakao: any;
+  }
+}
 
 export default function AddPlanPage() {
   const router = useRouter();
@@ -16,6 +24,85 @@ export default function AddPlanPage() {
   } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [amount, setAmount] = useState("");
+  const [location, setLocation] = useState("");
+  const [showMap, setShowMap] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * ============================================================================
+   * Kakao 지도 초기화
+   * ============================================================================
+   */
+  // eslint-disable-next-line consistent-return
+  useEffect(() => {
+    if (!showMap) {
+      return;
+    }
+
+    // Kakao Maps SDK가 이미 로드되었는지 확인
+    if (window.kakao && window.kakao.maps) {
+      // 이미 로드된 경우 바로 지도 초기화
+      const container = document.getElementById("map");
+      if (container) {
+        const options = {
+          center: new window.kakao.maps.LatLng(33.450701, 126.570667),
+          level: 3,
+        };
+        // 지도 생성 (변수는 사용하지 않지만 생성은 필요)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const map = new window.kakao.maps.Map(container, options);
+      }
+      return;
+    }
+
+    // Kakao Maps SDK 스크립트 로드
+    const script = document.createElement("script");
+    const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false`;
+    script.async = true;
+
+    script.onload = () => {
+      // Kakao Maps API 로드 완료 후 지도 초기화
+      window.kakao.maps.load(() => {
+        const container = document.getElementById("map");
+        if (container) {
+          const options = {
+            center: new window.kakao.maps.LatLng(33.450701, 126.570667),
+            level: 3,
+          };
+          // 지도 생성 (변수는 사용하지 않지만 생성은 필요)
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const map = new window.kakao.maps.Map(container, options);
+        }
+      });
+    };
+
+    document.head.appendChild(script);
+
+    // Cleanup: 컴포넌트 언마운트 시 스크립트 제거
+    // eslint-disable-next-line consistent-return
+    return () => {
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
+  }, [showMap]);
+
+  // 지도가 나타나면 해당 영역으로 자동 스크롤
+  useEffect(() => {
+    if (!showMap) {
+      return undefined;
+    }
+    // DOM 반영 후 스크롤 (지도 초기화 대기)
+    const timer = setTimeout(() => {
+      mapContainerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line consistent-return
+  }, [showMap]);
 
   /**
    * ============================================================================
@@ -233,6 +320,18 @@ export default function AddPlanPage() {
     setAmount(formatted);
   };
 
+  const handleSearchLocation = () => {
+    if (location.trim()) {
+      setShowMap(true);
+      // TODO: Kakao Map Search API 연동
+    }
+  };
+
+  const handleSkipLocation = () => {
+    setLocation("");
+    setShowMap(false);
+  };
+
   // 표시할 항목 결정 (Input에 값이 있을 때만)
   let displayItems: Array<{ id: string; color: string; label: string }> = [];
 
@@ -396,6 +495,54 @@ export default function AddPlanPage() {
             </span>
           </div>
         </div>
+        {/* 위치 영역 */}
+        <div className="mt-4 w-full">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="bg-white px-10 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8]">
+              <span className="text-xl font-semibold text-[#FFAAB8]">위치</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="plan-location"
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="위치을 입력해주세요"
+              className="flex-1 px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSearchLocation();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleSearchLocation}
+              disabled={!location.trim()}
+              className={`px-6 py-3.5 font-semibold rounded-xl transition-colors whitespace-nowrap ${
+                location.trim()
+                  ? "bg-[#FFAAB8] text-white hover:bg-[#FF8FA3] cursor-pointer"
+                  : "bg-stone-300 text-stone-500 cursor-not-allowed"
+              }`}
+            >
+              검색
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={handleSkipLocation}
+            className="mt-2 w-full px-4 py-3 bg-stone-200 text-stone-700 font-medium rounded-xl hover:bg-stone-300 transition-colors"
+          >
+            건너뛰기
+          </button>
+        </div>
+        {/* 지도 영역 - 검색 시에만 표시 */}
+        {showMap && (
+          <div ref={mapContainerRef} className="mt-4 w-full">
+            <div id="map" className="w-full h-[400px] rounded-xl" />
+          </div>
+        )}
       </main>
       {/* 하단 탭바 - Sticky로 최상단에 고정 */}
       <BottomTabBar

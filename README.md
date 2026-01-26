@@ -2,6 +2,19 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### 1. Environment Variables
+
+Create a `.env` file in the root directory and add the following:
+
+```env
+# Kakao Maps API Key
+NEXT_PUBLIC_KAKAO_MAP_API_KEY=your_kakao_map_api_key_here
+```
+
+**Note:** The `.env` file is already included in `.gitignore` to prevent committing sensitive information.
+
+### 2. Run the Development Server
+
 First, run the development server:
 
 ```bash
