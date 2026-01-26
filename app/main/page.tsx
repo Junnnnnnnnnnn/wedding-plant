@@ -1,9 +1,15 @@
 "use client";
 
-import CountUp from "@/components/CountUp";
-import { Calendar, Check, CircleDollarSign, CirclePlus, User } from "lucide-react";
+import {
+  Calendar,
+  Check,
+  CircleDollarSign,
+  CirclePlus,
+  User,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
 import { useWedding } from "../contexts/WeddingContext";
 
@@ -205,11 +211,11 @@ export default function MainPage() {
                 {budgetPlans.length}개의 플랜이 있어요
               </span>
             </div>
-            <button 
-              type="button" 
-              onClick={() => router.push('/add-plen')}
+            <button
+              type="button"
+              onClick={() => router.push("/add-plen")}
               className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-semibold text-lg transition-colors shadow-md hover:opacity-90 active:opacity-80"
-              style={{ backgroundColor: '#FFAAB8' }}
+              style={{ backgroundColor: "#FFAAB8" }}
             >
               플랜 추가
               <CirclePlus className="h-5 w-5 text-white" strokeWidth={2.5} />
