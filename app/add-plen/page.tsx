@@ -415,7 +415,7 @@ export default function AddPlanPage() {
 
   return (
     <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6">
-      <main className="relative flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6 py-6">
+      <main className="relative flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6 pt-6 pb-24">
         {/* 뒤로가기 버튼 */}
         <button
           type="button"
@@ -450,8 +450,8 @@ export default function AddPlanPage() {
         </div>
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-white px-10 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8]">
-              <span className="text-xl font-semibold text-[#FFAAB8]">제목</span>
+            <div className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center" style={{ textAlign: 'left' }}>
+              <span className="text-xl font-semibold text-[#FFAAB8]" style={{ textAlign: 'left' }}>제목</span>
             </div>
           </div>
           <input
@@ -466,8 +466,8 @@ export default function AddPlanPage() {
         {/* 카테고리 영역 - 항상 표시 */}
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 mb-2 min-w-0">
-            <div className="bg-white px-10 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex-shrink-0">
-              <span className="text-xl font-semibold text-[#FFAAB8]">
+            <div className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex-shrink-0 flex justify-start items-center" style={{ textAlign: 'left' }}>
+              <span className="text-xl font-semibold text-[#FFAAB8]" style={{ textAlign: 'left' }}>
                 카테고리
               </span>
             </div>
@@ -534,8 +534,8 @@ export default function AddPlanPage() {
         {/* 금액 영역 */}
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-white px-10 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8]">
-              <span className="text-xl font-semibold text-[#FFAAB8]">금액</span>
+            <div className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center" style={{ textAlign: 'left' }}>
+              <span className="text-xl font-semibold text-[#FFAAB8]" style={{ textAlign: 'left' }}>금액</span>
             </div>
           </div>
           <div className="flex items-center gap-2 min-w-0">
@@ -556,8 +556,8 @@ export default function AddPlanPage() {
         {/* 위치 영역 */}
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-white px-10 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8]">
-              <span className="text-xl font-semibold text-[#FFAAB8]">위치</span>
+            <div className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center" style={{ textAlign: 'left' }}>
+              <span className="text-xl font-semibold text-[#FFAAB8]" style={{ textAlign: 'left' }}>위치</span>
             </div>
           </div>
           <div className="flex items-center gap-2 min-w-0">
