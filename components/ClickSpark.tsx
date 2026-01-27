@@ -20,7 +20,7 @@ interface Spark {
   startTime: number;
 }
 
-const ClickSpark: React.FC<ClickSparkProps> = ({
+function ClickSpark({
   sparkColor = "#fff",
   sparkSize = 10,
   sparkRadius = 15,
@@ -29,17 +29,49 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
   easing = "ease-out",
   extraScale = 1.0,
   children,
-}) => {
+}: ClickSparkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sparksRef = useRef<Spark[]>([]);
   const startTimeRef = useRef<number | null>(null);
 
-  useEffect(() => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>): void => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const now = performance.now();
+    const newSparks: Spark[] = Array.from({ length: sparkCount }, (_, i) => ({
+      x,
+      y,
+      angle: (2 * Math.PI * i) / sparkCount,
+      startTime: now,
+    }));
+
+    sparksRef.current.push(...newSparks);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const syntheticEvent = {
+          clientX: rect.left + rect.width / 2,
+          clientY: rect.top + rect.height / 2,
+        } as React.MouseEvent<HTMLDivElement>;
+        handleClick(syntheticEvent);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
 
     const parent = canvas.parentElement;
-    if (!parent) return;
+    if (!parent) return undefined;
 
     let resizeTimeout: ReturnType<typeof setTimeout>;
 
@@ -80,14 +112,14 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
           return t * (2 - t);
       }
     },
-    [easing]
+    [easing],
   );
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return undefined;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) return undefined;
 
     let animationId: number;
 
@@ -132,28 +164,24 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [sparkColor, sparkSize, sparkRadius, sparkCount, duration, easeFunc, extraScale]);
-
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>): void => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const now = performance.now();
-    const newSparks: Spark[] = Array.from({ length: sparkCount }, (_, i) => ({
-      x,
-      y,
-      angle: (2 * Math.PI * i) / sparkCount,
-      startTime: now,
-    }));
-
-    sparksRef.current.push(...newSparks);
-  };
+  }, [
+    sparkColor,
+    sparkSize,
+    sparkRadius,
+    sparkCount,
+    duration,
+    easeFunc,
+    extraScale,
+  ]);
 
   return (
-    <div className="relative w-full h-full" onClick={handleClick}>
+    <div
+      className="relative w-full h-full"
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+    >
       <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none z-50"
@@ -162,6 +190,6 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
       {children}
     </div>
   );
-};
+}
 
 export default ClickSpark;

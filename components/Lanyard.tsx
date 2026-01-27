@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 "use client";
+
 import { useEffect, useRef, useState } from "react";
 import { Canvas, extend, useFrame } from "@react-three/fiber";
-import { useGLTF, useTexture, Environment, Lightformer, Text } from "@react-three/drei";
+import { Environment, Lightformer, Text } from "@react-three/drei";
 import {
   BallCollider,
   CuboidCollider,
@@ -72,77 +73,6 @@ THREE.ShaderLib.meshline = {
   `,
 };
 
-interface LanyardProps {
-  position?: [number, number, number];
-  gravity?: [number, number, number];
-  fov?: number;
-  transparent?: boolean;
-}
-
-export default function Lanyard({
-  position = [0, 0, 30],
-  gravity = [0, -40, 0],
-  fov = 20,
-  transparent = true,
-}: LanyardProps) {
-  const [isMobile, setIsMobile] = useState<boolean>(
-    () => typeof window !== "undefined" && window.innerWidth < 768
-  );
-  const { weddingData } = useWedding();
-
-  useEffect(() => {
-    const handleResize = (): void => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  return (
-    <div className="lanyard-wrapper">
-      <Canvas
-        camera={{ position, fov }}
-        dpr={[1, isMobile ? 1.5 : 2]}
-        gl={{ alpha: transparent }}
-        onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
-      >
-        <ambientLight intensity={Math.PI * 2} />
-        <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
-          <Band isMobile={isMobile} weddingData={weddingData} />
-        </Physics>
-        <Environment blur={0.75}>
-          <Lightformer
-            intensity={4}
-            color="white"
-            position={[0, -1, 5]}
-            rotation={[0, 0, Math.PI / 3]}
-            scale={[100, 0.1, 1]}
-          />
-          <Lightformer
-            intensity={6}
-            color="white"
-            position={[-1, -1, 1]}
-            rotation={[0, 0, Math.PI / 3]}
-            scale={[100, 0.1, 1]}
-          />
-          <Lightformer
-            intensity={6}
-            color="white"
-            position={[1, 1, 1]}
-            rotation={[0, 0, Math.PI / 3]}
-            scale={[100, 0.1, 1]}
-          />
-          <Lightformer
-            intensity={15}
-            color="white"
-            position={[-10, 0, 14]}
-            rotation={[0, Math.PI / 2, Math.PI / 3]}
-            scale={[100, 10, 1]}
-          />
-        </Environment>
-      </Canvas>
-    </div>
-  );
-}
-
 interface BandProps {
   maxSpeed?: number;
   minSpeed?: number;
@@ -154,7 +84,12 @@ interface BandProps {
   };
 }
 
-function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: BandProps) {
+function Band({
+  maxSpeed = 50,
+  minSpeed = 0,
+  isMobile = false,
+  weddingData,
+}: BandProps) {
   // Using "any" for refs since the exact types depend on Rapier's internals
   const band = useRef<any>(null);
   const fixed = useRef<any>(null);
@@ -181,19 +116,19 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
   const borderGeometry = new THREE.BoxGeometry(0.84, 1.165, 0.009); // 2px margin (0.02 units)
 
   // Create simple materials
-  const cardMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff,
-    roughness: 0.9,
-    metalness: 0.8,
-    clearcoat: isMobile ? 0 : 1,
-    clearcoatRoughness: 0.15,
-  });
+  // const cardMaterial = new THREE.MeshPhysicalMaterial({
+  //   color: 0xffffff,
+  //   roughness: 0.9,
+  //   metalness: 0.8,
+  //   clearcoat: isMobile ? 0 : 1,
+  //   clearcoatRoughness: 0.15,
+  // });
 
-  const borderMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffaab8, // Same color as lanyard
-    roughness: 0.5,
-    metalness: 0,
-  });
+  // const borderMaterial = new THREE.MeshStandardMaterial({
+  //   color: 0xffaab8, // Same color as lanyard
+  //   roughness: 0.5,
+  //   metalness: 0,
+  // });
 
   // Create simple lanyard texture
   const canvas = document.createElement("canvas");
@@ -228,7 +163,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
     gradientCtx.fillStyle = gradient;
     gradientCtx.fillRect(0, 0, 256, 64);
   }
-  const gradientTexture = new THREE.CanvasTexture(gradientCanvas);
+  // const gradientTexture = new THREE.CanvasTexture(gradientCanvas);
 
   const curve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, 0, 0),
@@ -256,6 +191,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
         document.body.style.cursor = "auto";
       };
     }
+    return undefined;
   }, [hovered, dragged]);
 
   useFrame((state, delta) => {
@@ -272,15 +208,19 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
     }
     if (fixed.current && card.current && j3.current) {
       [j1, j2].forEach((ref) => {
-        if (!ref.current.lerped)
-          ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
+        const currentRef = ref.current;
+        if (!currentRef.lerped) {
+          currentRef.lerped = new THREE.Vector3().copy(
+            currentRef.translation(),
+          );
+        }
         const clampedDistance = Math.max(
           0.1,
-          Math.min(1, ref.current.lerped.distanceTo(ref.current.translation()))
+          Math.min(1, currentRef.lerped.distanceTo(currentRef.translation())),
         );
-        ref.current.lerped.lerp(
-          ref.current.translation(),
-          delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed))
+        currentRef.lerped.lerp(
+          currentRef.translation(),
+          delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)),
         );
       });
       // Calculate card's attachment point (clip top where lanyard connects)
@@ -292,11 +232,13 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
         cardRotation.x,
         cardRotation.y,
         cardRotation.z,
-        cardRotation.w
+        cardRotation.w,
       );
       const attachmentOffset = new THREE.Vector3(0, 0.0375, 0); // This matches the joint anchor - clip top
       attachmentOffset.applyQuaternion(quat);
-      const cardAttachmentPoint = new THREE.Vector3().copy(cardTranslation).add(attachmentOffset);
+      const cardAttachmentPoint = new THREE.Vector3()
+        .copy(cardTranslation)
+        .add(attachmentOffset);
 
       // Curve goes from fixed (top) through all joints to card attachment point (bottom)
       curve.points[0].copy(fixed.current.translation());
@@ -311,12 +253,17 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
     }
   });
 
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
 
   return (
     <>
       <group position={[0, 4, 0]}>
-        <RigidBody ref={fixed} {...segmentProps} type={"fixed" as RigidBodyProps["type"]} />
+        <RigidBody
+          ref={fixed}
+          {...segmentProps}
+          type={"fixed" as RigidBodyProps["type"]}
+        />
         <RigidBody
           position={[0.5, 0, 0]}
           ref={j1}
@@ -364,12 +311,20 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
             }}
             onPointerDown={(e: any) => {
               e.target.setPointerCapture(e.pointerId);
-              drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
+              drag(
+                new THREE.Vector3()
+                  .copy(e.point)
+                  .sub(vec.copy(card.current.translation())),
+              );
             }}
           >
             {/* Border */}
             <mesh geometry={borderGeometry} position={[0, 0, -0.001]}>
-              <meshStandardMaterial color={0xff69b4} roughness={0.5} metalness={0} />
+              <meshStandardMaterial
+                color={0xff69b4}
+                roughness={0.5}
+                metalness={0}
+              />
             </mesh>
             {/* Card */}
             <mesh geometry={cardGeometry}>
@@ -397,7 +352,11 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
             {/* Divider Line */}
             <mesh position={[0, 0.26, 0.006]}>
               <boxGeometry args={[0.8, 0.02, 0.001]} />
-              <meshStandardMaterial color={0xff69b4} roughness={0.5} metalness={0} />
+              <meshStandardMaterial
+                color={0xff69b4}
+                roughness={0.5}
+                metalness={0}
+              />
             </mesh>
 
             {/* Name */}
@@ -456,15 +415,90 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, weddingData }: Ba
         {/* @ts-expect-error - meshLineMaterial is extended via extend() */}
         <meshLineMaterial
           color="#FFAAB8"
-          depthTest={true}
-          depthWrite={true}
-          resolution={new THREE.Vector2(isMobile ? 1000 : 1000, isMobile ? 2000 : 1000)}
-          useMap={true}
+          depthTest
+          depthWrite
+          resolution={
+            new THREE.Vector2(isMobile ? 1000 : 1000, isMobile ? 2000 : 1000)
+          }
+          useMap
           map={texture}
           lineWidth={1}
-          transparent={true}
+          transparent
         />
       </mesh>
     </>
+  );
+}
+
+interface LanyardProps {
+  position?: [number, number, number];
+  gravity?: [number, number, number];
+  fov?: number;
+  transparent?: boolean;
+}
+
+export default function Lanyard({
+  position = [0, 0, 30],
+  gravity = [0, -40, 0],
+  fov = 20,
+  transparent = true,
+}: LanyardProps) {
+  const [isMobile, setIsMobile] = useState<boolean>(
+    () => typeof window !== "undefined" && window.innerWidth < 768,
+  );
+  const { weddingData } = useWedding();
+
+  useEffect(() => {
+    const handleResize = (): void => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return (
+    <div className="lanyard-wrapper">
+      <Canvas
+        camera={{ position, fov }}
+        dpr={[1, isMobile ? 1.5 : 2]}
+        gl={{ alpha: transparent }}
+        onCreated={({ gl }) =>
+          gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)
+        }
+      >
+        <ambientLight intensity={Math.PI * 2} />
+        <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
+          <Band isMobile={isMobile} weddingData={weddingData} />
+        </Physics>
+        <Environment blur={0.75}>
+          <Lightformer
+            intensity={4}
+            color="white"
+            position={[0, -1, 5]}
+            rotation={[0, 0, Math.PI / 3]}
+            scale={[100, 0.1, 1]}
+          />
+          <Lightformer
+            intensity={6}
+            color="white"
+            position={[-1, -1, 1]}
+            rotation={[0, 0, Math.PI / 3]}
+            scale={[100, 0.1, 1]}
+          />
+          <Lightformer
+            intensity={6}
+            color="white"
+            position={[1, 1, 1]}
+            rotation={[0, 0, Math.PI / 3]}
+            scale={[100, 0.1, 1]}
+          />
+          <Lightformer
+            intensity={15}
+            color="white"
+            position={[-10, 0, 14]}
+            rotation={[0, Math.PI / 2, Math.PI / 3]}
+            scale={[100, 10, 1]}
+          />
+        </Environment>
+      </Canvas>
+    </div>
   );
 }

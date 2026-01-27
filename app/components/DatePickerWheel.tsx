@@ -7,7 +7,10 @@ type DatePickerWheelProps = {
   onNext?: () => void;
 };
 
-export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) {
+export default function DatePickerWheel({
+  onDateChange,
+  onNext,
+}: DatePickerWheelProps) {
   const currentYear = new Date().getFullYear();
 
   // sessionStorage에서 저장된 날짜 불러오기
@@ -18,7 +21,7 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
         try {
           const date = JSON.parse(stored);
           return {
-            year: date.year || 1995,
+            year: date.year || 2028,
             month: date.month || 1,
             day: date.day || 5,
           };
@@ -57,11 +60,18 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month, 0).getDate();
   };
-  const days = Array.from({ length: getDaysInMonth(selectedYear, selectedMonth) }, (_, i) => i + 1);
+  const days = Array.from(
+    { length: getDaysInMonth(selectedYear, selectedMonth) },
+    (_, i) => i + 1,
+  );
 
   useEffect(() => {
     if (onDateChange) {
-      onDateChange({ year: selectedYear, month: selectedMonth, day: selectedDay });
+      onDateChange({
+        year: selectedYear,
+        month: selectedMonth,
+        day: selectedDay,
+      });
     }
   }, [selectedYear, selectedMonth, selectedDay, onDateChange]);
 
@@ -76,7 +86,7 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
   const scrollToValue = (
     containerRef: React.RefObject<HTMLDivElement | null>,
     value: number,
-    immediate: boolean = false
+    immediate: boolean = false,
   ) => {
     if (containerRef.current) {
       const container = containerRef.current;
@@ -94,12 +104,12 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
   const handleScroll = (
     containerRef: React.RefObject<HTMLDivElement | null>,
     items: number[],
-    setValue: (value: number) => void
+    setValue: (value: number) => void,
   ) => {
     if (containerRef.current && !dragStateRef.current.isDragging) {
       const container = containerRef.current;
       const topPadding = getTopPadding(container);
-      const scrollTop = container.scrollTop;
+      const { scrollTop } = container;
       const adjustedScrollTop = scrollTop - topPadding;
       const index = Math.round(adjustedScrollTop / itemHeight);
       const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
@@ -118,29 +128,34 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
   // 드래그 시작 핸들러
   const handleDragStart = (
     e: React.TouchEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>,
-    containerRef: React.RefObject<HTMLDivElement | null>
+    containerRef: React.RefObject<HTMLDivElement | null>,
   ) => {
     if (!containerRef.current) return;
 
     const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    const container = containerRef.current;
     dragStateRef.current = {
       isDragging: true,
       startY: clientY,
-      startScrollTop: containerRef.current.scrollTop,
+      startScrollTop: container.scrollTop,
       containerRef,
     };
 
-    containerRef.current.style.cursor = "grabbing";
-    containerRef.current.style.userSelect = "none";
+    container.style.cursor = "grabbing";
+    container.style.userSelect = "none";
   };
 
   // 드래그 중 핸들러
   const handleDragMove = (
     e: TouchEvent | MouseEvent,
     items: number[],
-    setValue: (value: number) => void
+    setValue: (value: number) => void,
   ) => {
-    if (!dragStateRef.current.isDragging || !dragStateRef.current.containerRef?.current) return;
+    if (
+      !dragStateRef.current.isDragging ||
+      !dragStateRef.current.containerRef?.current
+    )
+      return;
 
     const container = dragStateRef.current.containerRef.current;
     const topPadding = getTopPadding(container);
@@ -150,7 +165,10 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
 
     // 스크롤 범위 제한 (상단 패딩 고려)
     const maxScroll = topPadding + (items.length - 1) * itemHeight;
-    const clampedScrollTop = Math.max(topPadding, Math.min(newScrollTop, maxScroll));
+    const clampedScrollTop = Math.max(
+      topPadding,
+      Math.min(newScrollTop, maxScroll),
+    );
     container.scrollTop = clampedScrollTop;
 
     // 실시간 값 업데이트
@@ -162,8 +180,15 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
   };
 
   // 드래그 종료 핸들러
-  const handleDragEnd = (items: number[], setValue: (value: number) => void) => {
-    if (!dragStateRef.current.isDragging || !dragStateRef.current.containerRef?.current) return;
+  const handleDragEnd = (
+    items: number[],
+    setValue: (value: number) => void,
+  ) => {
+    if (
+      !dragStateRef.current.isDragging ||
+      !dragStateRef.current.containerRef?.current
+    )
+      return;
 
     const container = dragStateRef.current.containerRef.current;
     const topPadding = getTopPadding(container);
@@ -171,7 +196,7 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
     container.style.userSelect = "";
 
     // 스냅 효과
-    const scrollTop = container.scrollTop;
+    const { scrollTop } = container;
     const adjustedScrollTop = scrollTop - topPadding;
     const index = Math.round(adjustedScrollTop / itemHeight);
     const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
@@ -196,9 +221,13 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
   // 전역 이벤트 리스너 설정
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!dragStateRef.current.isDragging || !dragStateRef.current.containerRef) return;
+      if (
+        !dragStateRef.current.isDragging ||
+        !dragStateRef.current.containerRef
+      )
+        return;
 
-      const containerRef = dragStateRef.current.containerRef;
+      const { containerRef } = dragStateRef.current;
       if (containerRef === yearRef) {
         handleDragMove(e, years, setSelectedYear);
       } else if (containerRef === monthRef) {
@@ -209,9 +238,13 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
     };
 
     const handleMouseUp = () => {
-      if (!dragStateRef.current.isDragging || !dragStateRef.current.containerRef) return;
+      if (
+        !dragStateRef.current.isDragging ||
+        !dragStateRef.current.containerRef
+      )
+        return;
 
-      const containerRef = dragStateRef.current.containerRef;
+      const { containerRef } = dragStateRef.current;
       if (containerRef === yearRef) {
         handleDragEnd(years, setSelectedYear);
       } else if (containerRef === monthRef) {
@@ -222,10 +255,14 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!dragStateRef.current.isDragging || !dragStateRef.current.containerRef) return;
+      if (
+        !dragStateRef.current.isDragging ||
+        !dragStateRef.current.containerRef
+      )
+        return;
       e.preventDefault();
 
-      const containerRef = dragStateRef.current.containerRef;
+      const { containerRef } = dragStateRef.current;
       if (containerRef === yearRef) {
         handleDragMove(e, years, setSelectedYear);
       } else if (containerRef === monthRef) {
@@ -236,9 +273,13 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
     };
 
     const handleTouchEnd = () => {
-      if (!dragStateRef.current.isDragging || !dragStateRef.current.containerRef) return;
+      if (
+        !dragStateRef.current.isDragging ||
+        !dragStateRef.current.containerRef
+      )
+        return;
 
-      const containerRef = dragStateRef.current.containerRef;
+      const { containerRef } = dragStateRef.current;
       if (containerRef === yearRef) {
         handleDragEnd(years, setSelectedYear);
       } else if (containerRef === monthRef) {
@@ -317,7 +358,9 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
       <div className="flex items-center justify-center gap-4 mb-16">
         {/* 년도 선택 */}
         <div className="relative">
-          <div className="text-sm font-medium text-stone-600 mb-2 text-center">년</div>
+          <div className="text-sm font-medium text-stone-600 mb-2 text-center">
+            년
+          </div>
           <div className="relative w-20 h-40 overflow-hidden rounded-lg bg-white shadow-sm">
             {/* 선택 영역 하이라이트 */}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-12 bg-stone-100/50 border-y-2 border-stone-300 pointer-events-none z-10" />
@@ -325,9 +368,23 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
             <div
               ref={yearRef}
               className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory cursor-grab active:cursor-grabbing"
+              role="listbox"
+              tabIndex={0}
               onScroll={() => handleScroll(yearRef, years, setSelectedYear)}
               onTouchStart={(e) => handleDragStart(e, yearRef)}
               onMouseDown={(e) => handleDragStart(e, yearRef)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                  e.preventDefault();
+                  const currentIndex = years.indexOf(selectedYear);
+                  const newIndex =
+                    e.key === "ArrowUp"
+                      ? Math.max(0, currentIndex - 1)
+                      : Math.min(years.length - 1, currentIndex + 1);
+                  setSelectedYear(years[newIndex]);
+                  scrollToValue(yearRef, newIndex);
+                }
+              }}
               style={{
                 scrollSnapType: "y mandatory",
               }}
@@ -352,7 +409,9 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
 
         {/* 월 선택 */}
         <div className="relative">
-          <div className="text-sm font-medium text-stone-600 mb-2 text-center">월</div>
+          <div className="text-sm font-medium text-stone-600 mb-2 text-center">
+            월
+          </div>
           <div className="relative w-16 h-40 overflow-hidden rounded-lg bg-white shadow-sm">
             {/* 선택 영역 하이라이트 */}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-12 bg-stone-100/50 border-y-2 border-stone-300 pointer-events-none z-10" />
@@ -360,9 +419,23 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
             <div
               ref={monthRef}
               className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory cursor-grab active:cursor-grabbing"
+              role="listbox"
+              tabIndex={0}
               onScroll={() => handleScroll(monthRef, months, setSelectedMonth)}
               onTouchStart={(e) => handleDragStart(e, monthRef)}
               onMouseDown={(e) => handleDragStart(e, monthRef)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                  e.preventDefault();
+                  const currentIndex = months.indexOf(selectedMonth);
+                  const newIndex =
+                    e.key === "ArrowUp"
+                      ? Math.max(0, currentIndex - 1)
+                      : Math.min(months.length - 1, currentIndex + 1);
+                  setSelectedMonth(months[newIndex]);
+                  scrollToValue(monthRef, newIndex);
+                }
+              }}
               style={{
                 scrollSnapType: "y mandatory",
               }}
@@ -387,7 +460,9 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
 
         {/* 일 선택 */}
         <div className="relative">
-          <div className="text-sm font-medium text-stone-600 mb-2 text-center">일</div>
+          <div className="text-sm font-medium text-stone-600 mb-2 text-center">
+            일
+          </div>
           <div className="relative w-16 h-40 overflow-hidden rounded-lg bg-white shadow-sm">
             {/* 선택 영역 하이라이트 */}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-12 bg-stone-100/50 border-y-2 border-stone-300 pointer-events-none z-10" />
@@ -395,9 +470,23 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
             <div
               ref={dayRef}
               className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory cursor-grab active:cursor-grabbing"
+              role="listbox"
+              tabIndex={0}
               onScroll={() => handleScroll(dayRef, days, setSelectedDay)}
               onTouchStart={(e) => handleDragStart(e, dayRef)}
               onMouseDown={(e) => handleDragStart(e, dayRef)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                  e.preventDefault();
+                  const currentIndex = days.indexOf(selectedDay);
+                  const newIndex =
+                    e.key === "ArrowUp"
+                      ? Math.max(0, currentIndex - 1)
+                      : Math.min(days.length - 1, currentIndex + 1);
+                  setSelectedDay(days[newIndex]);
+                  scrollToValue(dayRef, newIndex);
+                }
+              }}
               style={{
                 scrollSnapType: "y mandatory",
               }}
@@ -423,6 +512,7 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
 
       {/* 다음 버튼 */}
       <button
+        type="button"
         onClick={() => {
           // sessionStorage에 날짜 저장
           if (typeof window !== "undefined") {
@@ -432,7 +522,7 @@ export function DatePickerWheel({ onDateChange, onNext }: DatePickerWheelProps) 
                 year: selectedYear,
                 month: selectedMonth,
                 day: selectedDay,
-              })
+              }),
             );
           }
           // 기존 onNext 콜백 호출

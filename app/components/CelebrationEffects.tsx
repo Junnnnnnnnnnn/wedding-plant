@@ -1,6 +1,6 @@
 "use client";
 
-export function CelebrationEffects() {
+export default function CelebrationEffects() {
   const confettiColors = [
     "#FF6B6B",
     "#4ECDC4",
@@ -22,7 +22,7 @@ export function CelebrationEffects() {
         const shape = isRound ? "50%" : "2px";
         return (
           <div
-            key={index}
+            key={`confetti-1-${color}-${size}-${shape}`}
             className="confetti"
             style={
               {
@@ -44,7 +44,7 @@ export function CelebrationEffects() {
         const shape = isRound ? "50%" : "0px";
         return (
           <div
-            key={`second-${index}`}
+            key={`confetti-2-${color}-${size}-${shape}`}
             className="confetti"
             style={
               {
@@ -66,7 +66,7 @@ export function CelebrationEffects() {
         const shape = isRound ? "50%" : "3px";
         return (
           <div
-            key={`third-${index}`}
+            key={`confetti-3-${color}-${size}-${shape}`}
             className="confetti"
             style={
               {
@@ -89,7 +89,7 @@ export function CelebrationEffects() {
         const shape = isRound ? "50%" : "1px";
         return (
           <div
-            key={`fourth-${index}`}
+            key={`confetti-4-${color}-${size}-${shape}`}
             className="confetti"
             style={
               {

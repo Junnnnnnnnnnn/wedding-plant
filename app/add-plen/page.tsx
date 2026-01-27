@@ -398,6 +398,19 @@ export default function AddPlanPage() {
     setShowMap(false);
   };
 
+  // 필수값 유효성 검사
+  const validateForm = () => {
+    if (!inputValue.trim()) {
+      alert("제목을 입력해주세요.");
+      return false;
+    }
+    if (!selectedCategory) {
+      alert("카테고리를 선택해주세요.");
+      return false;
+    }
+    return true;
+  };
+
   // 표시할 항목 결정 (Input에 값이 있을 때만)
   let displayItems: Array<{ id: string; color: string; label: string }> = [];
 
@@ -450,8 +463,16 @@ export default function AddPlanPage() {
         </div>
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center" style={{ textAlign: 'left' }}>
-              <span className="text-xl font-semibold text-[#FFAAB8]" style={{ textAlign: 'left' }}>제목</span>
+            <div
+              className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center"
+              style={{ textAlign: "left" }}
+            >
+              <span
+                className="text-xl font-semibold text-[#FFAAB8]"
+                style={{ textAlign: "left" }}
+              >
+                제목 <span className="text-red-500">*</span>
+              </span>
             </div>
           </div>
           <input
@@ -466,9 +487,15 @@ export default function AddPlanPage() {
         {/* 카테고리 영역 - 항상 표시 */}
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 mb-2 min-w-0">
-            <div className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex-shrink-0 flex justify-start items-center" style={{ textAlign: 'left' }}>
-              <span className="text-xl font-semibold text-[#FFAAB8]" style={{ textAlign: 'left' }}>
-                카테고리
+            <div
+              className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex-shrink-0 flex justify-start items-center"
+              style={{ textAlign: "left" }}
+            >
+              <span
+                className="text-xl font-semibold text-[#FFAAB8]"
+                style={{ textAlign: "left" }}
+              >
+                카테고리 <span className="text-red-500">*</span>
               </span>
             </div>
             {/* 선택된 카테고리 표시 */}
@@ -534,8 +561,16 @@ export default function AddPlanPage() {
         {/* 금액 영역 */}
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center" style={{ textAlign: 'left' }}>
-              <span className="text-xl font-semibold text-[#FFAAB8]" style={{ textAlign: 'left' }}>금액</span>
+            <div
+              className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center"
+              style={{ textAlign: "left" }}
+            >
+              <span
+                className="text-xl font-semibold text-[#FFAAB8]"
+                style={{ textAlign: "left" }}
+              >
+                금액
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2 min-w-0">
@@ -556,8 +591,16 @@ export default function AddPlanPage() {
         {/* 위치 영역 */}
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center" style={{ textAlign: 'left' }}>
-              <span className="text-xl font-semibold text-[#FFAAB8]" style={{ textAlign: 'left' }}>위치</span>
+            <div
+              className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center"
+              style={{ textAlign: "left" }}
+            >
+              <span
+                className="text-xl font-semibold text-[#FFAAB8]"
+                style={{ textAlign: "left" }}
+              >
+                위치
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2 min-w-0">
@@ -601,6 +644,23 @@ export default function AddPlanPage() {
             <div id="map" className="w-full h-[400px] rounded-xl" />
           </div>
         )}
+
+        {/* 저장 버튼 */}
+        <div className="mt-8 w-full">
+          <button
+            type="button"
+            onClick={() => {
+              if (validateForm()) {
+                // TODO: API로 데이터 저장
+                alert("플랜이 저장되었습니다.");
+                router.push("/main");
+              }
+            }}
+            className="w-full px-6 py-4 bg-[#FFAAB8] text-white font-bold text-lg rounded-xl hover:bg-[#FF8FA3] transition-colors shadow-md active:scale-[0.98] transform"
+          >
+            플랜 저장하기
+          </button>
+        </div>
       </main>
       {/* 하단 탭바 - Sticky로 최상단에 고정 */}
       <BottomTabBar

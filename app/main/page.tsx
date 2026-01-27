@@ -114,9 +114,11 @@ export default function MainPage() {
   const handleUserClick = () => {
     if (!user) {
       // TODO: 추후 회원가입/로그인 모달이나 페이지로 이동
+      // eslint-disable-next-line no-alert
       alert("로그인이 필요합니다. 회원가입 또는 로그인을 해주세요.");
     } else {
       // TODO: 추후 마이페이지나 설정 페이지로 이동
+      // eslint-disable-next-line no-alert
       alert(`${user.name}님 환영합니다!`);
     }
   };

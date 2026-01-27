@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LandingHero } from "../components/LandingHero";
-import { CelebrationEffects } from "../components/CelebrationEffects";
-import { DatePickerWheel } from "../components/DatePickerWheel";
+import LandingHero from "../components/LandingHero";
+import CelebrationEffects from "../components/CelebrationEffects";
+import DatePickerWheel from "../components/DatePickerWheel";
 import { useWedding } from "../contexts/WeddingContext";
 import CountUp from "../../components/CountUp";
 import Lanyard from "../../components/Lanyard";
