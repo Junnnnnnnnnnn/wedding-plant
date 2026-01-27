@@ -948,20 +948,35 @@ export default function AddPlanPage() {
                     </span>
                   </button>
                 )}
+                {/* 원하는 결과가 없을 때 */}
+                {!showMap && (
+                  <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
+                    <div className="text-base font-semibold text-stone-600 mb-2">
+                      원하는 결과가 없습니다
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSaveWithoutLocation}
+                      className="px-6 py-2 bg-[#FFAAB8] text-white font-semibold rounded-xl hover:bg-[#FF8FA3] transition-colors text-sm"
+                    >
+                      건너뛰기
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
           {/* 검색 결과 없음 */}
           {hasSearched && locationSearchResults.length === 0 && (
             <div className="mt-3 w-full">
-              <div className="px-4 py-6 bg-white rounded-xl border-2 border-stone-200 text-center">
-                <div className="text-base font-semibold text-stone-600 mb-4">
+              <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
+                <div className="text-base font-semibold text-stone-600 mb-2">
                   검색 결과가 없습니다.
                 </div>
                 <button
                   type="button"
                   onClick={handleSaveWithoutLocation}
-                  className="px-6 py-3 bg-[#FFAAB8] text-white font-semibold rounded-xl hover:bg-[#FF8FA3] transition-colors"
+                  className="px-6 py-2 bg-[#FFAAB8] text-white font-semibold rounded-xl hover:bg-[#FF8FA3] transition-colors text-sm"
                 >
                   건너뛰기
                 </button>
