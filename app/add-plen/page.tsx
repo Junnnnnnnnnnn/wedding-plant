@@ -37,11 +37,12 @@ export default function AddPlanPage() {
   );
   const [location, setLocation] = useState("");
   const [memo, setMemo] = useState("");
+  const memoTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [showMap, setShowMap] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [map, setMap] = useState<any>(null);
+  const mapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [marker, setMarker] = useState<any>(null);
+  const markerRef = useRef<any>(null);
   const [mapCoords, setMapCoords] = useState<{
     lat: number;
     lng: number;
@@ -99,10 +100,18 @@ export default function AddPlanPage() {
   // 지도 컨테이너가 렌더링된 후 지도 생성
   useEffect(() => {
     if (!showMap || !mapCoords || !window.kakao || !window.kakao.maps) {
+      // showMap이 false가 되면 지도 인스턴스 초기화
+      if (!showMap && mapRef.current) {
+        if (markerRef.current) {
+          markerRef.current.setMap(null);
+          markerRef.current = null;
+        }
+        mapRef.current = null;
+      }
       return undefined;
     }
 
-    // DOM이 업데이트될 때까지 대기
+    // DOM이 업데이트될 때까지 대기 (컨테이너가 렌더링될 시간 확보)
     const timer = setTimeout(() => {
       const container = document.getElementById("map");
       if (!container) {
@@ -111,51 +120,49 @@ export default function AddPlanPage() {
 
       const coords = new window.kakao.maps.LatLng(mapCoords.lat, mapCoords.lng);
 
-      // 지도가 없으면 새로 생성
-      if (!map) {
-        const options = {
-          center: coords,
-          level: 3,
-          scrollwheel: false, // 마우스 휠로 지도 확대/축소 비활성화 (페이지 스크롤 허용)
-          disableDoubleClick: true, // 더블클릭 확대 비활성화
-          disableDoubleClickZoom: true, // 더블클릭 줌 비활성화
-        };
+      // showMap이 false였다가 true로 변경되면 컨테이너가 새로 생성되므로 항상 새로 생성
+      // 기존 지도 인스턴스가 있으면 제거
+      if (mapRef.current) {
+        // 기존 마커 제거
+        if (markerRef.current) {
+          markerRef.current.setMap(null);
+          markerRef.current = null;
+        }
+        // 지도 인스턴스는 자동으로 정리되므로 null로 설정
+        mapRef.current = null;
+      }
+
+      // 항상 새로 생성 (컨테이너가 새로 생성되었을 수 있으므로)
+      const options = {
+        center: coords,
+        level: 3,
+        scrollwheel: false, // 마우스 휠로 지도 확대/축소 비활성화 (페이지 스크롤 허용)
+        disableDoubleClick: true, // 더블클릭 확대 비활성화
+        disableDoubleClickZoom: true, // 더블클릭 줌 비활성화
+      };
+
+      try {
         const mapInstance = new window.kakao.maps.Map(container, options);
-        setMap(mapInstance);
+        mapRef.current = mapInstance;
 
         // 마커 생성
         const newMarker = new window.kakao.maps.Marker({
           map: mapInstance,
           position: coords,
         });
-        setMarker(newMarker);
-      } else {
-        // 기존 지도 사용 - 좌표 업데이트
-        map.setCenter(coords);
-        map.setLevel(3);
-
-        // 기존 마커 제거 후 새 마커 생성
-        if (marker) {
-          marker.setMap(null);
-        }
-        const newMarker = new window.kakao.maps.Marker({
-          map,
-          position: coords,
-        });
-        setMarker(newMarker);
+        markerRef.current = newMarker;
+      } catch (error) {
+        // 지도 생성 실패 시 무시 (에러는 발생하지만 사용자에게는 표시하지 않음)
       }
+    }, 150); // 대기 시간을 약간 늘림
 
-      // 지도 생성 후 스크롤 (선택적 - 필요시에만)
-      // 스크롤이 막히는 문제를 방지하기 위해 제거
-      // mapContainerRef.current?.scrollIntoView({
-      //   behavior: "smooth",
-      //   block: "start",
-      // });
-    }, 100);
-
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      // cleanup은 showMap이 false가 될 때만 수행
+    };
     // eslint-disable-next-line consistent-return
-  }, [showMap, mapCoords, map, marker]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showMap, mapCoords]);
 
   /**
    * ============================================================================
@@ -406,10 +413,21 @@ export default function AddPlanPage() {
   ) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleCompleteAddingCategory();
+      e.stopPropagation(); // ClickSpark 트리거 방지
+      // 글자 없이 엔터 입력 시 무력화
+      if (newCategoryName.trim()) {
+        handleCompleteAddingCategory();
+      }
     } else if (e.key === "Escape") {
       e.preventDefault();
+      e.stopPropagation();
       handleCancelAddingCategory();
+    } else if (e.key === " ") {
+      // 글자 없이 스페이스 입력 시 무력화
+      if (!newCategoryName.trim()) {
+        e.preventDefault();
+      }
+      e.stopPropagation();
     }
   };
 
@@ -438,6 +456,10 @@ export default function AddPlanPage() {
     if (!location.trim()) return;
 
     setHasSearched(true);
+    // 새로운 검색 시 기존 지도 숨기기 및 초기화
+    setShowMap(false);
+    setMapCoords(null);
+    // 지도 인스턴스 초기화는 useEffect에서 처리됨
 
     // API가 로드될 때까지 대기
     const waitForApiAndSearch = () => {
@@ -458,20 +480,13 @@ export default function AddPlanPage() {
             // 검색 결과 저장 (최대 10개)
             setLocationSearchResults(result.slice(0, 10));
             setShowAllLocationResults(false);
-            // 지도는 숨김 (결과 선택 시에만 표시)
-            setShowMap(false);
-            setMapCoords(null);
           } else {
             // 검색 결과가 없는 경우
             setLocationSearchResults([]);
-            setShowMap(false);
-            setMapCoords(null);
           }
         } else {
           // 검색 실패
           setLocationSearchResults([]);
-          setShowMap(false);
-          setMapCoords(null);
         }
       };
 
@@ -492,10 +507,11 @@ export default function AddPlanPage() {
     x: number;
   }) => {
     // 선택한 위치로 지도 표시
-    setMapCoords({
+    const newCoords = {
       lat: result.y,
       lng: result.x,
-    });
+    };
+    setMapCoords(newCoords);
     setShowMap(true);
     // 검색 결과 목록 접기 (버튼만 표시)
     setShowAllLocationResults(false);
@@ -616,9 +632,14 @@ export default function AddPlanPage() {
             placeholder="추가할 플랜 제목을 입력해주세요"
             className="w-full px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
             onKeyDown={(e) => {
-              // 스페이스 키 입력 허용
-              if (e.key === " ") {
-                e.stopPropagation();
+              // 글자 없이 엔터/스페이스 키 입력 시 무력화
+              if (e.key === "Enter" || e.key === " ") {
+                if (!inputValue.trim()) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                } else {
+                  e.stopPropagation();
+                }
               }
             }}
           />
@@ -753,6 +774,17 @@ export default function AddPlanPage() {
               onChange={handleAmountChange}
               placeholder="금액을 입력해주세요"
               className="flex-1 min-w-0 px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
+              onKeyDown={(e) => {
+                // 글자 없이 엔터/스페이스 키 입력 시 무력화
+                if (e.key === "Enter" || e.key === " ") {
+                  if (!amount.trim()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  } else {
+                    e.stopPropagation();
+                  }
+                }
+              }}
             />
             <span className="text-base font-semibold text-stone-700 whitespace-nowrap flex-shrink-0">
               만 원
@@ -857,15 +889,35 @@ export default function AddPlanPage() {
               id="plan-location"
               type="text"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setLocation(newValue);
+                // 입력 필드가 비어지면 검색 결과와 지도 모두 초기화
+                if (!newValue.trim()) {
+                  setLocationSearchResults([]);
+                  setShowMap(false);
+                  setMapCoords(null);
+                  setHasSearched(false);
+                  setShowAllLocationResults(false);
+                }
+              }}
               placeholder="위치를 입력해주세요"
               className="flex-1 min-w-0 px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  handleSearchLocation();
+                  e.stopPropagation(); // ClickSpark 트리거 방지
+                  // 글자 없이 엔터 입력 시 무력화
+                  if (!location.trim()) {
+                    e.preventDefault();
+                  } else {
+                    handleSearchLocation();
+                  }
                 }
-                // 스페이스 키 입력 허용
+                // 스페이스 키 입력 허용 (글자 없을 때만 무력화)
                 if (e.key === " ") {
+                  if (!location.trim()) {
+                    e.preventDefault();
+                  }
                   e.stopPropagation();
                 }
               }}
@@ -1012,20 +1064,40 @@ export default function AddPlanPage() {
               </span>
             </div>
           </div>
-          <textarea
-            id="plan-memo"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            placeholder="메모를 입력해주세요"
-            rows={4}
-            className="w-full px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors resize-none"
-            onKeyDown={(e) => {
-              // 스페이스 키 입력 허용
-              if (e.key === " ") {
-                e.stopPropagation();
-              }
-            }}
-          />
+          <div className="relative">
+            <textarea
+              ref={memoTextareaRef}
+              id="plan-memo"
+              value={memo}
+              maxLength={500}
+              onChange={(e) => {
+                const newValue = e.target.value.slice(0, 500);
+                setMemo(newValue);
+                // 높이 자동 조절
+                if (memoTextareaRef.current) {
+                  memoTextareaRef.current.style.height = "auto";
+                  memoTextareaRef.current.style.height = `${memoTextareaRef.current.scrollHeight}px`;
+                }
+              }}
+              placeholder="메모를 입력해주세요"
+              className="w-full min-h-[112px] px-4 py-3.5 pb-10 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors resize-none overflow-hidden"
+              style={{ height: "auto" }}
+              onKeyDown={(e) => {
+                // 글자 없이 엔터/스페이스 키 입력 시 무력화
+                if (e.key === "Enter" || e.key === " ") {
+                  if (!memo.trim()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  } else {
+                    e.stopPropagation();
+                  }
+                }
+              }}
+            />
+            <div className="absolute bottom-3 right-3 text-xs text-stone-400 font-medium">
+              {memo.length}/500
+            </div>
+          </div>
         </div>
 
         {/* 저장 버튼 - 제목과 카테고리가 모두 있을 때만 표시 */}
@@ -1035,10 +1107,37 @@ export default function AddPlanPage() {
               type="button"
               onClick={() => {
                 if (validateForm()) {
-                  // TODO: API로 데이터 저장
+                  // 금액에서 콤마 제거
+                  const amountValue = amount.replace(/,/g, "");
+
+                  // API로 보낼 데이터 구성
+                  const planData = {
+                    title: inputValue.trim(),
+                    category: selectedCategory
+                      ? {
+                          color: selectedCategory.color,
+                          label: selectedCategory.label,
+                        }
+                      : null,
+                    amount: amountValue ? parseInt(amountValue, 10) : null,
+                    date: isDateUndecided ? null : formatDate(selectedDate),
+                    isDateUndecided,
+                    paymentType,
+                    location: location.trim() || null,
+                    coordinates: mapCoords
+                      ? {
+                          lat: mapCoords.lat,
+                          lng: mapCoords.lng,
+                        }
+                      : null,
+                    memo: memo.trim() || null,
+                  };
+
+                  // JSON으로 변환하여 alert로 표시
                   // eslint-disable-next-line no-alert
-                  alert("플랜이 저장되었습니다.");
-                  router.push("/main");
+                  alert(JSON.stringify(planData, null, 2));
+                  // TODO: API로 데이터 저장
+                  // router.push("/main");
                 }
               }}
               className="w-full px-6 py-4 bg-[#FFAAB8] text-white font-bold text-lg rounded-xl hover:bg-[#FF8FA3] transition-colors shadow-md active:scale-[0.98] transform"
