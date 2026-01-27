@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import BottomTabBar from "../components/BottomTabBar";
+import DatePickerModal from "../components/DatePickerModal";
 import { useWedding } from "../contexts/WeddingContext";
 
 // Kakao Maps API 타입 선언
@@ -28,57 +29,59 @@ export default function AddPlanPage() {
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [amount, setAmount] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isDateUndecided, setIsDateUndecided] = useState(false);
+  const [paymentType, setPaymentType] = useState<"현금" | "카드" | "기타">(
+    "기타",
+  );
   const [location, setLocation] = useState("");
+  const [memo, setMemo] = useState("");
   const [showMap, setShowMap] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [map, setMap] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [marker, setMarker] = useState<any>(null);
+  const [mapCoords, setMapCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [locationSearchResults, setLocationSearchResults] = useState<
+    Array<{
+      place_name: string;
+      address_name: string;
+      road_address_name?: string;
+      y: number;
+      x: number;
+    }>
+  >([]);
+  const [showAllLocationResults, setShowAllLocationResults] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const newCategoryInputRef = useRef<HTMLInputElement>(null);
 
   /**
    * ============================================================================
-   * Kakao 지도 초기화
+   * Kakao 지도 초기화 (API 스크립트 로드)
    * ============================================================================
    */
   // eslint-disable-next-line consistent-return
   useEffect(() => {
-    if (!showMap) {
-      return;
-    }
-
-    // Kakao Maps SDK가 이미 로드되었는지 확인
+    // API 스크립트가 이미 로드되었는지 확인
     if (window.kakao && window.kakao.maps) {
-      // 이미 로드된 경우 바로 지도 초기화
-      const container = document.getElementById("map");
-      if (container) {
-        const options = {
-          center: new window.kakao.maps.LatLng(33.450701, 126.570667),
-          level: 3,
-        };
-        // 지도 생성 (변수는 사용하지 않지만 생성은 필요)
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const map = new window.kakao.maps.Map(container, options);
-      }
       return;
     }
 
-    // Kakao Maps SDK 스크립트 로드
+    // Kakao Maps SDK 스크립트 로드 (libraries=services 추가)
     const script = document.createElement("script");
     const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&libraries=services`;
     script.async = true;
 
     script.onload = () => {
-      // Kakao Maps API 로드 완료 후 지도 초기화
+      // Kakao Maps API 로드 완료
       window.kakao.maps.load(() => {
-        const container = document.getElementById("map");
-        if (container) {
-          const options = {
-            center: new window.kakao.maps.LatLng(33.450701, 126.570667),
-            level: 3,
-          };
-          // 지도 생성 (변수는 사용하지 않지만 생성은 필요)
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const map = new window.kakao.maps.Map(container, options);
-        }
+        // API 준비 완료 - 지도 생성은 검색 시에 함
       });
     };
 
@@ -91,23 +94,68 @@ export default function AddPlanPage() {
         document.head.removeChild(script);
       }
     };
-  }, [showMap]);
+  }, []);
 
-  // 지도가 나타나면 해당 영역으로 자동 스크롤
+  // 지도 컨테이너가 렌더링된 후 지도 생성
   useEffect(() => {
-    if (!showMap) {
+    if (!showMap || !mapCoords || !window.kakao || !window.kakao.maps) {
       return undefined;
     }
-    // DOM 반영 후 스크롤 (지도 초기화 대기)
+
+    // DOM이 업데이트될 때까지 대기
     const timer = setTimeout(() => {
-      mapContainerRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      const container = document.getElementById("map");
+      if (!container) {
+        return;
+      }
+
+      const coords = new window.kakao.maps.LatLng(mapCoords.lat, mapCoords.lng);
+
+      // 지도가 없으면 새로 생성
+      if (!map) {
+        const options = {
+          center: coords,
+          level: 3,
+          scrollwheel: false, // 마우스 휠로 지도 확대/축소 비활성화 (페이지 스크롤 허용)
+          disableDoubleClick: true, // 더블클릭 확대 비활성화
+          disableDoubleClickZoom: true, // 더블클릭 줌 비활성화
+        };
+        const mapInstance = new window.kakao.maps.Map(container, options);
+        setMap(mapInstance);
+
+        // 마커 생성
+        const newMarker = new window.kakao.maps.Marker({
+          map: mapInstance,
+          position: coords,
+        });
+        setMarker(newMarker);
+      } else {
+        // 기존 지도 사용 - 좌표 업데이트
+        map.setCenter(coords);
+        map.setLevel(3);
+
+        // 기존 마커 제거 후 새 마커 생성
+        if (marker) {
+          marker.setMap(null);
+        }
+        const newMarker = new window.kakao.maps.Marker({
+          map,
+          position: coords,
+        });
+        setMarker(newMarker);
+      }
+
+      // 지도 생성 후 스크롤 (선택적 - 필요시에만)
+      // 스크롤이 막히는 문제를 방지하기 위해 제거
+      // mapContainerRef.current?.scrollIntoView({
+      //   behavior: "smooth",
+      //   block: "start",
+      // });
     }, 100);
+
     return () => clearTimeout(timer);
     // eslint-disable-next-line consistent-return
-  }, [showMap]);
+  }, [showMap, mapCoords, map, marker]);
 
   /**
    * ============================================================================
@@ -387,25 +435,110 @@ export default function AddPlanPage() {
   };
 
   const handleSearchLocation = () => {
-    if (location.trim()) {
-      setShowMap(true);
-      // TODO: Kakao Map Search API 연동
-    }
+    if (!location.trim()) return;
+
+    setHasSearched(true);
+
+    // API가 로드될 때까지 대기
+    const waitForApiAndSearch = () => {
+      if (!window.kakao || !window.kakao.maps) {
+        setTimeout(waitForApiAndSearch, 100);
+        return;
+      }
+
+      // 장소 검색 서비스 객체 생성
+      const places = new window.kakao.maps.services.Places();
+
+      // 키워드 검색 콜백 함수
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const callback = (result: any, status: any) => {
+        if (status === window.kakao.maps.services.Status.OK) {
+          // 검색 결과가 있는 경우
+          if (result.length > 0) {
+            // 검색 결과 저장 (최대 10개)
+            setLocationSearchResults(result.slice(0, 10));
+            setShowAllLocationResults(false);
+            // 지도는 숨김 (결과 선택 시에만 표시)
+            setShowMap(false);
+            setMapCoords(null);
+          } else {
+            // 검색 결과가 없는 경우
+            setLocationSearchResults([]);
+            setShowMap(false);
+            setMapCoords(null);
+          }
+        } else {
+          // 검색 실패
+          setLocationSearchResults([]);
+          setShowMap(false);
+          setMapCoords(null);
+        }
+      };
+
+      // 키워드로 장소 검색 (최대 10개)
+      places.keywordSearch(location.trim(), callback, {
+        size: 10,
+      });
+    };
+
+    waitForApiAndSearch();
   };
 
-  const handleSkipLocation = () => {
-    setLocation("");
+  const handleSelectLocation = (result: {
+    place_name: string;
+    address_name: string;
+    road_address_name?: string;
+    y: number;
+    x: number;
+  }) => {
+    // 선택한 위치로 지도 표시
+    setMapCoords({
+      lat: result.y,
+      lng: result.x,
+    });
+    setShowMap(true);
+    // 검색 결과 목록 접기 (버튼만 표시)
+    setShowAllLocationResults(false);
+  };
+
+  const handleSaveWithoutLocation = () => {
+    // 지도 정보 없이 저장 - 위치 입력은 유지하되 검색 결과만 초기화
     setShowMap(false);
+    setMapCoords(null);
+    setLocationSearchResults([]);
+    setShowAllLocationResults(false);
+    setHasSearched(false);
+    // 위치 입력은 유지 (사용자가 다시 검색할 수 있도록)
+  };
+
+  // 날짜 포맷팅 (YYYY-MM-DD)
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+    setIsDateUndecided(false);
   };
 
   // 필수값 유효성 검사
   const validateForm = () => {
     if (!inputValue.trim()) {
+      // eslint-disable-next-line no-alert
       alert("제목을 입력해주세요.");
       return false;
     }
     if (!selectedCategory) {
+      // eslint-disable-next-line no-alert
       alert("카테고리를 선택해주세요.");
+      return false;
+    }
+    if (!paymentType) {
+      // eslint-disable-next-line no-alert
+      alert("결제 유형을 선택해주세요.");
       return false;
     }
     return true;
@@ -482,6 +615,12 @@ export default function AddPlanPage() {
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="추가할 플랜 제목을 입력해주세요"
             className="w-full px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors"
+            onKeyDown={(e) => {
+              // 스페이스 키 입력 허용
+              if (e.key === " ") {
+                e.stopPropagation();
+              }
+            }}
           />
         </div>
         {/* 카테고리 영역 - 항상 표시 */}
@@ -558,6 +697,38 @@ export default function AddPlanPage() {
               ))}
           </div>
         </div>
+        {/* 결제 유형 영역 */}
+        <div className="mt-4 w-full">
+          <div className="flex items-center gap-2 mb-2">
+            <div
+              className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center"
+              style={{ textAlign: "left" }}
+            >
+              <span
+                className="text-xl font-semibold text-[#FFAAB8]"
+                style={{ textAlign: "left" }}
+              >
+                결제 유형 <span className="text-red-500">*</span>
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {(["현금", "카드", "기타"] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setPaymentType(type)}
+                className={`flex-1 px-4 py-3.5 rounded-xl border-2 transition-colors font-semibold text-base ${
+                  paymentType === type
+                    ? "bg-[#FFAAB8] text-white border-[#FFAAB8]"
+                    : "bg-white text-stone-700 border-stone-200 hover:border-[#FFAAB8]"
+                }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
         {/* 금액 영역 */}
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 mb-2">
@@ -588,6 +759,84 @@ export default function AddPlanPage() {
             </span>
           </div>
         </div>
+        {/* 일자 영역 */}
+        <div className="mt-4 w-full">
+          <div className="flex items-center gap-2 mb-2">
+            <div
+              className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center"
+              style={{ textAlign: "left" }}
+            >
+              <span
+                className="text-xl font-semibold text-[#FFAAB8]"
+                style={{ textAlign: "left" }}
+              >
+                일자
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className={`flex-1 min-w-0 px-4 py-3.5 text-base font-semibold rounded-xl border-2 transition-colors ${
+                isDateUndecided
+                  ? "bg-stone-200 text-stone-500 border-stone-200 cursor-default"
+                  : "text-stone-900 bg-white border-stone-200 cursor-pointer hover:border-[#FFAAB8]"
+              }`}
+              onClick={() => {
+                if (!isDateUndecided) {
+                  setIsDatePickerOpen(true);
+                }
+              }}
+              role="button"
+              tabIndex={isDateUndecided ? -1 : 0}
+              onKeyDown={(e) => {
+                if (!isDateUndecided && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  setIsDatePickerOpen(true);
+                }
+              }}
+            >
+              {isDateUndecided ? "미정" : formatDate(selectedDate)}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsDateUndecided(true);
+              }}
+              className={`px-4 py-3.5 rounded-xl border-2 transition-colors flex-shrink-0 font-semibold text-sm ${
+                isDateUndecided
+                  ? "bg-stone-300 text-stone-600 border-stone-300"
+                  : "bg-white text-stone-700 border-stone-200 hover:border-[#FFAAB8]"
+              }`}
+              aria-label="날짜 미정"
+            >
+              미정
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsDateUndecided(false);
+                setIsDatePickerOpen(true);
+              }}
+              className="px-4 py-3.5 rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] transition-colors flex-shrink-0 flex items-center justify-center"
+              aria-label="날짜 선택"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="#FF8FA3"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
         {/* 위치 영역 */}
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 mb-2">
@@ -615,6 +864,10 @@ export default function AddPlanPage() {
                 if (e.key === "Enter") {
                   handleSearchLocation();
                 }
+                // 스페이스 키 입력 허용
+                if (e.key === " ") {
+                  e.stopPropagation();
+                }
               }}
             />
             <button
@@ -630,37 +883,155 @@ export default function AddPlanPage() {
               검색
             </button>
           </div>
-          <button
-            type="button"
-            onClick={handleSkipLocation}
-            className="mt-2 w-full px-4 py-3 bg-stone-200 text-stone-700 font-medium rounded-xl hover:bg-stone-300 transition-colors"
-          >
-            건너뛰기
-          </button>
+          {/* 검색 결과 목록 */}
+          {hasSearched && locationSearchResults.length > 0 && (
+            <div className="mt-3 w-full">
+              <div className="flex flex-col gap-2">
+                {/* 지도가 표시되지 않았을 때만 검색 결과 목록 표시 */}
+                {!showMap && (
+                  <>
+                    {(showAllLocationResults
+                      ? locationSearchResults
+                      : locationSearchResults.slice(0, 3)
+                    ).map((result) => (
+                      <div
+                        key={`${result.x}-${result.y}-${result.place_name}`}
+                        onClick={() => handleSelectLocation(result)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleSelectLocation(result);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] cursor-pointer transition-colors"
+                      >
+                        <div className="font-bold text-stone-900 mb-1">
+                          {result.place_name}
+                        </div>
+                        <div className="text-sm text-stone-600">
+                          {result.road_address_name || result.address_name}
+                        </div>
+                      </div>
+                    ))}
+                    {locationSearchResults.length > 3 &&
+                      !showAllLocationResults && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllLocationResults(true)}
+                          className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] cursor-pointer transition-colors flex items-center justify-center gap-2"
+                        >
+                          <span className="text-lg font-bold text-[#FFAAB8]">
+                            +
+                          </span>
+                          <span className="text-sm font-semibold text-stone-700">
+                            {locationSearchResults.length - 3}개 더보기
+                          </span>
+                        </button>
+                      )}
+                  </>
+                )}
+                {/* 지도가 표시되었을 때는 버튼만 표시 (전체 개수) */}
+                {showMap && locationSearchResults.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMap(false);
+                      setShowAllLocationResults(false);
+                    }}
+                    className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] cursor-pointer transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span className="text-lg font-bold text-[#FFAAB8]">+</span>
+                    <span className="text-sm font-semibold text-stone-700">
+                      {locationSearchResults.length}개 더보기
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          {/* 검색 결과 없음 */}
+          {hasSearched && locationSearchResults.length === 0 && (
+            <div className="mt-3 w-full">
+              <div className="px-4 py-6 bg-white rounded-xl border-2 border-stone-200 text-center">
+                <div className="text-base font-semibold text-stone-600 mb-4">
+                  검색 결과가 없습니다.
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveWithoutLocation}
+                  className="px-6 py-3 bg-[#FFAAB8] text-white font-semibold rounded-xl hover:bg-[#FF8FA3] transition-colors"
+                >
+                  건너뛰기
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-        {/* 지도 영역 - 검색 시에만 표시 */}
+        {/* 지도 영역 - 위치 선택 시에만 표시 */}
         {showMap && (
           <div ref={mapContainerRef} className="mt-4 w-full">
-            <div id="map" className="w-full h-[400px] rounded-xl" />
+            <div
+              id="map"
+              className="w-full h-[200px] rounded-xl"
+              style={{
+                pointerEvents: "auto",
+              }}
+            />
           </div>
         )}
 
-        {/* 저장 버튼 */}
-        <div className="mt-8 w-full">
-          <button
-            type="button"
-            onClick={() => {
-              if (validateForm()) {
-                // TODO: API로 데이터 저장
-                alert("플랜이 저장되었습니다.");
-                router.push("/main");
+        {/* 메모 영역 */}
+        <div className="mt-4 w-full">
+          <div className="flex items-center gap-2 mb-2">
+            <div
+              className="bg-white pl-4 pr-4 py-1 rounded-lg shadow-sm border-2 border-[#FFAAB8] flex justify-start items-center"
+              style={{ textAlign: "left" }}
+            >
+              <span
+                className="text-xl font-semibold text-[#FFAAB8]"
+                style={{ textAlign: "left" }}
+              >
+                메모
+              </span>
+            </div>
+          </div>
+          <textarea
+            id="plan-memo"
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="메모를 입력해주세요"
+            rows={4}
+            className="w-full px-4 py-3.5 text-base font-semibold text-stone-900 placeholder:text-stone-400 bg-white rounded-xl border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] transition-colors resize-none"
+            onKeyDown={(e) => {
+              // 스페이스 키 입력 허용
+              if (e.key === " ") {
+                e.stopPropagation();
               }
             }}
-            className="w-full px-6 py-4 bg-[#FFAAB8] text-white font-bold text-lg rounded-xl hover:bg-[#FF8FA3] transition-colors shadow-md active:scale-[0.98] transform"
-          >
-            플랜 저장하기
-          </button>
+          />
         </div>
+
+        {/* 저장 버튼 - 제목과 카테고리가 모두 있을 때만 표시 */}
+        {inputValue.trim() && selectedCategory && (
+          <div className="mt-8 w-full">
+            <button
+              type="button"
+              onClick={() => {
+                if (validateForm()) {
+                  // TODO: API로 데이터 저장
+                  // eslint-disable-next-line no-alert
+                  alert("플랜이 저장되었습니다.");
+                  router.push("/main");
+                }
+              }}
+              className="w-full px-6 py-4 bg-[#FFAAB8] text-white font-bold text-lg rounded-xl hover:bg-[#FF8FA3] transition-colors shadow-md active:scale-[0.98] transform"
+            >
+              플랜 저장하기
+            </button>
+          </div>
+        )}
       </main>
       {/* 하단 탭바 - Sticky로 최상단에 고정 */}
       <BottomTabBar
@@ -754,6 +1125,14 @@ export default function AddPlanPage() {
           </div>
         </div>
       )}
+
+      {/* 날짜 선택 캘린더 모달 */}
+      <DatePickerModal
+        isOpen={isDatePickerOpen}
+        selectedDate={selectedDate}
+        onDateChange={handleDateChange}
+        onClose={() => setIsDatePickerOpen(false)}
+      />
     </div>
   );
 }

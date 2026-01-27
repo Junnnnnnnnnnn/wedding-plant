@@ -16,9 +16,11 @@
 ## 🔍 현재 구현 상태
 
 ### 1. 자연어 검색 기능
+
 **위치**: `app/add-plen/page.tsx` (line 53-107)
 
 **현재 로직**:
+
 ```typescript
 useEffect(() => {
   if (inputValue.trim()) {
@@ -34,14 +36,17 @@ useEffect(() => {
 ```
 
 **동작**:
+
 - 사용자 입력: "나는 상견례를 하고 싶어"
 - 결과: "상견례" 카테고리가 검색됨
 - 원리: 입력 텍스트에 카테고리 label이 포함되어 있는지 확인
 
 ### 2. 전체 카테고리 목록
+
 **위치**: `app/add-plen/page.tsx` (line 19-51)
 
 **현재 데이터**:
+
 ```typescript
 const allCategories = [
   { color: "#FFE4E9", label: "가구 구매" },
@@ -59,12 +64,14 @@ const allCategories = [
 **Endpoint**: `GET /api/categories`
 
 **Request**:
+
 ```http
 GET /api/categories HTTP/1.1
 Host: your-domain.com
 ```
 
 **Response**:
+
 ```json
 {
   "categories": [
@@ -87,6 +94,7 @@ Host: your-domain.com
 ```
 
 **Status Codes**:
+
 - `200 OK`: 성공
 - `500 Internal Server Error`: 서버 에러
 
@@ -97,6 +105,7 @@ Host: your-domain.com
 **Endpoint**: `POST /api/search/categories`
 
 **Request**:
+
 ```http
 POST /api/search/categories HTTP/1.1
 Host: your-domain.com
@@ -109,6 +118,7 @@ Content-Type: application/json
 ```
 
 **Response**:
+
 ```json
 {
   "results": [
@@ -135,11 +145,13 @@ Content-Type: application/json
 ```
 
 **Parameters**:
+
 - `query` (required): 사용자 입력 텍스트
 - `size` (optional): 최대 결과 개수 (default: 10)
 - `min_score` (optional): 최소 관련도 점수 (default: 0.1)
 
 **Status Codes**:
+
 - `200 OK`: 성공
 - `400 Bad Request`: 잘못된 요청 (query 누락 등)
 - `500 Internal Server Error`: 서버 에러
@@ -153,6 +165,7 @@ Content-Type: application/json
 **인덱스명**: `wedding-categories`
 
 **Mappings**:
+
 ```json
 {
   "mappings": {
@@ -193,10 +206,7 @@ Content-Type: application/json
         "korean_analyzer": {
           "type": "custom",
           "tokenizer": "nori_tokenizer",
-          "filter": [
-            "nori_part_of_speech",
-            "lowercase"
-          ]
+          "filter": ["nori_part_of_speech", "lowercase"]
         }
       },
       "tokenizer": {
@@ -213,6 +223,7 @@ Content-Type: application/json
 ### 3. Synonym 설정 (동의어)
 
 **예시**:
+
 ```
 예약, 신청, 등록 => 예약
 촬영, 사진, 포토 => 촬영
@@ -222,6 +233,7 @@ Content-Type: application/json
 ### 4. 쿼리 예시
 
 **Match Query (기본)**:
+
 ```json
 {
   "query": {
@@ -238,6 +250,7 @@ Content-Type: application/json
 ```
 
 **설명**:
+
 - `label^2`: label 필드에 가중치 2배 부여
 - `fuzziness: "AUTO"`: 자동 퍼지 매칭 (오타 허용)
 - `min_score: 0.1`: 최소 관련도 점수 설정
@@ -249,6 +262,7 @@ Content-Type: application/json
 ### 1. 전체 카테고리 조회 로직 변경
 
 **변경 전** (`app/add-plen/page.tsx`):
+
 ```typescript
 const allCategories = [
   { color: "#FFE4E9", label: "가구 구매" },
@@ -257,6 +271,7 @@ const allCategories = [
 ```
 
 **변경 후**:
+
 ```typescript
 const [allCategories, setAllCategories] = useState<
   Array<{ id: string; color: string; label: string }>
@@ -267,22 +282,22 @@ useEffect(() => {
   const fetchCategories = async () => {
     try {
       setIsCategoriesLoading(true);
-      const response = await fetch('/api/categories');
-      
+      const response = await fetch("/api/categories");
+
       if (!response.ok) {
-        throw new Error('Failed to fetch categories');
+        throw new Error("Failed to fetch categories");
       }
-      
+
       const data = await response.json();
       setAllCategories(data.categories);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
       // TODO: 에러 UI 표시
     } finally {
       setIsCategoriesLoading(false);
     }
   };
-  
+
   fetchCategories();
 }, []);
 ```
@@ -290,6 +305,7 @@ useEffect(() => {
 ### 2. 자연어 검색 로직 변경
 
 **변경 전** (`app/add-plen/page.tsx`, line 53-107):
+
 ```typescript
 useEffect(() => {
   if (inputValue.trim()) {
@@ -305,6 +321,7 @@ useEffect(() => {
 ```
 
 **변경 후**:
+
 ```typescript
 const [isSearching, setIsSearching] = useState(false);
 
@@ -318,10 +335,10 @@ useEffect(() => {
   const timeoutId = setTimeout(async () => {
     try {
       setIsSearching(true);
-      const response = await fetch('/api/search/categories', {
-        method: 'POST',
+      const response = await fetch("/api/search/categories", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           query: inputValue.trim(),
@@ -329,15 +346,15 @@ useEffect(() => {
           min_score: 0.1,
         }),
       });
-      
+
       if (!response.ok) {
-        throw new Error('Search failed');
+        throw new Error("Search failed");
       }
-      
+
       const data = await response.json();
       setSearchResults(data.results);
     } catch (error) {
-      console.error('Error searching categories:', error);
+      console.error("Error searching categories:", error);
       // TODO: 에러 UI 표시
       setSearchResults([]);
     } finally {
@@ -364,21 +381,27 @@ const [searchError, setSearchError] = useState<string | null>(null);
 ### 4. UI 업데이트
 
 **로딩 인디케이터**:
+
 ```tsx
-{isSearching && (
-  <div className="flex items-center justify-center py-4">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FFAAB8]" />
-  </div>
-)}
+{
+  isSearching && (
+    <div className="flex items-center justify-center py-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FFAAB8]" />
+    </div>
+  );
+}
 ```
 
 **에러 메시지**:
+
 ```tsx
-{searchError && (
-  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-    <p className="text-sm text-red-600">{searchError}</p>
-  </div>
-)}
+{
+  searchError && (
+    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+      <p className="text-sm text-red-600">{searchError}</p>
+    </div>
+  );
+}
 ```
 
 ---
@@ -387,33 +410,33 @@ const [searchError, setSearchError] = useState<string | null>(null);
 
 ### 1. 기본 검색 테스트
 
-| 입력 | 기대 결과 |
-|------|-----------|
-| "상견례" | "상견례" 카테고리 표시 |
-| "나는 상견례를 하고 싶어" | "상견례" 카테고리 표시 |
-| "드레스 촬영을 예약하고 싶어요" | "드레스 촬영" 카테고리 표시 |
-| "웨딩 촬영" | "드레스 촬영" 카테고리 표시 (동의어) |
+| 입력                            | 기대 결과                            |
+| ------------------------------- | ------------------------------------ |
+| "상견례"                        | "상견례" 카테고리 표시               |
+| "나는 상견례를 하고 싶어"       | "상견례" 카테고리 표시               |
+| "드레스 촬영을 예약하고 싶어요" | "드레스 촬영" 카테고리 표시          |
+| "웨딩 촬영"                     | "드레스 촬영" 카테고리 표시 (동의어) |
 
 ### 2. 복수 카테고리 검색
 
-| 입력 | 기대 결과 |
-|------|-----------|
-| "상견례와 드레스 촬영" | "상견례", "드레스 촬영" 두 개 표시 |
+| 입력                           | 기대 결과                             |
+| ------------------------------ | ------------------------------------- |
+| "상견례와 드레스 촬영"         | "상견례", "드레스 촬영" 두 개 표시    |
 | "커플링 구매 그리고 혼주 구매" | "커플링 구매", "혼주 구매" 두 개 표시 |
 
 ### 3. 오타 허용 테스트 (Fuzzy)
 
-| 입력 | 기대 결과 |
-|------|-----------|
-| "상견례" (오타) | "상견례" 카테고리 표시 |
+| 입력                 | 기대 결과                   |
+| -------------------- | --------------------------- |
+| "상견례" (오타)      | "상견례" 카테고리 표시      |
 | "드레슨 촬영" (오타) | "드레스 촬영" 카테고리 표시 |
 
 ### 4. 검색 결과 없음
 
-| 입력 | 기대 결과 |
-|------|-----------|
-| "xyz123" | 회색 박스에 "xyz123" 표시 |
-| "존재하지 않는 카테고리" | 회색 박스에 텍스트 표시 |
+| 입력                     | 기대 결과                 |
+| ------------------------ | ------------------------- |
+| "xyz123"                 | 회색 박스에 "xyz123" 표시 |
+| "존재하지 않는 카테고리" | 회색 박스에 텍스트 표시   |
 
 ### 5. 성능 테스트
 
@@ -426,6 +449,7 @@ const [searchError, setSearchError] = useState<string | null>(null);
 ## 📝 체크리스트
 
 ### 백엔드 개발
+
 - [ ] OpenSearch 클러스터 설정
 - [ ] `wedding-categories` 인덱스 생성
 - [ ] 한국어 Analyzer 설정
@@ -436,6 +460,7 @@ const [searchError, setSearchError] = useState<string | null>(null);
 - [ ] API 문서 작성
 
 ### 프론트엔드 개발
+
 - [ ] allCategories를 API에서 가져오도록 수정
 - [ ] 자연어 검색을 API로 변경
 - [ ] Debounce 추가
@@ -445,6 +470,7 @@ const [searchError, setSearchError] = useState<string | null>(null);
 - [ ] 성능 최적화
 
 ### 테스트
+
 - [ ] 기본 검색 테스트
 - [ ] 복수 카테고리 검색 테스트
 - [ ] 오타 허용 테스트
@@ -453,6 +479,7 @@ const [searchError, setSearchError] = useState<string | null>(null);
 - [ ] 에러 시나리오 테스트
 
 ### 배포
+
 - [ ] 환경 변수 설정 (API URL 등)
 - [ ] OpenSearch 보안 설정
 - [ ] 모니터링 설정
