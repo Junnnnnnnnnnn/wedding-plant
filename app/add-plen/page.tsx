@@ -1113,12 +1113,7 @@ export default function AddPlanPage() {
                   // API로 보낼 데이터 구성
                   const planData = {
                     title: inputValue.trim(),
-                    category: selectedCategory
-                      ? {
-                          color: selectedCategory.color,
-                          label: selectedCategory.label,
-                        }
-                      : null,
+                    category: selectedCategory.label,
                     amount: amountValue ? parseInt(amountValue, 10) : null,
                     date: isDateUndecided ? null : formatDate(selectedDate),
                     isDateUndecided,
