@@ -75,7 +75,7 @@ export default function AddPlanPage() {
 
     // Kakao Maps SDK 스크립트 로드 (libraries=services 추가)
     const script = document.createElement("script");
-    const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&libraries=services`;
     script.async = true;
 

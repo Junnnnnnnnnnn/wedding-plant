@@ -7,15 +7,27 @@ type AuthButtonsProps = {
 function AuthButton({
   label,
   className,
+  href,
 }: {
   label: string;
   className: string;
+  href?: string;
 }) {
+  const baseClass = `h-11 w-full rounded-full text-sm font-semibold shadow-sm transition-transform hover:scale-[1.01] active:scale-[0.99] ${className}`;
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={`block w-full ${baseClass} flex items-center justify-center`}
+      >
+        {label}
+      </Link>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      className={`h-11 w-full rounded-full text-sm font-semibold shadow-sm transition-transform hover:scale-[1.01] active:scale-[0.99] ${className}`}
-    >
+    <button type="button" className={baseClass}>
       {label}
     </button>
   );
@@ -34,6 +46,7 @@ export default function AuthButtons({
         <AuthButton
           label="카카오로 시작하기"
           className="bg-[#FEE500] text-[#191919]"
+          href="/api/auth/kakao"
         />
         <AuthButton label="Apple로 시작하기" className="bg-black text-white" />
 

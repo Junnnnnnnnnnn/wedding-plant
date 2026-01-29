@@ -8,7 +8,7 @@ Create a `.env` file in the root directory and add the following:
 
 ```env
 # Kakao Maps API Key
-NEXT_PUBLIC_KAKAO_MAP_API_KEY=your_kakao_map_api_key_here
+NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY=your_kakao_map_api_key_here
 ```
 
 **Note:** The `.env` file is already included in `.gitignore` to prevent committing sensitive information.
