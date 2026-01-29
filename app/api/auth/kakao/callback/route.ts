@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(url);
   };
 
+  const redirectToHomeWithLoginSuccess = () => redirectToHome("?kakao_login=1");
+
   if (error) {
     return redirectToHome(
       `?error=${encodeURIComponent(errorDescription ?? error)}`,
@@ -78,7 +80,7 @@ export async function GET(request: NextRequest) {
       return redirectToHome("?error=액세스_토큰이_없습니다");
     }
 
-    const res = redirectToHome();
+    const res = redirectToHomeWithLoginSuccess();
     res.cookies.set("kakao_access_token", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
