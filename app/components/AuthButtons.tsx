@@ -9,20 +9,28 @@ function AuthButton({
   className,
   href,
   preparing,
+  fullPageRedirect,
 }: {
   label: string;
   className: string;
   href?: string;
   preparing?: boolean;
+  /** true면 <a> 사용. OAuth 등 외부 리다이렉트 시 fetch/RSC CORS 회피용 */
+  fullPageRedirect?: boolean;
 }) {
   const baseClass = `w-full rounded-full text-sm font-semibold shadow-sm transition-transform ${preparing ? "min-h-11 py-2.5 cursor-not-allowed opacity-70" : "h-11"} ${className} ${!preparing ? "hover:scale-[1.01] active:scale-[0.99]" : ""}`;
 
   if (href && !preparing) {
+    const linkClass = `block w-full ${baseClass} flex items-center justify-center`;
+    if (fullPageRedirect) {
+      return (
+        <a href={href} className={linkClass}>
+          {label}
+        </a>
+      );
+    }
     return (
-      <Link
-        href={href}
-        className={`block w-full ${baseClass} flex items-center justify-center`}
-      >
+      <Link href={href} className={linkClass}>
         {label}
       </Link>
     );
@@ -58,6 +66,7 @@ export default function AuthButtons({
           label="카카오로 시작하기"
           className="bg-[#FEE500] text-[#191919]"
           href="/api/auth/kakao"
+          fullPageRedirect
         />
         <AuthButton
           label="Apple로 시작하기"
