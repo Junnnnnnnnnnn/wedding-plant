@@ -22,7 +22,7 @@
     "react/require-default-props": "off",
     "@typescript-eslint/camelcase": "off",
     "import/extensions": "off",
-    "no-console": "error",
+    "no-console": ["error", { "allow": ["log"] }],
     "react/no-unknown-property": [
       "error",
       {

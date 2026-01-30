@@ -1,3 +1,4 @@
+/* access_token을 사용해라 그냥 code 말고! */
 import { NextRequest, NextResponse } from "next/server";
 
 const KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
