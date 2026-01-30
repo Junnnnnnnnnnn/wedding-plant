@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import LandingHero from "../components/LandingHero";
 import CelebrationEffects from "../components/CelebrationEffects";
 import DatePickerWheel from "../components/DatePickerWheel";
@@ -11,7 +12,9 @@ import Lanyard from "../../components/Lanyard";
 
 export default function SettingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { weddingData, setBudget, setName, setDate } = useWedding();
+  const showKakaoLogin = searchParams.get("kakao_login") === "1";
   const [showFirst, setShowFirst] = useState(true);
   const [showSecond, setShowSecond] = useState(false);
   const [showThird, setShowThird] = useState(false);
@@ -207,6 +210,7 @@ export default function SettingPage() {
 
   return (
     <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6 overflow-hidden overscroll-none">
+      <KakaoLoginAlert show={showKakaoLogin} />
       <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#FFF5F2] px-6 py-8 overscroll-none">
         {(showThird || showFourth || showFifth || showSixth || showSeventh) && (
           <button

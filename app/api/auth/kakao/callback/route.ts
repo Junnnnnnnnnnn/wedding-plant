@@ -15,7 +15,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(url);
   };
 
-  const redirectToHomeWithLoginSuccess = () => redirectToHome("?kakao_login=1");
+  const redirectToSettingWithLoginSuccess = (kakaoToken: string) => {
+    const url = new URL("/setting", request.url);
+    url.search = "kakao_login=1";
+    url.hash = `kakao_token=${encodeURIComponent(kakaoToken)}`;
+    return NextResponse.redirect(url.toString());
+  };
 
   if (error) {
     return redirectToHome(
@@ -81,24 +86,7 @@ export async function GET(request: NextRequest) {
       return redirectToHome("?error=액세스_토큰이_없습니다");
     }
 
-    const res = redirectToHomeWithLoginSuccess();
-    res.cookies.set("kakao_access_token", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    });
-    if (data.refresh_token) {
-      res.cookies.set("kakao_refresh_token", data.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 30,
-        path: "/",
-      });
-    }
-    return res;
+    return redirectToSettingWithLoginSuccess(accessToken);
   } catch (e) {
     const errorMsg =
       e instanceof Error ? e.message : "토큰 처리 중 오류가 발생했습니다";

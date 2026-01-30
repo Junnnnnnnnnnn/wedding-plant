@@ -1,0 +1,108 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { getApiBaseUrl, getToken } from "@/lib/api";
+
+interface ApiContextType {
+  loading: boolean;
+  /** Same-origin 요청 (로딩 표시). 예: /api/... */
+  request: (url: string, options?: RequestInit) => Promise<Response>;
+  /** 백엔드 API 요청 (Bearer 없음, 로딩 표시). 예: 로그인 POST /plan/auth/kakao/login */
+  fetchBackend: (path: string, options?: RequestInit) => Promise<Response>;
+  /** 백엔드 API 요청. Authorization: Bearer 토큰 + 로딩 표시 */
+  fetchWithAuth: (path: string, options?: RequestInit) => Promise<Response>;
+}
+
+const ApiContext = createContext<ApiContextType | undefined>(undefined);
+
+export function ApiProvider({ children }: { children: ReactNode }) {
+  const [loading, setLoading] = useState(false);
+
+  const request = useCallback(async (url: string, options?: RequestInit) => {
+    setLoading(true);
+    try {
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          ...options?.headers,
+        },
+      });
+      return res;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const buildBackendUrl = useCallback((path: string) => {
+    const baseUrl = getApiBaseUrl();
+    return path.startsWith("http")
+      ? path
+      : `${baseUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+  }, []);
+
+  const fetchBackend = useCallback(
+    async (path: string, options?: RequestInit) => {
+      const url = buildBackendUrl(path);
+      setLoading(true);
+      try {
+        const headers: HeadersInit = {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          ...options?.headers,
+        };
+        const res = await fetch(url, { ...options, headers });
+        return res;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [buildBackendUrl],
+  );
+
+  const fetchWithAuth = useCallback(
+    async (path: string, options?: RequestInit) => {
+      const token = getToken();
+      const url = buildBackendUrl(path);
+      setLoading(true);
+      try {
+        const headers: HeadersInit = {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          ...options?.headers,
+        };
+        if (token) {
+          (headers as Record<string, string>).Authorization = `Bearer ${token}`;
+        }
+        const res = await fetch(url, { ...options, headers });
+        return res;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [buildBackendUrl],
+  );
+
+  const value = useMemo(
+    () => ({ loading, request, fetchBackend, fetchWithAuth }),
+    [loading, request, fetchBackend, fetchWithAuth],
+  );
+
+  return <ApiContext.Provider value={value}>{children}</ApiContext.Provider>;
+}
+
+export function useApi() {
+  const context = useContext(ApiContext);
+  if (context === undefined) {
+    throw new Error("useApi must be used within an ApiProvider");
+  }
+  return context;
+}

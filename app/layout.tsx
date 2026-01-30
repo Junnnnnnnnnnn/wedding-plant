@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ApiProvider } from "./contexts/ApiContext";
 import { WeddingProvider } from "./contexts/WeddingContext";
+import ApiLoadingOverlay from "@/app/components/ApiLoadingOverlay";
 import ClickSpark from "@/components/ClickSpark";
 
 const hakgyoansim = localFont({
@@ -42,15 +44,18 @@ export default function RootLayout({
       <body
         className={`${hakgyoansim.className} ${hakgyoansim.variable} ${geistMono.variable} antialiased`}
       >
-        <ClickSpark
-          sparkColor="#FFAAB8"
-          sparkSize={10}
-          sparkRadius={15}
-          sparkCount={8}
-          duration={400}
-        >
-          <WeddingProvider>{children}</WeddingProvider>
-        </ClickSpark>
+        <ApiProvider>
+          <ClickSpark
+            sparkColor="#FFAAB8"
+            sparkSize={10}
+            sparkRadius={15}
+            sparkCount={8}
+            duration={400}
+          >
+            <WeddingProvider>{children}</WeddingProvider>
+          </ClickSpark>
+          <ApiLoadingOverlay />
+        </ApiProvider>
       </body>
     </html>
   );
