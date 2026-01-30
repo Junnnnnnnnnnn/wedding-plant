@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import LandingHero from "../components/LandingHero";
@@ -10,7 +10,7 @@ import { useWedding } from "../contexts/WeddingContext";
 import CountUp from "../../components/CountUp";
 import Lanyard from "../../components/Lanyard";
 
-export default function SettingPage() {
+function SettingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { weddingData, setBudget, setName, setDate } = useWedding();
@@ -417,5 +417,17 @@ export default function SettingPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function SettingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-[100dvh] items-center justify-center bg-[#FFF5F2]" />
+      }
+    >
+      <SettingPageContent />
+    </Suspense>
   );
 }
