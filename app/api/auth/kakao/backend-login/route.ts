@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const baseUrl = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
+  const baseUrl =
+    process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
     return NextResponse.json(
       { error: "API_BASE_URL이 설정되지 않았습니다." },

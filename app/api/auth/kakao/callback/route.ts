@@ -7,7 +7,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
   const error = searchParams.get("error");
-  const errorDescription = searchParams.get("error_description");
 
   const redirectToHome = (query?: string) => {
     const url = new URL("/", request.url);
@@ -23,13 +22,11 @@ export async function GET(request: NextRequest) {
   };
 
   if (error) {
-    return redirectToHome(
-      `?error=${encodeURIComponent(errorDescription ?? error)}`,
-    );
+    return redirectToHome("?login_error=1");
   }
 
   if (!code || typeof code !== "string") {
-    return redirectToHome("?error=인증_코드가_없습니다");
+    return redirectToHome("?login_error=1");
   }
 
   const redirectUri = process.env.KAKAO_REDIRECT_URI;
@@ -47,7 +44,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (!redirectUri || !clientId) {
-    return redirectToHome("?error=인증_설정_오류");
+    return redirectToHome("?login_error=1");
   }
 
   const params = new URLSearchParams({
@@ -63,11 +60,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     const tokenRes = await fetch(KAKAO_TOKEN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params.toString(),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     const data = (await tokenRes.json()) as {
       access_token?: string;
@@ -77,19 +78,16 @@ export async function GET(request: NextRequest) {
     };
 
     if (!tokenRes.ok) {
-      const errorMsg = data.error_description ?? data.error ?? "토큰 발급 실패";
-      return redirectToHome(`?error=${encodeURIComponent(errorMsg)}`);
+      return redirectToHome("?login_error=1");
     }
 
     const accessToken = data.access_token;
     if (!accessToken) {
-      return redirectToHome("?error=액세스_토큰이_없습니다");
+      return redirectToHome("?login_error=1");
     }
 
     return redirectToSettingWithLoginSuccess(accessToken);
-  } catch (e) {
-    const errorMsg =
-      e instanceof Error ? e.message : "토큰 처리 중 오류가 발생했습니다";
-    return redirectToHome(`?error=${encodeURIComponent(errorMsg)}`);
+  } catch {
+    return redirectToHome("?login_error=1");
   }
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/app/contexts/ApiContext";
-import { setToken } from "@/lib/api";
+import { clearToken, setToken } from "@/lib/api";
 
 type KakaoLoginAlertProps = {
   show: boolean;
@@ -27,17 +27,22 @@ export default function KakaoLoginAlert({ show }: KakaoLoginAlertProps) {
     const kakaoToken = getKakaoTokenFromHash();
     if (!kakaoToken) {
       shownRef.current = true;
-      alert("카카오 토큰이 없습니다. 다시 로그인해 주세요.");
+      clearToken();
+      router.replace("/?login_error=1");
       return;
     }
 
     shownRef.current = true;
     const run = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       try {
         const res = await fetchBackend("/plan/auth/kakao/login", {
           method: "POST",
           body: JSON.stringify({ kakaoToken }),
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
         const data = (await res.json()) as {
           data?: { token?: string };
           result?: boolean;
@@ -45,16 +50,15 @@ export default function KakaoLoginAlert({ show }: KakaoLoginAlertProps) {
         };
 
         if (!res.ok) {
-          alert(
-            (data && typeof data === "object" && "error" in data
-              ? data.error
-              : "로그인 처리에 실패했습니다.") as string,
-          );
+          clearTimeout(timeoutId);
+          clearToken();
+          router.replace("/?login_error=1");
           return;
         }
 
         const token = data?.data?.token;
         if (token) {
+          clearTimeout(timeoutId);
           setToken(token);
           const url = new URL(window.location.href);
           url.searchParams.delete("kakao_login");
@@ -64,12 +68,14 @@ export default function KakaoLoginAlert({ show }: KakaoLoginAlertProps) {
             router.push("/setting");
           }
         } else {
-          alert("토큰을 받지 못했습니다.");
+          clearTimeout(timeoutId);
+          clearToken();
+          router.replace("/?login_error=1");
         }
-      } catch (e) {
-        alert(
-          `로그인 처리 중 오류\n${e instanceof Error ? e.message : String(e)}`,
-        );
+      } catch {
+        clearTimeout(timeoutId);
+        clearToken();
+        router.replace("/?login_error=1");
       }
     };
 

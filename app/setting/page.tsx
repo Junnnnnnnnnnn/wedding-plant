@@ -7,6 +7,8 @@ import LandingHero from "../components/LandingHero";
 import CelebrationEffects from "../components/CelebrationEffects";
 import DatePickerWheel from "../components/DatePickerWheel";
 import { useWedding } from "../contexts/WeddingContext";
+import { useApi } from "../contexts/ApiContext";
+import { getToken } from "@/lib/api";
 import CountUp from "../../components/CountUp";
 import Lanyard from "../../components/Lanyard";
 
@@ -14,6 +16,7 @@ function SettingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { weddingData, setBudget, setName, setDate } = useWedding();
+  const { fetchWithAuth } = useApi();
   const showKakaoLogin = searchParams.get("kakao_login") === "1";
   const [showFirst, setShowFirst] = useState(true);
   const [showSecond, setShowSecond] = useState(false);
@@ -167,7 +170,22 @@ function SettingPageContent() {
     }, 500); // fade-out 애니메이션 시간과 동일
   };
 
-  const handleGoToMain = () => {
+  const handleGoToMain = async () => {
+    if (getToken() && weddingData.date) {
+      const { year, month, day } = weddingData.date;
+      const weddingDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const res = await fetchWithAuth("/plan/setting", {
+        method: "POST",
+        body: JSON.stringify({
+          weddingDate,
+          budget: Number(weddingData.budget) || 0,
+          name: weddingData.name.trim(),
+        }),
+      });
+      if (!res.ok) {
+        await res.json().catch(() => ({}));
+      }
+    }
     router.push("/main");
   };
 
@@ -254,6 +272,7 @@ function SettingPageContent() {
               subtitleSize="text-base sm:text-lg"
             />
             <DatePickerWheel
+              initialDate={weddingData.date}
               onDateChange={handleDateChange}
               onNext={handleDateNext}
             />
