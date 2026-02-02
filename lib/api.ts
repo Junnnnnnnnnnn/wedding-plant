@@ -16,6 +16,13 @@ export function clearToken(): void {
   sessionStorage.removeItem(AUTH_TOKEN_KEY);
 }
 
+/** 세션/로컬 스토리지, 인증 등 모든 저장값 삭제 */
+export function clearAllStoredData(): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.clear();
+  localStorage.clear();
+}
+
 /** Client-side API base URL (NEXT_PUBLIC_API_BASE_URL). */
 export function getApiBaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_API_BASE_URL;

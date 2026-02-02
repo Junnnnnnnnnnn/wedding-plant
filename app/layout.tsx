@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import localFont from "next/font/local";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ApiProvider } from "./contexts/ApiContext";
 import { WeddingProvider } from "./contexts/WeddingContext";
+import ApiErrorModal from "./components/ApiErrorModal";
 import ApiLoadingOverlay from "@/app/components/ApiLoadingOverlay";
 import ClickSpark from "@/components/ClickSpark";
 
@@ -52,7 +54,12 @@ export default function RootLayout({
             sparkCount={8}
             duration={400}
           >
-            <WeddingProvider>{children}</WeddingProvider>
+            <WeddingProvider>
+              {children}
+              <Suspense fallback={null}>
+                <ApiErrorModal />
+              </Suspense>
+            </WeddingProvider>
           </ClickSpark>
           <ApiLoadingOverlay />
         </ApiProvider>

@@ -8,18 +8,142 @@ import {
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
 import { useWedding } from "../contexts/WeddingContext";
+import { useApi } from "../contexts/ApiContext";
+import { getToken, clearAllStoredData } from "@/lib/api";
+
+/** API weddingDate "YYYY-MM-DD" → { year, month, day } */
+function parseWeddingDate(
+  weddingDate?: string,
+): { year: number; month: number; day: number } | undefined {
+  if (!weddingDate || typeof weddingDate !== "string") return undefined;
+  const [y, m, d] = weddingDate.split("-").map(Number);
+  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return undefined;
+  return { year: y, month: m, day: d };
+}
+
+// 결혼식 날짜 포맷 (YYYY년 MM월 DD일 (요일))
+function formatWeddingDate(date?: {
+  year: number;
+  month: number;
+  day: number;
+}) {
+  if (!date) return null;
+  const d = new Date(date.year, date.month - 1, date.day);
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  const weekday = weekdays[d.getDay()];
+  return `${date.year}년 ${date.month}월 ${date.day}일 (${weekday})`;
+}
+
+// 결혼식 날짜로부터 오늘까지의 D-day 계산 (일 단위)
+function getDDay(weddingDate?: { year: number; month: number; day: number }) {
+  if (!weddingDate) return null;
+  const wedding = new Date(
+    weddingDate.year,
+    weddingDate.month - 1,
+    weddingDate.day,
+  );
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  wedding.setHours(0, 0, 0, 0);
+  const diffMs = wedding.getTime() - today.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
+interface PlanUserData {
+  id: string;
+  weddingDate: string;
+  budget: number;
+  name: string;
+}
 
 export default function MainPage() {
   const router = useRouter();
-  const { weddingData, user } = useWedding();
+  const { weddingData, user, resetData } = useWedding();
+  const { fetchWithAuth } = useApi();
+  const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
+    null,
+  );
+  const cancelledRef = useRef(false);
+  const fetchPlanUser = useCallback(
+    async (onApiError: () => void) => {
+      if (!getToken()) {
+        setApiPlanData("none");
+        return;
+      }
+      try {
+        const res = await fetchWithAuth("/plan/user");
+        if (cancelledRef.current) return;
+        const json = (await res.json()) as {
+          result?: boolean;
+          data?: PlanUserData;
+        };
+        if (cancelledRef.current) return;
+        if (json.result === true && json.data) {
+          setApiPlanData(json.data);
+        } else {
+          setApiPlanData("none");
+          if (!res.ok) onApiError();
+        }
+      } catch {
+        if (!cancelledRef.current) onApiError();
+      }
+    },
+    [fetchWithAuth],
+  );
+
+  const handleApiError = useCallback(() => {
+    clearAllStoredData();
+    resetData();
+    router.replace("/?api_error=1");
+  }, [resetData, router]);
+
+  // JWT 있으면 API에서 플랜 데이터 fetch
+  useEffect(() => {
+    if (!getToken()) {
+      setApiPlanData("none");
+      return;
+    }
+    cancelledRef.current = false;
+    fetchPlanUser(handleApiError);
+    // eslint-disable-next-line consistent-return -- useEffect cleanup is valid
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, [fetchPlanUser, handleApiError]);
+
+  // JWT 있으면 API 데이터, 없으면 세션 스토리지(weddingData) 사용
+  const displayData = useMemo(() => {
+    if (apiPlanData && apiPlanData !== "none") {
+      const date = parseWeddingDate(apiPlanData.weddingDate);
+      return {
+        name: apiPlanData.name ?? "",
+        budget: String(apiPlanData.budget ?? 1000),
+        date,
+      };
+    }
+    return {
+      name: weddingData.name ?? "",
+      budget: weddingData.budget ?? "1000",
+      date: weddingData.date,
+    };
+  }, [apiPlanData, weddingData]);
+
+  const dDay = useMemo(() => getDDay(displayData.date), [displayData.date]);
+  const dDayLabel = (() => {
+    if (dDay === null) return "날짜 설정";
+    if (dDay > 0) return `D-${dDay}`;
+    if (dDay === 0) return "D-Day";
+    return `D+${Math.abs(dDay)}`;
+  })();
+  const weddingDateText = formatWeddingDate(displayData.date);
 
   // 예산 관리 변수
-  // user가 null이고 setting에서 지정한 예산이 있으면 그 값을 사용, 없으면 기본값 1000
-  const initialBudget = Number(weddingData.budget) || 1000; // 초기 예산 (만원)
+  const initialBudget = Number(displayData.budget) || 1000; // 초기 예산 (만원)
   const usedBudget = 0; // 사용한 예산 (만원) - 추후 API로 받아올 예정
   const remainingBudget = initialBudget - usedBudget; // 남은 예산 실시간 계산
 
@@ -128,21 +252,36 @@ export default function MainPage() {
       <main className="flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6">
         <div className="w-full pt-8">
           {/* 상단 영역 */}
-          <div className="w-full flex items-start justify-between">
-            {/* 이름 영역 */}
+          <div className="w-full flex items-center justify-between">
+            {/* 이름 + D-day 영역 */}
             <div className="flex flex-col items-start justify-start">
-              <span className="text-[32px] font-semibold text-[#FFAAB8] leading-none">
-                좋은 하루입니다.
-              </span>
-              <span className="text-[42px] font-semibold text-[#000000] leading-none mt-2">
-                {weddingData.name || "이름"}
-              </span>
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <span className="text-[42px] font-semibold text-[#000000] leading-none">
+                  {displayData.name || "이름"}
+                </span>
+                <span
+                  className="inline-flex items-center rounded-full px-4 py-1.5 text-[18px] font-semibold leading-none shrink-0"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #ffaab8 0%, #ffd8df 100%)",
+                    color: "#fff",
+                    boxShadow: "0 2px 8px rgba(255, 170, 184, 0.35)",
+                  }}
+                >
+                  {dDayLabel}
+                </span>
+              </div>
+              {weddingDateText && (
+                <span className="mt-1.5 text-[13px] font-normal leading-tight text-gray-500">
+                  결혼식: {weddingDateText}
+                </span>
+              )}
             </div>
             {/* 프로필 이미지 영역 */}
             <button
               type="button"
               onClick={handleUserClick}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full ml-auto mt-2 cursor-pointer hover:opacity-90 transition-opacity"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full cursor-pointer hover:opacity-90 transition-opacity"
               style={{
                 background: "linear-gradient(135deg, #ffaab8 0%, #ffd8df 100%)",
               }}
