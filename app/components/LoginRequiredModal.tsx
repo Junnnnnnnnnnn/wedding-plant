@@ -27,11 +27,13 @@ export default function LoginRequiredModal({
       onClick={onClose}
       onKeyDown={(e) => e.key === "Escape" && onClose()}
     >
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        tabIndex={-1}
         aria-modal="true"
         aria-label={MESSAGE}
       >
@@ -45,7 +47,9 @@ export default function LoginRequiredModal({
             className={`${baseBtnClass} flex-col gap-0.5 bg-[#03c75a] text-white`}
           >
             <span>네이버로 로그인</span>
-            <span className="text-xs font-normal opacity-90">서비스 준비중</span>
+            <span className="text-xs font-normal opacity-90">
+              서비스 준비중
+            </span>
           </button>
           <button
             type="button"
@@ -61,7 +65,9 @@ export default function LoginRequiredModal({
             className={`${baseBtnClass} flex-col gap-0.5 bg-black text-white`}
           >
             <span>Apple로 로그인</span>
-            <span className="text-xs font-normal opacity-90">서비스 준비중</span>
+            <span className="text-xs font-normal opacity-90">
+              서비스 준비중
+            </span>
           </button>
           <button
             type="button"

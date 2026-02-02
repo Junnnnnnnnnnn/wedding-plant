@@ -75,11 +75,13 @@ export default function DatePickerModal({
         }
       }}
     >
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         className="bg-white rounded-2xl w-full max-w-sm h-[520px] flex flex-col p-6"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        tabIndex={-1}
         aria-modal="true"
         aria-label="날짜 선택"
       >

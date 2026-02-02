@@ -72,6 +72,7 @@ export default function MainPage() {
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
     null,
   );
+  const [tokenChecked, setTokenChecked] = useState(false);
   const cancelledRef = useRef(false);
   const fetchPlanUser = useCallback(
     async (onApiError: () => void) => {
@@ -106,9 +107,10 @@ export default function MainPage() {
     router.replace("/?api_error=1");
   }, [resetData, router]);
 
-  // /main 접속 시 JWT가 존재하면 무조건 GET /plan/user 호출
+  // /main 접속 시 JWT가 존재하면 무조건 GET /plan/user 호출 (토큰 확인 후에만 실제 데이터 표시)
   useEffect(() => {
     const token = getToken();
+    setTokenChecked(true);
     if (!token) {
       setApiPlanData("none");
       return;
@@ -138,6 +140,10 @@ export default function MainPage() {
       date: weddingData.date,
     };
   }, [apiPlanData, weddingData]);
+
+  const isPlanLoading = Boolean(
+    !tokenChecked || (getToken() && apiPlanData === null),
+  );
 
   const dDay = useMemo(() => getDDay(displayData.date), [displayData.date]);
   const dDayLabel = (() => {
@@ -261,94 +267,158 @@ export default function MainPage() {
         <div className="w-full pt-8">
           {/* 상단 영역 */}
           <div className="w-full flex items-center justify-between">
-            {/* 이름 + D-day 영역 */}
+            {/* 이름 + D-day 영역 (로딩 시 스켈레톤) */}
             <div className="flex flex-col items-start justify-start">
-              <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="text-[42px] font-semibold text-[#000000] leading-none">
-                  {displayData.name || "이름"}
-                </span>
-                <span
-                  className="inline-flex items-center rounded-full px-4 py-1.5 text-[18px] font-semibold leading-none shrink-0"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #ffaab8 0%, #ffd8df 100%)",
-                    color: "#fff",
-                    boxShadow: "0 2px 8px rgba(255, 170, 184, 0.35)",
-                  }}
-                >
-                  {dDayLabel}
-                </span>
-              </div>
-              {weddingDateText && (
-                <span className="mt-1.5 text-[13px] font-normal leading-tight text-gray-500">
-                  결혼식: {weddingDateText}
-                </span>
+              {isPlanLoading ? (
+                <>
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <span
+                      className="skeleton-shimmer h-[42px] w-[120px] rounded-lg"
+                      aria-hidden
+                    />
+                    <span
+                      className="skeleton-shimmer h-8 w-[98px] shrink-0 rounded-full"
+                      aria-hidden
+                    />
+                  </div>
+                  <span
+                    className="skeleton-shimmer mt-1.5 block h-4 w-[152px] rounded"
+                    aria-hidden
+                  />
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <span className="text-[42px] font-semibold text-[#000000] leading-none">
+                      {displayData.name || "이름"}
+                    </span>
+                    <span
+                      className="inline-flex items-center rounded-full px-4 py-1.5 text-[18px] font-semibold leading-none shrink-0"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #ffaab8 0%, #ffd8df 100%)",
+                        color: "#fff",
+                        boxShadow: "0 2px 8px rgba(255, 170, 184, 0.35)",
+                      }}
+                    >
+                      {dDayLabel}
+                    </span>
+                  </div>
+                  {weddingDateText && (
+                    <span className="mt-1.5 text-[13px] font-normal leading-tight text-gray-500">
+                      결혼식: {weddingDateText}
+                    </span>
+                  )}
+                </>
               )}
             </div>
-            {/* 프로필 이미지 영역 */}
-            <button
-              type="button"
-              onClick={handleUserClick}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full cursor-pointer hover:opacity-90 transition-opacity"
-              style={{
-                background: "linear-gradient(135deg, #ffaab8 0%, #ffd8df 100%)",
-              }}
-            >
-              <User className="h-6 w-6 text-white" strokeWidth={2} />
-            </button>
+            {/* 프로필 이미지 영역 (로딩 시 스켈레톤 시머) */}
+            {isPlanLoading ? (
+              <span
+                className="skeleton-shimmer h-12 w-12 shrink-0 rounded-full"
+                aria-hidden
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={handleUserClick}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full cursor-pointer hover:opacity-90 transition-opacity"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #ffaab8 0%, #ffd8df 100%)",
+                }}
+              >
+                <User className="h-6 w-6 text-white" strokeWidth={2} />
+              </button>
+            )}
           </div>
-          {/* TodayFocus - Figma 20:206 */}
+          {/* TodayFocus - 로딩 시 요소별 스켈레톤 */}
           <div className="mt-4 w-full">
-            <div
-              className="flex w-full flex-col rounded-[24px] p-6"
-              style={{
-                background: budgetGradient,
-              }}
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/30">
-                  <CircleDollarSign
-                    className="h-5 w-5 text-white"
-                    strokeWidth={2}
+            {isPlanLoading ? (
+              <div className="flex w-full flex-col rounded-[24px] border-2 border-stone-200/50 bg-white/50 p-6">
+                <div className="flex items-start gap-3">
+                  <span
+                    className="skeleton-shimmer h-10 w-10 shrink-0 rounded-full"
+                    aria-hidden
                   />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold leading-5 text-white">
-                    남은 예산
-                  </p>
-                  <p className="my-3 text-[42px] font-semibold leading-7 text-white">
-                    <CountUp
-                      to={remainingBudget}
-                      separator=","
-                      duration={0.1}
-                      className="inline"
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <span
+                      className="skeleton-shimmer block h-5 w-20 rounded"
+                      aria-hidden
                     />
-                    만 원
-                  </p>
+                    <span
+                      className="skeleton-shimmer block h-[42px] w-28 rounded"
+                      aria-hidden
+                    />
+                  </div>
                 </div>
-              </div>
-              <p className="mt-1 pl-[52px] py-2 text-xl font-semibold leading-none text-white">
-                예산 중{" "}
-                <CountUp
-                  to={usedBudget}
-                  separator=","
-                  duration={0.1}
-                  className="inline"
+                <span
+                  className="skeleton-shimmer mt-4 block h-6 w-48 rounded"
+                  aria-hidden
                 />
-                만 원 지출 예정
-              </p>
-              <div className="mt-4 flex items-center gap-2">
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
-                  <div
-                    className="h-full rounded-full bg-white"
-                    style={{ width: `${budgetUsagePercentage}%` }}
+                <div className="mt-4 flex items-center gap-2">
+                  <span
+                    className="skeleton-shimmer h-2 flex-1 rounded-full"
+                    aria-hidden
+                  />
+                  <span
+                    className="skeleton-shimmer h-4 w-8 shrink-0 rounded"
+                    aria-hidden
                   />
                 </div>
-                <span className="shrink-0 text-sm font-normal leading-5 text-white">
-                  {budgetUsagePercentage}%
-                </span>
               </div>
-            </div>
+            ) : (
+              <div
+                className="flex w-full flex-col rounded-[24px] p-6"
+                style={{
+                  background: budgetGradient,
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/30">
+                    <CircleDollarSign
+                      className="h-5 w-5 text-white"
+                      strokeWidth={2}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold leading-5 text-white">
+                      남은 예산
+                    </p>
+                    <p className="my-3 text-[42px] font-semibold leading-7 text-white">
+                      <CountUp
+                        to={remainingBudget}
+                        separator=","
+                        duration={0.1}
+                        className="inline"
+                      />
+                      만 원
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-1 pl-[52px] py-2 text-xl font-semibold leading-none text-white">
+                  예산 중{" "}
+                  <CountUp
+                    to={usedBudget}
+                    separator=","
+                    duration={0.1}
+                    className="inline"
+                  />
+                  만 원 지출 예정
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
+                    <div
+                      className="h-full rounded-full bg-white"
+                      style={{ width: `${budgetUsagePercentage}%` }}
+                    />
+                  </div>
+                  <span className="shrink-0 text-sm font-normal leading-5 text-white">
+                    {budgetUsagePercentage}%
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <div className="w-full mt-8 pb-24">
@@ -356,9 +426,16 @@ export default function MainPage() {
           <div className="flex justify-between">
             <div className="flex flex-col items-start justify-start">
               <span className="text-lg font-semibold">플랜 가이드</span>
-              <span className="text-lg text-gray-500">
-                {budgetPlans.length}개의 플랜이 있어요
-              </span>
+              {isPlanLoading ? (
+                <span
+                  className="skeleton-shimmer mt-0.5 block h-5 w-32 rounded"
+                  aria-hidden
+                />
+              ) : (
+                <span className="text-lg text-gray-500">
+                  {budgetPlans.length}개의 플랜이 있어요
+                </span>
+              )}
             </div>
             <button
               type="button"
@@ -371,72 +448,99 @@ export default function MainPage() {
             </button>
           </div>
           <ul className="mt-4 w-full flex flex-col gap-3">
-            {budgetPlans.map((plan) => {
-              const isChecked = checkedItems.has(plan.id);
-              return (
-                <li
-                  key={plan.id}
-                  className="flex items-center gap-4 rounded-[20px] bg-white p-4"
-                >
-                  {/* 체크박스 버튼 */}
-                  <button
-                    type="button"
-                    onClick={() => handleToggleCheck(plan.id)}
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:opacity-80 ${
-                      isChecked
-                        ? "bg-[#ffaab8] border-[#ffaab8]"
-                        : "bg-white border-[#ffaab8]"
-                    }`}
+            {isPlanLoading
+              ? ["a", "b", "c", "d", "e"].map((id) => (
+                  <li
+                    key={`skeleton-plan-${id}`}
+                    className="flex items-center gap-4 rounded-[20px] bg-white p-4"
                   >
-                    {isChecked && (
-                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
-                    )}
-                  </button>
-                  {/* 텍스트 영역 */}
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-[15px] font-normal leading-[22.5px] ${
-                        isChecked ? "line-through" : ""
-                      }`}
-                      style={{
-                        color: isChecked ? "#99a1af" : "#2D5016",
-                      }}
-                    >
-                      {plan.title}
-                    </p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Calendar className="h-3.5 w-3.5 text-[#6a7282]" />
-                      {(() => {
-                        const { dateText, weekday } = formatDate(plan.date);
-                        return (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[13px] font-normal leading-[19.5px] text-[#6a7282]">
-                              {dateText}
-                            </span>
-                            <span className="text-[13px] font-normal leading-[19.5px] text-[#99a1af]">
-                              ({weekday})
-                            </span>
-                          </div>
-                        );
-                      })()}
+                    <span
+                      className="skeleton-shimmer h-6 w-6 shrink-0 rounded-full"
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <span
+                        className="skeleton-shimmer block h-[22px] max-w-[200px] rounded"
+                        style={{ width: "75%" }}
+                        aria-hidden
+                      />
+                      <span
+                        className="skeleton-shimmer block h-4 w-32 rounded"
+                        aria-hidden
+                      />
                     </div>
-                  </div>
-                  {/* 가격과 작은 점 */}
-                  <div className="flex shrink-0 items-center gap-2">
-                    {plan.price > 0 ? (
-                      <span className="text-[15px] font-semibold leading-[22.5px] text-black whitespace-nowrap">
-                        {plan.price.toLocaleString()}원
-                      </span>
-                    ) : (
-                      <span className="text-[15px] font-normal leading-[22.5px] text-[#99a1af] whitespace-nowrap">
-                        미정
-                      </span>
-                    )}
-                    <div className="h-2 w-2 rounded-full bg-[#ffaab8]" />
-                  </div>
-                </li>
-              );
-            })}
+                    <span
+                      className="skeleton-shimmer h-5 w-16 shrink-0 rounded"
+                      aria-hidden
+                    />
+                  </li>
+                ))
+              : budgetPlans.map((plan) => {
+                  const isChecked = checkedItems.has(plan.id);
+                  return (
+                    <li
+                      key={plan.id}
+                      className="flex items-center gap-4 rounded-[20px] bg-white p-4"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleToggleCheck(plan.id)}
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:opacity-80 ${
+                          isChecked
+                            ? "bg-[#ffaab8] border-[#ffaab8]"
+                            : "bg-white border-[#ffaab8]"
+                        }`}
+                      >
+                        {isChecked && (
+                          <Check
+                            className="h-3 w-3 text-white"
+                            strokeWidth={3}
+                          />
+                        )}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-[15px] font-normal leading-[22.5px] ${
+                            isChecked ? "line-through" : ""
+                          }`}
+                          style={{
+                            color: isChecked ? "#99a1af" : "#2D5016",
+                          }}
+                        >
+                          {plan.title}
+                        </p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-[#6a7282]" />
+                          {(() => {
+                            const { dateText, weekday } = formatDate(plan.date);
+                            return (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[13px] font-normal leading-[19.5px] text-[#6a7282]">
+                                  {dateText}
+                                </span>
+                                <span className="text-[13px] font-normal leading-[19.5px] text-[#99a1af]">
+                                  ({weekday})
+                                </span>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {plan.price > 0 ? (
+                          <span className="text-[15px] font-semibold leading-[22.5px] text-black whitespace-nowrap">
+                            {plan.price.toLocaleString()}원
+                          </span>
+                        ) : (
+                          <span className="text-[15px] font-normal leading-[22.5px] text-[#99a1af] whitespace-nowrap">
+                            미정
+                          </span>
+                        )}
+                        <div className="h-2 w-2 rounded-full bg-[#ffaab8]" />
+                      </div>
+                    </li>
+                  );
+                })}
           </ul>
         </div>
       </main>

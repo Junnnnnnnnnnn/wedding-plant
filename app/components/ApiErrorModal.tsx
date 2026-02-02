@@ -40,11 +40,13 @@ export default function ApiErrorModal() {
       onClick={handleClose}
       onKeyDown={(e) => e.key === "Escape" && handleClose()}
     >
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        tabIndex={-1}
         aria-modal="true"
         aria-label={API_ERROR_MESSAGE}
       >

@@ -41,7 +41,7 @@ function loadWeddingData(): WeddingData {
     return { budget: "1000", name: "" };
   }
   try {
-    let raw = sessionStorage.getItem(WEDDING_DATA_KEY);
+    const raw = sessionStorage.getItem(WEDDING_DATA_KEY);
     let parsed: Record<string, unknown> | null = null;
 
     if (raw) {
@@ -166,7 +166,7 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
       setUser,
       resetData,
     }),
-    [weddingData, user],
+    [weddingData, user, setBudget, setName, setDate, setUser, resetData],
   );
 
   return (

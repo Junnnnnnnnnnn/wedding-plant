@@ -17,11 +17,13 @@ export default function LoggedInModal({ show, onClose }: LoggedInModalProps) {
       onClick={onClose}
       onKeyDown={(e) => e.key === "Escape" && onClose()}
     >
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        tabIndex={-1}
         aria-modal="true"
         aria-label={MESSAGE}
       >
