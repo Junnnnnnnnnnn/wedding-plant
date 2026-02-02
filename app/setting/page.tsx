@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
@@ -10,7 +11,16 @@ import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import { getToken } from "@/lib/api";
 import CountUp from "../../components/CountUp";
-import Lanyard from "../../components/Lanyard";
+
+// 3D(WebGL)는 클라이언트에서만 로드해 Context Lost·엑스박스 방지
+const Lanyard = dynamic(() => import("../../components/Lanyard"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-[100dvh] w-full items-center justify-center bg-[#FFF5F2]">
+      <span className="text-stone-500">출입증 준비 중...</span>
+    </div>
+  ),
+});
 
 function SettingPageContent() {
   const router = useRouter();
@@ -391,9 +401,9 @@ function SettingPageContent() {
         )}
         {showLanyard && (
           <div
-            className={`${isLanyardFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+            className={`absolute inset-0 z-40 min-h-[100dvh] ${isLanyardFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
           >
-            <div className="absolute inset-0 z-40">
+            <div className="absolute inset-0 min-h-[100dvh]">
               <Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
             </div>
             <button
