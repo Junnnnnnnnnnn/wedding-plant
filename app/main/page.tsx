@@ -7,10 +7,13 @@ import {
   CirclePlus,
   User,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
+import KakaoLoginAlert from "../components/KakaoLoginAlert";
+import ProfileEditModal from "../components/ProfileEditModal";
+import LoginRequiredModal from "../components/LoginRequiredModal";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import { getToken, clearAllStoredData } from "@/lib/api";
@@ -63,7 +66,8 @@ interface PlanUserData {
 
 export default function MainPage() {
   const router = useRouter();
-  const { weddingData, user, resetData } = useWedding();
+  const searchParams = useSearchParams();
+  const { weddingData, resetData } = useWedding();
   const { fetchWithAuth } = useApi();
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
     null,
@@ -102,9 +106,10 @@ export default function MainPage() {
     router.replace("/?api_error=1");
   }, [resetData, router]);
 
-  // JWT 있으면 API에서 플랜 데이터 fetch
+  // /main 접속 시 JWT가 존재하면 무조건 GET /plan/user 호출
   useEffect(() => {
-    if (!getToken()) {
+    const token = getToken();
+    if (!token) {
       setApiPlanData("none");
       return;
     }
@@ -116,7 +121,7 @@ export default function MainPage() {
     };
   }, [fetchPlanUser, handleApiError]);
 
-  // JWT 있으면 API 데이터, 없으면 세션 스토리지(weddingData) 사용
+  // JWT 있으면 GET /plan/user 결과(apiPlanData) 사용, 없으면 세션 스토리지(weddingData) 데이터 적용
   const displayData = useMemo(() => {
     if (apiPlanData && apiPlanData !== "none") {
       const date = parseWeddingDate(apiPlanData.weddingDate);
@@ -126,6 +131,7 @@ export default function MainPage() {
         date,
       };
     }
+    // JWT 없음 → 세션 스토리지에 있는 이름·날짜·예산 적용
     return {
       name: weddingData.name ?? "",
       budget: weddingData.budget ?? "1000",
@@ -220,6 +226,8 @@ export default function MainPage() {
 
   // 각 계획의 체크 상태 관리
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  const [showProfileEditModal, setShowProfileEditModal] = useState(false);
 
   // 체크박스 토글 핸들러
   const handleToggleCheck = (id: number) => {
@@ -234,21 +242,21 @@ export default function MainPage() {
     });
   };
 
-  // User 버튼 클릭 핸들러
+  // 프로필 버튼 클릭 핸들러
   const handleUserClick = () => {
-    if (!user) {
-      // TODO: 추후 회원가입/로그인 모달이나 페이지로 이동
-      // eslint-disable-next-line no-alert
-      alert("로그인이 필요합니다. 회원가입 또는 로그인을 해주세요.");
+    if (getToken()) {
+      setShowProfileEditModal(true);
     } else {
-      // TODO: 추후 마이페이지나 설정 페이지로 이동
-      // eslint-disable-next-line no-alert
-      alert(`${user.name}님 환영합니다!`);
+      setShowLoginRequiredModal(true);
     }
   };
 
   return (
     <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6">
+      <KakaoLoginAlert
+        show={searchParams.get("kakao_login") === "1"}
+        onSuccessFromMain={() => fetchPlanUser(handleApiError)}
+      />
       <main className="flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6">
         <div className="w-full pt-8">
           {/* 상단 영역 */}
@@ -446,6 +454,20 @@ export default function MainPage() {
           }
           // TODO: 나머지 탭들은 나중에 처리
         }}
+      />
+      <LoginRequiredModal
+        show={showLoginRequiredModal}
+        onClose={() => setShowLoginRequiredModal(false)}
+      />
+      <ProfileEditModal
+        show={showProfileEditModal}
+        onClose={() => setShowProfileEditModal(false)}
+        displayData={{
+          name: displayData.name,
+          date: displayData.date,
+          budget: displayData.budget,
+        }}
+        onSaved={() => fetchPlanUser(handleApiError)}
       />
     </div>
   );

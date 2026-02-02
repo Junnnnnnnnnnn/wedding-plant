@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const KAKAO_AUTHORIZE_URL = "https://kauth.kakao.com/oauth/authorize";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const redirectUri = process.env.KAKAO_REDIRECT_URI;
   const clientId = process.env.KAKAO_REST_API_KEY;
 
@@ -16,6 +16,9 @@ export async function GET() {
     );
   }
 
+  const from = request.nextUrl.searchParams.get("from");
+  const state = from === "main" ? "main" : "";
+
   // 개발 환경에서만 로그 출력 (디버깅용)
   if (process.env.NODE_ENV === "development") {
     console.log("카카오 인증 Redirect URI:", redirectUri);
@@ -28,6 +31,7 @@ export async function GET() {
     response_type: "code",
     locale: "ko_KR", // 카카오 로그인 페이지를 한글로 표시
   });
+  if (state) params.set("state", state);
 
   const url = `${KAKAO_AUTHORIZE_URL}?${params.toString()}`;
   return NextResponse.redirect(url);

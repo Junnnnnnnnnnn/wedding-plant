@@ -14,8 +14,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(url);
   };
 
-  const redirectToSettingWithLoginSuccess = (kakaoToken: string) => {
-    const url = new URL("/setting", request.url);
+  const redirectWithLoginSuccess = (
+    kakaoToken: string,
+    state: string | null,
+  ) => {
+    const path = state === "main" ? "/main" : "/setting";
+    const url = new URL(path, request.url);
     url.search = "kakao_login=1";
     url.hash = `kakao_token=${encodeURIComponent(kakaoToken)}`;
     return NextResponse.redirect(url.toString());
@@ -86,7 +90,8 @@ export async function GET(request: NextRequest) {
       return redirectToHome("?login_error=1");
     }
 
-    return redirectToSettingWithLoginSuccess(accessToken);
+    const state = searchParams.get("state");
+    return redirectWithLoginSuccess(accessToken, state);
   } catch {
     return redirectToHome("?login_error=1");
   }
