@@ -18,6 +18,7 @@ import GuestPlanLimitModal from "../components/GuestPlanLimitModal";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import { getToken, clearAllStoredData } from "@/lib/api";
+import { useScrollDirection } from "../hooks/useScrollDirection";
 
 /** API weddingDate "YYYY-MM-DD" → { year, month, day } */
 function parseWeddingDate(
@@ -236,6 +237,8 @@ export default function MainPage() {
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [showProfileEditModal, setShowProfileEditModal] = useState(false);
   const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
+  const mainScrollRef = useRef<HTMLElement>(null);
+  const scrollDirection = useScrollDirection(mainScrollRef);
 
   // 체크박스 토글 핸들러
   const handleToggleCheck = (id: number) => {
@@ -265,7 +268,10 @@ export default function MainPage() {
         show={searchParams.get("kakao_login") === "1"}
         onSuccessFromMain={() => fetchPlanUser(handleApiError)}
       />
-      <main className="flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6">
+      <main
+        ref={mainScrollRef}
+        className="flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6"
+      >
         <div className="w-full pt-8">
           {/* 상단 영역 */}
           <div className="w-full flex items-center justify-between">
@@ -555,6 +561,13 @@ export default function MainPage() {
       {/* 하단 탭바 - Sticky로 최상단에 고정 */}
       <BottomTabBar
         activeTab="home"
+        showLoginButton={
+          !getToken() &&
+          !showGuestPlanLimitModal &&
+          !showLoginRequiredModal
+        }
+        onLoginClick={() => setShowLoginRequiredModal(true)}
+        scrollDirection={scrollDirection}
         onTabClick={(tab) => {
           if (tab === "home") {
             // 이미 /main 페이지에 있으면 새로고침, 아니면 이동

@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import BottomTabBar from "../components/BottomTabBar";
+import LoginRequiredModal from "../components/LoginRequiredModal";
+import { getToken } from "@/lib/api";
+import { useScrollDirection } from "../hooks/useScrollDirection";
 import DatePickerModal from "../components/DatePickerModal";
 import { useWedding } from "../contexts/WeddingContext";
 
@@ -60,6 +63,9 @@ export default function AddPlanPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const newCategoryInputRef = useRef<HTMLInputElement>(null);
+  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  const mainScrollRef = useRef<HTMLElement>(null);
+  const scrollDirection = useScrollDirection(mainScrollRef);
 
   /**
    * ============================================================================
@@ -577,7 +583,10 @@ export default function AddPlanPage() {
 
   return (
     <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6">
-      <main className="relative flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6 pt-6 pb-24">
+      <main
+        ref={mainScrollRef}
+        className="relative flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6 pt-6 pb-24"
+      >
         {/* 뒤로가기 버튼 */}
         <button
           type="button"
@@ -1145,12 +1154,21 @@ export default function AddPlanPage() {
       {/* 하단 탭바 - Sticky로 최상단에 고정 */}
       <BottomTabBar
         activeTab="home"
+        showLoginButton={
+          !getToken() && !showLoginRequiredModal
+        }
+        onLoginClick={() => setShowLoginRequiredModal(true)}
+        scrollDirection={scrollDirection}
         onTabClick={(tab) => {
           if (tab === "home") {
             router.push("/main");
           }
           // TODO: 나머지 탭들은 나중에 처리
         }}
+      />
+      <LoginRequiredModal
+        show={showLoginRequiredModal}
+        onClose={() => setShowLoginRequiredModal(false)}
       />
 
       {/* 카테고리 선택 모달 */}
