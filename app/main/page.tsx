@@ -8,7 +8,7 @@ import {
   User,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { Suspense, useState, useMemo, useEffect, useRef, useCallback } from "react";
 import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
@@ -66,7 +66,7 @@ interface PlanUserData {
   name: string;
 }
 
-export default function MainPage() {
+function MainPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { weddingData, resetData } = useWedding();
@@ -598,5 +598,17 @@ export default function MainPage() {
         onSaved={() => fetchPlanUser(handleApiError)}
       />
     </div>
+  );
+}
+
+export default function MainPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-[100dvh] items-center justify-center bg-[#FFF5F2]" />
+      }
+    >
+      <MainPageContent />
+    </Suspense>
   );
 }
