@@ -14,6 +14,7 @@ import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import ProfileEditModal from "../components/ProfileEditModal";
 import LoginRequiredModal from "../components/LoginRequiredModal";
+import GuestPlanLimitModal from "../components/GuestPlanLimitModal";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import { getToken, clearAllStoredData } from "@/lib/api";
@@ -234,6 +235,7 @@ export default function MainPage() {
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [showProfileEditModal, setShowProfileEditModal] = useState(false);
+  const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
 
   // 체크박스 토글 핸들러
   const handleToggleCheck = (id: number) => {
@@ -385,7 +387,7 @@ export default function MainPage() {
                     <p className="text-sm font-semibold leading-5 text-white">
                       남은 예산
                     </p>
-                    <p className="my-3 text-[42px] font-semibold leading-7 text-white">
+                    <p className="my-3 text-[42px] max-[350px]:text-[37px] font-semibold leading-7 text-white">
                       <CountUp
                         to={remainingBudget}
                         separator=","
@@ -396,7 +398,7 @@ export default function MainPage() {
                     </p>
                   </div>
                 </div>
-                <p className="mt-1 pl-[52px] py-2 text-xl font-semibold leading-none text-white">
+                <p className="mt-1 pl-[52px] py-2 text-xl max-[350px]:text-[15px] font-semibold leading-none text-white">
                   예산 중{" "}
                   <CountUp
                     to={usedBudget}
@@ -439,7 +441,13 @@ export default function MainPage() {
             </div>
             <button
               type="button"
-              onClick={() => router.push("/add-plen")}
+              onClick={() => {
+                if (getToken()) {
+                  router.push("/add-plen");
+                } else {
+                  setShowGuestPlanLimitModal(true);
+                }
+              }}
               className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-semibold text-lg transition-colors shadow-md hover:opacity-90 active:opacity-80"
               style={{ backgroundColor: "#FFAAB8" }}
             >
@@ -500,7 +508,7 @@ export default function MainPage() {
                       </button>
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`text-[15px] font-normal leading-[22.5px] ${
+                          className={`text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-normal leading-[22.5px] ${
                             isChecked ? "line-through" : ""
                           }`}
                           style={{
@@ -515,10 +523,10 @@ export default function MainPage() {
                             const { dateText, weekday } = formatDate(plan.date);
                             return (
                               <div className="flex items-center gap-1.5">
-                                <span className="text-[13px] font-normal leading-[19.5px] text-[#6a7282]">
+                                <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#6a7282]">
                                   {dateText}
                                 </span>
-                                <span className="text-[13px] font-normal leading-[19.5px] text-[#99a1af]">
+                                <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#99a1af]">
                                   ({weekday})
                                 </span>
                               </div>
@@ -528,11 +536,11 @@ export default function MainPage() {
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         {plan.price > 0 ? (
-                          <span className="text-[15px] font-semibold leading-[22.5px] text-black whitespace-nowrap">
+                          <span className="text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] text-black whitespace-nowrap">
                             {plan.price.toLocaleString()}원
                           </span>
                         ) : (
-                          <span className="text-[15px] font-normal leading-[22.5px] text-[#99a1af] whitespace-nowrap">
+                          <span className="text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-normal leading-[22.5px] text-[#99a1af] whitespace-nowrap">
                             미정
                           </span>
                         )}
@@ -562,6 +570,11 @@ export default function MainPage() {
       <LoginRequiredModal
         show={showLoginRequiredModal}
         onClose={() => setShowLoginRequiredModal(false)}
+      />
+      <GuestPlanLimitModal
+        show={showGuestPlanLimitModal}
+        onClose={() => setShowGuestPlanLimitModal(false)}
+        onConfirm={() => router.push("/add-plen")}
       />
       <ProfileEditModal
         show={showProfileEditModal}
