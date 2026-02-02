@@ -12,7 +12,7 @@ const SCROLL_THRESHOLD = 10;
  * 'up' = user scrolled up (show login button)
  */
 export function useScrollDirection(
-  scrollRef: React.RefObject<HTMLElement | null>
+  scrollRef: React.RefObject<HTMLElement | null>,
 ): ScrollDirection {
   const [direction, setDirection] = useState<ScrollDirection>(null);
   const lastScrollTop = useRef(0);
@@ -27,7 +27,7 @@ export function useScrollDirection(
       if (!ticking.current) {
         window.requestAnimationFrame(() => {
           if (!scrollRef.current) return;
-          const scrollTop = scrollRef.current.scrollTop;
+          const { scrollTop } = scrollRef.current;
           const delta = scrollTop - lastScrollTop.current;
 
           if (Math.abs(delta) > SCROLL_THRESHOLD) {

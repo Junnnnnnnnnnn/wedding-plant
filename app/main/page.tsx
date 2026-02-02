@@ -562,9 +562,7 @@ export default function MainPage() {
       <BottomTabBar
         activeTab="home"
         showLoginButton={
-          !getToken() &&
-          !showGuestPlanLimitModal &&
-          !showLoginRequiredModal
+          !getToken() && !showGuestPlanLimitModal && !showLoginRequiredModal
         }
         onLoginClick={() => setShowLoginRequiredModal(true)}
         scrollDirection={scrollDirection}

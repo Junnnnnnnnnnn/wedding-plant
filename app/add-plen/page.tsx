@@ -7,7 +7,7 @@ import LoginRequiredModal from "../components/LoginRequiredModal";
 import { getToken } from "@/lib/api";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import DatePickerModal from "../components/DatePickerModal";
-import { useWedding } from "../contexts/WeddingContext";
+import { useApi } from "../contexts/ApiContext";
 
 // Kakao Maps API 타입 선언
 declare global {
@@ -17,9 +17,16 @@ declare global {
   }
 }
 
+/** 결제 유형 → API payType */
+const PAY_TYPE_MAP: Record<"현금" | "카드" | "기타", string> = {
+  현금: "CASH",
+  카드: "CREDIT",
+  기타: "ETC",
+};
+
 export default function AddPlanPage() {
   const router = useRouter();
-  const { user } = useWedding();
+  const { fetchWithAuth } = useApi();
   const [inputValue, setInputValue] = useState("");
   const [searchResults, setSearchResults] = useState<
     Array<{ color: string; label: string }>
@@ -64,6 +71,19 @@ export default function AddPlanPage() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const newCategoryInputRef = useRef<HTMLInputElement>(null);
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showDuplicateCategoryModal, setShowDuplicateCategoryModal] =
+    useState(false);
+  const [duplicateCategoryLabel, setDuplicateCategoryLabel] = useState<
+    string | null
+  >(null);
+  const [highlightCategoryLabel, setHighlightCategoryLabel] = useState<
+    string | null
+  >(null);
+  const highlightedCategoryRef = useRef<HTMLDivElement>(null);
+  const [userAddedCategories, setUserAddedCategories] = useState<
+    Array<{ color: string; label: string }>
+  >([]);
   const mainScrollRef = useRef<HTMLElement>(null);
   const scrollDirection = useScrollDirection(mainScrollRef);
 
@@ -247,6 +267,18 @@ export default function AddPlanPage() {
     [],
   );
 
+  /** 모달 그리드용: 기본 카테고리 + 사용자 추가 카테고리 */
+  const categoriesForModal = useMemo(
+    () => [...allCategories, ...userAddedCategories],
+    [allCategories, userAddedCategories],
+  );
+
+  /** 사용자 추가 카테고리 라벨 집합 (my 뱃지 표시용) */
+  const userAddedLabels = useMemo(
+    () => new Set(userAddedCategories.map((c) => c.label)),
+    [userAddedCategories],
+  );
+
   /**
    * ============================================================================
    * 로컬 검색 함수 (임시 - OpenSearch 연동 전까지만 사용)
@@ -298,18 +330,15 @@ export default function AddPlanPage() {
    */
   useEffect(() => {
     if (inputValue.trim()) {
-      // input에 값이 있으면 검색 실행
       const inputText = inputValue.trim().toLowerCase();
-      const results = allCategories.filter((category) =>
-        // 입력 텍스트에 카테고리 label이 포함되어 있는지 확인
+      const results = categoriesForModal.filter((category) =>
         inputText.includes(category.label.toLowerCase()),
       );
       setSearchResults(results);
     } else {
-      // input이 비어있으면 검색 결과 초기화
       setSearchResults([]);
     }
-  }, [inputValue, allCategories]);
+  }, [inputValue, categoriesForModal]);
 
   // 마우스 드래그로 슬라이드 기능
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -375,10 +404,10 @@ export default function AddPlanPage() {
   };
 
   const handleStartAddingCategory = () => {
-    // 로그인 여부 확인
-    if (!user) {
-      // eslint-disable-next-line no-alert
-      alert("로그인이 필요한 서비스입니다.");
+    // JWT(로그인) 여부 확인
+    if (!getToken()) {
+      handleCloseModal();
+      setShowLoginRequiredModal(true);
       return;
     }
     setIsAddingCategory(true);
@@ -391,27 +420,51 @@ export default function AddPlanPage() {
   };
 
   const handleCompleteAddingCategory = () => {
-    if (newCategoryName.trim()) {
-      // 기존 카테고리 색상 중 랜덤 선택
-      const colors = [
-        "#FFE4E9",
-        "#FFE5D9",
-        "#E8DDF5",
-        "#D5F0E5",
-        "#FFF0D6",
-        "#D4EBF7",
-      ];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
 
-      const newCategory = {
-        color: randomColor,
-        label: newCategoryName.trim(),
-      };
-      setSelectedCategory(newCategory);
-      setIsModalOpen(false);
+    // 기존 카테고리·사용자 추가 카테고리와 이름 중복 검사
+    const existsInAll = allCategories.some(
+      (c) => c.label.toLowerCase() === trimmed.toLowerCase(),
+    );
+    const existsInUser = userAddedCategories.some(
+      (c) => c.label.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (existsInAll || existsInUser) {
+      const existingLabel =
+        allCategories.find(
+          (c) => c.label.toLowerCase() === trimmed.toLowerCase(),
+        )?.label ??
+        userAddedCategories.find(
+          (c) => c.label.toLowerCase() === trimmed.toLowerCase(),
+        )?.label ??
+        trimmed;
+      setDuplicateCategoryLabel(existingLabel);
+      setShowDuplicateCategoryModal(true);
       setIsAddingCategory(false);
       setNewCategoryName("");
+      return;
     }
+
+    const colors = [
+      "#FFE4E9",
+      "#FFE5D9",
+      "#E8DDF5",
+      "#D5F0E5",
+      "#FFF0D6",
+      "#D4EBF7",
+    ];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+    const newCategory = {
+      color: randomColor,
+      label: trimmed,
+    };
+    setUserAddedCategories((prev) => [...prev, newCategory]);
+    setSelectedCategory(newCategory);
+    setIsModalOpen(false);
+    setIsAddingCategory(false);
+    setNewCategoryName("");
   };
 
   const handleNewCategoryKeyDown = (
@@ -443,6 +496,35 @@ export default function AddPlanPage() {
       newCategoryInputRef.current.focus();
     }
   }, [isAddingCategory]);
+
+  // "이미 존재합니다" 모달 닫기 → 중복 카테고리 위치로 스크롤 후 밝은 분홍 보더
+  const handleCloseDuplicateModal = () => {
+    const label = duplicateCategoryLabel;
+    setShowDuplicateCategoryModal(false);
+    setDuplicateCategoryLabel(null);
+    if (label) {
+      setHighlightCategoryLabel(label);
+    }
+  };
+
+  // 하이라이트 대상이 설정되면 해당 요소로 스크롤
+  useEffect(() => {
+    if (!highlightCategoryLabel) return;
+    const timer = requestAnimationFrame(() => {
+      highlightedCategoryRef.current?.scrollIntoView({
+        block: "center",
+        behavior: "smooth",
+      });
+    });
+    return () => cancelAnimationFrame(timer);
+  }, [highlightCategoryLabel]);
+
+  // 하이라이트 3초 후 해제
+  useEffect(() => {
+    if (!highlightCategoryLabel) return;
+    const id = setTimeout(() => setHighlightCategoryLabel(null), 3000);
+    return () => clearTimeout(id);
+  }, [highlightCategoryLabel]);
 
   // 금액 포맷팅 (콤마 추가)
   const formatNumber = (value: string) => {
@@ -671,7 +753,7 @@ export default function AddPlanPage() {
             {selectedCategory && (
               <div className="relative flex-shrink-0">
                 <div
-                  className="h-10 px-4 flex-shrink-0 rounded-xl flex items-center justify-center"
+                  className="relative h-10 px-4 flex-shrink-0 rounded-xl flex items-center justify-center"
                   style={{ backgroundColor: selectedCategory.color }}
                 >
                   <span className="text-sm font-semibold text-stone-700 whitespace-nowrap">
@@ -1114,39 +1196,54 @@ export default function AddPlanPage() {
           <div className="mt-8 w-full">
             <button
               type="button"
-              onClick={() => {
-                if (validateForm()) {
-                  // 금액에서 콤마 제거
-                  const amountValue = amount.replace(/,/g, "");
+              disabled={isSaving}
+              onClick={async () => {
+                if (!validateForm()) return;
+                if (!getToken()) {
+                  setShowLoginRequiredModal(true);
+                  return;
+                }
 
-                  // API로 보낼 데이터 구성
-                  const planData = {
-                    title: inputValue.trim(),
-                    category: selectedCategory.label,
-                    amount: amountValue ? parseInt(amountValue, 10) : null,
-                    date: isDateUndecided ? null : formatDate(selectedDate),
-                    isDateUndecided,
-                    paymentType,
-                    location: location.trim() || null,
-                    coordinates: mapCoords
-                      ? {
-                          lat: mapCoords.lat,
-                          lng: mapCoords.lng,
-                        }
-                      : null,
-                    memo: memo.trim() || null,
-                  };
+                const amountValue = amount.replace(/,/g, "");
+                const body = {
+                  categoryName: selectedCategory.label,
+                  title: inputValue.trim(),
+                  payType: PAY_TYPE_MAP[paymentType],
+                  amount: amountValue ? parseInt(amountValue, 10) : 0,
+                  startDate: isDateUndecided ? null : formatDate(selectedDate),
+                  location: location.trim() || "",
+                  locationLat: mapCoords?.lat ?? 0,
+                  locationLng: mapCoords?.lng ?? 0,
+                  memo: memo.trim() || "",
+                  addCategoryNameList: userAddedCategories.map((c) => c.label),
+                };
 
-                  // JSON으로 변환하여 alert로 표시
+                setIsSaving(true);
+                try {
+                  const res = await fetchWithAuth("/plan/schedule", {
+                    method: "POST",
+                    body: JSON.stringify(body),
+                  });
+                  const json = await res.json().catch(() => ({}));
+
+                  if (res.ok && json.result === true) {
+                    router.push("/main");
+                    return;
+                  }
                   // eslint-disable-next-line no-alert
-                  alert(JSON.stringify(planData, null, 2));
-                  // TODO: API로 데이터 저장
-                  // router.push("/main");
+                  alert(
+                    json.message || "저장에 실패했습니다. 다시 시도해 주세요.",
+                  );
+                } catch {
+                  // eslint-disable-next-line no-alert
+                  alert("저장 중 오류가 발생했습니다. 다시 시도해 주세요.");
+                } finally {
+                  setIsSaving(false);
                 }
               }}
-              className="w-full px-6 py-4 bg-[#FFAAB8] text-white font-bold text-lg rounded-xl hover:bg-[#FF8FA3] transition-colors shadow-md active:scale-[0.98] transform"
+              className="w-full px-6 py-4 bg-[#FFAAB8] text-white font-bold text-lg rounded-xl hover:bg-[#FF8FA3] transition-colors shadow-md active:scale-[0.98] transform disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              플랜 저장하기
+              {isSaving ? "저장 중..." : "플랜 저장하기"}
             </button>
           </div>
         )}
@@ -1154,9 +1251,7 @@ export default function AddPlanPage() {
       {/* 하단 탭바 - Sticky로 최상단에 고정 */}
       <BottomTabBar
         activeTab="home"
-        showLoginButton={
-          !getToken() && !showLoginRequiredModal
-        }
+        showLoginButton={!getToken() && !showLoginRequiredModal}
         onLoginClick={() => setShowLoginRequiredModal(true)}
         scrollDirection={scrollDirection}
         onTabClick={(tab) => {
@@ -1201,31 +1296,64 @@ export default function AddPlanPage() {
             {/* 모달 바디 - 스크롤 영역 */}
             <div className="p-6 overflow-y-auto flex-1">
               <div className="grid grid-cols-3 gap-3">
-                {allCategories.map((category) => (
+                {categoriesForModal.map((category) => (
                   // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
                   <div
                     key={`modal-${category.label}`}
+                    ref={
+                      category.label === highlightCategoryLabel
+                        ? highlightedCategoryRef
+                        : null
+                    }
                     onClick={() => handleSelectFromModal(category)}
-                    className="h-16 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                    className={`relative h-16 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity ${
+                      category.label === highlightCategoryLabel
+                        ? "ring-2 ring-[#FF8FA3] ring-offset-2 scroll-mt-8"
+                        : ""
+                    }`}
                     style={{ backgroundColor: category.color }}
                   >
                     <span className="text-sm font-semibold text-stone-700 text-center px-2 break-keep">
                       {category.label}
                     </span>
+                    {userAddedLabels.has(category.label) && (
+                      <span
+                        className="absolute top-0 right-0 w-7 h-7 -translate-y-1/2 translate-x-1/2 rounded-full bg-[#FFAAB8] text-white text-xs font-bold flex items-center justify-center shadow-sm"
+                        aria-label="내가 추가한 카테고리"
+                      >
+                        my
+                      </span>
+                    )}
                   </div>
                 ))}
-                {/* 카테고리 추가 박스 */}
+                {/* 카테고리 추가 박스 - 한 셀 안에 세로 배치로 그리드 유지 */}
                 {isAddingCategory ? (
-                  <div className="h-16 rounded-xl flex items-center justify-center border-2 border-[#FFAAB8] bg-white">
+                  <div className="min-h-16 rounded-xl flex flex-col items-stretch justify-center gap-1.5 border-2 border-[#FFAAB8] bg-white p-1.5">
                     <input
                       ref={newCategoryInputRef}
                       type="text"
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
                       onKeyDown={handleNewCategoryKeyDown}
-                      placeholder="카테고리 이름"
-                      className="w-full h-full px-3 text-sm font-semibold text-stone-700 text-center bg-transparent border-none outline-none placeholder:text-stone-400"
+                      className="w-full min-h-[28px] px-2 py-0.5 text-sm font-semibold text-stone-700 text-center bg-transparent border-none outline-none placeholder:text-stone-400"
                     />
+                    <div className="flex gap-1.5 justify-center">
+                      <button
+                        type="button"
+                        onClick={handleCancelAddingCategory}
+                        className="h-7 px-2 rounded-md border border-stone-200 text-stone-600 font-semibold text-xs hover:bg-stone-100 transition-colors flex-1 min-w-0"
+                      >
+                        취소
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCompleteAddingCategory}
+                        disabled={!newCategoryName.trim()}
+                        className="h-7 px-2 rounded-md bg-[#FFAAB8] text-white font-semibold text-xs hover:bg-[#FF8FA3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 min-w-0"
+                      >
+                        확인
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <button
@@ -1249,6 +1377,42 @@ export default function AddPlanPage() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 이미 존재하는 카테고리 알림 모달 */}
+      {showDuplicateCategoryModal && (
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
+          onClick={handleCloseDuplicateModal}
+          onKeyDown={(e) => e.key === "Escape" && handleCloseDuplicateModal()}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="duplicate-modal-title"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <p
+              id="duplicate-modal-title"
+              className="text-center text-lg font-semibold text-stone-900"
+            >
+              이미 존재합니다
+            </p>
+            <p className="mt-2 text-center text-sm text-stone-600">
+              동일한 이름의 카테고리가 있습니다.
+            </p>
+            <button
+              type="button"
+              onClick={handleCloseDuplicateModal}
+              className="mt-4 w-full rounded-xl bg-[#FFAAB8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FF8FA3]"
+            >
+              닫기
+            </button>
           </div>
         </div>
       )}
