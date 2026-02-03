@@ -6,6 +6,7 @@ import "./globals.css";
 import { ApiProvider } from "./contexts/ApiContext";
 import { WeddingProvider } from "./contexts/WeddingContext";
 import ApiErrorModal from "./components/ApiErrorModal";
+import ApiLoadingOverlay from "./components/ApiLoadingOverlay";
 import ClickSpark from "@/components/ClickSpark";
 
 const hakgyoansim = localFont({
@@ -55,6 +56,7 @@ export default function RootLayout({
           >
             <WeddingProvider>
               {children}
+              <ApiLoadingOverlay />
               <Suspense fallback={null}>
                 <ApiErrorModal />
               </Suspense>

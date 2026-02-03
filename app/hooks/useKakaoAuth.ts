@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useApi } from "../contexts/ApiContext";
 import { getToken } from "@/lib/api";
 
@@ -25,19 +25,22 @@ function isPlanDataComplete(data: {
 export function useKakaoAuth() {
   const router = useRouter();
   const pathname = usePathname();
-  const { fetchWithAuth } = useApi();
-  const [loading, setLoading] = useState(false);
+  const { fetchWithAuth, setLoading, loading } = useApi();
 
   const handleKakaoAuth = useCallback(async () => {
+    setLoading(true);
     const token = getToken();
     if (!token) {
-      const fromMain = pathname === "/main";
-      window.location.href = fromMain
-        ? "/api/auth/kakao?from=main"
-        : "/api/auth/kakao";
+      // /main 또는 / 에서 로그인 시 콜백에서 /main으로 보냄 → 플랜 데이터 있으면 /main 유지, 없으면 /setting으로
+      const goToMainAfterLogin = pathname === "/main" || pathname === "/";
+      const url = goToMainAfterLogin ? "/api/auth/kakao?from=main" : "/api/auth/kakao";
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.location.href = url;
+        });
+      });
       return;
     }
-    setLoading(true);
     try {
       const res = await fetchWithAuth("/plan/user");
       const json = (await res.json()) as {
@@ -58,7 +61,7 @@ export function useKakaoAuth() {
     } finally {
       setLoading(false);
     }
-  }, [fetchWithAuth, router, pathname]);
+  }, [fetchWithAuth, setLoading, router, pathname]);
 
   return { handleKakaoAuth, loading };
 }

@@ -12,6 +12,8 @@ import { getApiBaseUrl, getToken } from "@/lib/api";
 
 interface ApiContextType {
   loading: boolean;
+  /** 수동 로딩 제어 (예: OAuth 리다이렉트 전 즉시 로딩 표시) */
+  setLoading: (value: boolean) => void;
   /** Same-origin 요청 (로딩 표시). 예: /api/... */
   request: (url: string, options?: RequestInit) => Promise<Response>;
   /** 백엔드 API 요청 (Bearer 없음, 로딩 표시). 예: 로그인 POST /plan/auth/kakao/login */
@@ -92,7 +94,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ loading, request, fetchBackend, fetchWithAuth }),
+    () => ({ loading, setLoading, request, fetchBackend, fetchWithAuth }),
     [loading, request, fetchBackend, fetchWithAuth],
   );
 

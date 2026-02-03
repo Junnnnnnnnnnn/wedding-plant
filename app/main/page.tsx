@@ -66,12 +66,64 @@ interface PlanUserData {
   name: string;
 }
 
+/** GET /plan/schedule/list 응답 항목 */
+interface ScheduleListItem {
+  id: number;
+  categoryName: string;
+  title: string;
+  amount: number | null;
+  startDate: string | null;
+}
+
+const SCHEDULE_PAGE_SIZE = 10;
+const SCHEDULE_SORT = "DESC";
+const SCHEDULE_SORT_COLUMN = "createDate";
+
+/** 카테고리명으로 파스텔 색상 반환 (동일 이름 = 동일 색상) */
+function getCategoryColor(categoryName: string): string {
+  const colors = [
+    "#FFE4E9",
+    "#E8DDF5",
+    "#D5F0E5",
+    "#FFF0D6",
+    "#D4EBF7",
+    "#FFE5D9",
+  ];
+  let hash = 0;
+  for (let i = 0; i < categoryName.length; i++) {
+    hash = (hash << 5) - hash + categoryName.charCodeAt(i);
+    hash |= 0;
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+/** startDate와 오늘의 거리에 따라 점 색상: 가까울수록 진한 분홍, 멀수록 회색. null이면 미정(회색) */
+function getDotColorByDate(startDate: string | null): string {
+  if (!startDate?.trim()) return "#9ca3af"; // 미정: 회색
+  const start = new Date(startDate);
+  if (Number.isNaN(start.getTime())) return "#9ca3af";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0);
+  const diffMs = start.getTime() - today.getTime();
+  const daysUntil = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (daysUntil < 0) return "#bbf7d0"; // 지난 일정: 연한 녹색
+  if (daysUntil <= 7) return "#ff8fa3"; // 1주 이내: 찐한 분홍
+  if (daysUntil <= 30) return "#ffaab8"; // 1개월 이내: 분홍
+  if (daysUntil <= 90) return "#ffd0d9"; // 3개월 이내: 연한 분홍
+  return "#bbf7d0"; // 그 이상: 연한 녹색
+}
+
 function MainPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { weddingData, resetData } = useWedding();
   const { fetchWithAuth } = useApi();
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
+    null,
+  );
+  const [totalAmountManwon, setTotalAmountManwon] = useState<number | null>(
     null,
   );
   const [tokenChecked, setTokenChecked] = useState(false);
@@ -103,27 +155,60 @@ function MainPageContent() {
     [fetchWithAuth],
   );
 
+  const fetchTotalAmount = useCallback(
+    async (onApiError: () => void) => {
+      if (!getToken()) {
+        setTotalAmountManwon(0);
+        return;
+      }
+      try {
+        const res = await fetchWithAuth("/plan/user/total-amount");
+        if (cancelledRef.current) return;
+        const json = (await res.json()) as {
+          result?: boolean;
+          data?: { totalAmount?: number };
+        };
+        if (cancelledRef.current) return;
+        if (json.result === true && json.data?.totalAmount != null) {
+          // API totalAmount는 만원 단위 (예: 240149 → 24억 1백49만원)
+          setTotalAmountManwon(json.data.totalAmount);
+        } else {
+          setTotalAmountManwon(0);
+          if (!res.ok) onApiError();
+        }
+      } catch {
+        if (!cancelledRef.current) {
+          setTotalAmountManwon(0);
+          onApiError();
+        }
+      }
+    },
+    [fetchWithAuth],
+  );
+
   const handleApiError = useCallback(() => {
     clearAllStoredData();
     resetData();
     router.replace("/?api_error=1");
   }, [resetData, router]);
 
-  // /main 접속 시 JWT가 존재하면 무조건 GET /plan/user 호출 (토큰 확인 후에만 실제 데이터 표시)
+  // /main 접속 시 JWT가 존재하면 GET /plan/user, GET /plan/user/total-amount 호출
   useEffect(() => {
     const token = getToken();
     setTokenChecked(true);
     if (!token) {
       setApiPlanData("none");
+      setTotalAmountManwon(0);
       return;
     }
     cancelledRef.current = false;
     fetchPlanUser(handleApiError);
+    fetchTotalAmount(handleApiError);
     // eslint-disable-next-line consistent-return -- useEffect cleanup is valid
     return () => {
       cancelledRef.current = true;
     };
-  }, [fetchPlanUser, handleApiError]);
+  }, [fetchPlanUser, fetchTotalAmount, handleApiError]);
 
   // JWT 있으면 GET /plan/user 결과(apiPlanData) 사용, 없으면 세션 스토리지(weddingData) 데이터 적용
   const displayData = useMemo(() => {
@@ -156,9 +241,9 @@ function MainPageContent() {
   })();
   const weddingDateText = formatWeddingDate(displayData.date);
 
-  // 예산 관리 변수
+  // 예산 관리 변수 (지출 예정 = GET /plan/user/total-amount)
   const initialBudget = Number(displayData.budget) || 1000; // 초기 예산 (만원)
-  const usedBudget = 0; // 사용한 예산 (만원) - 추후 API로 받아올 예정
+  const usedBudget = totalAmountManwon ?? 0; // 지출 예정 총액 (만원)
   const remainingBudget = initialBudget - usedBudget; // 남은 예산 실시간 계산
 
   // 예산 사용률 계산
@@ -208,29 +293,102 @@ function MainPageContent() {
     };
   };
 
-  // 샘플 예산 계획 데이터 (추후 API로 받아올 예정)
-  const budgetPlans = [
-    {
-      id: 1,
-      title: "디자인 목업 검토하기",
-      date: "2026-12-26",
-      price: 1000000,
+  // 스케줄 목록 API
+  const [scheduleList, setScheduleList] = useState<ScheduleListItem[]>([]);
+  const [scheduleTotal, setScheduleTotal] = useState(0);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleInitialFetched, setScheduleInitialFetched] = useState(false);
+  const scheduleLoadMoreRef = useRef<HTMLDivElement>(null);
+  const scheduleFetchingRef = useRef(false);
+
+  const fetchScheduleList = useCallback(
+    async (page: number, append: boolean) => {
+      if (scheduleFetchingRef.current) return;
+      const token = getToken();
+      if (!token) {
+        setScheduleInitialFetched(true);
+        return;
+      }
+      scheduleFetchingRef.current = true;
+      setScheduleLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          count: String(SCHEDULE_PAGE_SIZE),
+          sort: SCHEDULE_SORT,
+          sortColumn: SCHEDULE_SORT_COLUMN,
+        });
+        const res = await fetchWithAuth(
+          `/plan/schedule/list?${params.toString()}`
+        );
+        const json = (await res.json()) as {
+          result?: boolean;
+          data?: { total: number; list: ScheduleListItem[] };
+        };
+        if (json.result === true && json.data) {
+          const { total, list } = json.data;
+          setScheduleTotal(total);
+          if (append) {
+            setScheduleList((prev) => [...prev, ...list]);
+          } else {
+            setScheduleList(list);
+          }
+        }
+      } catch {
+        if (!append) setScheduleList([]);
+      } finally {
+        setScheduleLoading(false);
+        setScheduleInitialFetched(true);
+        scheduleFetchingRef.current = false;
+      }
     },
-    { id: 2, title: "웨딩홀 투어 예약", date: "2026-12-27", price: 0 },
-    { id: 3, title: "드레스 피팅", date: "2026-12-28", price: 500000 },
-    { id: 4, title: "예식장 꽃장식 상담", date: "2026-12-29", price: 2000000 },
-    { id: 5, title: "사진작가 미팅", date: "2026-12-30", price: 3000000 },
-    { id: 6, title: "청첩장 디자인 확인", date: "2027-01-02", price: 800000 },
-    { id: 7, title: "혼주 선물 준비", date: "2027-01-03", price: 1500000 },
-    { id: 8, title: "예식 음악 선정", date: "2027-01-04", price: 0 },
-    { id: 9, title: "신혼여행 일정 확인", date: "2027-01-05", price: 5000000 },
-    {
-      id: 10,
-      title: "예식장 계약금 입금",
-      date: "2027-01-06",
-      price: 10000000,
-    },
-  ];
+    [fetchWithAuth]
+  );
+
+  // 최초 로드: 토큰 있으면 1페이지 요청
+  useEffect(() => {
+    if (!getToken()) {
+      setScheduleInitialFetched(true);
+      setScheduleList([]);
+      return;
+    }
+    fetchScheduleList(1, false);
+  }, [fetchScheduleList]);
+
+  // 무한 스크롤: 하단 감지 시 다음 페이지 (로드할 다음 페이지 = loadedPages + 1)
+  const nextPageToLoad =
+    scheduleList.length === 0
+      ? 1
+      : Math.floor(scheduleList.length / SCHEDULE_PAGE_SIZE) + 1;
+
+  useEffect(() => {
+    const sentinel = scheduleLoadMoreRef.current;
+    const root = mainScrollRef.current;
+    if (!sentinel || !root || !getToken()) return;
+    const hasMore =
+      scheduleList.length < scheduleTotal && scheduleTotal > 0;
+    if (!hasMore || scheduleLoading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting || scheduleFetchingRef.current)
+          return;
+        fetchScheduleList(nextPageToLoad, true);
+      },
+      { root, rootMargin: "100px", threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [
+    scheduleList.length,
+    scheduleTotal,
+    scheduleLoading,
+    nextPageToLoad,
+    fetchScheduleList,
+  ]);
+
+  const scheduleHasMore =
+    scheduleList.length < scheduleTotal && scheduleTotal > 0;
 
   // 각 계획의 체크 상태 관리
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
@@ -253,6 +411,14 @@ function MainPageContent() {
     });
   };
 
+  const handleOpenScheduleDetail = (id: number) => {
+    if (!getToken()) {
+      setShowLoginRequiredModal(true);
+      return;
+    }
+    router.push(`/schedule-detail?id=${id}`);
+  };
+
   // 프로필 버튼 클릭 핸들러
   const handleUserClick = () => {
     if (getToken()) {
@@ -266,7 +432,11 @@ function MainPageContent() {
     <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6">
       <KakaoLoginAlert
         show={searchParams.get("kakao_login") === "1"}
-        onSuccessFromMain={() => fetchPlanUser(handleApiError)}
+        onSuccessFromMain={() => {
+          fetchPlanUser(handleApiError);
+          fetchTotalAmount(handleApiError);
+          fetchScheduleList(1, false);
+        }}
       />
       <main
         ref={mainScrollRef}
@@ -393,14 +563,22 @@ function MainPageContent() {
                     <p className="text-sm font-semibold leading-5 text-white">
                       남은 예산
                     </p>
-                    <p className="my-3 text-[42px] max-[350px]:text-[37px] font-semibold leading-7 text-white">
-                      <CountUp
-                        to={remainingBudget}
-                        separator=","
-                        duration={0.1}
-                        className="inline"
-                      />
-                      만 원
+                    <p
+                      className={
+                        Math.abs(remainingBudget) >= 1000
+                          ? "my-3 text-[32px] max-[350px]:text-[28px] font-semibold leading-7 text-white"
+                          : "my-3 text-[42px] max-[350px]:text-[37px] font-semibold leading-7 text-white"
+                      }
+                    >
+                      <span className="whitespace-nowrap">
+                        <CountUp
+                          to={remainingBudget}
+                          separator=","
+                          duration={0.1}
+                          className="inline"
+                        />
+                        만 원
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -441,7 +619,11 @@ function MainPageContent() {
                 />
               ) : (
                 <span className="text-lg text-gray-500">
-                  {budgetPlans.length}개의 플랜이 있어요
+                  {scheduleTotal > 0
+                    ? `${scheduleTotal}개의 플랜이 있어요`
+                    : scheduleList.length > 0
+                      ? `${scheduleList.length}개의 플랜이 있어요`
+                      : "플랜을 추가해볼까요?"}
                 </span>
               )}
             </div>
@@ -461,44 +643,65 @@ function MainPageContent() {
               <CirclePlus className="h-5 w-5 text-white" strokeWidth={2.5} />
             </button>
           </div>
-          <ul className="mt-4 w-full flex flex-col gap-3">
-            {isPlanLoading
-              ? ["a", "b", "c", "d", "e"].map((id) => (
-                  <li
-                    key={`skeleton-plan-${id}`}
-                    className="flex items-center gap-4 rounded-[20px] bg-white p-4"
-                  >
+          <ul className="mt-4 w-full flex flex-col gap-3 min-h-[200px] relative">
+            {scheduleLoading && scheduleList.length === 0 ? (
+              ["a", "b", "c", "d", "e"].map((id) => (
+                <li
+                  key={`skeleton-plan-${id}`}
+                  className="flex items-center gap-4 rounded-[20px] bg-white p-4"
+                >
+                  <span
+                    className="skeleton-shimmer h-6 w-6 shrink-0 rounded-full"
+                    aria-hidden
+                  />
+                  <div className="min-w-0 flex-1 space-y-2">
                     <span
-                      className="skeleton-shimmer h-6 w-6 shrink-0 rounded-full"
+                      className="skeleton-shimmer block h-[22px] max-w-[200px] rounded"
+                      style={{ width: "75%" }}
                       aria-hidden
                     />
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <span
-                        className="skeleton-shimmer block h-[22px] max-w-[200px] rounded"
-                        style={{ width: "75%" }}
-                        aria-hidden
-                      />
-                      <span
-                        className="skeleton-shimmer block h-4 w-32 rounded"
-                        aria-hidden
-                      />
-                    </div>
                     <span
-                      className="skeleton-shimmer h-5 w-16 shrink-0 rounded"
+                      className="skeleton-shimmer block h-4 w-32 rounded"
                       aria-hidden
                     />
-                  </li>
-                ))
-              : budgetPlans.map((plan) => {
+                  </div>
+                  <span
+                    className="skeleton-shimmer h-5 w-16 shrink-0 rounded"
+                    aria-hidden
+                  />
+                </li>
+              ))
+            ) : scheduleInitialFetched && scheduleList.length === 0 ? (
+              <li className="flex flex-1 flex-col items-center justify-center py-16">
+                <p className="text-4xl font-semibold text-stone-400">텅~</p>
+              </li>
+            ) : (
+              <>
+                {scheduleList.map((plan) => {
                   const isChecked = checkedItems.has(plan.id);
+                  const amount = plan.amount ?? 0;
+                  const categoryColor = getCategoryColor(plan.categoryName);
                   return (
                     <li
                       key={plan.id}
-                      className="flex items-center gap-4 rounded-[20px] bg-white p-4"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`플랜 상세 보기: ${plan.title}`}
+                      onClick={() => handleOpenScheduleDetail(plan.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleOpenScheduleDetail(plan.id);
+                        }
+                      }}
+                      className="flex items-center gap-4 rounded-[20px] bg-white p-4 cursor-pointer"
                     >
                       <button
                         type="button"
-                        onClick={() => handleToggleCheck(plan.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleCheck(plan.id);
+                        }}
                         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:opacity-80 ${
                           isChecked
                             ? "bg-[#ffaab8] border-[#ffaab8]"
@@ -512,9 +715,15 @@ function MainPageContent() {
                           />
                         )}
                       </button>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex min-w-0 flex-1 flex-col rounded-2xl px-1 py-0">
+                        <span
+                          className="-ml-1 inline-flex w-fit h-[22.5px] items-center rounded-xl px-2 py-0 text-[11px] max-[350px]:text-[9px] font-semibold leading-none text-stone-700"
+                          style={{ backgroundColor: categoryColor }}
+                        >
+                          {plan.categoryName}
+                        </span>
                         <p
-                          className={`text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-normal leading-[22.5px] ${
+                          className={`mt-1 text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] ${
                             isChecked ? "line-through" : ""
                           }`}
                           style={{
@@ -524,37 +733,60 @@ function MainPageContent() {
                           {plan.title}
                         </p>
                         <div className="mt-1 flex items-center gap-2">
-                          <Calendar className="h-3.5 w-3.5 text-[#6a7282]" />
-                          {(() => {
-                            const { dateText, weekday } = formatDate(plan.date);
-                            return (
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#6a7282]">
-                                  {dateText}
-                                </span>
-                                <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#99a1af]">
-                                  ({weekday})
-                                </span>
-                              </div>
-                            );
-                          })()}
+                          <Calendar className="h-3.5 w-3.5 shrink-0 text-[#6a7282]" />
+                          {plan.startDate?.trim() ? (
+                            (() => {
+                              const { dateText, weekday } = formatDate(
+                                plan.startDate as string
+                              );
+                              return (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#6a7282]">
+                                    {dateText}
+                                  </span>
+                                  <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#99a1af]">
+                                    ({weekday})
+                                  </span>
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#6a7282]">
+                              미정
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {plan.price > 0 ? (
+                      <div className="flex min-w-[90px] shrink-0 items-center justify-end gap-2">
+                        {amount > 0 ? (
                           <span className="text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] text-black whitespace-nowrap">
-                            {plan.price.toLocaleString()}원
+                            {amount.toLocaleString()}만 원
                           </span>
                         ) : (
                           <span className="text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-normal leading-[22.5px] text-[#99a1af] whitespace-nowrap">
                             미정
                           </span>
                         )}
-                        <div className="h-2 w-2 rounded-full bg-[#ffaab8]" />
+                        <div
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{
+                            backgroundColor: getDotColorByDate(plan.startDate),
+                          }}
+                        />
                       </div>
                     </li>
                   );
                 })}
+                {scheduleHasMore && (
+                  <li ref={scheduleLoadMoreRef} className="h-4 w-full" />
+                )}
+                {scheduleLoading && scheduleList.length > 0 && (
+                  <li className="flex justify-center py-3">
+                    <span className="text-sm text-stone-400">불러오는 중...</span>
+                  </li>
+                )}
+              </>
+            )}
           </ul>
         </div>
       </main>

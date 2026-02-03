@@ -1,0 +1,582 @@
+"use client";
+
+import {
+  ArrowLeft,
+  Calendar,
+  Check,
+  Clock,
+  FileText,
+  Loader2,
+  MapPin,
+  Tag,
+} from "lucide-react";
+import { motion } from "motion/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import LoginRequiredModal from "../components/LoginRequiredModal";
+import BottomTabBar from "../components/BottomTabBar";
+import { useApi } from "../contexts/ApiContext";
+import { useScrollDirection } from "../hooks/useScrollDirection";
+import { getToken } from "@/lib/api";
+
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    kakao: any;
+  }
+}
+
+/** API status: NORMAL = 예정, COMPLETED = 완료 */
+type ScheduleDetailData = {
+  id: number;
+  title: string;
+  categoryName: string;
+  payType?: "CASH" | "CREDIT" | "OTHER" | string | null;
+  amount?: number | null;
+  startDate?: string | null;
+  location?: string | null;
+  locationLat?: number | string | null;
+  locationLng?: number | string | null;
+  memo?: string | null;
+  createDate?: string | null;
+  updateDate?: string | null;
+  addCategoryNameList?: string[] | null;
+  /** NORMAL = 예정, COMPLETED = 완료 */
+  status?: "NORMAL" | "COMPLETED" | string | null;
+};
+
+const PAY_TYPE_LABELS: Record<string, string> = {
+  CASH: "현금",
+  CREDIT: "카드",
+  OTHER: "기타",
+};
+
+function isScheduleDetailData(value: unknown): value is ScheduleDetailData {
+  if (!value || typeof value !== "object") return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    typeof obj.id === "number" &&
+    typeof obj.title === "string" &&
+    typeof obj.categoryName === "string"
+  );
+}
+
+function extractDetailFromResponse(value: unknown): ScheduleDetailData | null {
+  if (!value || typeof value !== "object") return null;
+
+  if (isScheduleDetailData(value)) {
+    return value;
+  }
+
+  const obj = value as Record<string, unknown>;
+  if ("data" in obj) {
+    const { data } = obj as { data?: unknown };
+    if (isScheduleDetailData(data)) {
+      return data;
+    }
+  }
+  return null;
+}
+
+/** "2026년 6월 17일 (목)" 형식 */
+function formatDate(dateStr?: string | null) {
+  if (!dateStr) return "일정 미정";
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return dateStr;
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const w = weekdays[date.getDay()];
+  return `${y}년 ${m}월 ${d}일 (${w})`;
+}
+
+export default function ScheduleDetailPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { fetchWithAuth } = useApi();
+  const mainScrollRef = useRef<HTMLElement>(null);
+  const scrollDirection = useScrollDirection(mainScrollRef);
+
+  const [detail, setDetail] = useState<ScheduleDetailData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markerRef = useRef<any>(null);
+
+  const scheduleId = useMemo(() => {
+    const idParam = searchParams.get("id");
+    if (!idParam) return null;
+    const parsed = Number(idParam);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!scheduleId) {
+      setError("잘못된 접근입니다. 플랜 ID를 확인해 주세요.");
+      return undefined;
+    }
+
+    const token = getToken();
+    if (!token) {
+      setShowLoginRequiredModal(true);
+      setError("로그인이 필요합니다.");
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    const fetchDetail = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetchWithAuth(`/plan/schedule/${scheduleId}`, {
+          method: "GET",
+          signal: controller.signal,
+        });
+
+        if (res.status === 401) {
+          setShowLoginRequiredModal(true);
+          setError("로그인이 필요합니다.");
+        } else {
+          const json = (await res.json().catch(() => null)) as unknown;
+          const data = extractDetailFromResponse(json);
+
+          if (res.ok && data) {
+            setDetail(data);
+          } else if (json && typeof json === "object" && "message" in json) {
+            const { message } = json as { message?: unknown };
+            setError(String(message ?? "플랜 정보를 불러오지 못했습니다."));
+          } else {
+            setError("플랜 정보를 불러오지 못했습니다.");
+          }
+        }
+      } catch (fetchError) {
+        if ((fetchError as { name?: string }).name !== "AbortError") {
+          setError("플랜 정보를 불러오는 중 오류가 발생했습니다.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDetail();
+
+    return () => {
+      controller.abort();
+    };
+  }, [fetchWithAuth, scheduleId]);
+
+  const formattedAmount = useMemo(() => {
+    if (detail?.amount == null || Number.isNaN(Number(detail.amount)))
+      return "미정";
+    return `${Number(detail.amount).toLocaleString()}만 원`;
+  }, [detail?.amount]);
+  const payTypeLabel = useMemo(() => {
+    if (!detail?.payType) return "미정";
+    return PAY_TYPE_LABELS[detail.payType] ?? detail.payType;
+  }, [detail?.payType]);
+  const isCompleted = detail?.status === "COMPLETED";
+
+  const mapLink = useMemo(() => {
+    if (!detail?.location) return null;
+    const lat = Number(detail.locationLat);
+    const lng = Number(detail.locationLng);
+    if (Number.isNaN(lat) || Number.isNaN(lng) || (lat === 0 && lng === 0))
+      return null;
+    const encodedName = encodeURIComponent(detail.location);
+    return `https://map.kakao.com/link/map/${encodedName},${lat},${lng}`;
+  }, [detail?.location, detail?.locationLat, detail?.locationLng]);
+
+  const mapCoords = useMemo(() => {
+    if (!detail) return null;
+    const lat = Number(detail.locationLat);
+    const lng = Number(detail.locationLng);
+    if (Number.isNaN(lat) || Number.isNaN(lng) || (lat === 0 && lng === 0))
+      return null;
+    return { lat, lng };
+  }, [detail?.locationLat, detail?.locationLng]);
+
+  useEffect(() => {
+    if (window.kakao?.maps) return;
+    const script = document.createElement("script");
+    const apiKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&libraries=services`;
+    script.async = true;
+    script.onload = () => {
+      window.kakao?.maps?.load(() => {});
+    };
+    document.head.appendChild(script);
+    return () => {
+      if (document.head.contains(script)) document.head.removeChild(script);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapCoords || !window.kakao?.maps) {
+      if (mapRef.current) {
+        if (markerRef.current) {
+          markerRef.current.setMap(null);
+          markerRef.current = null;
+        }
+        mapRef.current = null;
+      }
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      const container = document.getElementById("schedule-detail-map");
+      if (!container) return;
+      if (mapRef.current) {
+        if (markerRef.current) {
+          markerRef.current.setMap(null);
+          markerRef.current = null;
+        }
+        mapRef.current = null;
+      }
+      try {
+        const coords = new window.kakao.maps.LatLng(
+          mapCoords.lat,
+          mapCoords.lng,
+        );
+        const options = {
+          center: coords,
+          level: 3,
+          scrollwheel: false,
+          disableDoubleClick: true,
+          disableDoubleClickZoom: true,
+        };
+        const mapInstance = new window.kakao.maps.Map(container, options);
+        mapRef.current = mapInstance;
+        const marker = new window.kakao.maps.Marker({
+          map: mapInstance,
+          position: coords,
+        });
+        markerRef.current = marker;
+      } catch {
+        // ignore map init errors
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [mapCoords]);
+
+  let content: JSX.Element | null = null;
+
+  if (loading) {
+    content = (
+      <section className="flex flex-1 items-center justify-center rounded-3xl bg-white p-10 shadow-md">
+        <div className="flex items-center gap-3 text-[#FF8FA3]">
+          <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+          <span className="text-base font-semibold">불러오는 중...</span>
+        </div>
+      </section>
+    );
+  } else if (error) {
+    content = (
+      <section className="flex flex-1 flex-col items-center justify-center gap-4 rounded-3xl bg-white px-6 py-12 text-center shadow-md">
+        <p className="text-lg font-semibold text-[#FF8FA3]">
+          플랜을 찾을 수 없어요
+        </p>
+        <p className="text-sm leading-relaxed text-stone-500">{error}</p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/main")}
+            className="rounded-full bg-[#FFAAB8] px-5 py-2 text-sm font-semibold text-white transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            홈으로 이동
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-full border border-[#FFAAB8] px-5 py-2 text-sm font-semibold text-[#FFAAB8] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            다시 시도
+          </button>
+        </div>
+      </section>
+    );
+  } else if (detail) {
+    const latStr =
+      detail.locationLat != null
+        ? parseFloat(String(detail.locationLat)).toFixed(4)
+        : "-";
+    const lngStr =
+      detail.locationLng != null
+        ? parseFloat(String(detail.locationLng)).toFixed(4)
+        : "-";
+
+    content = (
+      <>
+        {/* Hero Section with status stamp */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-6 relative"
+        >
+          <div className="bg-gradient-to-br from-[#FF8FA3] to-[#FF6B85] rounded-3xl p-8 shadow-2xl">
+            <div className="flex items-center gap-2 mb-3">
+              <Tag className="w-4 h-4 text-white/60" />
+              <span className="text-white/70 font-medium text-xs">
+                {detail.categoryName}
+              </span>
+            </div>
+            <h2 className="text-4xl font-black text-white mb-4 max-w-full">
+              {detail.title}
+            </h2>
+            <div className="flex items-center gap-2 mb-6 text-white/90">
+              <Calendar className="w-5 h-5" />
+              <span className="font-medium">
+                {formatDate(detail.startDate)}
+              </span>
+            </div>
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="text-white/80 text-sm mb-1">지출 금액</div>
+                <div className="text-4xl font-black text-white">
+                  {formattedAmount}
+                </div>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-5 py-3">
+                <div className="text-white/80 text-xs mb-1">결제 방식</div>
+                <div className="text-white font-bold text-lg">
+                  {payTypeLabel}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Sticker: COMPLETED = 완료, NORMAL = 예정 */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0, rotate: -20 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              rotate: isCompleted ? 12 : -12,
+            }}
+            transition={{
+              duration: 0.6,
+              delay: 0.3,
+              type: "spring",
+              bounce: 0.5,
+            }}
+            className="absolute -top-8 -right-6"
+          >
+            {isCompleted ? (
+              <div className="relative">
+                <div className="bg-gradient-to-br from-green-400 to-green-600 w-24 h-24 rounded-full flex items-center justify-center shadow-2xl border-4 border-white">
+                  <div className="text-center">
+                    <Check
+                      className="w-10 h-10 text-white mx-auto mb-1"
+                      strokeWidth={4}
+                    />
+                    <div className="text-white font-black text-sm tracking-wider">
+                      완료
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-green-500/30 rounded-full blur-xl -z-10" />
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="bg-gradient-to-br from-orange-300 to-orange-500 w-24 h-24 rounded-full flex items-center justify-center shadow-2xl border-4 border-white">
+                  <div className="text-center">
+                    <Clock
+                      className="w-10 h-10 text-white mx-auto mb-1"
+                      strokeWidth={3}
+                    />
+                    <div className="text-white font-black text-sm tracking-wider">
+                      예정
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-orange-400/30 rounded-full blur-xl -z-10" />
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+
+        {/* Location Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-4">
+              <div className="bg-gradient-to-br from-[#E5F3FF] to-[#D0E7FF] rounded-xl p-3">
+                <MapPin className="w-6 h-6 text-[#4A90E2]" />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm text-gray-500 mb-1 font-medium">
+                  장소
+                </div>
+                <div className="text-lg font-bold text-gray-900 mb-3">
+                  {detail.location?.trim() || "장소 미정"}
+                </div>
+                {mapCoords ? (
+                  <div
+                    id="schedule-detail-map"
+                    className="w-full h-32 rounded-xl overflow-hidden border border-gray-200 bg-gray-100"
+                  />
+                ) : (
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl h-32 flex items-center justify-center border border-gray-200">
+                    <div className="text-center">
+                      <MapPin className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <div className="text-sm text-gray-500">
+                        위도: {latStr}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        경도: {lngStr}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {mapLink && (
+                  <a
+                    href={mapLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#FFAAB8] px-4 py-2 text-sm font-semibold text-[#FF8FA3] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    카카오맵에서 보기
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Memo Card */}
+        {detail.memo?.trim() && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+          >
+            <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start gap-4">
+                <div className="bg-gradient-to-br from-[#FFF3E0] to-[#FFE0B2] rounded-xl p-3">
+                  <FileText className="w-6 h-6 text-[#FF9800]" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm text-gray-500 mb-1 font-medium">
+                    메모
+                  </div>
+                  <div className="text-lg font-medium text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {detail.memo}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex gap-3 mt-6"
+        >
+          <button
+            type="button"
+            onClick={() =>
+              router.push(`/add-plen?id=${encodeURIComponent(detail.id)}`)
+            }
+            className="flex-1 bg-gradient-to-r from-[#FF8FA3] to-[#FF6B85] hover:from-[#FF7A92] hover:to-[#FF5A78] text-white py-4 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all"
+          >
+            수정하기
+          </button>
+          <button
+            type="button"
+            className="flex-1 bg-white hover:bg-gray-50 text-gray-700 py-4 rounded-2xl font-bold border-2 border-gray-200 hover:border-[#FF8FA3] transition-all"
+          >
+            삭제하기
+          </button>
+        </motion.div>
+
+        {/* Additional Categories */}
+        {detail.addCategoryNameList &&
+          detail.addCategoryNameList.filter(Boolean).length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-6 bg-white rounded-2xl p-6 shadow-sm"
+            >
+              <div className="text-sm text-gray-500 mb-3 font-medium">
+                추가 카테고리
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {detail.addCategoryNameList
+                  .filter(Boolean)
+                  .map((category, index) => (
+                    <span
+                      key={index}
+                      className="bg-gradient-to-r from-[#FFE5EA] to-[#FFD0DA] text-[#FF6B85] px-4 py-2 rounded-full text-sm font-medium"
+                    >
+                      {category}
+                    </span>
+                  ))}
+              </div>
+            </motion.div>
+          )}
+      </>
+    );
+  }
+
+  return (
+    <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6">
+      <div className="flex h-full w-full max-w-[500px] flex-col bg-[#FFF5F2]">
+        {/* Header - Figma style */}
+        <div className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-100 shrink-0">
+          <div className="px-6 py-4">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="flex items-center gap-2 text-gray-700 hover:text-[#FF8FA3] transition-colors"
+              aria-label="뒤로가기"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">뒤로가기</span>
+            </button>
+          </div>
+        </div>
+
+        <main
+          ref={mainScrollRef}
+          className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-8 pb-24"
+        >
+          {content}
+        </main>
+
+        <BottomTabBar
+          activeTab="home"
+          onTabClick={(tab) => {
+            if (tab === "home") {
+              router.push("/main");
+            }
+            // TODO: 캘린더, 통계, 설정 탭 라우팅 추가 예정
+          }}
+          scrollDirection={scrollDirection}
+          showLoginButton={false}
+        />
+      </div>
+
+      <LoginRequiredModal
+        show={showLoginRequiredModal}
+        onClose={() => {
+          setShowLoginRequiredModal(false);
+          if (!getToken()) {
+            router.push("/");
+          }
+        }}
+      />
+    </div>
+  );
+}
