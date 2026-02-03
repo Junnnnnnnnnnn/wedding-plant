@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { Suspense, useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Tag,
@@ -46,7 +46,7 @@ const PAY_TYPE_FROM_API: Record<string, "현금" | "카드" | "기타"> = {
   OTHER: "기타",
 };
 
-export default function AddPlanPage() {
+function AddPlanPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { fetchWithAuth } = useApi();
@@ -1633,5 +1633,19 @@ export default function AddPlanPage() {
       />
       </div>
     </div>
+  );
+}
+
+export default function AddPlanPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFF5F2]">
+          <div className="text-[#FF8FA3]">불러오는 중...</div>
+        </div>
+      }
+    >
+      <AddPlanPageContent />
+    </Suspense>
   );
 }

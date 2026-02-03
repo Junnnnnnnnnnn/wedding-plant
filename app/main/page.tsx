@@ -298,7 +298,7 @@ function MainPageContent() {
   const [scheduleTotal, setScheduleTotal] = useState(0);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleInitialFetched, setScheduleInitialFetched] = useState(false);
-  const scheduleLoadMoreRef = useRef<HTMLDivElement>(null);
+  const scheduleLoadMoreRef = useRef<HTMLLIElement>(null);
   const scheduleFetchingRef = useRef(false);
 
   const fetchScheduleList = useCallback(

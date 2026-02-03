@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
@@ -91,7 +91,7 @@ function formatDate(dateStr?: string | null) {
   return `${y}년 ${m}월 ${d}일 (${w})`;
 }
 
-export default function ScheduleDetailPage() {
+function ScheduleDetailPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { fetchWithAuth } = useApi();
@@ -263,7 +263,7 @@ export default function ScheduleDetailPage() {
     return () => clearTimeout(timer);
   }, [mapCoords]);
 
-  let content: JSX.Element | null = null;
+  let content: ReactElement | null = null;
 
   if (loading) {
     content = (
@@ -578,5 +578,22 @@ export default function ScheduleDetailPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function ScheduleDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFF5F2]">
+          <div className="flex items-center gap-3 text-[#FF8FA3]">
+            <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+            <span className="text-base font-semibold">불러오는 중...</span>
+          </div>
+        </div>
+      }
+    >
+      <ScheduleDetailPageContent />
+    </Suspense>
   );
 }
