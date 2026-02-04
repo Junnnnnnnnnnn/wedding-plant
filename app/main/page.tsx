@@ -563,7 +563,8 @@ function MainPageContent() {
               </div>
             ) : (
               <div
-                className="flex w-full flex-col rounded-[24px] p-6"
+                onClick={() => router.push("/budget-detail")}
+                className="flex w-full flex-col rounded-[24px] p-6 cursor-pointer hover:opacity-95 transition-opacity"
                 style={{
                   background: budgetGradient,
                 }}
@@ -710,11 +711,10 @@ function MainPageContent() {
                           e.stopPropagation();
                           handleToggleCheck(plan.id);
                         }}
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:opacity-80 ${
-                          isChecked
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:opacity-80 ${isChecked
                             ? "bg-[#ffaab8] border-[#ffaab8]"
                             : "bg-white border-[#ffaab8]"
-                        }`}
+                          }`}
                       >
                         {isChecked && (
                           <Check
@@ -742,9 +742,8 @@ function MainPageContent() {
                             {plan.categoryName}
                           </span>
                           <p
-                            className={`mt-1 text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] ${
-                              isChecked ? "line-through" : ""
-                            }`}
+                            className={`mt-1 text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] ${isChecked ? "line-through" : ""
+                              }`}
                             style={{
                               color: isChecked ? "#99a1af" : "#2D5016",
                             }}
