@@ -26,6 +26,7 @@ import GuestPlanLimitModal from "../components/GuestPlanLimitModal";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import { getToken, clearAllStoredData } from "@/lib/api";
+import { getGuestScheduleList } from "@/lib/guestSchedule";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 
 /** API weddingDate "YYYY-MM-DD" → { year, month, day } */
@@ -210,7 +211,7 @@ function MainPageContent() {
     [resetData, router],
   );
 
-  // /main 접속 시 JWT가 존재하면 GET /plan/user, GET /plan/user/total-amount 호출
+  // 로그인되어 있을 때만 API 사용. 비로그인(setting→main 로그인 없이 둘러보기 등) 시 API 호출 없음
   useEffect(() => {
     const token = getToken();
     setTokenChecked(true);
@@ -259,13 +260,33 @@ function MainPageContent() {
   })();
   const weddingDateText = formatWeddingDate(displayData.date);
 
+  // 스케줄 목록 API: count=10000으로 한 번에 전체 로드
+  const [scheduleList, setScheduleList] = useState<ScheduleListItem[]>([]);
+  const [scheduleTotal, setScheduleTotal] = useState(0);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleInitialFetched, setScheduleInitialFetched] = useState(false);
+  const scheduleFetchingRef = useRef(false);
+
   // 예산 관리 변수 (지출 예정 = GET /plan/user/total-amount)
   const initialBudget = Number(displayData.budget) || 1000; // 초기 예산 (만원)
-  const usedBudget = totalAmountManwon ?? 0; // 지출 예정 총액 (만원)
+  const guestUsedBudget = useMemo(() => {
+    if (getToken()) return 0;
+    return scheduleList.reduce((sum, plan) => {
+      const amount = typeof plan.amount === "number" ? plan.amount : 0;
+      return sum + amount;
+    }, 0);
+  }, [scheduleList]);
+  const usedBudget = getToken() ? (totalAmountManwon ?? 0) : guestUsedBudget; // 지출 예정 총액 (만원)
   const remainingBudget = initialBudget - usedBudget; // 남은 예산 실시간 계산
 
   // 예산 사용률 계산
-  const budgetUsagePercentage = Math.round((usedBudget / initialBudget) * 100);
+  const budgetUsagePercentage = Math.round(
+    initialBudget > 0 ? (usedBudget / initialBudget) * 100 : 0,
+  );
+  const budgetUsagePercentageForBar = Math.max(
+    0,
+    Math.min(100, budgetUsagePercentage),
+  );
 
   // 예산 사용률에 따른 그라데이션 색상 계산
   const getGradientColors = (percentage: number) => {
@@ -306,13 +327,6 @@ function MainPageContent() {
     };
   };
 
-  // 스케줄 목록 API: count=10000으로 한 번에 전체 로드
-  const [scheduleList, setScheduleList] = useState<ScheduleListItem[]>([]);
-  const [scheduleTotal, setScheduleTotal] = useState(0);
-  const [scheduleLoading, setScheduleLoading] = useState(false);
-  const [scheduleInitialFetched, setScheduleInitialFetched] = useState(false);
-  const scheduleFetchingRef = useRef(false);
-
   const fetchScheduleList = useCallback(async () => {
     if (scheduleFetchingRef.current) return;
     const token = getToken();
@@ -352,10 +366,11 @@ function MainPageContent() {
     }
   }, [fetchWithAuth]);
 
+  // 로그인되어 있을 때만 GET /plan/schedule/list 호출. 비로그인 시 세션 스토리지 게스트 리스트만 사용
   useEffect(() => {
     if (!getToken()) {
       setScheduleInitialFetched(true);
-      setScheduleList([]);
+      setScheduleList(getGuestScheduleList());
       return;
     }
     fetchScheduleList();
@@ -364,6 +379,9 @@ function MainPageContent() {
   // 각 계획의 체크 상태 관리
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  const [loginRequiredTitle, setLoginRequiredTitle] = useState<
+    string | undefined
+  >(undefined);
   const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const mainScrollRef = useRef<HTMLElement>(null);
@@ -520,12 +538,19 @@ function MainPageContent() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setShowShareModal(true)}
+                  onClick={() => {
+                    if (!getToken()) {
+                      setShowShareModal(false);
+                      setShowLoginRequiredModal(true);
+                      return;
+                    }
+                    setShowShareModal(true);
+                  }}
                   className="flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-[#1b0d14] bg-stone-100 hover:bg-stone-200 transition-colors border border-stone-200"
                   aria-label="플랜 초대하기"
                 >
                   <Mail className="h-4 w-4 text-stone-600" strokeWidth={2} />
-                  초대하기
+                  초대
                 </button>
               )}
               {/* 프로필 이미지 영역 (로딩 시 스켈레톤 시머) */}
@@ -585,7 +610,9 @@ function MainPageContent() {
                 </div>
               ) : (
                 <div
-                  onClick={() => router.push("/budget-detail")}
+                  onClick={() => {
+                    router.push("/budget-detail");
+                  }}
                   className="flex w-full flex-col rounded-[24px] p-6 cursor-pointer hover:opacity-95 transition-opacity"
                   style={{
                     background: budgetGradient,
@@ -634,7 +661,7 @@ function MainPageContent() {
                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
                       <div
                         className="h-full rounded-full bg-white"
-                        style={{ width: `${budgetUsagePercentage}%` }}
+                        style={{ width: `${budgetUsagePercentageForBar}%` }}
                       />
                     </div>
                     <span className="shrink-0 text-sm font-normal leading-5 text-white">
@@ -672,14 +699,31 @@ function MainPageContent() {
                 onClick={() => {
                   if (getToken()) {
                     router.push("/add-plen");
-                  } else {
-                    setShowGuestPlanLimitModal(true);
+                    return;
                   }
+
+                  // Guest: allow up to 3 plans saved in sessionStorage
+                  const guestCount = scheduleList.length;
+                  if (guestCount === 0) {
+                    // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
+                    setShowGuestPlanLimitModal(true);
+                    return;
+                  }
+                  if (guestCount >= 3) {
+                    setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
+                    setShowLoginRequiredModal(true);
+                    return;
+                  }
+                  router.push("/add-plen");
                 }}
                 className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-bold text-lg transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
                 style={{
-                  backgroundColor: "#ee2b8c",
-                  boxShadow: "0 4px 12px rgba(238, 43, 140, 0.3)",
+                  backgroundColor:
+                    !getToken() && scheduleList.length >= 3 ? "#cbd5e1" : "#ee2b8c",
+                  boxShadow:
+                    !getToken() && scheduleList.length >= 3
+                      ? "0 4px 12px rgba(148, 163, 184, 0.35)"
+                      : "0 4px 12px rgba(238, 43, 140, 0.3)",
                 }}
               >
                 플랜 추가
@@ -737,13 +781,7 @@ function MainPageContent() {
                     return (
                       <li key={plan.id}>
                         <Link
-                          href={getToken() ? detailHref : "#"}
-                          onClick={(e) => {
-                            if (!getToken()) {
-                              e.preventDefault();
-                              setShowLoginRequiredModal(true);
-                            }
-                          }}
+                          href={detailHref}
                           className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
                           aria-label={`플랜 상세 보기: ${plan.title}`}
                         >
@@ -808,18 +846,26 @@ function MainPageContent() {
                 </>
               )}
             </ul>
+            {tokenChecked &&
+              !getToken() &&
+              !showGuestPlanLimitModal &&
+              !showLoginRequiredModal && (
+                <div className="mt-4 w-full">
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginRequiredModal(true)}
+                    className="w-full h-16 bg-[#ee2b8c] text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-lg shadow-xl shadow-[#ee2b8c44] hover:bg-[#d4237b] transition-all transform hover:scale-[1.02] active:scale-95"
+                  >
+                    로그인 하기
+                  </button>
+                </div>
+              )}
           </div>
         </main>
         {/* 하단 탭바 - Sticky로 최상단에 고정 */}
         <BottomTabBar
           activeTab="home"
-          showLoginButton={
-            tokenChecked &&
-            !getToken() &&
-            !showGuestPlanLimitModal &&
-            !showLoginRequiredModal
-          }
-          onLoginClick={() => setShowLoginRequiredModal(true)}
+          showLoginButton={false}
           scrollDirection={scrollDirection}
           onTabClick={(tab) => {
             if (tab === "home") {
@@ -835,7 +881,11 @@ function MainPageContent() {
         />
         <LoginRequiredModal
           show={showLoginRequiredModal}
-          onClose={() => setShowLoginRequiredModal(false)}
+          onClose={() => {
+            setShowLoginRequiredModal(false);
+            setLoginRequiredTitle(undefined);
+          }}
+          title={loginRequiredTitle}
         />
         <GuestPlanLimitModal
           show={showGuestPlanLimitModal}

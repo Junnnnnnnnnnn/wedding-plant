@@ -5,6 +5,10 @@ import { useRouter, usePathname } from "next/navigation";
 import { useApi } from "@/app/contexts/ApiContext";
 import { useWedding } from "@/app/contexts/WeddingContext";
 import { clearToken, setToken } from "@/lib/api";
+import {
+  getGuestScheduleList,
+  clearGuestScheduleList,
+} from "@/lib/guestSchedule";
 
 type KakaoLoginAlertProps = {
   show: boolean;
@@ -139,6 +143,33 @@ export default function KakaoLoginAlert({
                 });
               } catch {
                 // POST 실패해도 /main으로 이동
+              }
+              const guestPlans = getGuestScheduleList();
+              for (const item of guestPlans) {
+                const startDate =
+                  item.startDate?.trim() ||
+                  new Date().toISOString().slice(0, 10);
+                try {
+                  await fetchWithAuth("/plan/schedule", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      categoryName: item.categoryName,
+                      title: item.title,
+                      payType: item.payType ?? "OTHER",
+                      amount: item.amount ?? 0,
+                      startDate,
+                      location: item.location ?? "",
+                      locationLat: item.locationLat ?? 0,
+                      locationLng: item.locationLng ?? 0,
+                      memo: item.memo ?? "",
+                    }),
+                  });
+                } catch {
+                  // 개별 플랜 POST 실패 시 건너뜀
+                }
+              }
+              if (guestPlans.length > 0) {
+                clearGuestScheduleList();
               }
               await onSuccessFromMain?.();
               router.replace("/main");

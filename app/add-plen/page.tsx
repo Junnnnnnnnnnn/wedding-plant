@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "motion/react";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import { getToken } from "@/lib/api";
+import { addGuestScheduleItem, getGuestScheduleList } from "@/lib/guestSchedule";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import DatePickerModal from "../components/DatePickerModal";
 import { useApi } from "../contexts/ApiContext";
@@ -1265,7 +1266,28 @@ function AddPlanPageContent() {
                 onClick={async () => {
                   if (!validateForm()) return;
                   if (!getToken()) {
-                    setShowLoginRequiredModal(true);
+                    const existing = getGuestScheduleList();
+                    if (existing.length >= 3) {
+                      setShowLoginRequiredModal(true);
+                      return;
+                    }
+
+                    const amountValue = amount.replace(/,/g, "");
+                    const guestItem = {
+                      categoryName: selectedCategory.label,
+                      title: inputValue.trim(),
+                      amount: amountValue ? parseInt(amountValue, 10) : 0,
+                      startDate: isDateUndecided ? null : formatDate(selectedDate),
+                      status: "NORMAL",
+                      location: location.trim() || "",
+                      locationLat: mapCoords?.lat ?? 0,
+                      locationLng: mapCoords?.lng ?? 0,
+                      memo: memo.trim() || "",
+                      payType: PAY_TYPE_MAP[paymentType],
+                      addCategoryNameList: userAddedCategories.map((c) => c.label),
+                    };
+                    addGuestScheduleItem(guestItem);
+                    setShowPlanSavedModal(true);
                     return;
                   }
 
@@ -1323,10 +1345,7 @@ function AddPlanPageContent() {
         {/* 하단 탭바 - Sticky로 최상단에 고정 */}
         <BottomTabBar
           activeTab="home"
-          showLoginButton={
-            tokenChecked && !getToken() && !showLoginRequiredModal
-          }
-          onLoginClick={() => setShowLoginRequiredModal(true)}
+          showLoginButton={false}
           scrollDirection={scrollDirection}
           onTabClick={(tab) => {
             if (tab === "home") {
@@ -1338,6 +1357,11 @@ function AddPlanPageContent() {
         <LoginRequiredModal
           show={showLoginRequiredModal}
           onClose={() => setShowLoginRequiredModal(false)}
+          title={
+            !getToken() && getGuestScheduleList().length >= 3
+              ? "이미 3개의 플랜을 계획하셨어요"
+              : undefined
+          }
         />
 
         {/* 카테고리 선택 모달 */}

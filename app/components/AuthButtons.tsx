@@ -75,7 +75,7 @@ export default function AuthButtons({
   guestLabel = "로그인 없이 둘러보기",
 }: AuthButtonsProps) {
   return (
-    <div className="animate-rise-delayed w-full max-w-[320px] pb-10">
+    <div className="w-full max-w-[320px] pb-[5px]">
       <div className="flex flex-col items-center gap-3">
         <AuthButton
           label="네이버로 시작하기"

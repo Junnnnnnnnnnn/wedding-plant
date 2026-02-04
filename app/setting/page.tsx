@@ -16,8 +16,12 @@ import CountUp from "../../components/CountUp";
 const Lanyard = dynamic(() => import("../../components/Lanyard"), {
   ssr: false,
   loading: () => (
-    <div className="flex min-h-[100dvh] w-full items-center justify-center bg-[#FFF5F2]">
-      <span className="text-stone-500">출입증 준비 중...</span>
+    <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#fcfbfc] grid-bg">
+      {/* Decorative Blur Elements (match app/page.tsx) */}
+      <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none"></div>
+
+      <span className="relative z-10 text-stone-500">출입증 준비 중...</span>
     </div>
   ),
 });
@@ -180,20 +184,29 @@ function SettingPageContent() {
     }, 500); // fade-out 애니메이션 시간과 동일
   };
 
+  // 로그인되어 있을 때만 API 사용. 비로그인(로그인 없이 둘러보기) 시 API 호출 없이 /main으로만 이동
   const handleGoToMain = async () => {
-    if (getToken() && weddingData.date) {
+    if (!getToken()) {
+      router.push("/main");
+      return;
+    }
+    if (weddingData.date) {
       const { year, month, day } = weddingData.date;
       const weddingDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      const res = await fetchWithAuth("/plan/setting", {
-        method: "POST",
-        body: JSON.stringify({
-          weddingDate,
-          budget: Number(weddingData.budget) || 0,
-          name: weddingData.name.trim(),
-        }),
-      });
-      if (!res.ok) {
-        await res.json().catch(() => ({}));
+      try {
+        const res = await fetchWithAuth("/plan/setting", {
+          method: "POST",
+          body: JSON.stringify({
+            weddingDate,
+            budget: Number(weddingData.budget) || 0,
+            name: weddingData.name.trim(),
+          }),
+        });
+        if (!res.ok) {
+          await res.json().catch(() => ({}));
+        }
+      } catch {
+        // POST 실패해도 /main으로 이동
       }
     }
     router.push("/main");
@@ -237,9 +250,13 @@ function SettingPageContent() {
   };
 
   return (
-    <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6 overflow-hidden overscroll-none">
+    <div className="flex h-[100dvh] justify-center bg-[#fcfbfc] px-0 text-stone-900 lg:bg-white lg:px-6 overflow-hidden overscroll-none">
       <KakaoLoginAlert show={showKakaoLogin} />
-      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#FFF5F2] px-6 py-8 overscroll-none">
+      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#fcfbfc] px-6 py-8 overscroll-none grid-bg">
+        {/* Decorative Blur Elements (match app/page.tsx) */}
+        <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none"></div>
+
         {(showThird || showFourth || showFifth || showSixth || showSeventh) && (
           <button
             type="button"
@@ -453,7 +470,9 @@ export default function SettingPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-[100dvh] items-center justify-center bg-[#FFF5F2]" />
+        <div className="flex h-[100dvh] justify-center bg-[#fcfbfc] px-0 lg:bg-white lg:px-6 overflow-hidden">
+          <div className="h-full w-full max-w-[500px] bg-[#fcfbfc] grid-bg" />
+        </div>
       }
     >
       <SettingPageContent />

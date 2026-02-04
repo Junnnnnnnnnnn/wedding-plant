@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -10,6 +10,9 @@ const SCHEDULE_SORT_COLUMN = 'startDate';
 
 import { useApi } from '../contexts/ApiContext';
 import { getToken } from '@/lib/api';
+import { getGuestScheduleList } from "@/lib/guestSchedule";
+import { useWedding } from "../contexts/WeddingContext";
+import LoginRequiredModal from "../components/LoginRequiredModal";
 import { Expense, ExpenseStatus, BudgetStats, Category } from './types';
 import StatCard from './components/StatCard';
 import SpendingAnalysis from './components/SpendingAnalysis';
@@ -36,7 +39,7 @@ interface ScheduleListItem {
     id: number;
     categoryName: string;
     title: string;
-    amount: number;
+    amount: number | null;
     startDate: string | null;
     status?: string | null;
 }
@@ -101,8 +104,8 @@ function mapScheduleListToExpenses(list: ScheduleListItem[]): Expense[] {
         id: String(item.id),
         title: item.title,
         description: item.categoryName,
-        amount: item.amount,
-        plannedAmount: item.amount,
+        amount: item.status === "COMPLETED" ? item.amount ?? 0 : 0,
+        plannedAmount: item.amount ?? 0,
         status: item.status === 'COMPLETED' ? ExpenseStatus.PAID : ExpenseStatus.PLANNED,
         category: item.categoryName,
     }));
@@ -111,6 +114,10 @@ function mapScheduleListToExpenses(list: ScheduleListItem[]): Expense[] {
 const BudgetDetailsPage = () => {
     const router = useRouter();
     const { fetchWithAuth } = useApi();
+    const { weddingData } = useWedding();
+    const isGuest = !getToken();
+    const guestBlurClass = isGuest ? "blur-sm opacity-60" : "";
+    const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
 
     const [detailData, setDetailData] = useState<AmountDetailData | null>(null);
     const [categoryList, setCategoryList] = useState<CategoryChartItem[]>([]);
@@ -165,10 +172,49 @@ const BudgetDetailsPage = () => {
 
     const loadData = useCallback(async () => {
         if (!getToken()) {
+            const guestList = getGuestScheduleList().map((p) => ({
+              id: p.id,
+              categoryName: p.categoryName,
+              title: p.title,
+              amount: p.amount ?? 0,
+              startDate: p.startDate,
+              status: p.status ?? "NORMAL",
+            })) as ScheduleListItem[];
+
+            const initialCapital = Number(weddingData.budget) || 1000;
+            const plannedUseAmount = guestList
+              .filter((x) => x.status !== "COMPLETED")
+              .reduce((sum, x) => sum + (x.amount ?? 0), 0);
+            const usedAmount = guestList
+              .filter((x) => x.status === "COMPLETED")
+              .reduce((sum, x) => sum + (x.amount ?? 0), 0);
+
+            const byCategory = new Map<string, { total: number; used: number }>();
+            for (const item of guestList) {
+              const key = item.categoryName || "Others";
+              const prev = byCategory.get(key) ?? { total: 0, used: 0 };
+              const amt = item.amount ?? 0;
+              prev.total += amt;
+              if (item.status === "COMPLETED") prev.used += amt;
+              byCategory.set(key, prev);
+            }
+
+            setDetailData({
+              initialCapital,
+              totalPlannedAndUsedAmount: plannedUseAmount + usedAmount,
+              plannedUseAmount,
+              usedAmount,
+            });
+            setCategoryList(
+              Array.from(byCategory.entries()).map(([categoryName, v]) => ({
+                categoryName,
+                totalAmount: v.total,
+                usedAmount: v.used,
+              })),
+            );
+            setScheduleList(guestList);
             setLoading(false);
-            setDetailData(null);
-            setCategoryList([]);
-            setScheduleList([]);
+            setError(null);
             return;
         }
         setLoading(true);
@@ -220,7 +266,25 @@ const BudgetDetailsPage = () => {
             isFirstFilterRun.current = false;
             return;
         }
-        if (!getToken() || !detailData) return;
+        if (!detailData) return;
+        if (!getToken()) {
+            const guestList = getGuestScheduleList().map((p) => ({
+              id: p.id,
+              categoryName: p.categoryName,
+              title: p.title,
+              amount: p.amount ?? 0,
+              startDate: p.startDate,
+              status: p.status ?? "NORMAL",
+            })) as ScheduleListItem[];
+            const filtered = guestList.filter((x) => {
+              if (activeTab === "예정" && x.status === "COMPLETED") return false;
+              if (activeTab === "사용" && x.status !== "COMPLETED") return false;
+              if (selectedCategory && x.categoryName !== selectedCategory) return false;
+              return true;
+            });
+            setScheduleList(filtered);
+            return;
+        }
         fetchScheduleAll();
     }, [activeTab, selectedCategory, fetchScheduleAll, detailData]);
 
@@ -279,10 +343,6 @@ const BudgetDetailsPage = () => {
                                 다시 시도
                             </button>
                         </div>
-                    ) : !getToken() ? (
-                        <div className="px-4 py-8 text-center">
-                            <p className="text-gray-500 font-medium">로그인하면 예산 내역을 볼 수 있어요.</p>
-                        </div>
                     ) : stats ? (
                         <>
                             {/* Prominent Stats Grid */}
@@ -314,51 +374,73 @@ const BudgetDetailsPage = () => {
                             </div>
 
                             {/* Spending Analysis Section */}
-                            <div className="px-4 mt-8">
-                                <div className="flex justify-between items-center mb-4">
+                            <div className="relative">
+                              <div
+                                className={isGuest ? `pointer-events-none select-none ${guestBlurClass}` : ""}
+                              >
+                                {/* Spending Analysis Section */}
+                                <div className="px-4 mt-8">
+                                  <div className="flex justify-between items-center mb-4">
                                     <h2 className="text-xl font-bold text-[#1b0d14]">지출 분석</h2>
                                     {selectedCategory && (
-                                        <button
-                                            onClick={() => setSelectedCategory(null)}
-                                            className="text-[10px] font-extrabold text-[#ee2b8c] uppercase tracking-widest bg-[#ee2b8c11] px-3 py-1 rounded-full"
-                                        >
-                                            필터 해제
-                                        </button>
+                                      <button
+                                        onClick={() => setSelectedCategory(null)}
+                                        className="text-[10px] font-extrabold text-[#ee2b8c] uppercase tracking-widest bg-[#ee2b8c11] px-3 py-1 rounded-full"
+                                      >
+                                        필터 해제
+                                      </button>
                                     )}
-                                </div>
-                                <SpendingAnalysis
+                                  </div>
+                                  <SpendingAnalysis
                                     stats={stats}
                                     expenses={expensesForAnalysis}
                                     selectedCategory={selectedCategory}
                                     onCategorySelect={handleCategoryToggle}
-                                />
-                            </div>
-
-                            {/* Tabs */}
-                            <div className="px-4 mt-8">
-                                <div className="flex border-b border-gray-100">
-                                    {(['전체', '예정', '사용'] as const).map((tab) => (
-                                        <button
-                                            key={tab}
-                                            onClick={() => setActiveTab(tab)}
-                                            className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${activeTab === tab
-                                                ? 'text-[#ee2b8c] border-[#ee2b8c]'
-                                                : 'text-gray-400 border-transparent hover:text-gray-600'
-                                                }`}
-                                        >
-                                            {tab}
-                                        </button>
-                                    ))}
+                                  />
                                 </div>
-                            </div>
 
-                            {/* Expense List: count=10000으로 전체 한 번에 로드 */}
-                            <div className="mt-4">
-                                {scheduleLoading && scheduleList.length === 0 ? (
-                                    <div className="px-4 py-4 text-center text-sm text-gray-500">불러오는 중...</div>
-                                ) : (
+                                {/* Tabs */}
+                                <div className="px-4 mt-8">
+                                  <div className="flex border-b border-gray-100">
+                                    {(["전체", "예정", "사용"] as const).map((tab) => (
+                                      <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${
+                                          activeTab === tab
+                                            ? "text-[#ee2b8c] border-[#ee2b8c]"
+                                            : "text-gray-400 border-transparent hover:text-gray-600"
+                                        }`}
+                                      >
+                                        {tab}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Expense List: count=10000으로 전체 한 번에 로드 */}
+                                <div className="mt-4">
+                                  {scheduleLoading && scheduleList.length === 0 ? (
+                                    <div className="px-4 py-4 text-center text-sm text-gray-500">
+                                      불러오는 중...
+                                    </div>
+                                  ) : (
                                     <ExpenseList expenses={listExpenses} />
-                                )}
+                                  )}
+                                </div>
+                              </div>
+
+                              {isGuest && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowLoginRequiredModal(true)}
+                                    className="rounded-2xl bg-white/70 px-6 py-3 text-sm font-bold text-stone-700 shadow-sm backdrop-blur transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                                  >
+                                    로그인이 필요한 서비스 입니다
+                                  </button>
+                                </div>
+                              )}
                             </div>
                         </>
                     ) : (
@@ -371,6 +453,10 @@ const BudgetDetailsPage = () => {
                 <AIInsightsModal
                     isOpen={isAIModalOpen}
                     onClose={() => setIsAIModalOpen(false)}
+                />
+                <LoginRequiredModal
+                  show={showLoginRequiredModal}
+                  onClose={() => setShowLoginRequiredModal(false)}
                 />
 
                 <BottomTabBar

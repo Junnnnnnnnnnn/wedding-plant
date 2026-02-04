@@ -18,6 +18,7 @@ import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { getToken } from "@/lib/api";
+import { getGuestScheduleList } from "@/lib/guestSchedule";
 
 declare global {
   interface Window {
@@ -122,8 +123,28 @@ function ScheduleDetailPageContent() {
 
     const token = getToken();
     if (!token) {
-      setShowLoginRequiredModal(true);
-      setError("로그인이 필요합니다.");
+      const guest = getGuestScheduleList().find((p) => p.id === scheduleId);
+      if (!guest) {
+        setDetail(null);
+        setError("플랜 정보를 불러오지 못했습니다.");
+        return undefined;
+      }
+      setError(null);
+      setDetail({
+        id: guest.id,
+        title: guest.title,
+        categoryName: guest.categoryName,
+        amount: guest.amount ?? 0,
+        startDate: guest.startDate,
+        status:
+          guest.status === "COMPLETED" || guest.status === "NORMAL"
+            ? (guest.status as "COMPLETED" | "NORMAL")
+            : "NORMAL",
+        location: guest.location ?? null,
+        locationLat: guest.locationLat ?? null,
+        locationLng: guest.locationLng ?? null,
+        memo: guest.memo ?? null,
+      });
       return undefined;
     }
 
@@ -479,29 +500,31 @@ function ScheduleDetailPageContent() {
           </motion.div>
         )}
 
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex gap-3 mt-6"
-        >
-          <button
-            type="button"
-            onClick={() =>
-              router.push(`/add-plen?id=${encodeURIComponent(detail.id)}`)
-            }
-            className="flex-1 bg-[#ee2b8c] hover:bg-[#d4237b] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#ee2b8c33] transition-all transform active:scale-95"
+        {/* Action Buttons (logged-in only) */}
+        {getToken() && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex gap-3 mt-6"
           >
-            수정하기
-          </button>
-          <button
-            type="button"
-            className="flex-1 bg-white hover:bg-gray-50 text-[#1b0d14] py-4 rounded-2xl font-bold border-2 border-gray-100 hover:border-[#ee2b8c33] transition-all transform active:scale-95"
-          >
-            삭제하기
-          </button>
-        </motion.div>
+            <button
+              type="button"
+              onClick={() =>
+                router.push(`/add-plen?id=${encodeURIComponent(detail.id)}`)
+              }
+              className="flex-1 bg-[#ee2b8c] hover:bg-[#d4237b] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#ee2b8c33] transition-all transform active:scale-95"
+            >
+              수정하기
+            </button>
+            <button
+              type="button"
+              className="flex-1 bg-white hover:bg-gray-50 text-[#1b0d14] py-4 rounded-2xl font-bold border-2 border-gray-100 hover:border-[#ee2b8c33] transition-all transform active:scale-95"
+            >
+              삭제하기
+            </button>
+          </motion.div>
+        )}
 
         {/* Additional Categories */}
         {detail.addCategoryNameList &&

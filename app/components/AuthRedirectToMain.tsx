@@ -38,6 +38,7 @@ export default function AuthRedirectToMain() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const token = getToken();
+    // JWT 없을 때(예: 로그인 없이 둘러보기 후 setting → main) /plan/user 요청 금지
     if (!token || !ENTRY_PATHS.includes(pathname)) return;
     // 동일 path 내 중복 요청 방지
     if (checkedRef.current) return;

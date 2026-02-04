@@ -9,16 +9,19 @@ const TIP = "아래에서 원하는 방법으로 로그인해 주세요.";
 type LoginRequiredModalProps = {
   show: boolean;
   onClose: () => void;
+  title?: string;
 };
 
 export default function LoginRequiredModal({
   show,
   onClose,
+  title,
 }: LoginRequiredModalProps) {
   const { handleKakaoAuth, loading } = useKakaoAuth();
 
   if (!show) return null;
 
+  const resolvedTitle = title ?? TITLE;
   const baseBtnClass =
     "w-full rounded-full text-sm font-semibold h-11 flex items-center justify-center transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70";
 
@@ -36,10 +39,10 @@ export default function LoginRequiredModal({
         onKeyDown={(e) => e.stopPropagation()}
         tabIndex={-1}
         aria-modal="true"
-        aria-label={TITLE}
+        aria-label={resolvedTitle}
       >
         <h2 className="text-center text-lg font-semibold text-stone-900">
-          {TITLE}
+          {resolvedTitle}
         </h2>
         <p className="mt-3 text-center text-[15px] font-normal leading-relaxed text-stone-700">
           {BODY}

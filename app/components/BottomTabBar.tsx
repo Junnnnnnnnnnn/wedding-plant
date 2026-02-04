@@ -43,7 +43,7 @@ export default function BottomTabBar({
     <div className="fixed bottom-0 left-0 right-0 z-[100] flex flex-col items-center">
       {showLoginButton && onLoginClick && (
         <div
-          className="w-full max-w-md px-6 pb-2 flex items-center justify-center bg-transparent overflow-hidden"
+          className="w-full max-w-md px-6 flex items-center justify-center bg-transparent overflow-hidden"
           style={{
             transform:
               scrollDirection === "down"
