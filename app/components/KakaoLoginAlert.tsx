@@ -73,6 +73,12 @@ export default function KakaoLoginAlert({
           error?: string;
         };
 
+        if (res.status === 401) {
+          clearTimeout(timeoutId);
+          clearToken();
+          router.replace("/");
+          return;
+        }
         if (!res.ok) {
           clearTimeout(timeoutId);
           clearToken();

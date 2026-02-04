@@ -7,8 +7,16 @@ import {
   CirclePlus,
   User,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, useMemo, useEffect, useRef, useCallback } from "react";
+import {
+  Suspense,
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
@@ -73,6 +81,8 @@ interface ScheduleListItem {
   title: string;
   amount: number | null;
   startDate: string | null;
+  /** COMPLETED 일 때 체크박스·취소선·회색 표시 */
+  status?: string | null;
 }
 
 const SCHEDULE_PAGE_SIZE = 10;
@@ -129,7 +139,7 @@ function MainPageContent() {
   const [tokenChecked, setTokenChecked] = useState(false);
   const cancelledRef = useRef(false);
   const fetchPlanUser = useCallback(
-    async (onApiError: () => void) => {
+    async (onApiError: (status?: number) => void) => {
       if (!getToken()) {
         setApiPlanData("none");
         return;
@@ -146,7 +156,7 @@ function MainPageContent() {
           setApiPlanData(json.data);
         } else {
           setApiPlanData("none");
-          if (!res.ok) onApiError();
+          if (!res.ok) onApiError(res.status);
         }
       } catch {
         if (!cancelledRef.current) onApiError();
@@ -156,7 +166,7 @@ function MainPageContent() {
   );
 
   const fetchTotalAmount = useCallback(
-    async (onApiError: () => void) => {
+    async (onApiError: (status?: number) => void) => {
       if (!getToken()) {
         setTotalAmountManwon(0);
         return;
@@ -174,7 +184,7 @@ function MainPageContent() {
           setTotalAmountManwon(json.data.totalAmount);
         } else {
           setTotalAmountManwon(0);
-          if (!res.ok) onApiError();
+          if (!res.ok) onApiError(res.status);
         }
       } catch {
         if (!cancelledRef.current) {
@@ -186,11 +196,19 @@ function MainPageContent() {
     [fetchWithAuth],
   );
 
-  const handleApiError = useCallback(() => {
-    clearAllStoredData();
-    resetData();
-    router.replace("/?api_error=1");
-  }, [resetData, router]);
+  /** 401이면 모달 없이 / 로만 이동, 그 외에는 api_error=1 로 ApiErrorModal 표시 */
+  const handleApiError = useCallback(
+    (status?: number) => {
+      clearAllStoredData();
+      resetData();
+      if (status === 401) {
+        router.replace("/");
+      } else {
+        router.replace("/?api_error=1");
+      }
+    },
+    [resetData, router],
+  );
 
   // /main 접속 시 JWT가 존재하면 GET /plan/user, GET /plan/user/total-amount 호출
   useEffect(() => {
@@ -319,7 +337,7 @@ function MainPageContent() {
           sortColumn: SCHEDULE_SORT_COLUMN,
         });
         const res = await fetchWithAuth(
-          `/plan/schedule/list?${params.toString()}`
+          `/plan/schedule/list?${params.toString()}`,
         );
         const json = (await res.json()) as {
           result?: boolean;
@@ -342,7 +360,7 @@ function MainPageContent() {
         scheduleFetchingRef.current = false;
       }
     },
-    [fetchWithAuth]
+    [fetchWithAuth],
   );
 
   // 최초 로드: 토큰 있으면 1페이지 요청
@@ -365,17 +383,15 @@ function MainPageContent() {
     const sentinel = scheduleLoadMoreRef.current;
     const root = mainScrollRef.current;
     if (!sentinel || !root || !getToken()) return;
-    const hasMore =
-      scheduleList.length < scheduleTotal && scheduleTotal > 0;
+    const hasMore = scheduleList.length < scheduleTotal && scheduleTotal > 0;
     if (!hasMore || scheduleLoading) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!entries[0]?.isIntersecting || scheduleFetchingRef.current)
-          return;
+        if (!entries[0]?.isIntersecting || scheduleFetchingRef.current) return;
         fetchScheduleList(nextPageToLoad, true);
       },
-      { root, rootMargin: "100px", threshold: 0 }
+      { root, rootMargin: "100px", threshold: 0 },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -678,23 +694,15 @@ function MainPageContent() {
             ) : (
               <>
                 {scheduleList.map((plan) => {
-                  const isChecked = checkedItems.has(plan.id);
+                  const isChecked =
+                    checkedItems.has(plan.id) || plan.status === "COMPLETED";
                   const amount = plan.amount ?? 0;
                   const categoryColor = getCategoryColor(plan.categoryName);
+                  const detailHref = `/schedule-detail?id=${plan.id}`;
                   return (
                     <li
                       key={plan.id}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`플랜 상세 보기: ${plan.title}`}
-                      onClick={() => handleOpenScheduleDetail(plan.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          handleOpenScheduleDetail(plan.id);
-                        }
-                      }}
-                      className="flex items-center gap-4 rounded-[20px] bg-white p-4 cursor-pointer"
+                      className="flex items-center gap-4 rounded-[20px] bg-white p-4"
                     >
                       <button
                         type="button"
@@ -715,65 +723,79 @@ function MainPageContent() {
                           />
                         )}
                       </button>
-                      <div className="flex min-w-0 flex-1 flex-col rounded-2xl px-1 py-0">
-                        <span
-                          className="-ml-1 inline-flex w-fit h-[22.5px] items-center rounded-xl px-2 py-0 text-[11px] max-[350px]:text-[9px] font-semibold leading-none text-stone-700"
-                          style={{ backgroundColor: categoryColor }}
-                        >
-                          {plan.categoryName}
-                        </span>
-                        <p
-                          className={`mt-1 text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] ${
-                            isChecked ? "line-through" : ""
-                          }`}
-                          style={{
-                            color: isChecked ? "#99a1af" : "#2D5016",
-                          }}
-                        >
-                          {plan.title}
-                        </p>
-                        <div className="mt-1 flex items-center gap-2">
-                          <Calendar className="h-3.5 w-3.5 shrink-0 text-[#6a7282]" />
-                          {plan.startDate?.trim() ? (
-                            (() => {
-                              const { dateText, weekday } = formatDate(
-                                plan.startDate as string
-                              );
-                              return (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#6a7282]">
-                                    {dateText}
-                                  </span>
-                                  <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#99a1af]">
-                                    ({weekday})
-                                  </span>
-                                </div>
-                              );
-                            })()
+                      <Link
+                        href={getToken() ? detailHref : "#"}
+                        onClick={(e) => {
+                          if (!getToken()) {
+                            e.preventDefault();
+                            setShowLoginRequiredModal(true);
+                          }
+                        }}
+                        className="flex min-w-0 flex-1 items-stretch gap-4 rounded-2xl px-1 py-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#FFAAB8] focus-visible:ring-offset-2"
+                        aria-label={`플랜 상세 보기: ${plan.title}`}
+                      >
+                        <div className="flex min-w-0 flex-1 flex-col rounded-2xl px-1 py-0">
+                          <span
+                            className="-ml-1 inline-flex w-fit h-[22.5px] items-center rounded-xl px-2 py-0 text-[11px] max-[350px]:text-[9px] font-semibold leading-none text-stone-700"
+                            style={{ backgroundColor: categoryColor }}
+                          >
+                            {plan.categoryName}
+                          </span>
+                          <p
+                            className={`mt-1 text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] ${
+                              isChecked ? "line-through" : ""
+                            }`}
+                            style={{
+                              color: isChecked ? "#99a1af" : "#2D5016",
+                            }}
+                          >
+                            {plan.title}
+                          </p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <Calendar className="h-3.5 w-3.5 shrink-0 text-[#6a7282]" />
+                            {plan.startDate?.trim() ? (
+                              (() => {
+                                const { dateText, weekday } = formatDate(
+                                  plan.startDate as string,
+                                );
+                                return (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#6a7282]">
+                                      {dateText}
+                                    </span>
+                                    <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#99a1af]">
+                                      ({weekday})
+                                    </span>
+                                  </div>
+                                );
+                              })()
+                            ) : (
+                              <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#6a7282]">
+                                미정
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex min-w-[90px] shrink-0 items-center justify-end gap-2">
+                          {amount > 0 ? (
+                            <span className="text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] text-black whitespace-nowrap">
+                              {amount.toLocaleString()}만 원
+                            </span>
                           ) : (
-                            <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#6a7282]">
+                            <span className="text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-normal leading-[22.5px] text-[#99a1af] whitespace-nowrap">
                               미정
                             </span>
                           )}
+                          <div
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{
+                              backgroundColor: getDotColorByDate(
+                                plan.startDate,
+                              ),
+                            }}
+                          />
                         </div>
-                      </div>
-                      <div className="flex min-w-[90px] shrink-0 items-center justify-end gap-2">
-                        {amount > 0 ? (
-                          <span className="text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] text-black whitespace-nowrap">
-                            {amount.toLocaleString()}만 원
-                          </span>
-                        ) : (
-                          <span className="text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-normal leading-[22.5px] text-[#99a1af] whitespace-nowrap">
-                            미정
-                          </span>
-                        )}
-                        <div
-                          className="h-2 w-2 shrink-0 rounded-full"
-                          style={{
-                            backgroundColor: getDotColorByDate(plan.startDate),
-                          }}
-                        />
-                      </div>
+                      </Link>
                     </li>
                   );
                 })}
@@ -782,7 +804,9 @@ function MainPageContent() {
                 )}
                 {scheduleLoading && scheduleList.length > 0 && (
                   <li className="flex justify-center py-3">
-                    <span className="text-sm text-stone-400">불러오는 중...</span>
+                    <span className="text-sm text-stone-400">
+                      불러오는 중...
+                    </span>
                   </li>
                 )}
               </>

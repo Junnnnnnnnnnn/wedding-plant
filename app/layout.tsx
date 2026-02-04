@@ -7,6 +7,7 @@ import { ApiProvider } from "./contexts/ApiContext";
 import { WeddingProvider } from "./contexts/WeddingContext";
 import ApiErrorModal from "./components/ApiErrorModal";
 import ApiLoadingOverlay from "./components/ApiLoadingOverlay";
+import AuthRedirectToMain from "./components/AuthRedirectToMain";
 import ClickSpark from "@/components/ClickSpark";
 
 const hakgyoansim = localFont({
@@ -47,6 +48,7 @@ export default function RootLayout({
         className={`${hakgyoansim.className} ${hakgyoansim.variable} ${geistMono.variable} antialiased`}
       >
         <ApiProvider>
+          <AuthRedirectToMain />
           <ClickSpark
             sparkColor="#FFAAB8"
             sparkSize={10}
