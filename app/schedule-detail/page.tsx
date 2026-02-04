@@ -531,8 +531,9 @@ function ScheduleDetailPageContent() {
   }
 
   return (
-    <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6">
-      <div className="flex h-full w-full max-w-[500px] flex-col bg-[#FFF5F2]">
+    <div className="min-h-screen bg-[#fcfbfc]">
+      <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
+      <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
         {/* Header - Figma style */}
         <div className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-100 shrink-0">
           <div className="px-6 py-4">
@@ -566,17 +567,16 @@ function ScheduleDetailPageContent() {
           scrollDirection={scrollDirection}
           showLoginButton={false}
         />
+        <LoginRequiredModal
+          show={showLoginRequiredModal}
+          onClose={() => {
+            setShowLoginRequiredModal(false);
+            if (!getToken()) {
+              router.push("/");
+            }
+          }}
+        />
       </div>
-
-      <LoginRequiredModal
-        show={showLoginRequiredModal}
-        onClose={() => {
-          setShowLoginRequiredModal(false);
-          if (!getToken()) {
-            router.push("/");
-          }
-        }}
-      />
     </div>
   );
 }

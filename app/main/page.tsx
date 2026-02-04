@@ -445,19 +445,21 @@ function MainPageContent() {
   };
 
   return (
-    <div className="flex h-[100dvh] justify-center bg-[#FFF5F2] px-0 text-stone-900 lg:bg-white lg:px-6">
-      <KakaoLoginAlert
-        show={searchParams.get("kakao_login") === "1"}
-        onSuccessFromMain={() => {
-          fetchPlanUser(handleApiError);
-          fetchTotalAmount(handleApiError);
-          fetchScheduleList(1, false);
-        }}
-      />
-      <main
-        ref={mainScrollRef}
-        className="flex h-full w-full max-w-[500px] flex-col items-center overflow-y-auto bg-[#FFF5F2] px-6"
-      >
+    <div className="min-h-screen bg-[#fcfbfc]">
+      <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
+      <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
+        <KakaoLoginAlert
+          show={searchParams.get("kakao_login") === "1"}
+          onSuccessFromMain={() => {
+            fetchPlanUser(handleApiError);
+            fetchTotalAmount(handleApiError);
+            fetchScheduleList(1, false);
+          }}
+        />
+        <main
+          ref={mainScrollRef}
+          className="flex flex-1 flex-col items-center overflow-y-auto w-full px-6"
+        >
         <div className="w-full pt-8">
           {/* 상단 영역 */}
           <div className="w-full flex items-center justify-between">
@@ -665,7 +667,7 @@ function MainPageContent() {
               ["a", "b", "c", "d", "e"].map((id) => (
                 <li
                   key={`skeleton-plan-${id}`}
-                  className="flex items-center gap-4 rounded-[20px] bg-white p-4"
+                  className="flex items-center gap-4 rounded-3xl border border-[#ee2b8c0a] bg-white p-4 shadow-sm"
                 >
                   <span
                     className="skeleton-shimmer h-6 w-6 shrink-0 rounded-full"
@@ -700,29 +702,16 @@ function MainPageContent() {
                   const amount = plan.amount ?? 0;
                   const categoryColor = getCategoryColor(plan.categoryName);
                   const detailHref = `/schedule-detail?id=${plan.id}`;
+                  const dateLabel = plan.startDate?.trim()
+                    ? (() => {
+                        const { dateText, weekday } = formatDate(
+                          plan.startDate as string,
+                        );
+                        return `${dateText} (${weekday})`;
+                      })()
+                    : "미정";
                   return (
-                    <li
-                      key={plan.id}
-                      className="flex items-center gap-4 rounded-[20px] bg-white p-4"
-                    >
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleCheck(plan.id);
-                        }}
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all hover:opacity-80 ${isChecked
-                            ? "bg-[#ffaab8] border-[#ffaab8]"
-                            : "bg-white border-[#ffaab8]"
-                          }`}
-                      >
-                        {isChecked && (
-                          <Check
-                            className="h-3 w-3 text-white"
-                            strokeWidth={3}
-                          />
-                        )}
-                      </button>
+                    <li key={plan.id}>
                       <Link
                         href={getToken() ? detailHref : "#"}
                         onClick={(e) => {
@@ -731,68 +720,57 @@ function MainPageContent() {
                             setShowLoginRequiredModal(true);
                           }
                         }}
-                        className="flex min-w-0 flex-1 items-stretch gap-4 rounded-2xl px-1 py-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#FFAAB8] focus-visible:ring-offset-2"
+                        className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
                         aria-label={`플랜 상세 보기: ${plan.title}`}
                       >
-                        <div className="flex min-w-0 flex-1 flex-col rounded-2xl px-1 py-0">
-                          <span
-                            className="-ml-1 inline-flex w-fit h-[22.5px] items-center rounded-xl px-2 py-0 text-[11px] max-[350px]:text-[9px] font-semibold leading-none text-stone-700"
-                            style={{ backgroundColor: categoryColor }}
-                          >
-                            {plan.categoryName}
-                          </span>
-                          <p
-                            className={`mt-1 text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] ${isChecked ? "line-through" : ""
-                              }`}
-                            style={{
-                              color: isChecked ? "#99a1af" : "#2D5016",
+                        <div
+                          className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${categoryColor}` }}
+                        >
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleToggleCheck(plan.id);
                             }}
+                            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 ${isChecked
+                                ? "bg-[#ee2b8c] border-[#ee2b8c]"
+                                : "bg-white/80 border-[#ee2b8c]"
+                              }`}
+                          >
+                            {isChecked && (
+                              <Check
+                                className="h-3 w-3 text-white"
+                                strokeWidth={3}
+                              />
+                            )}
+                          </button>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4
+                            className={`text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
                           >
                             {plan.title}
+                          </h4>
+                          <p className="text-gray-400 text-xs font-semibold truncate tracking-tight mt-0.5">
+                            {plan.categoryName} · {dateLabel}
                           </p>
-                          <div className="mt-1 flex items-center gap-2">
-                            <Calendar className="h-3.5 w-3.5 shrink-0 text-[#6a7282]" />
-                            {plan.startDate?.trim() ? (
-                              (() => {
-                                const { dateText, weekday } = formatDate(
-                                  plan.startDate as string,
-                                );
-                                return (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#6a7282]">
-                                      {dateText}
-                                    </span>
-                                    <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#99a1af]">
-                                      ({weekday})
-                                    </span>
-                                  </div>
-                                );
-                              })()
-                            ) : (
-                              <span className="text-[13px] max-[350px]:text-[8px] max-[350px]:leading-[12px] font-normal leading-[19.5px] text-[#6a7282]">
-                                미정
-                              </span>
-                            )}
-                          </div>
                         </div>
-                        <div className="flex min-w-[90px] shrink-0 items-center justify-end gap-2">
-                          {amount > 0 ? (
-                            <span className="text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-semibold leading-[22.5px] text-black whitespace-nowrap">
-                              {amount.toLocaleString()}만 원
-                            </span>
-                          ) : (
-                            <span className="text-[15px] max-[350px]:text-[10px] max-[350px]:leading-[15px] font-normal leading-[22.5px] text-[#99a1af] whitespace-nowrap">
-                              미정
-                            </span>
-                          )}
-                          <div
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{
-                              backgroundColor: getDotColorByDate(
-                                plan.startDate,
-                              ),
-                            }}
-                          />
+                        <div className="text-right shrink-0">
+                          <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
+                            {amount > 0
+                              ? `${amount.toLocaleString()}만 원`
+                              : "미정"}
+                          </div>
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
+                                ? "bg-[#ee2b8c] text-white"
+                                : "bg-gray-100 text-gray-500"
+                              }`}
+                          >
+                            {isChecked ? "완료" : "예정"}
+                          </span>
                         </div>
                       </Link>
                     </li>
@@ -812,46 +790,47 @@ function MainPageContent() {
             )}
           </ul>
         </div>
-      </main>
-      {/* 하단 탭바 - Sticky로 최상단에 고정 */}
-      <BottomTabBar
-        activeTab="home"
-        showLoginButton={
-          !getToken() && !showGuestPlanLimitModal && !showLoginRequiredModal
-        }
-        onLoginClick={() => setShowLoginRequiredModal(true)}
-        scrollDirection={scrollDirection}
-        onTabClick={(tab) => {
-          if (tab === "home") {
-            // 이미 /main 페이지에 있으면 새로고침, 아니면 이동
-            if (window.location.pathname === "/main") {
-              router.refresh();
-            } else {
-              router.push("/main");
-            }
+        </main>
+        {/* 하단 탭바 - Sticky로 최상단에 고정 */}
+        <BottomTabBar
+          activeTab="home"
+          showLoginButton={
+            !getToken() && !showGuestPlanLimitModal && !showLoginRequiredModal
           }
-          // TODO: 나머지 탭들은 나중에 처리
-        }}
-      />
-      <LoginRequiredModal
-        show={showLoginRequiredModal}
-        onClose={() => setShowLoginRequiredModal(false)}
-      />
-      <GuestPlanLimitModal
-        show={showGuestPlanLimitModal}
-        onClose={() => setShowGuestPlanLimitModal(false)}
-        onConfirm={() => router.push("/add-plen")}
-      />
-      <ProfileEditModal
-        show={showProfileEditModal}
-        onClose={() => setShowProfileEditModal(false)}
-        displayData={{
-          name: displayData.name,
-          date: displayData.date,
-          budget: displayData.budget,
-        }}
-        onSaved={() => fetchPlanUser(handleApiError)}
-      />
+          onLoginClick={() => setShowLoginRequiredModal(true)}
+          scrollDirection={scrollDirection}
+          onTabClick={(tab) => {
+            if (tab === "home") {
+              // 이미 /main 페이지에 있으면 새로고침, 아니면 이동
+              if (window.location.pathname === "/main") {
+                router.refresh();
+              } else {
+                router.push("/main");
+              }
+            }
+            // TODO: 나머지 탭들은 나중에 처리
+          }}
+        />
+        <LoginRequiredModal
+          show={showLoginRequiredModal}
+          onClose={() => setShowLoginRequiredModal(false)}
+        />
+        <GuestPlanLimitModal
+          show={showGuestPlanLimitModal}
+          onClose={() => setShowGuestPlanLimitModal(false)}
+          onConfirm={() => router.push("/add-plen")}
+        />
+        <ProfileEditModal
+          show={showProfileEditModal}
+          onClose={() => setShowProfileEditModal(false)}
+          displayData={{
+            name: displayData.name,
+            date: displayData.date,
+            budget: displayData.budget,
+          }}
+          onSaved={() => fetchPlanUser(handleApiError)}
+        />
+      </div>
     </div>
   );
 }

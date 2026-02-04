@@ -118,14 +118,7 @@ const BudgetDetailsPage = () => {
 
     return (
         <div className="min-h-screen bg-[#fcfbfc]">
-            <style dangerouslySetInnerHTML={{
-                __html: `
-            .grid-bg {
-            background-image: radial-gradient(#ee2b8c22 1px, transparent 1px);
-            background-size: 20px 20px;
-            }
-        `}} />
-            <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0"></div>
+            <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
             <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
                 {/* Top Header */}
                 <header className="flex items-center justify-between px-4 py-6 z-10 sticky top-0 bg-white/80 backdrop-blur-sm">

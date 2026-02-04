@@ -278,6 +278,12 @@ main {
   border-radius: var(--confetti-shape);
 }
 
+/* 배경 그리드 점 패턴 (budget-detail 등 공통 레이아웃) */
+.grid-bg {
+  background-image: radial-gradient(#ee2b8c22 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
 /* 스크롤바 숨기기 */
 .scrollbar-hide {
   -ms-overflow-style: none;
