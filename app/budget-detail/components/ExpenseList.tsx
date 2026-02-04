@@ -12,7 +12,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses }) => {
         <div className="px-4 space-y-4">
             {expenses.length === 0 ? (
                 <div className="text-center py-12 text-gray-400 font-medium italic">
-                    No items found in this category.
+                    이 카테고리에 항목이 없습니다.
                 </div>
             ) : (
                 expenses.map((expense) => (
@@ -31,7 +31,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses }) => {
 
                         <div className="text-right shrink-0">
                             <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
-                                {expense.amount.toLocaleString()}
+                                {expense.plannedAmount.toLocaleString()}만 원
                             </div>
                             <StatusBadge status={expense.status} />
                         </div>
@@ -40,6 +40,13 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses }) => {
             )}
         </div>
     );
+};
+
+const STATUS_LABELS: Record<ExpenseStatus, string> = {
+    [ExpenseStatus.PAID]: '결제완료',
+    [ExpenseStatus.PENDING]: '대기',
+    [ExpenseStatus.DEPOSIT_PAID]: '계약금 결제',
+    [ExpenseStatus.PLANNED]: '예정'
 };
 
 const StatusBadge: React.FC<{ status: ExpenseStatus }> = ({ status }) => {
@@ -51,8 +58,8 @@ const StatusBadge: React.FC<{ status: ExpenseStatus }> = ({ status }) => {
     };
 
     return (
-        <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-tight ${styles[status]}`}>
-            {status}
+        <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${styles[status]}`}>
+            {STATUS_LABELS[status]}
         </span>
     );
 };

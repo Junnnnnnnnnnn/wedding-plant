@@ -808,192 +808,61 @@ function AddPlanPageContent() {
     <div className="min-h-screen bg-[#fcfbfc]">
       <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
       <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
-        {/* Header - ScheduleDetailPage와 동일 */}
-        <div className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-100 shrink-0">
-          <div className="px-6 py-4">
+        <div className="absolute top-0 left-0 z-50 w-full pointer-events-none">
+          <div className="px-6 py-4 pointer-events-auto">
             <button
               type="button"
               onClick={() => router.push("/main")}
-              className="flex items-center gap-2 text-gray-700 hover:text-[#FF8FA3] transition-colors"
+              className="flex items-center gap-2 text-[#ee2b8c] hover:bg-[#ee2b8c11] px-3 py-1.5 rounded-full transition-colors w-fit backdrop-blur-sm bg-white/30 shadow-sm"
               aria-label="뒤로가기"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">뒤로가기</span>
+              <span className="font-bold">뒤로가기</span>
             </button>
           </div>
         </div>
 
         <main
           ref={mainScrollRef}
-          className="flex flex-1 flex-col items-center overflow-y-auto px-6 pt-6 pb-24"
+          className="flex flex-1 flex-col items-center overflow-y-auto px-6 pt-14 pb-24"
         >
-        <div className="w-full pt-2">
-          <div className="flex flex-col items-start justify-start">
-            <span className="text-[32px] font-semibold text-[#FFAAB8] leading-none">
-              {editId ? "플랜 수정" : "계획을 추가해보세요"}
-            </span>
-            <span className="text-[42px] font-semibold text-[#000000] leading-none mt-2">
-              {editId ? "수정하기" : "플랜 추가"}
-            </span>
-            {editId && isLoadingDetail && (
-              <span className="text-sm text-stone-500 mt-2">불러오는 중...</span>
-            )}
-          </div>
-        </div>
-        {/* 폼 카드 영역 */}
-        <div className="mt-6 w-full space-y-5">
-          {/* 제목 */}
-          <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-pink-200">
-            <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-[#FF8FA3]" />
-              </div>
-              <span className="text-lg">제목</span>
-              <span className="text-[#FF6B85] text-xl">*</span>
-              <span className="ml-auto text-xs bg-gradient-to-r from-[#FF8FA3] to-[#FF6B85] text-white px-3 py-1 rounded-full font-bold">
-                필수
+          <div className="w-full pt-2">
+            <div className="flex flex-col items-start justify-start">
+              <span className="text-[32px] font-semibold text-[#ee2b8c] leading-none">
+                {editId ? "플랜 수정" : "계획을 추가해보세요"}
               </span>
-            </label>
-            <input
-              id="plan-name"
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="✨ 추가할 플랜 제목을 입력해주세요"
-              className="w-full px-5 py-4 border-2 border-pink-200 rounded-2xl focus:border-[#FF8FA3] focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 bg-pink-50/50"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  if (!inputValue.trim()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  } else {
-                    e.stopPropagation();
-                  }
-                }
-              }}
-            />
-          </div>
-          {/* 카테고리 */}
-          <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-amber-200">
-            <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
-                <Tag className="w-4 h-4 text-amber-600" />
-              </div>
-              <span className="text-lg">카테고리</span>
-              <span className="text-[#FF6B85] text-xl">*</span>
-              <span className="ml-auto text-xs bg-gradient-to-r from-[#FF8FA3] to-[#FF6B85] text-white px-3 py-1 rounded-full font-bold">
-                필수
+              <span className="text-[42px] font-semibold text-[#1b0d14] leading-none mt-2">
+                {editId ? "수정하기" : "플랜 추가"}
               </span>
-            </label>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleOpenModal}
-                className={`flex-1 px-5 py-4 rounded-2xl border-2 font-semibold transition-all text-left ${
-                  selectedCategory
-                    ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300 text-stone-800 shadow-sm"
-                    : "border-amber-200 text-stone-400 bg-amber-50/30 hover:border-amber-300"
-                }`}
-              >
-                {selectedCategory ? `✨ ${selectedCategory.label}` : "카테고리 선택해주세요"}
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenModal}
-                className="w-14 h-14 rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center hover:from-amber-100 hover:to-amber-200 transition-all shadow-sm hover:shadow-md flex-shrink-0"
-                aria-label="카테고리 추가"
-              >
-                <Plus className="w-6 h-6 text-amber-600" />
-              </button>
-            </div>
-            {/* 검색 결과 - 제목 입력 시 추천 카테고리 */}
-            {inputValue.trim() && (
-              <div
-                ref={scrollRef}
-                className="mt-3 w-full overflow-x-auto overflow-y-hidden scrollbar-hide flex gap-3 flex-nowrap pr-2 select-none cursor-grab active:cursor-grabbing"
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUpOrLeave}
-                onMouseLeave={handleMouseUpOrLeave}
-              >
-                {displayItems.map((category) => (
-                  <div
-                    key={category.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handleCategoryClick(category)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleCategoryClick(category);
-                      }
-                    }}
-                    className="h-10 px-4 flex-shrink-0 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
-                    style={{ backgroundColor: category.color }}
-                  >
-                    <span className="text-sm font-semibold text-stone-700 whitespace-nowrap">
-                      {category.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* 결제 유형 */}
-          <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-blue-200">
-            <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                <CreditCard className="w-4 h-4 text-blue-600" />
-              </div>
-              <span className="text-lg">결제 유형</span>
-              <span className="text-[#FF6B85] text-xl">*</span>
-              <span className="ml-auto text-xs bg-gradient-to-r from-[#FF8FA3] to-[#FF6B85] text-white px-3 py-1 rounded-full font-bold">
-                필수
-              </span>
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {(["현금", "카드", "기타"] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setPaymentType(type)}
-                  className={`py-4 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 ${
-                    paymentType === type
-                      ? "bg-gradient-to-br from-[#FF8FA3] to-[#FF6B85] text-white shadow-lg scale-105"
-                      : "bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-blue-200 text-stone-600 hover:border-blue-300"
-                  }`}
-                >
-                  {type === "현금" && <Wallet className="w-6 h-6" />}
-                  {type === "카드" && <CreditCard className="w-6 h-6" />}
-                  {type === "기타" && <DollarSign className="w-6 h-6" />}
-                  <span>{type}</span>
-                </button>
-              ))}
+              {editId && isLoadingDetail && (
+                <span className="text-sm text-stone-500 mt-2">불러오는 중...</span>
+              )}
             </div>
           </div>
-          {/* 금액 */}
-          <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-            <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-emerald-600" />
-              </div>
-              <span className="text-lg">금액</span>
-              <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                선택
-              </span>
-            </label>
-            <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 rounded-2xl p-1">
+          {/* 폼 카드 영역 */}
+          <div className="mt-6 w-full space-y-5">
+            {/* 제목 */}
+            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-[#ee2b8c22]">
+              <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-[#ee2b8c]" />
+                </div>
+                <span className="text-lg">제목</span>
+                <span className="text-[#ee2b8c] text-xl">*</span>
+                <span className="ml-auto text-xs bg-[#ee2b8c] text-white px-3 py-1 rounded-full font-bold">
+                  필수
+                </span>
+              </label>
               <input
-                id="plan-amount"
+                id="plan-name"
                 type="text"
-                inputMode="numeric"
-                value={amount}
-                onChange={handleAmountChange}
-                placeholder="금액을 입력해주세요"
-                className="flex-1 min-w-0 px-5 py-4 bg-white rounded-xl focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 border-2 border-transparent focus:border-emerald-200"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="✨ 추가할 플랜 제목을 입력해주세요"
+                className="w-full px-5 py-4 border-2 border-[#ee2b8c22] rounded-2xl focus:border-[#ee2b8c] focus:outline-none transition-all text-[#1b0d14] placeholder:text-stone-400 bg-pink-50/50"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
-                    if (!amount.trim()) {
+                    if (!inputValue.trim()) {
                       e.preventDefault();
                       e.stopPropagation();
                     } else {
@@ -1002,638 +871,762 @@ function AddPlanPageContent() {
                   }
                 }}
               />
-              <span className="text-stone-700 font-bold text-lg pr-4">만 원</span>
             </div>
-          </div>
-          {/* 일자 */}
-          <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-            <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
-                <Calendar className="w-4 h-4 text-purple-600" />
+            {/* 카테고리 */}
+            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-amber-200">
+              <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
+                  <Tag className="w-4 h-4 text-amber-600" />
+                </div>
+                <span className="text-lg">카테고리</span>
+                <span className="text-[#ee2b8c] text-xl">*</span>
+                <span className="ml-auto text-xs bg-[#ee2b8c] text-white px-3 py-1 rounded-full font-bold">
+                  필수
+                </span>
+              </label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleOpenModal}
+                  className={`flex-1 px-5 py-4 rounded-2xl border-2 font-semibold transition-all text-left ${selectedCategory
+                    ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300 text-stone-800 shadow-sm"
+                    : "border-amber-200 text-stone-400 bg-amber-50/30 hover:border-amber-300"
+                    }`}
+                >
+                  {selectedCategory ? `✨ ${selectedCategory.label}` : "카테고리 선택해주세요"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenModal}
+                  className="w-14 h-14 rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center hover:from-amber-100 hover:to-amber-200 transition-all shadow-sm hover:shadow-md flex-shrink-0"
+                  aria-label="카테고리 추가"
+                >
+                  <Plus className="w-6 h-6 text-amber-600" />
+                </button>
               </div>
-              <span className="text-lg">일자</span>
-              <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                선택
-              </span>
-            </label>
-            <div className="flex items-center gap-3">
-              <div
-                className={`flex-1 min-w-0 px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate ${
-                  isDateUndecided
+              {/* 검색 결과 - 제목 입력 시 추천 카테고리 */}
+              {inputValue.trim() && (
+                <div
+                  ref={scrollRef}
+                  className="mt-3 w-full overflow-x-auto overflow-y-hidden scrollbar-hide flex gap-3 flex-nowrap pr-2 select-none cursor-grab active:cursor-grabbing"
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUpOrLeave}
+                  onMouseLeave={handleMouseUpOrLeave}
+                >
+                  {displayItems.map((category) => (
+                    <div
+                      key={category.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleCategoryClick(category)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleCategoryClick(category);
+                        }
+                      }}
+                      className="h-10 px-4 flex-shrink-0 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                      style={{ backgroundColor: category.color }}
+                    >
+                      <span className="text-sm font-semibold text-stone-700 whitespace-nowrap">
+                        {category.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* 결제 유형 */}
+            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-blue-200">
+              <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                  <CreditCard className="w-4 h-4 text-blue-600" />
+                </div>
+                <span className="text-lg">결제 유형</span>
+                <span className="text-[#ee2b8c] text-xl">*</span>
+                <span className="ml-auto text-xs bg-[#ee2b8c] text-white px-3 py-1 rounded-full font-bold">
+                  필수
+                </span>
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {(["현금", "카드", "기타"] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setPaymentType(type)}
+                    className={`py-4 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 ${paymentType === type
+                      ? "bg-[#ee2b8c] text-white shadow-lg scale-105"
+                      : "bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-blue-200 text-stone-600 hover:border-blue-300"
+                      }`}
+                  >
+                    {type === "현금" && <Wallet className="w-6 h-6" />}
+                    {type === "카드" && <CreditCard className="w-6 h-6" />}
+                    {type === "기타" && <DollarSign className="w-6 h-6" />}
+                    <span>{type}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* 금액 */}
+            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
+              <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                </div>
+                <span className="text-lg">금액</span>
+                <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
+                  선택
+                </span>
+              </label>
+              <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 rounded-2xl p-1">
+                <input
+                  id="plan-amount"
+                  type="text"
+                  inputMode="numeric"
+                  value={amount}
+                  onChange={handleAmountChange}
+                  placeholder="금액을 입력해주세요"
+                  className="flex-1 min-w-0 px-5 py-4 bg-white rounded-xl focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 border-2 border-transparent focus:border-emerald-200"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      if (!amount.trim()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      } else {
+                        e.stopPropagation();
+                      }
+                    }
+                  }}
+                />
+                <span className="text-stone-700 font-bold text-lg pr-4">만 원</span>
+              </div>
+            </div>
+            {/* 일자 */}
+            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
+              <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-purple-600" />
+                </div>
+                <span className="text-lg">일자</span>
+                <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
+                  선택
+                </span>
+              </label>
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex-1 min-w-0 px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate ${isDateUndecided
                     ? "bg-stone-100 border-stone-200 text-stone-400 cursor-default"
                     : "text-stone-900 bg-purple-50/20 border-stone-200 cursor-pointer hover:border-purple-300 focus:border-purple-300 focus:outline-none"
-                }`}
-                onClick={() => {
-                  if (!isDateUndecided) {
-                    setIsDatePickerOpen(true);
-                  }
-                }}
-                role="button"
-                tabIndex={isDateUndecided ? -1 : 0}
-                onKeyDown={(e) => {
-                  if (!isDateUndecided && (e.key === "Enter" || e.key === " ")) {
-                    e.preventDefault();
-                    setIsDatePickerOpen(true);
-                  }
-                }}
-              >
-                {isDateUndecided ? (
-                  <span className="text-stone-400">미정</span>
-                ) : (
-                  formatDate(selectedDate)
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsDateUndecided(true)}
-                className={`px-5 py-4 rounded-2xl font-bold transition-all flex-shrink-0 ${
-                  isDateUndecided
+                    }`}
+                  onClick={() => {
+                    if (!isDateUndecided) {
+                      setIsDatePickerOpen(true);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={isDateUndecided ? -1 : 0}
+                  onKeyDown={(e) => {
+                    if (!isDateUndecided && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      setIsDatePickerOpen(true);
+                    }
+                  }}
+                >
+                  {isDateUndecided ? (
+                    <span className="text-stone-400">미정</span>
+                  ) : (
+                    formatDate(selectedDate)
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDateUndecided(true)}
+                  className={`px-5 py-4 rounded-2xl font-bold transition-all flex-shrink-0 ${isDateUndecided
                     ? "bg-stone-300 text-stone-600 border-2 border-stone-300"
                     : "bg-gradient-to-br from-gray-100 to-gray-200 text-stone-600 border-2 border-stone-200 hover:from-gray-200 hover:to-gray-300"
-                }`}
-                aria-label="날짜 미정"
-              >
-                미정
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsDateUndecided(false);
-                  setIsDatePickerOpen(true);
-                }}
-                className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm flex-shrink-0"
-                aria-label="날짜 선택"
-              >
-                <Calendar className="w-6 h-6 text-purple-600" />
-              </button>
-            </div>
-          </div>
-          {/* 위치 */}
-          <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-            <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
-                <MapPin className="w-4 h-4 text-red-600" />
+                    }`}
+                  aria-label="날짜 미정"
+                >
+                  미정
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDateUndecided(false);
+                    setIsDatePickerOpen(true);
+                  }}
+                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm flex-shrink-0"
+                  aria-label="날짜 선택"
+                >
+                  <Calendar className="w-6 h-6 text-purple-600" />
+                </button>
               </div>
-              <span className="text-lg">위치</span>
-              <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                선택
-              </span>
-            </label>
-            <div className="flex items-center gap-3 mb-4">
-              <input
-                id="plan-location"
-                type="text"
-                value={location}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setLocation(newValue);
-                  if (!newValue.trim()) {
-                    setLocationSearchResults([]);
-                    setShowMap(false);
-                    setMapCoords(null);
-                    setHasSearched(false);
-                    setShowAllLocationResults(false);
-                  }
-                }}
-                placeholder="🔍 위치를 검색해주세요"
-                className="flex-1 min-w-0 px-5 py-4 border-2 border-stone-200 rounded-2xl focus:border-red-300 focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 bg-red-50/20"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.stopPropagation();
-                    if (!location.trim()) {
-                      e.preventDefault();
-                    } else {
-                      handleSearchLocation();
+            </div>
+            {/* 위치 */}
+            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
+              <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
+                  <MapPin className="w-4 h-4 text-red-600" />
+                </div>
+                <span className="text-lg">위치</span>
+                <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
+                  선택
+                </span>
+              </label>
+              <div className="flex items-center gap-3 mb-4">
+                <input
+                  id="plan-location"
+                  type="text"
+                  value={location}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setLocation(newValue);
+                    if (!newValue.trim()) {
+                      setLocationSearchResults([]);
+                      setShowMap(false);
+                      setMapCoords(null);
+                      setHasSearched(false);
+                      setShowAllLocationResults(false);
                     }
-                  }
-                  if (e.key === " ") {
-                    if (!location.trim()) e.preventDefault();
-                    e.stopPropagation();
-                  }
-                }}
-              />
-              <button
-                type="button"
-                onClick={handleSearchLocation}
-                disabled={!location.trim()}
-                className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${
-                  location.trim()
+                  }}
+                  placeholder="🔍 위치를 검색해주세요"
+                  className="flex-1 min-w-0 px-5 py-4 border-2 border-stone-200 rounded-2xl focus:border-red-300 focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 bg-red-50/20"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.stopPropagation();
+                      if (!location.trim()) {
+                        e.preventDefault();
+                      } else {
+                        handleSearchLocation();
+                      }
+                    }
+                    if (e.key === " ") {
+                      if (!location.trim()) e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSearchLocation}
+                  disabled={!location.trim()}
+                  className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${location.trim()
                     ? "bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700 shadow-md hover:shadow-lg cursor-pointer"
                     : "bg-stone-300 text-stone-500 cursor-not-allowed"
-                }`}
-              >
-                <Search className="w-5 h-5" />
-                검색
-              </button>
-            </div>
-          {/* 검색 결과 목록 */}
-          {hasSearched && locationSearchResults.length > 0 && (
-            <div className="mt-3 w-full">
-              <div className="flex flex-col gap-2">
-                {/* 지도가 표시되지 않았을 때만 검색 결과 목록 표시 */}
-                {!showMap && (
-                  <>
-                    {(showAllLocationResults
-                      ? locationSearchResults
-                      : locationSearchResults.slice(0, 3)
-                    ).map((result) => (
-                      <div
-                        key={`${result.x}-${result.y}-${result.place_name}`}
-                        onClick={() => handleSelectLocation(result)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            handleSelectLocation(result);
-                          }
+                    }`}
+                >
+                  <Search className="w-5 h-5" />
+                  검색
+                </button>
+              </div>
+              {/* 검색 결과 목록 */}
+              {hasSearched && locationSearchResults.length > 0 && (
+                <div className="mt-3 w-full">
+                  <div className="flex flex-col gap-2">
+                    {/* 지도가 표시되지 않았을 때만 검색 결과 목록 표시 */}
+                    {!showMap && (
+                      <>
+                        {(showAllLocationResults
+                          ? locationSearchResults
+                          : locationSearchResults.slice(0, 3)
+                        ).map((result) => (
+                          <div
+                            key={`${result.x}-${result.y}-${result.place_name}`}
+                            onClick={() => handleSelectLocation(result)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                handleSelectLocation(result);
+                              }
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] cursor-pointer transition-colors"
+                          >
+                            <div className="font-bold text-stone-900 mb-1">
+                              {result.place_name}
+                            </div>
+                            <div className="text-sm text-stone-600">
+                              {result.road_address_name || result.address_name}
+                            </div>
+                          </div>
+                        ))}
+                        {locationSearchResults.length > 3 &&
+                          !showAllLocationResults && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllLocationResults(true)}
+                              className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors flex items-center justify-center gap-2"
+                            >
+                              <span className="text-lg font-bold text-[#ee2b8c]">
+                                +
+                              </span>
+                              <span className="text-sm font-semibold text-[#1b0d14]">
+                                {locationSearchResults.length - 3}개 더보기
+                              </span>
+                            </button>
+                          )}
+                      </>
+                    )}
+                    {/* 지도가 표시되었을 때는 버튼만 표시 (전체 개수) */}
+                    {showMap && locationSearchResults.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMap(false);
+                          setShowAllLocationResults(false);
                         }}
-                        role="button"
-                        tabIndex={0}
-                        className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] cursor-pointer transition-colors"
+                        className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors flex items-center justify-center gap-2"
                       >
-                        <div className="font-bold text-stone-900 mb-1">
-                          {result.place_name}
+                        <span className="text-lg font-bold text-[#ee2b8c]">+</span>
+                        <span className="text-sm font-semibold text-[#1b0d14]">
+                          {locationSearchResults.length}개 더보기
+                        </span>
+                      </button>
+                    )}
+                    {/* 원하는 결과가 없을 때 */}
+                    {!showMap && (
+                      <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
+                        <div className="text-base font-semibold text-stone-600 mb-2">
+                          원하는 결과가 없습니다
                         </div>
-                        <div className="text-sm text-stone-600">
-                          {result.road_address_name || result.address_name}
-                        </div>
-                      </div>
-                    ))}
-                    {locationSearchResults.length > 3 &&
-                      !showAllLocationResults && (
                         <button
                           type="button"
-                          onClick={() => setShowAllLocationResults(true)}
-                          className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] cursor-pointer transition-colors flex items-center justify-center gap-2"
+                          onClick={handleSaveWithoutLocation}
+                          className="px-6 py-2 bg-[#ee2b8c] text-white font-semibold rounded-xl hover:bg-[#d4237b] transition-colors text-sm"
                         >
-                          <span className="text-lg font-bold text-[#FFAAB8]">
-                            +
-                          </span>
-                          <span className="text-sm font-semibold text-stone-700">
-                            {locationSearchResults.length - 3}개 더보기
-                          </span>
+                          건너뛰기
                         </button>
-                      )}
-                  </>
-                )}
-                {/* 지도가 표시되었을 때는 버튼만 표시 (전체 개수) */}
-                {showMap && locationSearchResults.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowMap(false);
-                      setShowAllLocationResults(false);
-                    }}
-                    className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] cursor-pointer transition-colors flex items-center justify-center gap-2"
-                  >
-                    <span className="text-lg font-bold text-[#FFAAB8]">+</span>
-                    <span className="text-sm font-semibold text-stone-700">
-                      {locationSearchResults.length}개 더보기
-                    </span>
-                  </button>
-                )}
-                {/* 원하는 결과가 없을 때 */}
-                {!showMap && (
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {/* 검색 결과 없음 */}
+              {hasSearched && locationSearchResults.length === 0 && (
+                <div className="mt-3 w-full">
                   <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
                     <div className="text-base font-semibold text-stone-600 mb-2">
-                      원하는 결과가 없습니다
+                      검색 결과가 없습니다.
                     </div>
                     <button
                       type="button"
                       onClick={handleSaveWithoutLocation}
-                      className="px-6 py-2 bg-[#FFAAB8] text-white font-semibold rounded-xl hover:bg-[#FF8FA3] transition-colors text-sm"
+                      className="px-6 py-2 bg-[#ee2b8c] text-white font-semibold rounded-xl hover:bg-[#d4237b] transition-colors text-sm"
                     >
                       건너뛰기
                     </button>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-          {/* 검색 결과 없음 */}
-          {hasSearched && locationSearchResults.length === 0 && (
-            <div className="mt-3 w-full">
-              <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
-                <div className="text-base font-semibold text-stone-600 mb-2">
-                  검색 결과가 없습니다.
                 </div>
-                <button
-                  type="button"
-                  onClick={handleSaveWithoutLocation}
-                  className="px-6 py-2 bg-[#FFAAB8] text-white font-semibold rounded-xl hover:bg-[#FF8FA3] transition-colors text-sm"
-                >
-                  건너뛰기
-                </button>
-              </div>
-            </div>
-          )}
-            {/* 지도 - 위치 선택 시 카드 내에 표시 */}
-            {showMap && (
-              <div ref={mapContainerRef} className="mt-4 w-full">
-                <div
-                  id="map"
-                  className="w-full h-[200px] rounded-2xl overflow-hidden border-2 border-stone-200"
-                  style={{ pointerEvents: "auto" }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* 메모 */}
-          <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-            <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-orange-600" />
-              </div>
-              <span className="text-lg">메모</span>
-              <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                선택
-              </span>
-            </label>
-            <div className="relative">
-              <textarea
-                ref={memoTextareaRef}
-                id="plan-memo"
-                value={memo}
-                maxLength={500}
-                onChange={(e) => {
-                  const newValue = e.target.value.slice(0, 500);
-                  setMemo(newValue);
-                  if (memoTextareaRef.current) {
-                    memoTextareaRef.current.style.height = "auto";
-                    memoTextareaRef.current.style.height = `${memoTextareaRef.current.scrollHeight}px`;
-                  }
-                }}
-                placeholder="📝 메모를 입력해주세요"
-                className="w-full min-h-[112px] px-5 py-4 pb-10 border-2 border-stone-200 rounded-2xl focus:border-orange-300 focus:outline-none transition-all resize-none overflow-hidden text-stone-700 placeholder:text-stone-400 bg-orange-50/20"
-                style={{ height: "auto" }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    if (!memo.trim()) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    } else {
-                      e.stopPropagation();
-                    }
-                  }
-                }}
-              />
-              <div className="absolute bottom-3 right-3 text-sm text-stone-400 font-medium">
-                {memo.length}/500
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 저장 버튼 - 제목과 카테고리가 모두 있을 때만 표시 */}
-        {inputValue.trim() && selectedCategory && !isLoadingDetail && (
-          <div className="mt-8 w-full">
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={async () => {
-                if (!validateForm()) return;
-                if (!getToken()) {
-                  setShowLoginRequiredModal(true);
-                  return;
-                }
-
-                const amountValue = amount.replace(/,/g, "");
-                const body: Record<string, unknown> = {
-                  categoryName: selectedCategory.label,
-                  title: inputValue.trim(),
-                  payType: PAY_TYPE_MAP[paymentType],
-                  amount: amountValue ? parseInt(amountValue, 10) : 0,
-                  location: location.trim() || "",
-                  locationLat: mapCoords?.lat ?? 0,
-                  locationLng: mapCoords?.lng ?? 0,
-                  memo: memo.trim() || "",
-                  addCategoryNameList: userAddedCategories.map((c) => c.label),
-                };
-                if (!isDateUndecided) {
-                  body.startDate = formatDate(selectedDate);
-                }
-
-                setIsSaving(true);
-                try {
-                  const url = editId
-                    ? `/plan/schedule/${editId}`
-                    : "/plan/schedule";
-                  const res = await fetchWithAuth(url, {
-                    method: editId ? "PATCH" : "POST",
-                    body: JSON.stringify(body),
-                  });
-                  const json = await res.json().catch(() => ({}));
-
-                  if (res.ok && json.result === true) {
-                    setShowPlanSavedModal(true);
-                    return;
-                  }
-                  setShowSystemErrorModal(true);
-                } catch {
-                  setShowSystemErrorModal(true);
-                } finally {
-                  setIsSaving(false);
-                }
-              }}
-              className="w-full px-6 py-4 bg-[#FFAAB8] text-white font-bold text-lg rounded-xl hover:bg-[#FF8FA3] transition-colors shadow-md active:scale-[0.98] transform disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {isSaving
-                ? editId
-                  ? "수정 중..."
-                  : "저장 중..."
-                : editId
-                  ? "수정하기"
-                  : "플랜 저장하기"}
-            </button>
-          </div>
-        )}
-      </main>
-      {/* 하단 탭바 - Sticky로 최상단에 고정 */}
-      <BottomTabBar
-        activeTab="home"
-        showLoginButton={!getToken() && !showLoginRequiredModal}
-        onLoginClick={() => setShowLoginRequiredModal(true)}
-        scrollDirection={scrollDirection}
-        onTabClick={(tab) => {
-          if (tab === "home") {
-            router.push("/main");
-          }
-          // TODO: 나머지 탭들은 나중에 처리
-        }}
-      />
-      <LoginRequiredModal
-        show={showLoginRequiredModal}
-        onClose={() => setShowLoginRequiredModal(false)}
-      />
-
-      {/* 카테고리 선택 모달 */}
-      <AnimatePresence>
-        {isModalOpen && (
-          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-          <motion.div
-            key="category-modal-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-            onClick={handleCloseModal}
-          >
-            <motion.div
-              key="category-modal-content"
-              initial={{ opacity: 0, y: 100, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 50, scale: 0.95 }}
-              transition={{
-                duration: 0.3,
-                ease: [0.25, 0.46, 0.45, 0.94],
-              }}
-              className="bg-white rounded-3xl w-full max-w-md p-7 max-h-[70vh] overflow-y-auto shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-            {/* 모달 헤더 */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
-                  <Tag className="w-5 h-5 text-amber-600" />
-                </div>
-                <h2 className="text-2xl font-black text-stone-900">
-                  카테고리 선택
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={handleCloseModal}
-                className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                aria-label="닫기"
-              >
-                <X className="w-6 h-6 text-stone-500" />
-              </button>
-            </div>
-
-            {/* 카테고리 목록 - 왼쪽에서 차례대로 슬라이드 인 */}
-            <div className="space-y-3">
-              {categoriesForModal.map((category, index) => (
-                <motion.div
-                  key={`modal-${category.label}`}
-                  ref={
-                    category.label === highlightCategoryLabel
-                      ? highlightedCategoryRef
-                      : null
-                  }
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={category.label === highlightCategoryLabel ? "scroll-mt-8" : ""}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleSelectFromModal(category)}
-                    className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between ${
-                      selectedCategory?.label === category.label
-                        ? "bg-gradient-to-r from-[#FF8FA3] to-[#FF6B85] text-white shadow-lg scale-[1.02]"
-                        : "bg-gradient-to-r from-gray-50 to-gray-100 hover:from-pink-50 hover:to-rose-50 text-stone-800 border-2 border-gray-100 hover:border-pink-200"
-                    } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
-                  >
-                    <span className="font-bold text-lg flex items-center gap-2">
-                      {selectedCategory?.label === category.label ? "✨ " : ""}
-                      {category.label}
-                      {userAddedLabels.has(category.label) && (
-                        <span
-                          className="rounded-full bg-[#FFAAB8] text-white text-xs font-bold px-2 py-0.5"
-                          aria-label="내가 추가한 카테고리"
-                        >
-                          my
-                        </span>
-                      )}
-                    </span>
-                    {selectedCategory?.label === category.label && (
-                      <Check className="w-6 h-6 flex-shrink-0" />
-                    )}
-                  </button>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* 카테고리 종류 추가 - 모달 내 마지막 요소 */}
-            <div className="mt-4 pt-4 border-t border-stone-100">
-              {isAddingCategory ? (
-                <div className="rounded-2xl flex flex-col items-stretch gap-3 border-2 border-[#FFAAB8] bg-white p-4">
-                  <input
-                    ref={newCategoryInputRef}
-                    type="text"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    onKeyDown={handleNewCategoryKeyDown}
-                    placeholder="새 카테고리 이름"
-                    className="w-full px-4 py-3 text-sm font-semibold text-stone-700 bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-[#FFAAB8] placeholder:text-stone-400"
+              )}
+              {/* 지도 - 위치 선택 시 카드 내에 표시 */}
+              {showMap && (
+                <div ref={mapContainerRef} className="mt-4 w-full">
+                  <div
+                    id="map"
+                    className="w-full h-[200px] rounded-2xl overflow-hidden border-2 border-stone-200"
+                    style={{ pointerEvents: "auto" }}
                   />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleCancelAddingCategory}
-                      className="flex-1 py-3 rounded-xl border-2 border-stone-200 text-stone-600 font-semibold text-sm hover:bg-stone-100 transition-colors"
-                    >
-                      취소
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCompleteAddingCategory}
-                      disabled={!newCategoryName.trim()}
-                      className="flex-1 py-3 rounded-xl bg-[#FFAAB8] text-white font-semibold text-sm hover:bg-[#FF8FA3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      확인
-                    </button>
-                  </div>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  className="w-full py-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity border-2 border-dashed border-[#FFAAB8] bg-[#FFF5F2]"
-                  onClick={handleStartAddingCategory}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleStartAddingCategory();
-                    }
-                  }}
-                >
-                  <span className="text-2xl font-bold text-[#FFAAB8] mb-1">
-                    +
-                  </span>
-                  <span className="text-sm font-semibold text-[#FFAAB8]">
-                    카테고리 추가
-                  </span>
-                </button>
               )}
             </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* 플랜 등록 완료 모달 */}
-      {showPlanSavedModal && (
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
-          onClick={() => {
-            setShowPlanSavedModal(false);
-            router.push("/main");
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              setShowPlanSavedModal(false);
+            {/* 메모 */}
+            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
+              <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-orange-600" />
+                </div>
+                <span className="text-lg">메모</span>
+                <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
+                  선택
+                </span>
+              </label>
+              <div className="relative">
+                <textarea
+                  ref={memoTextareaRef}
+                  id="plan-memo"
+                  value={memo}
+                  maxLength={500}
+                  onChange={(e) => {
+                    const newValue = e.target.value.slice(0, 500);
+                    setMemo(newValue);
+                    if (memoTextareaRef.current) {
+                      memoTextareaRef.current.style.height = "auto";
+                      memoTextareaRef.current.style.height = `${memoTextareaRef.current.scrollHeight}px`;
+                    }
+                  }}
+                  placeholder="📝 메모를 입력해주세요"
+                  className="w-full min-h-[112px] px-5 py-4 pb-10 border-2 border-stone-200 rounded-2xl focus:border-orange-300 focus:outline-none transition-all resize-none overflow-hidden text-stone-700 placeholder:text-stone-400 bg-orange-50/20"
+                  style={{ height: "auto" }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      if (!memo.trim()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      } else {
+                        e.stopPropagation();
+                      }
+                    }
+                  }}
+                />
+                <div className="absolute bottom-3 right-3 text-sm text-stone-400 font-medium">
+                  {memo.length}/500
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 저장 버튼 - 제목과 카테고리가 모두 있을 때만 표시 */}
+          {inputValue.trim() && selectedCategory && !isLoadingDetail && (
+            <div className="mt-8 w-full">
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={async () => {
+                  if (!validateForm()) return;
+                  if (!getToken()) {
+                    setShowLoginRequiredModal(true);
+                    return;
+                  }
+
+                  const amountValue = amount.replace(/,/g, "");
+                  const body: Record<string, unknown> = {
+                    categoryName: selectedCategory.label,
+                    title: inputValue.trim(),
+                    payType: PAY_TYPE_MAP[paymentType],
+                    amount: amountValue ? parseInt(amountValue, 10) : 0,
+                    location: location.trim() || "",
+                    locationLat: mapCoords?.lat ?? 0,
+                    locationLng: mapCoords?.lng ?? 0,
+                    memo: memo.trim() || "",
+                    addCategoryNameList: userAddedCategories.map((c) => c.label),
+                  };
+                  if (!isDateUndecided) {
+                    body.startDate = formatDate(selectedDate);
+                  }
+
+                  setIsSaving(true);
+                  try {
+                    const url = editId
+                      ? `/plan/schedule/${editId}`
+                      : "/plan/schedule";
+                    const res = await fetchWithAuth(url, {
+                      method: editId ? "PATCH" : "POST",
+                      body: JSON.stringify(body),
+                    });
+                    const json = await res.json().catch(() => ({}));
+
+                    if (res.ok && json.result === true) {
+                      setShowPlanSavedModal(true);
+                      return;
+                    }
+                    setShowSystemErrorModal(true);
+                  } catch {
+                    setShowSystemErrorModal(true);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                className="w-full px-6 py-4 bg-[#ee2b8c] text-white font-bold text-lg rounded-xl hover:bg-[#d4237b] transition-colors shadow-lg shadow-[#ee2b8c44] active:scale-[0.98] transform disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isSaving
+                  ? editId
+                    ? "수정 중..."
+                    : "저장 중..."
+                  : editId
+                    ? "수정하기"
+                    : "플랜 저장하기"}
+              </button>
+            </div>
+          )}
+        </main>
+        {/* 하단 탭바 - Sticky로 최상단에 고정 */}
+        <BottomTabBar
+          activeTab="home"
+          showLoginButton={!getToken() && !showLoginRequiredModal}
+          onLoginClick={() => setShowLoginRequiredModal(true)}
+          scrollDirection={scrollDirection}
+          onTabClick={(tab) => {
+            if (tab === "home") {
               router.push("/main");
             }
+            // TODO: 나머지 탭들은 나중에 처리
           }}
-        >
-          <div
-            className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="plan-saved-modal-title"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-          >
-            <p
-              id="plan-saved-modal-title"
-              className="text-center text-lg font-semibold text-stone-900"
+        />
+        <LoginRequiredModal
+          show={showLoginRequiredModal}
+          onClose={() => setShowLoginRequiredModal(false)}
+        />
+
+        {/* 카테고리 선택 모달 */}
+        <AnimatePresence>
+          {isModalOpen && (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+            <motion.div
+              key="category-modal-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+              onClick={handleCloseModal}
             >
-              {editId ? "수정되었습니다" : "등록되었습니다"}
-            </p>
-            <button
-              type="button"
-              onClick={() => {
+              <motion.div
+                key="category-modal-content"
+                initial={{ opacity: 0, y: 100, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 50, scale: 0.95 }}
+                transition={{
+                  duration: 0.3,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                }}
+                className="bg-white rounded-3xl w-full max-w-md p-7 max-h-[70vh] overflow-y-auto shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* 모달 헤더 */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
+                      <Tag className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <h2 className="text-2xl font-black text-stone-900">
+                      카테고리 선택
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                    aria-label="닫기"
+                  >
+                    <X className="w-6 h-6 text-stone-500" />
+                  </button>
+                </div>
+
+                {/* 카테고리 목록 - 왼쪽에서 차례대로 슬라이드 인 */}
+                <div className="space-y-3">
+                  {categoriesForModal.map((category, index) => (
+                    <motion.div
+                      key={`modal-${category.label}`}
+                      ref={
+                        category.label === highlightCategoryLabel
+                          ? highlightedCategoryRef
+                          : null
+                      }
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={category.label === highlightCategoryLabel ? "scroll-mt-8" : ""}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleSelectFromModal(category)}
+                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between ${selectedCategory?.label === category.label
+                          ? "bg-[#ee2b8c] text-white shadow-lg scale-[1.02]"
+                          : "bg-gradient-to-r from-gray-50 to-gray-100 hover:from-pink-50 hover:to-rose-50 text-[#1b0d14] border-2 border-gray-100 hover:border-pink-200"
+                          } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
+                      >
+                        <span className="font-bold text-lg flex items-center gap-2">
+                          {selectedCategory?.label === category.label ? "✨ " : ""}
+                          {category.label}
+                          {userAddedLabels.has(category.label) && (
+                            <span
+                              className="rounded-full bg-[#ee2b8c] text-white text-xs font-bold px-2 py-0.5"
+                              aria-label="내가 추가한 카테고리"
+                            >
+                              my
+                            </span>
+                          )}
+                        </span>
+                        {selectedCategory?.label === category.label && (
+                          <Check className="w-6 h-6 flex-shrink-0" />
+                        )}
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* 카테고리 종류 추가 - 모달 내 마지막 요소 */}
+                <div className="mt-4 pt-4 border-t border-stone-100">
+                  {isAddingCategory ? (
+                    <div className="rounded-2xl flex flex-col items-stretch gap-3 border-2 border-[#FFAAB8] bg-white p-4">
+                      <input
+                        ref={newCategoryInputRef}
+                        type="text"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        onKeyDown={handleNewCategoryKeyDown}
+                        placeholder="새 카테고리 이름"
+                        className="w-full px-4 py-3 text-sm font-semibold text-[#1b0d14] bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-[#ee2b8c] placeholder:text-stone-400"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleCancelAddingCategory}
+                          className="flex-1 py-3 rounded-xl border-2 border-stone-200 text-stone-600 font-semibold text-sm hover:bg-stone-100 transition-colors"
+                        >
+                          취소
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCompleteAddingCategory}
+                          disabled={!newCategoryName.trim()}
+                          className="flex-1 py-3 rounded-xl bg-[#ee2b8c] text-white font-semibold text-sm hover:bg-[#d4237b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          확인
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="w-full py-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity border-2 border-dashed border-[#ee2b8c] bg-[#FFF5F2]"
+                      onClick={handleStartAddingCategory}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleStartAddingCategory();
+                        }
+                      }}
+                    >
+                      <span className="text-2xl font-bold text-[#ee2b8c] mb-1">
+                        +
+                      </span>
+                      <span className="text-sm font-semibold text-[#ee2b8c]">
+                        카테고리 추가
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* 플랜 등록 완료 모달 */}
+        {showPlanSavedModal && (
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
+            onClick={() => {
+              setShowPlanSavedModal(false);
+              router.push("/main");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
                 setShowPlanSavedModal(false);
                 router.push("/main");
-              }}
-              className="mt-4 w-full rounded-xl bg-[#FFAAB8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FF8FA3]"
-            >
-              확인
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 시스템 오류 모달 */}
-      {showSystemErrorModal && (
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
-          onClick={() => setShowSystemErrorModal(false)}
-          onKeyDown={(e) => e.key === "Escape" && setShowSystemErrorModal(false)}
-        >
-          <div
-            className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="system-error-modal-title"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
+              }
+            }}
           >
-            <p
-              id="system-error-modal-title"
-              className="text-center text-lg font-semibold text-stone-900"
+            <div
+              className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="plan-saved-modal-title"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
             >
-              시스템 오류입니다
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowSystemErrorModal(false)}
-              className="mt-4 w-full rounded-xl bg-[#FFAAB8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FF8FA3]"
-            >
-              확인
-            </button>
+              <p
+                id="plan-saved-modal-title"
+                className="text-center text-lg font-semibold text-stone-900"
+              >
+                {editId ? "수정되었습니다" : "등록되었습니다"}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPlanSavedModal(false);
+                  router.push("/main");
+                }}
+                className="mt-4 w-full rounded-xl bg-[#ee2b8c] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#d4237b]"
+              >
+                확인
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 이미 존재하는 카테고리 알림 모달 */}
-      {showDuplicateCategoryModal && (
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
-          onClick={handleCloseDuplicateModal}
-          onKeyDown={(e) => e.key === "Escape" && handleCloseDuplicateModal()}
-        >
+        {/* 시스템 오류 모달 */}
+        {showSystemErrorModal && (
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
           <div
-            className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="duplicate-modal-title"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
+            onClick={() => setShowSystemErrorModal(false)}
+            onKeyDown={(e) => e.key === "Escape" && setShowSystemErrorModal(false)}
           >
-            <p
-              id="duplicate-modal-title"
-              className="text-center text-lg font-semibold text-stone-900"
+            <div
+              className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="system-error-modal-title"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
             >
-              이미 존재합니다
-            </p>
-            <p className="mt-2 text-center text-sm text-stone-600">
-              동일한 이름의 카테고리가 있습니다.
-            </p>
-            <button
-              type="button"
-              onClick={handleCloseDuplicateModal}
-              className="mt-4 w-full rounded-xl bg-[#FFAAB8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FF8FA3]"
-            >
-              닫기
-            </button>
+              <p
+                id="system-error-modal-title"
+                className="text-center text-lg font-semibold text-stone-900"
+              >
+                시스템 오류입니다
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowSystemErrorModal(false)}
+                className="mt-4 w-full rounded-xl bg-[#ee2b8c] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#d4237b]"
+              >
+                확인
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 날짜 선택 캘린더 모달 */}
-      <DatePickerModal
-        isOpen={isDatePickerOpen}
-        selectedDate={selectedDate}
-        onDateChange={handleDateChange}
-        onClose={() => setIsDatePickerOpen(false)}
-      />
+        {/* 이미 존재하는 카테고리 알림 모달 */}
+        {showDuplicateCategoryModal && (
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
+            onClick={handleCloseDuplicateModal}
+            onKeyDown={(e) => e.key === "Escape" && handleCloseDuplicateModal()}
+          >
+            <div
+              className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="duplicate-modal-title"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <p
+                id="duplicate-modal-title"
+                className="text-center text-lg font-semibold text-stone-900"
+              >
+                이미 존재합니다
+              </p>
+              <p className="mt-2 text-center text-sm text-stone-600">
+                동일한 이름의 카테고리가 있습니다.
+              </p>
+              <button
+                type="button"
+                onClick={handleCloseDuplicateModal}
+                className="mt-4 w-full rounded-xl bg-[#FFAAB8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#FF8FA3]"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 날짜 선택 캘린더 모달 */}
+        <DatePickerModal
+          isOpen={isDatePickerOpen}
+          selectedDate={selectedDate}
+          onDateChange={handleDateChange}
+          onClose={() => setIsDatePickerOpen(false)}
+        />
       </div>
-    </div>
+    </div >
   );
 }
 

@@ -85,7 +85,7 @@ interface ScheduleListItem {
   status?: string | null;
 }
 
-const SCHEDULE_PAGE_SIZE = 10;
+const SCHEDULE_FETCH_COUNT = 10000;
 const SCHEDULE_SORT = "DESC";
 const SCHEDULE_SORT_COLUMN = "createDate";
 
@@ -272,19 +272,14 @@ function MainPageContent() {
     // 0% = 현재 색상(기본), 100% = 진한 색상
     const t = percentage / 100; // 0 ~ 1
 
-    // 기본 색상 (0%일 때 - 현재 색상)
-    const baseStart = { h: 351, s: 100, l: 83 }; // #ffaab8
-    const baseEnd = { h: 347, s: 100, l: 92 }; // #ffd8df
+    // 기본 색상 (0%일 때 - Pink Solid variant from budget detail)
+    // #ee2b8c is HSL(328, 86%, 55%)
 
-    // 진한 색상 (100%일 때)
-    const darkStart = { h: 351, s: 100, l: 65 };
-    const darkEnd = { h: 347, s: 100, l: 78 };
+    // Let's just use a solid logic for now or a simpler gradient based on the new pink
+    // Start: #ee2b8c (Primary Pink)
+    // End: #ff659c (Slightly lighter/different hue for gradient)
 
-    // 0%에서 100%로 갈수록 명도(lightness)를 줄여서 진하게 만듦
-    const startColor = `hsl(${baseStart.h}, ${baseStart.s}%, ${baseStart.l - (baseStart.l - darkStart.l) * t}%)`;
-    const endColor = `hsl(${baseEnd.h}, ${baseEnd.s}%, ${baseEnd.l - (baseEnd.l - darkEnd.l) * t}%)`;
-
-    return `linear-gradient(135deg, ${startColor} 0%, ${endColor} 100%)`;
+    return `linear-gradient(135deg, #ee2b8c 0%, #ff5c95 100%)`;
   };
 
   const budgetGradient = getGradientColors(budgetUsagePercentage);
@@ -311,100 +306,60 @@ function MainPageContent() {
     };
   };
 
-  // 스케줄 목록 API
+  // 스케줄 목록 API: count=10000으로 한 번에 전체 로드
   const [scheduleList, setScheduleList] = useState<ScheduleListItem[]>([]);
   const [scheduleTotal, setScheduleTotal] = useState(0);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleInitialFetched, setScheduleInitialFetched] = useState(false);
-  const scheduleLoadMoreRef = useRef<HTMLLIElement>(null);
   const scheduleFetchingRef = useRef(false);
 
-  const fetchScheduleList = useCallback(
-    async (page: number, append: boolean) => {
-      if (scheduleFetchingRef.current) return;
-      const token = getToken();
-      if (!token) {
-        setScheduleInitialFetched(true);
-        return;
+  const fetchScheduleList = useCallback(async () => {
+    if (scheduleFetchingRef.current) return;
+    const token = getToken();
+    if (!token) {
+      setScheduleInitialFetched(true);
+      return;
+    }
+    scheduleFetchingRef.current = true;
+    setScheduleLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: "1",
+        count: String(SCHEDULE_FETCH_COUNT),
+        sort: SCHEDULE_SORT,
+        sortColumn: SCHEDULE_SORT_COLUMN,
+      });
+      const res = await fetchWithAuth(
+        `/plan/schedule/list?${params.toString()}`,
+      );
+      const json = (await res.json()) as {
+        result?: boolean;
+        data?: { total: number; list: ScheduleListItem[] };
+      };
+      if (json.result === true && json.data) {
+        const { total, list } = json.data;
+        setScheduleTotal(total);
+        setScheduleList(list);
+      } else {
+        setScheduleList([]);
       }
-      scheduleFetchingRef.current = true;
-      setScheduleLoading(true);
-      try {
-        const params = new URLSearchParams({
-          page: String(page),
-          count: String(SCHEDULE_PAGE_SIZE),
-          sort: SCHEDULE_SORT,
-          sortColumn: SCHEDULE_SORT_COLUMN,
-        });
-        const res = await fetchWithAuth(
-          `/plan/schedule/list?${params.toString()}`,
-        );
-        const json = (await res.json()) as {
-          result?: boolean;
-          data?: { total: number; list: ScheduleListItem[] };
-        };
-        if (json.result === true && json.data) {
-          const { total, list } = json.data;
-          setScheduleTotal(total);
-          if (append) {
-            setScheduleList((prev) => [...prev, ...list]);
-          } else {
-            setScheduleList(list);
-          }
-        }
-      } catch {
-        if (!append) setScheduleList([]);
-      } finally {
-        setScheduleLoading(false);
-        setScheduleInitialFetched(true);
-        scheduleFetchingRef.current = false;
-      }
-    },
-    [fetchWithAuth],
-  );
+    } catch {
+      setScheduleList([]);
+    } finally {
+      setScheduleLoading(false);
+      setScheduleInitialFetched(true);
+      scheduleFetchingRef.current = false;
+    }
+  }, [fetchWithAuth]);
 
-  // 최초 로드: 토큰 있으면 1페이지 요청
   useEffect(() => {
     if (!getToken()) {
       setScheduleInitialFetched(true);
       setScheduleList([]);
       return;
     }
-    fetchScheduleList(1, false);
+    fetchScheduleList();
   }, [fetchScheduleList]);
-
-  // 무한 스크롤: 하단 감지 시 다음 페이지 (로드할 다음 페이지 = loadedPages + 1)
-  const nextPageToLoad =
-    scheduleList.length === 0
-      ? 1
-      : Math.floor(scheduleList.length / SCHEDULE_PAGE_SIZE) + 1;
-
-  useEffect(() => {
-    const sentinel = scheduleLoadMoreRef.current;
-    const root = mainScrollRef.current;
-    if (!sentinel || !root || !getToken()) return;
-    const hasMore = scheduleList.length < scheduleTotal && scheduleTotal > 0;
-    if (!hasMore || scheduleLoading) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0]?.isIntersecting || scheduleFetchingRef.current) return;
-        fetchScheduleList(nextPageToLoad, true);
-      },
-      { root, rootMargin: "100px", threshold: 0 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [
-    scheduleList.length,
-    scheduleTotal,
-    scheduleLoading,
-    nextPageToLoad,
-    fetchScheduleList,
-  ]);
-
-  const scheduleHasMore =
-    scheduleList.length < scheduleTotal && scheduleTotal > 0;
 
   // 각 계획의 체크 상태 관리
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
@@ -413,19 +368,68 @@ function MainPageContent() {
   const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
   const mainScrollRef = useRef<HTMLElement>(null);
   const scrollDirection = useScrollDirection(mainScrollRef);
+  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
+  const togglingIdsRef = useRef<Set<number>>(new Set());
+  const checkedItemsRef = useRef<Set<number>>(checkedItems);
+  const scheduleListRef = useRef(scheduleList);
+  checkedItemsRef.current = checkedItems;
+  scheduleListRef.current = scheduleList;
 
-  // 체크박스 토글 핸들러
-  const handleToggleCheck = (id: number) => {
-    setCheckedItems((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
+  // 체크박스 토글 핸들러 (PATCH /plan/schedule/status/{id} — COMPLETED / NORMAL)
+  const handleToggleCheck = useCallback(
+    async (id: number) => {
+      if (!getToken()) {
+        setShowLoginRequiredModal(true);
+        return;
       }
-      return newSet;
-    });
-  };
+      if (togglingIdsRef.current.has(id)) return;
+      togglingIdsRef.current.add(id);
+      setTogglingIds((prev) => new Set(prev).add(id));
+
+      const plan = scheduleListRef.current.find((p) => p.id === id);
+      const isCurrentlyChecked =
+        checkedItemsRef.current.has(id) || plan?.status === "COMPLETED";
+      const newStatus = isCurrentlyChecked ? "NORMAL" : "COMPLETED";
+
+      setCheckedItems((prev) => {
+        const next = new Set(prev);
+        if (isCurrentlyChecked) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+
+      try {
+        const res = await fetchWithAuth(`/plan/schedule/status/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: newStatus }),
+        });
+        const json = (await res.json()) as { result?: boolean };
+        if (!res.ok || !json.result) {
+          setCheckedItems((prev) => {
+            const revert = new Set(prev);
+            if (isCurrentlyChecked) revert.add(id);
+            else revert.delete(id);
+            return revert;
+          });
+        }
+      } catch {
+        setCheckedItems((prev) => {
+          const revert = new Set(prev);
+          if (isCurrentlyChecked) revert.add(id);
+          else revert.delete(id);
+          return revert;
+        });
+      } finally {
+        togglingIdsRef.current.delete(id);
+        setTogglingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
+    },
+    [fetchWithAuth],
+  );
 
   const handleOpenScheduleDetail = (id: number) => {
     if (!getToken()) {
@@ -453,349 +457,350 @@ function MainPageContent() {
           onSuccessFromMain={() => {
             fetchPlanUser(handleApiError);
             fetchTotalAmount(handleApiError);
-            fetchScheduleList(1, false);
+            fetchScheduleList();
           }}
         />
         <main
           ref={mainScrollRef}
           className="flex flex-1 flex-col items-center overflow-y-auto w-full px-6"
         >
-        <div className="w-full pt-8">
-          {/* 상단 영역 */}
-          <div className="w-full flex items-center justify-between">
-            {/* 이름 + D-day 영역 (로딩 시 스켈레톤) */}
-            <div className="flex flex-col items-start justify-start">
+          <div className="w-full pt-8">
+            {/* 상단 영역 */}
+            <div className="w-full flex items-center justify-between">
+              {/* 이름 + D-day 영역 (로딩 시 스켈레톤) */}
+              <div className="flex flex-col items-start justify-start">
+                {isPlanLoading ? (
+                  <>
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                      <span
+                        className="skeleton-shimmer h-[42px] w-[120px] rounded-lg"
+                        aria-hidden
+                      />
+                      <span
+                        className="skeleton-shimmer h-8 w-[98px] shrink-0 rounded-full"
+                        aria-hidden
+                      />
+                    </div>
+                    <span
+                      className="skeleton-shimmer mt-1.5 block h-4 w-[152px] rounded"
+                      aria-hidden
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                      <span className="text-[42px] font-semibold text-[#1b0d14] leading-none">
+                        {displayData.name || "이름"}
+                      </span>
+                      <span
+                        className="inline-flex items-center rounded-full px-4 py-1.5 text-[18px] font-semibold leading-none shrink-0"
+                        style={{
+                          background: "#ee2b8c",
+                          color: "#fff",
+                          boxShadow: "0 2px 8px rgba(238, 43, 140, 0.35)",
+                        }}
+                      >
+                        {dDayLabel}
+                      </span>
+                    </div>
+                    {weddingDateText && (
+                      <span className="mt-1.5 text-[13px] font-normal leading-tight text-gray-500">
+                        결혼식: {weddingDateText}
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+              {/* 프로필 이미지 영역 (로딩 시 스켈레톤 시머) */}
               {isPlanLoading ? (
-                <>
-                  <div className="flex items-baseline gap-3 flex-wrap">
-                    <span
-                      className="skeleton-shimmer h-[42px] w-[120px] rounded-lg"
-                      aria-hidden
-                    />
-                    <span
-                      className="skeleton-shimmer h-8 w-[98px] shrink-0 rounded-full"
-                      aria-hidden
-                    />
-                  </div>
-                  <span
-                    className="skeleton-shimmer mt-1.5 block h-4 w-[152px] rounded"
-                    aria-hidden
-                  />
-                </>
+                <span
+                  className="skeleton-shimmer h-12 w-12 shrink-0 rounded-full"
+                  aria-hidden
+                />
               ) : (
-                <>
-                  <div className="flex items-baseline gap-3 flex-wrap">
-                    <span className="text-[42px] font-semibold text-[#000000] leading-none">
-                      {displayData.name || "이름"}
-                    </span>
-                    <span
-                      className="inline-flex items-center rounded-full px-4 py-1.5 text-[18px] font-semibold leading-none shrink-0"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #ffaab8 0%, #ffd8df 100%)",
-                        color: "#fff",
-                        boxShadow: "0 2px 8px rgba(255, 170, 184, 0.35)",
-                      }}
-                    >
-                      {dDayLabel}
-                    </span>
-                  </div>
-                  {weddingDateText && (
-                    <span className="mt-1.5 text-[13px] font-normal leading-tight text-gray-500">
-                      결혼식: {weddingDateText}
-                    </span>
-                  )}
-                </>
+                <button
+                  type="button"
+                  onClick={handleUserClick}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full cursor-pointer hover:opacity-90 transition-opacity"
+                  style={{
+                    background: "#ee2b8c",
+                    boxShadow: "0 4px 12px rgba(238, 43, 140, 0.25)",
+                  }}
+                >
+                  <User className="h-6 w-6 text-white" strokeWidth={2} />
+                </button>
               )}
             </div>
-            {/* 프로필 이미지 영역 (로딩 시 스켈레톤 시머) */}
-            {isPlanLoading ? (
-              <span
-                className="skeleton-shimmer h-12 w-12 shrink-0 rounded-full"
-                aria-hidden
-              />
-            ) : (
+            {/* TodayFocus - 로딩 시 요소별 스켈레톤 */}
+            <div className="mt-4 w-full">
+              {isPlanLoading ? (
+                <div className="flex w-full flex-col rounded-[24px] border-2 border-stone-200/50 bg-white/50 p-6">
+                  <div className="flex items-start gap-3">
+                    <span
+                      className="skeleton-shimmer h-10 w-10 shrink-0 rounded-full"
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <span
+                        className="skeleton-shimmer block h-5 w-20 rounded"
+                        aria-hidden
+                      />
+                      <span
+                        className="skeleton-shimmer block h-[42px] w-28 rounded"
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+                  <span
+                    className="skeleton-shimmer mt-4 block h-6 w-48 rounded"
+                    aria-hidden
+                  />
+                  <div className="mt-4 flex items-center gap-2">
+                    <span
+                      className="skeleton-shimmer h-2 flex-1 rounded-full"
+                      aria-hidden
+                    />
+                    <span
+                      className="skeleton-shimmer h-4 w-8 shrink-0 rounded"
+                      aria-hidden
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => router.push("/budget-detail")}
+                  className="flex w-full flex-col rounded-[24px] p-6 cursor-pointer hover:opacity-95 transition-opacity"
+                  style={{
+                    background: budgetGradient,
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/30">
+                      <CircleDollarSign
+                        className="h-5 w-5 text-white"
+                        strokeWidth={2}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold leading-5 text-white">
+                        남은 예산
+                      </p>
+                      <p
+                        className={
+                          Math.abs(remainingBudget) >= 1000
+                            ? "my-3 text-[32px] max-[350px]:text-[28px] font-semibold leading-7 text-white"
+                            : "my-3 text-[42px] max-[350px]:text-[37px] font-semibold leading-7 text-white"
+                        }
+                      >
+                        <span className="whitespace-nowrap">
+                          <CountUp
+                            to={remainingBudget}
+                            separator=","
+                            duration={0.1}
+                            className="inline"
+                          />
+                          만 원
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-1 pl-[52px] py-2 text-xl max-[350px]:text-[15px] font-semibold leading-none text-white">
+                    예산 중{" "}
+                    <CountUp
+                      to={usedBudget}
+                      separator=","
+                      duration={0.1}
+                      className="inline"
+                    />
+                    만 원 지출 예정
+                  </p>
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
+                      <div
+                        className="h-full rounded-full bg-white"
+                        style={{ width: `${budgetUsagePercentage}%` }}
+                      />
+                    </div>
+                    <span className="shrink-0 text-sm font-normal leading-5 text-white">
+                      {budgetUsagePercentage}%
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="w-full mt-8 pb-24">
+            {/* 하단 영역 */}
+            <div className="flex justify-between">
+              <div className="flex flex-col items-start justify-start">
+                <span className="text-lg font-bold text-[#1b0d14]">
+                  플랜 가이드
+                </span>
+                {isPlanLoading ? (
+                  <span
+                    className="skeleton-shimmer mt-0.5 block h-5 w-32 rounded"
+                    aria-hidden
+                  />
+                ) : (
+                  <span className="text-lg text-gray-500">
+                    {scheduleTotal > 0
+                      ? `${scheduleTotal}개의 플랜이 있어요`
+                      : scheduleList.length > 0
+                        ? `${scheduleList.length}개의 플랜이 있어요`
+                        : "플랜을 추가해볼까요?"}
+                  </span>
+                )}
+              </div>
               <button
                 type="button"
-                onClick={handleUserClick}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => {
+                  if (getToken()) {
+                    router.push("/add-plen");
+                  } else {
+                    setShowGuestPlanLimitModal(true);
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-bold text-lg transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #ffaab8 0%, #ffd8df 100%)",
+                  backgroundColor: "#ee2b8c",
+                  boxShadow: "0 4px 12px rgba(238, 43, 140, 0.3)",
                 }}
               >
-                <User className="h-6 w-6 text-white" strokeWidth={2} />
+                플랜 추가
+                <CirclePlus className="h-5 w-5 text-white" strokeWidth={2.5} />
               </button>
-            )}
-          </div>
-          {/* TodayFocus - 로딩 시 요소별 스켈레톤 */}
-          <div className="mt-4 w-full">
-            {isPlanLoading ? (
-              <div className="flex w-full flex-col rounded-[24px] border-2 border-stone-200/50 bg-white/50 p-6">
-                <div className="flex items-start gap-3">
-                  <span
-                    className="skeleton-shimmer h-10 w-10 shrink-0 rounded-full"
-                    aria-hidden
-                  />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <span
-                      className="skeleton-shimmer block h-5 w-20 rounded"
-                      aria-hidden
-                    />
-                    <span
-                      className="skeleton-shimmer block h-[42px] w-28 rounded"
-                      aria-hidden
-                    />
-                  </div>
-                </div>
-                <span
-                  className="skeleton-shimmer mt-4 block h-6 w-48 rounded"
-                  aria-hidden
-                />
-                <div className="mt-4 flex items-center gap-2">
-                  <span
-                    className="skeleton-shimmer h-2 flex-1 rounded-full"
-                    aria-hidden
-                  />
-                  <span
-                    className="skeleton-shimmer h-4 w-8 shrink-0 rounded"
-                    aria-hidden
-                  />
-                </div>
-              </div>
-            ) : (
-              <div
-                onClick={() => router.push("/budget-detail")}
-                className="flex w-full flex-col rounded-[24px] p-6 cursor-pointer hover:opacity-95 transition-opacity"
-                style={{
-                  background: budgetGradient,
-                }}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/30">
-                    <CircleDollarSign
-                      className="h-5 w-5 text-white"
-                      strokeWidth={2}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold leading-5 text-white">
-                      남은 예산
-                    </p>
-                    <p
-                      className={
-                        Math.abs(remainingBudget) >= 1000
-                          ? "my-3 text-[32px] max-[350px]:text-[28px] font-semibold leading-7 text-white"
-                          : "my-3 text-[42px] max-[350px]:text-[37px] font-semibold leading-7 text-white"
-                      }
-                    >
-                      <span className="whitespace-nowrap">
-                        <CountUp
-                          to={remainingBudget}
-                          separator=","
-                          duration={0.1}
-                          className="inline"
-                        />
-                        만 원
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <p className="mt-1 pl-[52px] py-2 text-xl max-[350px]:text-[15px] font-semibold leading-none text-white">
-                  예산 중{" "}
-                  <CountUp
-                    to={usedBudget}
-                    separator=","
-                    duration={0.1}
-                    className="inline"
-                  />
-                  만 원 지출 예정
-                </p>
-                <div className="mt-4 flex items-center gap-2">
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
-                    <div
-                      className="h-full rounded-full bg-white"
-                      style={{ width: `${budgetUsagePercentage}%` }}
-                    />
-                  </div>
-                  <span className="shrink-0 text-sm font-normal leading-5 text-white">
-                    {budgetUsagePercentage}%
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="w-full mt-8 pb-24">
-          {/* 하단 영역 */}
-          <div className="flex justify-between">
-            <div className="flex flex-col items-start justify-start">
-              <span className="text-lg font-semibold">플랜 가이드</span>
-              {isPlanLoading ? (
-                <span
-                  className="skeleton-shimmer mt-0.5 block h-5 w-32 rounded"
-                  aria-hidden
-                />
-              ) : (
-                <span className="text-lg text-gray-500">
-                  {scheduleTotal > 0
-                    ? `${scheduleTotal}개의 플랜이 있어요`
-                    : scheduleList.length > 0
-                      ? `${scheduleList.length}개의 플랜이 있어요`
-                      : "플랜을 추가해볼까요?"}
-                </span>
-              )}
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                if (getToken()) {
-                  router.push("/add-plen");
-                } else {
-                  setShowGuestPlanLimitModal(true);
-                }
-              }}
-              className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-semibold text-lg transition-colors shadow-md hover:opacity-90 active:opacity-80"
-              style={{ backgroundColor: "#FFAAB8" }}
-            >
-              플랜 추가
-              <CirclePlus className="h-5 w-5 text-white" strokeWidth={2.5} />
-            </button>
-          </div>
-          <ul className="mt-4 w-full flex flex-col gap-3 min-h-[200px] relative">
-            {scheduleLoading && scheduleList.length === 0 ? (
-              ["a", "b", "c", "d", "e"].map((id) => (
-                <li
-                  key={`skeleton-plan-${id}`}
-                  className="flex items-center gap-4 rounded-3xl border border-[#ee2b8c0a] bg-white p-4 shadow-sm"
-                >
-                  <span
-                    className="skeleton-shimmer h-6 w-6 shrink-0 rounded-full"
-                    aria-hidden
-                  />
-                  <div className="min-w-0 flex-1 space-y-2">
+            <ul className="mt-4 w-full flex flex-col gap-3 min-h-[200px] relative">
+              {scheduleLoading && scheduleList.length === 0 ? (
+                ["a", "b", "c", "d", "e"].map((id) => (
+                  <li
+                    key={`skeleton-plan-${id}`}
+                    className="flex items-center gap-4 rounded-3xl border border-[#ee2b8c0a] bg-white p-4 shadow-sm"
+                  >
                     <span
-                      className="skeleton-shimmer block h-[22px] max-w-[200px] rounded"
-                      style={{ width: "75%" }}
+                      className="skeleton-shimmer h-6 w-6 shrink-0 rounded-full"
                       aria-hidden
                     />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <span
+                        className="skeleton-shimmer block h-[22px] max-w-[200px] rounded"
+                        style={{ width: "75%" }}
+                        aria-hidden
+                      />
+                      <span
+                        className="skeleton-shimmer block h-4 w-32 rounded"
+                        aria-hidden
+                      />
+                    </div>
                     <span
-                      className="skeleton-shimmer block h-4 w-32 rounded"
+                      className="skeleton-shimmer h-5 w-16 shrink-0 rounded"
                       aria-hidden
                     />
-                  </div>
-                  <span
-                    className="skeleton-shimmer h-5 w-16 shrink-0 rounded"
-                    aria-hidden
-                  />
-                </li>
-              ))
-            ) : scheduleInitialFetched && scheduleList.length === 0 ? (
-              <li className="flex flex-1 flex-col items-center justify-center py-16">
-                <p className="text-4xl font-semibold text-stone-400">텅~</p>
-              </li>
-            ) : (
-              <>
-                {scheduleList.map((plan) => {
-                  const isChecked =
-                    checkedItems.has(plan.id) || plan.status === "COMPLETED";
-                  const amount = plan.amount ?? 0;
-                  const categoryColor = getCategoryColor(plan.categoryName);
-                  const detailHref = `/schedule-detail?id=${plan.id}`;
-                  const dateLabel = plan.startDate?.trim()
-                    ? (() => {
-                        const { dateText, weekday } = formatDate(
-                          plan.startDate as string,
-                        );
-                        return `${dateText} (${weekday})`;
-                      })()
-                    : "미정";
-                  return (
-                    <li key={plan.id}>
-                      <Link
-                        href={getToken() ? detailHref : "#"}
-                        onClick={(e) => {
-                          if (!getToken()) {
-                            e.preventDefault();
-                            setShowLoginRequiredModal(true);
-                          }
-                        }}
-                        className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
-                        aria-label={`플랜 상세 보기: ${plan.title}`}
-                      >
-                        <div
-                          className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: `${categoryColor}` }}
-                        >
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleToggleCheck(plan.id);
-                            }}
-                            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 ${isChecked
-                                ? "bg-[#ee2b8c] border-[#ee2b8c]"
-                                : "bg-white/80 border-[#ee2b8c]"
-                              }`}
-                          >
-                            {isChecked && (
-                              <Check
-                                className="h-3 w-3 text-white"
-                                strokeWidth={3}
-                              />
-                            )}
-                          </button>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4
-                            className={`text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
-                          >
-                            {plan.title}
-                          </h4>
-                          <p className="text-gray-400 text-xs font-semibold truncate tracking-tight mt-0.5">
-                            {plan.categoryName} · {dateLabel}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
-                            {amount > 0
-                              ? `${amount.toLocaleString()}만 원`
-                              : "미정"}
-                          </div>
-                          <span
-                            className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
-                                ? "bg-[#ee2b8c] text-white"
-                                : "bg-gray-100 text-gray-500"
-                              }`}
-                          >
-                            {isChecked ? "완료" : "예정"}
-                          </span>
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                })}
-                {scheduleHasMore && (
-                  <li ref={scheduleLoadMoreRef} className="h-4 w-full" />
-                )}
-                {scheduleLoading && scheduleList.length > 0 && (
-                  <li className="flex justify-center py-3">
-                    <span className="text-sm text-stone-400">
-                      불러오는 중...
-                    </span>
                   </li>
-                )}
-              </>
-            )}
-          </ul>
-        </div>
+                ))
+              ) : scheduleInitialFetched && scheduleList.length === 0 ? (
+                <li className="flex flex-1 flex-col items-center justify-center py-16">
+                  <p className="text-4xl font-semibold text-stone-400">텅~</p>
+                </li>
+              ) : (
+                <>
+                  {scheduleList.map((plan) => {
+                    const isChecked =
+                      checkedItems.has(plan.id) || plan.status === "COMPLETED";
+                    const amount = plan.amount ?? 0;
+                    const categoryColor = getCategoryColor(plan.categoryName);
+                    const detailHref = `/schedule-detail?id=${plan.id}`;
+                    const dateLabel = plan.startDate?.trim()
+                      ? (() => {
+                          const { dateText, weekday } = formatDate(
+                            plan.startDate as string,
+                          );
+                          return `${dateText} (${weekday})`;
+                        })()
+                      : "미정";
+                    return (
+                      <li key={plan.id}>
+                        <Link
+                          href={getToken() ? detailHref : "#"}
+                          onClick={(e) => {
+                            if (!getToken()) {
+                              e.preventDefault();
+                              setShowLoginRequiredModal(true);
+                            }
+                          }}
+                          className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
+                          aria-label={`플랜 상세 보기: ${plan.title}`}
+                        >
+                          <div
+                            className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+                            style={{ backgroundColor: `${categoryColor}` }}
+                          >
+                            <button
+                              type="button"
+                              id={String(plan.id)}
+                              disabled={togglingIds.has(plan.id)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleToggleCheck(plan.id);
+                              }}
+                              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
+                                isChecked
+                                  ? "bg-[#ee2b8c] border-[#ee2b8c]"
+                                  : "bg-white/80 border-[#ee2b8c]"
+                              }`}
+                            >
+                              {isChecked && (
+                                <Check
+                                  className="h-3 w-3 text-white"
+                                  strokeWidth={3}
+                                />
+                              )}
+                            </button>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4
+                              className={`text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
+                            >
+                              {plan.title}
+                            </h4>
+                            <p className="text-gray-400 text-xs font-semibold truncate tracking-tight mt-0.5">
+                              {plan.categoryName} · {dateLabel}
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
+                              {amount > 0
+                                ? `${amount.toLocaleString()}만 원`
+                                : "미정"}
+                            </div>
+                            <span
+                              className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
+                                isChecked
+                                  ? "bg-[#ee2b8c] text-white"
+                                  : "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              {isChecked ? "완료" : "예정"}
+                            </span>
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </>
+              )}
+            </ul>
+          </div>
         </main>
         {/* 하단 탭바 - Sticky로 최상단에 고정 */}
         <BottomTabBar
           activeTab="home"
           showLoginButton={
-            !getToken() && !showGuestPlanLimitModal && !showLoginRequiredModal
+            tokenChecked &&
+            !getToken() &&
+            !showGuestPlanLimitModal &&
+            !showLoginRequiredModal
           }
           onLoginClick={() => setShowLoginRequiredModal(true)}
           scrollDirection={scrollDirection}

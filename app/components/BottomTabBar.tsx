@@ -42,20 +42,21 @@ export default function BottomTabBar({
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] flex flex-col items-center">
       {showLoginButton && onLoginClick && (
-        <div className="w-full max-w-[500px] min-h-[70px] px-6 pb-2 flex items-center justify-center bg-transparent overflow-hidden">
+        <div
+          className="w-full max-w-md px-6 pb-2 flex items-center justify-center bg-transparent overflow-hidden"
+          style={{
+            transform:
+              scrollDirection === "down"
+                ? "translateY(calc(100% + 16px)) scale(0.95)"
+                : "translateY(0) scale(1)",
+            transition:
+              "transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+          }}
+        >
           <button
             type="button"
             onClick={onLoginClick}
-            className="w-full max-w-[280px] py-3 rounded-full text-white font-semibold text-base transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-md"
-            style={{
-              backgroundColor: "#FFAAB8",
-              transform:
-                scrollDirection === "down"
-                  ? "translateY(calc(100% + 16px)) scale(0.95)"
-                  : "translateY(0) scale(1)",
-              transition:
-                "transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-            }}
+            className="w-full h-16 bg-[#ee2b8c] text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-lg shadow-xl shadow-[#ee2b8c44] hover:bg-[#d4237b] transition-all transform hover:scale-[1.02] active:scale-95"
           >
             로그인 하기
           </button>

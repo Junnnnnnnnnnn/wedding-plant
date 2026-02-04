@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface StatCardProps {
@@ -6,9 +5,11 @@ interface StatCardProps {
     value: number;
     variant: 'white' | 'pink-light' | 'pink-solid';
     size?: 'normal' | 'large';
+    /** 초기 자본 카드에만 사용. 우측 하단에 표시 (initialCapital - planned - used) */
+    remainingAmount?: number;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ label, value, variant, size = 'normal' }) => {
+const StatCard: React.FC<StatCardProps> = ({ label, value, variant, size = 'normal', remainingAmount }) => {
     const styles = {
         white: 'bg-white border border-[#ee2b8c1a] text-[#1b0d14] shadow-sm',
         'pink-light': 'bg-[#fff0f7] border border-[#ee2b8c11] text-[#ee2b8c]',
@@ -33,13 +34,13 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, variant, size = 'norm
             <span className={`${valueSize} font-extrabold tracking-tight`}>
                 {value.toLocaleString()}만원
             </span>
+            {remainingAmount !== undefined && (
+                <p className={`mt-auto pt-2 text-right text-sm font-semibold ${labelStyles[variant]}`}>
+                    남은 금액 {remainingAmount.toLocaleString()}만원
+                </p>
+            )}
         </div>
     );
-}; // Changed unit to 만원 as per user context usually? Or just locale string. The reference used $. The user data context implies "만 원".
-// Wait, user data: "남은 예산 550만 원". So the values are in 'man-won' likely.
-// I'll append "만원" or just let it be numbers. The reference had `$`.
-// I'll switch to `만원` or just number. Reference: lines 34 `${value.toLocaleString()}`
-// I'll stick to `{value.toLocaleString()}` and maybe add "만원" or just match the reference visual but with Korean context if implicit.
-// The user prompt screenshot text says "550만 원". I'll use "만원".
+};
 
 export default StatCard;

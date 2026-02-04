@@ -1,214 +1,387 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { ChevronLeft, MoreVertical, PlusCircle, Sparkles } from 'lucide-react';
-import Link from 'next/link';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-import { Expense, ExpenseStatus, BudgetStats } from './types';
+const SCHEDULE_FETCH_COUNT = 10000;
+const SCHEDULE_SORT = 'DESC';
+const SCHEDULE_SORT_COLUMN = 'startDate';
+
+import { useApi } from '../contexts/ApiContext';
+import { getToken } from '@/lib/api';
+import { Expense, ExpenseStatus, BudgetStats, Category } from './types';
 import StatCard from './components/StatCard';
 import SpendingAnalysis from './components/SpendingAnalysis';
 import ExpenseList from './components/ExpenseList';
+import BottomTabBar from '../components/BottomTabBar';
 
-// Placeholder modals (can be implemented fully if needed later)
-const AddExpenseModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void; onAdd: any }) => isOpen ? (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-        <div className="bg-white p-6 rounded-2xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4">Add Expense (Placeholder)</h3>
-            <button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Close</button>
+/** GET /plan/user/amount/detail 응답 */
+interface AmountDetailData {
+    initialCapital: number;
+    totalPlannedAndUsedAmount: number;
+    plannedUseAmount: number;
+    usedAmount: number;
+}
+
+/** GET /plan/user/amount/category-chart 리스트 항목 */
+interface CategoryChartItem {
+    categoryName: string;
+    totalAmount: number;
+    usedAmount: number;
+}
+
+/** GET /plan/schedule/list 리스트 항목 */
+interface ScheduleListItem {
+    id: number;
+    categoryName: string;
+    title: string;
+    amount: number;
+    startDate: string | null;
+    status?: string | null;
+}
+
+const AI_PREP_TITLE = "AI 서비스 준비중이예요!";
+const AI_PREP_SUBTITLE = "조금만 기다려 주세요 🙇‍♂️";
+
+const AIInsightsModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+    if (!isOpen) return null;
+    const baseBtnClass =
+        "w-full rounded-full text-sm font-semibold h-11 flex items-center justify-center transition-transform hover:scale-[1.01] active:scale-[0.99]";
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+            onClick={onClose}
+            onKeyDown={(e) => e.key === "Escape" && onClose()}
+            role="presentation"
+        >
+            <div
+                className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+                role="dialog"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                tabIndex={-1}
+                aria-modal="true"
+                aria-label={AI_PREP_TITLE}
+            >
+                <h2 className="text-center text-lg font-semibold text-stone-900">
+                    {AI_PREP_TITLE}
+                </h2>
+                <p className="mt-3 text-center text-[15px] font-normal leading-relaxed text-stone-700">
+                    {AI_PREP_SUBTITLE}
+                </p>
+                <div className="mt-6 flex flex-col gap-3">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className={`${baseBtnClass} border-2 border-stone-300 bg-white text-stone-700`}
+                    >
+                        닫기
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
-) : null;
-
-const AIInsightsModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void; expenses: any; stats: any }) => isOpen ? (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-        <div className="bg-white p-6 rounded-2xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4">AI Insights (Placeholder)</h3>
-            <button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded-lg">Close</button>
-        </div>
-    </div>
-) : null;
-
-const USER_DATA = {
-    "result": true,
-    "data": {
-        "initialCapital": 10000,
-        "totalPlannedAndUsedAmount": 10000, // Not explicitly used mapped, maybe plannedTotal?
-        "plannedUseAmount": 10000,
-        "usedAmount": 10000
-    },
-    "list": [
-        {
-            "categoryName": "혼주 구매",
-            "totalAmount": 0,
-            "usedAmount": 150
-        },
-        {
-            "categoryName": "저녁 식사",
-            "totalAmount": 1000,
-            "usedAmount": 0
-        },
-        {
-            "categoryName": "결혼반지",
-            "totalAmount": 300,
-            "usedAmount": 0
-        }
-    ]
+    );
 };
+
+function mapCategoryListToExpenses(list: CategoryChartItem[]): Expense[] {
+    return list.map((item, index) => ({
+        id: String(index + 1),
+        title: item.categoryName,
+        description: item.categoryName,
+        amount: item.usedAmount,
+        plannedAmount: item.totalAmount,
+        status: item.usedAmount > 0 ? ExpenseStatus.PAID : ExpenseStatus.PLANNED,
+        category: item.categoryName,
+    }));
+}
+
+function mapScheduleListToExpenses(list: ScheduleListItem[]): Expense[] {
+    return list.map((item) => ({
+        id: String(item.id),
+        title: item.title,
+        description: item.categoryName,
+        amount: item.amount,
+        plannedAmount: item.amount,
+        status: item.status === 'COMPLETED' ? ExpenseStatus.PAID : ExpenseStatus.PLANNED,
+        category: item.categoryName,
+    }));
+}
 
 const BudgetDetailsPage = () => {
     const router = useRouter();
+    const { fetchWithAuth } = useApi();
 
-    // Transform user data list to Expense[]
-    const initialExpenses: Expense[] = useMemo(() => {
-        return USER_DATA.list.map((item, index) => {
-            let status = ExpenseStatus.PLANNED;
-            if (item.usedAmount > 0) {
-                status = ExpenseStatus.PAID; // Simplification
-            }
+    const [detailData, setDetailData] = useState<AmountDetailData | null>(null);
+    const [categoryList, setCategoryList] = useState<CategoryChartItem[]>([]);
+    const [scheduleList, setScheduleList] = useState<ScheduleListItem[]>([]);
+    const [scheduleLoading, setScheduleLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const scheduleFetchingRef = useRef(false);
+    const isFirstFilterRun = useRef(true);
 
-            return {
-                id: String(index + 1),
-                title: item.categoryName,
-                description: item.categoryName, // No description provided, using name
-                amount: item.usedAmount,
-                plannedAmount: item.totalAmount,
-                status: status,
-                category: item.categoryName
-            };
-        });
-    }, []);
-
-    const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
-    const [activeTab, setActiveTab] = useState<'All' | 'Planned' | 'Used'>('All');
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'전체' | '예정' | '사용'>('전체');
+    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
-    // Use the top-level data for initialCapital
-    const initialCapital = USER_DATA.data.initialCapital;
+    /** 스케줄 목록 API 쿼리: 전체일 때는 status 생략, 그래프 클릭 시 categoryName 전달 */
+    const buildScheduleParams = useCallback(
+        (page: number, statusFilter: '전체' | '예정' | '사용', category: Category | null) => {
+            const params = new URLSearchParams({
+                page: String(page),
+                count: String(SCHEDULE_FETCH_COUNT),
+                sort: SCHEDULE_SORT,
+                sortColumn: SCHEDULE_SORT_COLUMN,
+            });
+            if (statusFilter === '예정') params.set('status', 'NORMAL');
+            else if (statusFilter === '사용') params.set('status', 'COMPLETED');
+            if (category) params.set('categoryName', category);
+            return params;
+        },
+        [],
+    );
 
-    const stats: BudgetStats = useMemo(() => {
-        // We can recalculate from expenses OR use the USER_DATA/data fields directly.
-        // However, reference App.tsx calculates from expenses list.
-        // If we rely on the list, we might miss 'totalPlannedAndUsedAmount' if list is incomplete?
-        // Let's recalculate to be consistent with the list shown.
+    /** 스케줄 목록 count=10000으로 전체 요청 (탭/카테고리 변경 시 사용) */
+    const fetchScheduleAll = useCallback(async () => {
+        if (!getToken() || scheduleFetchingRef.current) return;
+        scheduleFetchingRef.current = true;
+        setScheduleLoading(true);
+        try {
+            const params = buildScheduleParams(1, activeTab, selectedCategory);
+            const res = await fetchWithAuth(`/plan/schedule/list?${params.toString()}`);
+            const json = (await res.json()) as { result?: boolean; data?: { list?: ScheduleListItem[] } & Record<string, unknown> };
+            if (res.ok && json.result === true && json.data) {
+                const list = json.data.list ?? [];
+                setScheduleList(list);
+            } else {
+                setScheduleList([]);
+            }
+        } finally {
+            setScheduleLoading(false);
+            scheduleFetchingRef.current = false;
+        }
+    }, [fetchWithAuth, buildScheduleParams, activeTab, selectedCategory]);
 
-        // Actually, let's trust the expenses list we built.
-        const plannedTotal = expenses.reduce((acc, curr) => acc + curr.plannedAmount, 0);
-        const usedTotal = expenses.reduce((acc, curr) =>
-            // In reference App.tsx logic: curr.status !== ExpenseStatus.PLANNED ? acc + curr.amount : acc
-            // But here we set status based on usedAmount > 0.
-            curr.amount // Just sum amount? expense.amount IS mapped to usedAmount.
-            // Wait, if status is PLANNED, usedAmount should be 0 usually.
-            // Let's stick to simple sum of amount.
-            , 0);
+    const loadData = useCallback(async () => {
+        if (!getToken()) {
+            setLoading(false);
+            setDetailData(null);
+            setCategoryList([]);
+            setScheduleList([]);
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            const scheduleParams = buildScheduleParams(1, '전체', null);
+            const [detailRes, chartRes, scheduleRes] = await Promise.all([
+                fetchWithAuth('/plan/user/amount/detail'),
+                fetchWithAuth('/plan/user/amount/category-chart'),
+                fetchWithAuth(`/plan/schedule/list?${scheduleParams.toString()}`),
+            ]);
+            const detailJson = (await detailRes.json().catch(() => null)) as { result?: boolean; data?: AmountDetailData } | null;
+            const chartJson = (await chartRes.json().catch(() => null)) as { result?: boolean; data?: { list?: CategoryChartItem[] } } | null;
+            const scheduleJson = (await scheduleRes.json().catch(() => null)) as { result?: boolean; data?: { list?: ScheduleListItem[] } & Record<string, unknown> } | null;
 
-        return { initialCapital, plannedTotal, usedTotal };
-    }, [expenses, initialCapital]);
+            if (detailRes.ok && detailJson?.result && detailJson.data) {
+                setDetailData(detailJson.data);
+            } else {
+                setDetailData(null);
+            }
+            if (chartRes.ok && chartJson?.result && chartJson.data?.list) {
+                setCategoryList(chartJson.data.list);
+            } else {
+                setCategoryList([]);
+            }
+            if (scheduleRes.ok && scheduleJson?.result && scheduleJson.data) {
+                const list = scheduleJson.data.list ?? [];
+                setScheduleList(list);
+            } else {
+                setScheduleList([]);
+            }
+        } catch {
+            setError('데이터를 불러오지 못했습니다.');
+            setDetailData(null);
+            setCategoryList([]);
+            setScheduleList([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [fetchWithAuth, buildScheduleParams]);
 
-    const filteredExpenses = useMemo(() => {
-        if (activeTab === 'Planned') return expenses.filter(e => e.status === ExpenseStatus.PLANNED);
-        if (activeTab === 'Used') return expenses.filter(e => e.status !== ExpenseStatus.PLANNED);
-        return expenses;
-    }, [expenses, activeTab]);
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
-    const handleAddExpense = (newExpense: Expense) => {
-        setExpenses(prev => [newExpense, ...prev]);
+    /** 탭 또는 카테고리 변경 시 count=10000으로 전체 다시 로드 */
+    useEffect(() => {
+        if (isFirstFilterRun.current) {
+            isFirstFilterRun.current = false;
+            return;
+        }
+        if (!getToken() || !detailData) return;
+        fetchScheduleAll();
+    }, [activeTab, selectedCategory, fetchScheduleAll, detailData]);
+
+    const expensesForAnalysis: Expense[] = useMemo(() => mapCategoryListToExpenses(categoryList), [categoryList]);
+    const listExpenses: Expense[] = useMemo(() => mapScheduleListToExpenses(scheduleList), [scheduleList]);
+
+    const stats: BudgetStats | null = useMemo(() => {
+        if (!detailData) return null;
+        return {
+            initialCapital: detailData.initialCapital,
+            plannedTotal: detailData.plannedUseAmount,
+            usedTotal: detailData.usedAmount,
+        };
+    }, [detailData]);
+
+    /* API가 status, categoryName으로 필터링하므로 클라이언트 필터 제거 */
+
+    const remainingAmount = stats ? stats.initialCapital - (stats.plannedTotal + stats.usedTotal) : undefined;
+
+    const handleCategoryToggle = (category: Category) => {
+        setSelectedCategory(prev => prev === category ? null : category);
     };
 
     return (
         <div className="min-h-screen bg-[#fcfbfc]">
             <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
             <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
-                {/* Top Header */}
-                <header className="flex items-center justify-between px-4 py-6 z-10 sticky top-0 bg-white/80 backdrop-blur-sm">
-                    <button
-                        onClick={() => router.back()}
-                        className="p-2 text-[#ee2b8c] hover:bg-[#ee2b8c11] rounded-full transition-colors"
-                    >
-                        <ChevronLeft className="w-6 h-6" />
-                    </button>
-                    <h1 className="text-xl font-bold text-[#1b0d14]">Wedding Budget</h1>
-                    <button className="p-2 text-[#1b0d14] hover:bg-gray-100 rounded-full transition-colors">
-                        <MoreVertical className="w-6 h-6" />
-                    </button>
-                </header>
-
-                <main className="flex-1 pb-32">
-                    {/* Prominent Stats Grid - Redesigned for immediate visibility */}
-                    <div className="px-4 py-4 space-y-3">
-                        <div className="w-full">
-                            <StatCard label="Initial Capital" value={stats.initialCapital} variant="white" size="large" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <StatCard label="Planned" value={stats.plannedTotal} variant="pink-light" />
-                            <StatCard label="Used" value={stats.usedTotal} variant="pink-solid" />
-                        </div>
-                    </div>
-
-                    {/* AI Insight Trigger */}
-                    <div className="px-4 mt-2">
+                <div className="absolute top-0 left-0 z-50 w-full pointer-events-none">
+                    <div className="px-6 py-4 pointer-events-auto">
                         <button
-                            onClick={() => setIsAIModalOpen(true)}
-                            className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-purple-500 to-[#ee2b8c] text-white rounded-2xl font-bold shadow-lg shadow-[#ee2b8c22] hover:opacity-95 transition-all transform active:scale-[0.98]"
+                            type="button"
+                            onClick={() => router.back()}
+                            className="flex items-center gap-2 text-[#ee2b8c] hover:bg-[#ee2b8c11] px-3 py-1.5 rounded-full transition-colors w-fit backdrop-blur-sm bg-white/30 shadow-sm"
+                            aria-label="뒤로가기"
                         >
-                            <Sparkles className="w-5 h-5" />
-                            Ask AI for Budget Advice
+                            <ArrowLeft className="w-5 h-5" />
+                            <span className="font-bold">뒤로가기</span>
                         </button>
                     </div>
-
-                    {/* Spending Analysis Section */}
-                    <div className="px-4 mt-8">
-                        <h2 className="text-xl font-bold text-[#1b0d14] mb-4">Spending Analysis</h2>
-                        <SpendingAnalysis stats={stats} expenses={expenses} />
-                    </div>
-
-                    {/* Tabs */}
-                    <div className="px-4 mt-8">
-                        <div className="flex border-b border-gray-100">
-                            {(['All', 'Planned', 'Used'] as const).map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${activeTab === tab
-                                            ? 'text-[#ee2b8c] border-[#ee2b8c]'
-                                            : 'text-gray-400 border-transparent hover:text-gray-600'
-                                        }`}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Expense List */}
-                    <div className="mt-4">
-                        <ExpenseList expenses={filteredExpenses} />
-                    </div>
-                </main>
-
-                {/* Sticky Add Button */}
-                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-20">
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="w-full h-16 bg-[#ee2b8c] text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-lg shadow-xl shadow-[#ee2b8c44] hover:bg-[#d4237b] transition-all transform active:scale-95"
-                    >
-                        <PlusCircle className="w-6 h-6" />
-                        Add New Expense
-                    </button>
                 </div>
 
-                <AddExpenseModal
-                    isOpen={isAddModalOpen}
-                    onClose={() => setIsAddModalOpen(false)}
-                    onAdd={handleAddExpense}
-                />
+                <main className="flex-1 pt-14 pb-32 overflow-y-auto overflow-x-hidden">
+                    {loading ? (
+                        <div className="px-4 py-6 flex flex-col items-center justify-center min-h-[200px]">
+                            <div className="w-10 h-10 border-2 border-[#ee2b8c] border-t-transparent rounded-full animate-spin" aria-hidden />
+                            <p className="mt-4 text-gray-500 font-medium">불러오는 중...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="px-4 py-8 text-center">
+                            <p className="text-[#ee2b8c] font-semibold">{error}</p>
+                            <button
+                                type="button"
+                                onClick={() => loadData()}
+                                className="mt-4 px-4 py-2 bg-[#ee2b8c] text-white rounded-xl font-bold text-sm"
+                            >
+                                다시 시도
+                            </button>
+                        </div>
+                    ) : !getToken() ? (
+                        <div className="px-4 py-8 text-center">
+                            <p className="text-gray-500 font-medium">로그인하면 예산 내역을 볼 수 있어요.</p>
+                        </div>
+                    ) : stats ? (
+                        <>
+                            {/* Prominent Stats Grid */}
+                            <div className="px-4 py-4 space-y-3">
+                                <div className="w-full">
+                                    <StatCard
+                                        label="초기 자본"
+                                        value={stats.initialCapital}
+                                        variant="white"
+                                        size="large"
+                                        remainingAmount={remainingAmount}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <StatCard label="예정" value={stats.plannedTotal} variant="pink-light" />
+                                    <StatCard label="사용" value={stats.usedTotal} variant="pink-solid" />
+                                </div>
+                            </div>
+
+                            {/* AI Insight Trigger */}
+                            <div className="px-4 mt-2">
+                                <button
+                                    onClick={() => setIsAIModalOpen(true)}
+                                    className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-purple-500 to-[#ee2b8c] text-white rounded-2xl font-bold shadow-lg shadow-[#ee2b8c22] hover:opacity-95 transition-all transform active:scale-[0.98]"
+                                >
+                                    <Sparkles className="w-5 h-5" />
+                                    AI에게 예산 조언 받기
+                                </button>
+                            </div>
+
+                            {/* Spending Analysis Section */}
+                            <div className="px-4 mt-8">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-xl font-bold text-[#1b0d14]">지출 분석</h2>
+                                    {selectedCategory && (
+                                        <button
+                                            onClick={() => setSelectedCategory(null)}
+                                            className="text-[10px] font-extrabold text-[#ee2b8c] uppercase tracking-widest bg-[#ee2b8c11] px-3 py-1 rounded-full"
+                                        >
+                                            필터 해제
+                                        </button>
+                                    )}
+                                </div>
+                                <SpendingAnalysis
+                                    stats={stats}
+                                    expenses={expensesForAnalysis}
+                                    selectedCategory={selectedCategory}
+                                    onCategorySelect={handleCategoryToggle}
+                                />
+                            </div>
+
+                            {/* Tabs */}
+                            <div className="px-4 mt-8">
+                                <div className="flex border-b border-gray-100">
+                                    {(['전체', '예정', '사용'] as const).map((tab) => (
+                                        <button
+                                            key={tab}
+                                            onClick={() => setActiveTab(tab)}
+                                            className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${activeTab === tab
+                                                ? 'text-[#ee2b8c] border-[#ee2b8c]'
+                                                : 'text-gray-400 border-transparent hover:text-gray-600'
+                                                }`}
+                                        >
+                                            {tab}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Expense List: count=10000으로 전체 한 번에 로드 */}
+                            <div className="mt-4">
+                                {scheduleLoading && scheduleList.length === 0 ? (
+                                    <div className="px-4 py-4 text-center text-sm text-gray-500">불러오는 중...</div>
+                                ) : (
+                                    <ExpenseList expenses={listExpenses} />
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="px-4 py-8 text-center">
+                            <p className="text-gray-500 font-medium">데이터가 없습니다.</p>
+                        </div>
+                    )}
+                </main>
 
                 <AIInsightsModal
                     isOpen={isAIModalOpen}
                     onClose={() => setIsAIModalOpen(false)}
-                    expenses={expenses}
-                    stats={stats}
+                />
+
+                <BottomTabBar
+                    activeTab="stats"
+                    showLoginButton={false}
+                    onTabClick={(tab) => {
+                        if (tab === 'home') router.push('/main');
+                        if (tab === 'calendar') router.push('/main');
+                        if (tab === 'stats') router.push('/budget-detail');
+                        if (tab === 'settings') router.push('/setting');
+                    }}
                 />
             </div>
         </div>

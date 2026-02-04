@@ -208,7 +208,7 @@ function ScheduleDetailPageContent() {
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&libraries=services`;
     script.async = true;
     script.onload = () => {
-      window.kakao?.maps?.load(() => {});
+      window.kakao?.maps?.load(() => { });
     };
     document.head.appendChild(script);
     return () => {
@@ -268,7 +268,7 @@ function ScheduleDetailPageContent() {
   if (loading) {
     content = (
       <section className="flex flex-1 items-center justify-center rounded-3xl bg-white p-10 shadow-md">
-        <div className="flex items-center gap-3 text-[#FF8FA3]">
+        <div className="flex items-center gap-3 text-[#ee2b8c]">
           <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
           <span className="text-base font-semibold">불러오는 중...</span>
         </div>
@@ -277,7 +277,7 @@ function ScheduleDetailPageContent() {
   } else if (error) {
     content = (
       <section className="flex flex-1 flex-col items-center justify-center gap-4 rounded-3xl bg-white px-6 py-12 text-center shadow-md">
-        <p className="text-lg font-semibold text-[#FF8FA3]">
+        <p className="text-lg font-semibold text-[#ee2b8c]">
           플랜을 찾을 수 없어요
         </p>
         <p className="text-sm leading-relaxed text-stone-500">{error}</p>
@@ -285,14 +285,14 @@ function ScheduleDetailPageContent() {
           <button
             type="button"
             onClick={() => router.push("/main")}
-            className="rounded-full bg-[#FFAAB8] px-5 py-2 text-sm font-semibold text-white transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            className="rounded-full bg-[#ee2b8c] px-5 py-2 text-sm font-semibold text-white transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#ee2b8c33]"
           >
             홈으로 이동
           </button>
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="rounded-full border border-[#FFAAB8] px-5 py-2 text-sm font-semibold text-[#FFAAB8] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            className="rounded-full border border-[#ee2b8c] px-5 py-2 text-sm font-semibold text-[#ee2b8c] transition-transform hover:scale-[1.02] active:scale-[0.98]"
           >
             다시 시도
           </button>
@@ -318,8 +318,11 @@ function ScheduleDetailPageContent() {
           transition={{ duration: 0.5 }}
           className="mb-6 relative"
         >
-          <div className="bg-gradient-to-br from-[#FF8FA3] to-[#FF6B85] rounded-3xl p-8 shadow-2xl">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="bg-[#ee2b8c] rounded-[32px] p-8 shadow-[0_8px_32px_rgba(238,43,140,0.25)] relative overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+
+            <div className="flex items-center gap-2 mb-3 relative z-10">
               <Tag className="w-4 h-4 text-white/60" />
               <span className="text-white/70 font-medium text-xs">
                 {detail.categoryName}
@@ -412,10 +415,10 @@ function ScheduleDetailPageContent() {
                 <MapPin className="w-6 h-6 text-[#4A90E2]" />
               </div>
               <div className="flex-1">
-                <div className="text-sm text-gray-500 mb-1 font-medium">
+                <div className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-1">
                   장소
                 </div>
-                <div className="text-lg font-bold text-gray-900 mb-3">
+                <div className="text-lg font-bold text-[#1b0d14] mb-3">
                   {detail.location?.trim() || "장소 미정"}
                 </div>
                 {mapCoords ? (
@@ -441,7 +444,7 @@ function ScheduleDetailPageContent() {
                     href={mapLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#FFAAB8] px-4 py-2 text-sm font-semibold text-[#FF8FA3] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                    className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#ee2b8c] px-4 py-2 text-sm font-semibold text-[#ee2b8c] transition-transform hover:scale-[1.02] active:scale-[0.98]"
                   >
                     카카오맵에서 보기
                   </a>
@@ -464,10 +467,10 @@ function ScheduleDetailPageContent() {
                   <FileText className="w-6 h-6 text-[#FF9800]" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm text-gray-500 mb-1 font-medium">
+                  <div className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-1">
                     메모
                   </div>
-                  <div className="text-lg font-medium text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  <div className="text-lg font-medium text-[#1b0d14] leading-relaxed whitespace-pre-wrap">
                     {detail.memo}
                   </div>
                 </div>
@@ -488,13 +491,13 @@ function ScheduleDetailPageContent() {
             onClick={() =>
               router.push(`/add-plen?id=${encodeURIComponent(detail.id)}`)
             }
-            className="flex-1 bg-gradient-to-r from-[#FF8FA3] to-[#FF6B85] hover:from-[#FF7A92] hover:to-[#FF5A78] text-white py-4 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all"
+            className="flex-1 bg-[#ee2b8c] hover:bg-[#d4237b] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#ee2b8c33] transition-all transform active:scale-95"
           >
             수정하기
           </button>
           <button
             type="button"
-            className="flex-1 bg-white hover:bg-gray-50 text-gray-700 py-4 rounded-2xl font-bold border-2 border-gray-200 hover:border-[#FF8FA3] transition-all"
+            className="flex-1 bg-white hover:bg-gray-50 text-[#1b0d14] py-4 rounded-2xl font-bold border-2 border-gray-100 hover:border-[#ee2b8c33] transition-all transform active:scale-95"
           >
             삭제하기
           </button>
@@ -518,7 +521,7 @@ function ScheduleDetailPageContent() {
                   .map((category, index) => (
                     <span
                       key={index}
-                      className="bg-gradient-to-r from-[#FFE5EA] to-[#FFD0DA] text-[#FF6B85] px-4 py-2 rounded-full text-sm font-medium"
+                      className="bg-[#fff0f7] text-[#ee2b8c] px-4 py-2 rounded-full text-sm font-bold border border-[#ee2b8c11]"
                     >
                       {category}
                     </span>
@@ -534,24 +537,23 @@ function ScheduleDetailPageContent() {
     <div className="min-h-screen bg-[#fcfbfc]">
       <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
       <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
-        {/* Header - Figma style */}
-        <div className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-100 shrink-0">
-          <div className="px-6 py-4">
+        <div className="absolute top-0 left-0 z-50 w-full pointer-events-none">
+          <div className="px-6 py-4 pointer-events-auto">
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex items-center gap-2 text-gray-700 hover:text-[#FF8FA3] transition-colors"
+              className="flex items-center gap-2 text-[#ee2b8c] hover:bg-[#ee2b8c11] px-3 py-1.5 rounded-full transition-colors w-fit backdrop-blur-sm bg-white/30 shadow-sm"
               aria-label="뒤로가기"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">뒤로가기</span>
+              <span className="font-bold">뒤로가기</span>
             </button>
           </div>
         </div>
 
         <main
           ref={mainScrollRef}
-          className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-8 pb-24"
+          className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 pt-14 pb-24"
         >
           {content}
         </main>
@@ -585,8 +587,8 @@ export default function ScheduleDetailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFF5F2]">
-          <div className="flex items-center gap-3 text-[#FF8FA3]">
+        <div className="flex h-[100dvh] w-full items-center justify-center bg-[#fcfbfc]">
+          <div className="flex items-center gap-3 text-[#ee2b8c]">
             <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
             <span className="text-base font-semibold">불러오는 중...</span>
           </div>
