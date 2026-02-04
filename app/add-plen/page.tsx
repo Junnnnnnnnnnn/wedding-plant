@@ -100,6 +100,7 @@ function AddPlanPageContent() {
   const [hasSearched, setHasSearched] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const newCategoryInputRef = useRef<HTMLInputElement>(null);
+  const [tokenChecked, setTokenChecked] = useState(false);
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -120,6 +121,11 @@ function AddPlanPageContent() {
   const mainScrollRef = useRef<HTMLElement>(null);
   const scrollDirection = useScrollDirection(mainScrollRef);
   const loadedEditIdRef = useRef<number | null>(null);
+
+  /** 클라이언트 마운트 후에만 토큰 기준 표시 (로그인 버튼 플래시 방지) */
+  useEffect(() => {
+    setTokenChecked(true);
+  }, []);
 
   /**
    * ============================================================================
@@ -224,93 +230,56 @@ function AddPlanPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showMap, mapCoords]);
 
-  /**
-   * ============================================================================
-   * 전체 카테고리 목록 (더미 데이터)
-   * ============================================================================
-   *
-   * TODO: 백엔드 연동 시 아래 내용으로 교체
-   *
-   * 1. API 엔드포인트: GET /api/categories
-   *
-   * 2. 응답 형식:
-   *    {
-   *      "categories": [
-   *        { "id": "1", "color": "#FFE4E9", "label": "상견례" },
-   *        { "id": "2", "color": "#FFE5D9", "label": "드레스 촬영" },
-   *        ...
-   *      ]
-   *    }
-   *
-   * 3. 구현 예시:
-   *    const [allCategories, setAllCategories] = useState([]);
-   *
-   *    useEffect(() => {
-   *      const fetchCategories = async () => {
-   *        const response = await fetch('/api/categories');
-   *        const data = await response.json();
-   *        setAllCategories(data.categories);
-   *      };
-   *      fetchCategories();
-   *    }, []);
-   *
-   * 4. OpenSearch 인덱스 구조:
-   *    - index: wedding-categories
-   *    - mappings: {
-   *        "id": "keyword",
-   *        "label": "text" with Korean analyzer,
-   *        "color": "keyword",
-   *        "synonyms": ["text"] // 예: "예약" -> ["신청", "등록"]
-   *      }
-   * ============================================================================
-   */
-  const allCategories = useMemo(
-    () =>
-      [
-        { color: "#FFE4E9", label: "가구 구매" },
-        { color: "#FFE5D9", label: "결혼식" },
-        { color: "#E8DDF5", label: "공연 예약" },
-        { color: "#D5F0E5", label: "드레스 구매" },
-        { color: "#FFF0D6", label: "드레스 촬영" },
-        { color: "#D4EBF7", label: "렌탈 예약" },
-        { color: "#FFE4E9", label: "메이크업 예약" },
-        { color: "#FFE5D9", label: "부케 주문" },
-        { color: "#E8DDF5", label: "상견례" },
-        { color: "#D5F0E5", label: "서류 준비" },
-        { color: "#FFF0D6", label: "선물 구매" },
-        { color: "#D4EBF7", label: "스냅 촬영" },
-        { color: "#FFE4E9", label: "신혼여행" },
-        { color: "#FFE5D9", label: "예단 준비" },
-        { color: "#E8DDF5", label: "예물 구매" },
-        { color: "#D5F0E5", label: "예식장 예약" },
-        { color: "#FFF0D6", label: "음식 시식" },
-        { color: "#D4EBF7", label: "이사 준비" },
-        { color: "#FFE4E9", label: "인테리어" },
-        { color: "#FFE5D9", label: "전세 계약" },
-        { color: "#E8DDF5", label: "축가 부탁" },
-        { color: "#D5F0E5", label: "카드 제작" },
-        { color: "#FFF0D6", label: "커플링 구매" },
-        { color: "#D4EBF7", label: "턱시도 대여" },
-        { color: "#FFE4E9", label: "페이퍼 초대장" },
-        { color: "#FFE5D9", label: "폐백 준비" },
-        { color: "#E8DDF5", label: "한복 대여" },
-        { color: "#D5F0E5", label: "허니문 예약" },
-        { color: "#FFF0D6", label: "헤어 예약" },
-        { color: "#D4EBF7", label: "혼주 구매" },
-      ].sort((a, b) => a.label.localeCompare(b.label, "ko")),
-    [],
-  );
+  /** API 카테고리 항목: type USER → 모달에서 "my" 뱃지 표시 */
+  type CategoryItem = {
+    id?: number;
+    color: string;
+    label: string;
+    type?: "SYSTEM" | "USER";
+  };
 
-  /** 모달 그리드용: 기본 카테고리 + 사용자 추가 카테고리 */
+  const [allCategories, setAllCategories] = useState<CategoryItem[]>([]);
+
+  /** GET /plen/category/list 로 카테고리 목록 로드 */
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await fetchWithAuth("/plen/category/list", { method: "GET" });
+        const json = (await res.json().catch(() => null)) as {
+          result?: boolean;
+          data?: { total?: number; list?: Array<{ id: number; name: string; color: string; type: "SYSTEM" | "USER" }> };
+        };
+        if (!json.result || !json.data?.list) return;
+        const list = json.data.list
+          .map((item) => ({
+            id: item.id,
+            color: item.color,
+            label: item.name,
+            type: item.type,
+          }))
+          .sort((a, b) => a.label.localeCompare(b.label, "ko"));
+        setAllCategories(list);
+      } catch {
+        // 실패 시 빈 목록 유지
+      }
+    };
+    loadCategories();
+  }, [fetchWithAuth]);
+
+  /** 모달 그리드용: API 카테고리 + 세션에서 추가한 카테고리 */
   const categoriesForModal = useMemo(
     () => [...allCategories, ...userAddedCategories],
     [allCategories, userAddedCategories],
   );
 
-  /** 사용자 추가 카테고리 라벨 집합 (my 뱃지 표시용) */
+  /** "my" 뱃지 표시 대상: API type USER + 세션에서 추가한 카테고리 라벨 */
   const userAddedLabels = useMemo(
-    () => new Set(userAddedCategories.map((c) => c.label)),
-    [userAddedCategories],
+    () =>
+      new Set([
+        ...allCategories.filter((c) => c.type === "USER").map((c) => c.label),
+        ...userAddedCategories.map((c) => c.label),
+      ]),
+    [allCategories, userAddedCategories],
   );
 
   /** 수정 모드: id가 있으면 GET /plan/schedule/{id} 로 폼 채우기 (중복 요청 방지) */
@@ -417,6 +386,15 @@ function AddPlanPageContent() {
 
     loadDetail();
   }, [editId, fetchWithAuth, allCategories]);
+
+  /** API 카테고리 로드 후 selectedCategory가 있으면 API 항목으로 동기화 (색상/type 반영) */
+  useEffect(() => {
+    if (!selectedCategory || allCategories.length === 0) return;
+    const found = allCategories.find((c) => c.label === selectedCategory.label);
+    if (found && (selectedCategory as CategoryItem).id !== found.id) {
+      setSelectedCategory(found);
+    }
+  }, [allCategories, selectedCategory?.label]);
 
   /**
    * ============================================================================
@@ -1345,7 +1323,9 @@ function AddPlanPageContent() {
         {/* 하단 탭바 - Sticky로 최상단에 고정 */}
         <BottomTabBar
           activeTab="home"
-          showLoginButton={!getToken() && !showLoginRequiredModal}
+          showLoginButton={
+            tokenChecked && !getToken() && !showLoginRequiredModal
+          }
           onLoginClick={() => setShowLoginRequiredModal(true)}
           scrollDirection={scrollDirection}
           onTabClick={(tab) => {
@@ -1409,7 +1389,7 @@ function AddPlanPageContent() {
                 <div className="space-y-3">
                   {categoriesForModal.map((category, index) => (
                     <motion.div
-                      key={`modal-${category.label}`}
+                      key={`modal-${"id" in category && category.id != null ? category.id : `new-${category.label}`}`}
                       ref={
                         category.label === highlightCategoryLabel
                           ? highlightedCategoryRef
@@ -1423,9 +1403,17 @@ function AddPlanPageContent() {
                       <button
                         type="button"
                         onClick={() => handleSelectFromModal(category)}
-                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between ${selectedCategory?.label === category.label
-                          ? "bg-[#ee2b8c] text-white shadow-lg scale-[1.02]"
-                          : "bg-gradient-to-r from-gray-50 to-gray-100 hover:from-pink-50 hover:to-rose-50 text-[#1b0d14] border-2 border-gray-100 hover:border-pink-200"
+                        style={
+                          selectedCategory?.label === category.label
+                            ? { backgroundColor: category.color }
+                            : {
+                                backgroundColor: `${category.color}20`,
+                                borderColor: category.color,
+                              }
+                        }
+                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${selectedCategory?.label === category.label
+                          ? "text-[#1b0d14] shadow-lg scale-[1.02]"
+                          : "text-[#1b0d14] hover:opacity-90"
                           } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
                       >
                         <span className="font-bold text-lg flex items-center gap-2">

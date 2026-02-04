@@ -5,6 +5,7 @@ import {
   Check,
   CircleDollarSign,
   CirclePlus,
+  Mail,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -364,6 +365,7 @@ function MainPageContent() {
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const mainScrollRef = useRef<HTMLElement>(null);
   const scrollDirection = useScrollDirection(mainScrollRef);
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
@@ -509,6 +511,23 @@ function MainPageContent() {
                   </>
                 )}
               </div>
+              {/* 공유하기 버튼 */}
+              {isPlanLoading ? (
+                <span
+                  className="skeleton-shimmer h-10 w-[88px] shrink-0 rounded-full"
+                  aria-hidden
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowShareModal(true)}
+                  className="flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-[#1b0d14] bg-stone-100 hover:bg-stone-200 transition-colors border border-stone-200"
+                  aria-label="플랜 초대하기"
+                >
+                  <Mail className="h-4 w-4 text-stone-600" strokeWidth={2} />
+                  초대하기
+                </button>
+              )}
               {/* 프로필 이미지 영역 (로딩 시 스켈레톤 시머) */}
               {isPlanLoading ? (
                 <span
@@ -603,7 +622,6 @@ function MainPageContent() {
                     </div>
                   </div>
                   <p className="mt-1 pl-[52px] py-2 text-xl max-[350px]:text-[15px] font-semibold leading-none text-white">
-                    예산 중{" "}
                     <CountUp
                       to={usedBudget}
                       separator=","
@@ -710,11 +728,11 @@ function MainPageContent() {
                     const detailHref = `/schedule-detail?id=${plan.id}`;
                     const dateLabel = plan.startDate?.trim()
                       ? (() => {
-                        const { dateText, weekday } = formatDate(
-                          plan.startDate as string,
-                        );
-                        return `${dateText} (${weekday})`;
-                      })()
+                          const { dateText, weekday } = formatDate(
+                            plan.startDate as string,
+                          );
+                          return `${dateText} (${weekday})`;
+                        })()
                       : "미정";
                     return (
                       <li key={plan.id}>
@@ -742,10 +760,11 @@ function MainPageContent() {
                                 e.stopPropagation();
                                 handleToggleCheck(plan.id);
                               }}
-                              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
+                              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
+                                isChecked
                                   ? "bg-[#ee2b8c] border-[#ee2b8c]"
                                   : "bg-white/80 border-[#ee2b8c]"
-                                }`}
+                              }`}
                             >
                               {isChecked && (
                                 <Check
@@ -761,9 +780,10 @@ function MainPageContent() {
                             >
                               {plan.title}
                             </h4>
-                            <p className="text-gray-400 text-xs font-semibold truncate tracking-tight mt-0.5">
-                              {plan.categoryName} · {dateLabel}
-                            </p>
+                            <div className="text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
+                              <p className="truncate">{plan.categoryName}</p>
+                              <p className="truncate">{dateLabel}</p>
+                            </div>
                           </div>
                           <div className="text-right shrink-0">
                             <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
@@ -772,10 +792,11 @@ function MainPageContent() {
                                 : "미정"}
                             </div>
                             <span
-                              className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
+                              className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
+                                isChecked
                                   ? "bg-[#ee2b8c] text-white"
                                   : "bg-gray-100 text-gray-500"
-                                }`}
+                              }`}
                             >
                               {isChecked ? "완료" : "예정"}
                             </span>
@@ -821,6 +842,50 @@ function MainPageContent() {
           onClose={() => setShowGuestPlanLimitModal(false)}
           onConfirm={() => router.push("/add-plen")}
         />
+        {/* 플랜 공유하기 모달 */}
+        {showShareModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+            onClick={() => setShowShareModal(false)}
+            onKeyDown={(e) => e.key === "Escape" && setShowShareModal(false)}
+            role="presentation"
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="share-modal-title"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              tabIndex={-1}
+            >
+              <h2
+                id="share-modal-title"
+                className="text-center text-lg font-semibold text-stone-900"
+              >
+                플랜 공유하기
+              </h2>
+              <p className="mt-3 text-center text-[15px] font-normal leading-relaxed text-stone-700">
+                연인이나, 플랜 전문가 등 에게
+                <br />
+                플랜을 공유하고 수정해봐요!
+              </p>
+              <p className="mt-3 text-center text-[13px] font-medium text-amber-600">
+                최대 4명까지 가능합니다.
+              </p>
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowShareModal(false)}
+                  className="w-full rounded-full h-11 flex items-center justify-center text-sm font-semibold transition-transform hover:scale-[1.01] active:scale-[0.99] text-white"
+                  style={{ backgroundColor: "#ee2b8c" }}
+                >
+                  확인
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

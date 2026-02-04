@@ -14,7 +14,12 @@ import {
 import DatePickerModal from "./DatePickerModal";
 
 interface SettingsPageProps {
-  user: { name: string; weddingDate: string; budget: number };
+  user: {
+    name: string;
+    weddingDate: string;
+    budget: number;
+    profileImageUrl?: string | null;
+  };
   onSave: (user: { name: string; weddingDate: string; budget: number }) => void;
   onClose: () => void;
   onSignOut?: () => void;
@@ -67,13 +72,30 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
       {/* 헤더 + 닫기 버튼 */}
       <header className="px-6 pt-12 pb-6 flex justify-between items-center relative z-10">
-        <div>
-          <h2 className="text-3xl font-black text-[#1b0d14] tracking-tight">
-            프로필
-          </h2>
-          <p className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-widest mt-1">
-            결혼 정보를 관리해요
-          </p>
+        <div className="flex items-center gap-4">
+          {/* 프로필 사진: 있으면 이미지, 없으면 이름 첫 글자 원형 */}
+          {user.profileImageUrl ? (
+            <img
+              src={user.profileImageUrl}
+              alt="프로필"
+              className="w-14 h-14 rounded-full object-cover border-2 border-[#ee2b8c22] shadow-sm flex-shrink-0"
+            />
+          ) : (
+            <div
+              className="w-14 h-14 rounded-full bg-gradient-to-br from-[#ee2b8c] to-[#ff7eb3] flex items-center justify-center text-white text-xl font-black flex-shrink-0 shadow-sm border-2 border-[#ee2b8c22]"
+              aria-hidden
+            >
+              {user.name?.trim().charAt(0)?.toUpperCase() || "?"}
+            </div>
+          )}
+          <div>
+            <h2 className="text-3xl font-black text-[#1b0d14] tracking-tight">
+              프로필
+            </h2>
+            <p className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-widest mt-1">
+              결혼 정보를 관리해요
+            </p>
+          </div>
         </div>
         <button
           onClick={onClose}
@@ -92,9 +114,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
               <p className="text-white/70 text-[10px] font-extrabold uppercase tracking-widest mb-1">
                 결혼식 날짜
               </p>
-              <h3 className="text-2xl font-bold">
-                {formData.name}님
-              </h3>
+              <h3 className="text-2xl font-bold">{formData.name}님</h3>
             </div>
             <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20">
               <span className="text-xl font-black">
