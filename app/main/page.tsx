@@ -20,7 +20,6 @@ import {
 import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
-import ProfileEditModal from "../components/ProfileEditModal";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import GuestPlanLimitModal from "../components/GuestPlanLimitModal";
 import { useWedding } from "../contexts/WeddingContext";
@@ -364,7 +363,6 @@ function MainPageContent() {
   // 각 계획의 체크 상태 관리
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
-  const [showProfileEditModal, setShowProfileEditModal] = useState(false);
   const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
   const mainScrollRef = useRef<HTMLElement>(null);
   const scrollDirection = useScrollDirection(mainScrollRef);
@@ -442,7 +440,7 @@ function MainPageContent() {
   // 프로필 버튼 클릭 핸들러
   const handleUserClick = () => {
     if (getToken()) {
-      setShowProfileEditModal(true);
+      router.push("/user");
     } else {
       setShowLoginRequiredModal(true);
     }
@@ -712,11 +710,11 @@ function MainPageContent() {
                     const detailHref = `/schedule-detail?id=${plan.id}`;
                     const dateLabel = plan.startDate?.trim()
                       ? (() => {
-                          const { dateText, weekday } = formatDate(
-                            plan.startDate as string,
-                          );
-                          return `${dateText} (${weekday})`;
-                        })()
+                        const { dateText, weekday } = formatDate(
+                          plan.startDate as string,
+                        );
+                        return `${dateText} (${weekday})`;
+                      })()
                       : "미정";
                     return (
                       <li key={plan.id}>
@@ -744,11 +742,10 @@ function MainPageContent() {
                                 e.stopPropagation();
                                 handleToggleCheck(plan.id);
                               }}
-                              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
-                                isChecked
+                              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
                                   ? "bg-[#ee2b8c] border-[#ee2b8c]"
                                   : "bg-white/80 border-[#ee2b8c]"
-                              }`}
+                                }`}
                             >
                               {isChecked && (
                                 <Check
@@ -775,11 +772,10 @@ function MainPageContent() {
                                 : "미정"}
                             </div>
                             <span
-                              className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
-                                isChecked
+                              className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
                                   ? "bg-[#ee2b8c] text-white"
                                   : "bg-gray-100 text-gray-500"
-                              }`}
+                                }`}
                             >
                               {isChecked ? "완료" : "예정"}
                             </span>
@@ -824,16 +820,6 @@ function MainPageContent() {
           show={showGuestPlanLimitModal}
           onClose={() => setShowGuestPlanLimitModal(false)}
           onConfirm={() => router.push("/add-plen")}
-        />
-        <ProfileEditModal
-          show={showProfileEditModal}
-          onClose={() => setShowProfileEditModal(false)}
-          displayData={{
-            name: displayData.name,
-            date: displayData.date,
-            budget: displayData.budget,
-          }}
-          onSaved={() => fetchPlanUser(handleApiError)}
         />
       </div>
     </div>
