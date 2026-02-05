@@ -23,6 +23,7 @@ import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import GuestPlanLimitModal from "../components/GuestPlanLimitModal";
+import SharePlanModal from "@/components/SharePlanModal";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import { getToken, clearAllStoredData } from "@/lib/api";
@@ -483,35 +484,71 @@ function MainPageContent() {
           className="flex flex-1 flex-col items-center overflow-y-auto w-full px-6"
         >
           <div className="w-full pt-8">
-            {/* 상단 영역 */}
-            <div className="w-full flex items-center justify-between">
-              {/* 이름 + D-day 영역 (로딩 시 스켈레톤) */}
-              <div className="flex flex-col items-start justify-start">
-                {isPlanLoading ? (
-                  <>
-                    <div className="flex items-baseline gap-3 flex-wrap">
-                      <span
-                        className="skeleton-shimmer h-[42px] w-[120px] rounded-lg"
-                        aria-hidden
-                      />
-                      <span
-                        className="skeleton-shimmer h-8 w-[98px] shrink-0 rounded-full"
-                        aria-hidden
-                      />
-                    </div>
+            {/* 상단 영역: 1행=이름·초대(이름 우측), 2행=결혼식 날짜(좌측)·D-day(날짜 오른쪽), 오른쪽=프로필 */}
+            <div className="w-full flex items-start justify-between gap-4">
+              {/* 왼쪽: [이름(좌)·초대(우)] + [결혼식 날짜(좌)·D-day(우)] */}
+              <div className="flex flex-col items-start min-w-0 flex-1">
+                {/* 1행: 이름(좌) · 초대(이름 우측) */}
+                <div className="flex w-[279px] items-center justify-between gap-2 flex-nowrap">
+                  {isPlanLoading ? (
                     <span
-                      className="skeleton-shimmer mt-1.5 block h-4 w-[152px] rounded"
+                      className="skeleton-shimmer h-[42px] w-[120px] rounded-lg shrink-0"
                       aria-hidden
                     />
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-baseline gap-3 flex-wrap">
-                      <span className="text-[42px] font-semibold text-[#1b0d14] leading-none">
-                        {displayData.name || "이름"}
+                  ) : (
+                    <span className="text-[42px] font-semibold text-[#1b0d14] leading-none shrink-0 min-w-0">
+                      {displayData.name || "이름"}
+                    </span>
+                  )}
+                  {isPlanLoading ? (
+                    <span
+                      className="skeleton-shimmer h-10 w-[88px] shrink-0 rounded-full"
+                      aria-hidden
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!getToken()) {
+                          setShowShareModal(false);
+                          setShowLoginRequiredModal(true);
+                          return;
+                        }
+                        setShowShareModal(true);
+                      }}
+                      className="flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-[#1b0d14] bg-stone-100 hover:bg-stone-200 transition-colors border border-stone-200"
+                      aria-label="플랜 초대하기"
+                    >
+                      <Mail
+                        className="h-4 w-4 text-stone-600"
+                        strokeWidth={2}
+                      />
+                      초대
+                    </button>
+                  )}
+                </div>
+                {/* 2행: 결혼식 날짜(좌측) + D-day(날짜 오른쪽에 붙임) */}
+                <div className="mt-0.5 flex w-[200px] items-center justify-between gap-1 flex-nowrap">
+                  {isPlanLoading ? (
+                    <>
+                      <span
+                        className="skeleton-shimmer h-3.5 w-[152px] rounded shrink-0"
+                        aria-hidden
+                      />
+                      <span
+                        className="skeleton-shimmer h-10 w-14 shrink-0 rounded-full"
+                        aria-hidden
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[12px] font-normal leading-tight text-gray-500 shrink-0">
+                        {weddingDateText
+                          ? `결혼식: ${weddingDateText}`
+                          : "\u00A0"}
                       </span>
                       <span
-                        className="inline-flex items-center rounded-full px-4 py-1.5 text-[18px] font-semibold leading-none shrink-0"
+                        className="flex h-5 shrink-0 items-center rounded-full px-4 py-2 text-sm font-semibold leading-none"
                         style={{
                           background: "#ee2b8c",
                           color: "#fff",
@@ -520,40 +557,11 @@ function MainPageContent() {
                       >
                         {dDayLabel}
                       </span>
-                    </div>
-                    {weddingDateText && (
-                      <span className="mt-1.5 text-[13px] font-normal leading-tight text-gray-500">
-                        결혼식: {weddingDateText}
-                      </span>
-                    )}
-                  </>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
-              {/* 공유하기 버튼 */}
-              {isPlanLoading ? (
-                <span
-                  className="skeleton-shimmer h-10 w-[88px] shrink-0 rounded-full"
-                  aria-hidden
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!getToken()) {
-                      setShowShareModal(false);
-                      setShowLoginRequiredModal(true);
-                      return;
-                    }
-                    setShowShareModal(true);
-                  }}
-                  className="flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-[#1b0d14] bg-stone-100 hover:bg-stone-200 transition-colors border border-stone-200"
-                  aria-label="플랜 초대하기"
-                >
-                  <Mail className="h-4 w-4 text-stone-600" strokeWidth={2} />
-                  초대
-                </button>
-              )}
-              {/* 프로필 이미지 영역 (로딩 시 스켈레톤 시머) */}
+              {/* 오른쪽: 프로필 (기존 위치) */}
               {isPlanLoading ? (
                 <span
                   className="skeleton-shimmer h-12 w-12 shrink-0 rounded-full"
@@ -719,7 +727,9 @@ function MainPageContent() {
                 className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-bold text-lg transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
                 style={{
                   backgroundColor:
-                    !getToken() && scheduleList.length >= 3 ? "#cbd5e1" : "#ee2b8c",
+                    !getToken() && scheduleList.length >= 3
+                      ? "#cbd5e1"
+                      : "#ee2b8c",
                   boxShadow:
                     !getToken() && scheduleList.length >= 3
                       ? "0 4px 12px rgba(148, 163, 184, 0.35)"
@@ -893,49 +903,10 @@ function MainPageContent() {
           onConfirm={() => router.push("/add-plen")}
         />
         {/* 플랜 공유하기 모달 */}
-        {showShareModal && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-            onClick={() => setShowShareModal(false)}
-            onKeyDown={(e) => e.key === "Escape" && setShowShareModal(false)}
-            role="presentation"
-          >
-            <div
-              className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="share-modal-title"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-              tabIndex={-1}
-            >
-              <h2
-                id="share-modal-title"
-                className="text-center text-lg font-semibold text-stone-900"
-              >
-                플랜 공유하기
-              </h2>
-              <p className="mt-3 text-center text-[15px] font-normal leading-relaxed text-stone-700">
-                연인이나, 플랜 전문가 등 에게
-                <br />
-                플랜을 공유하고 수정해봐요!
-              </p>
-              <p className="mt-3 text-center text-[13px] font-medium text-amber-600">
-                최대 4명까지 가능합니다.
-              </p>
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowShareModal(false)}
-                  className="w-full rounded-full h-11 flex items-center justify-center text-sm font-semibold transition-transform hover:scale-[1.01] active:scale-[0.99] text-white"
-                  style={{ backgroundColor: "#ee2b8c" }}
-                >
-                  확인
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <SharePlanModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+        />
       </div>
     </div>
   );

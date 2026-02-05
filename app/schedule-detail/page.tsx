@@ -12,7 +12,14 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+} from "react";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
@@ -229,7 +236,7 @@ function ScheduleDetailPageContent() {
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&libraries=services`;
     script.async = true;
     script.onload = () => {
-      window.kakao?.maps?.load(() => { });
+      window.kakao?.maps?.load(() => {});
     };
     document.head.appendChild(script);
     return () => {
@@ -337,37 +344,37 @@ function ScheduleDetailPageContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-6 relative"
+          className="mt-10 mb-2 relative"
         >
-          <div className="bg-[#ee2b8c] rounded-[32px] p-8 shadow-[0_8px_32px_rgba(238,43,140,0.25)] relative overflow-hidden">
+          <div className="bg-[#ee2b8c] rounded-[32px] p-4 shadow-[0_8px_32px_rgba(238,43,140,0.25)] relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
 
-            <div className="flex items-center gap-2 mb-3 relative z-10">
-              <Tag className="w-4 h-4 text-white/60" />
+            <div className="flex items-center gap-2 mb-1.5 relative z-10">
+              <Tag className="w-3 h-3 text-white/60" />
               <span className="text-white/70 font-medium text-xs">
                 {detail.categoryName}
               </span>
             </div>
-            <h2 className="text-4xl font-black text-white mb-4 max-w-full">
+            <h2 className="text-xl font-black text-white mb-1.5 max-w-full leading-tight">
               {detail.title}
             </h2>
-            <div className="flex items-center gap-2 mb-6 text-white/90">
-              <Calendar className="w-5 h-5" />
-              <span className="font-medium">
+            <div className="flex items-center gap-2 mb-3 text-white/90">
+              <Calendar className="w-3.5 h-3.5" />
+              <span className="font-medium text-xs">
                 {formatDate(detail.startDate)}
               </span>
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-white/80 text-sm mb-1">지출 금액</div>
-                <div className="text-4xl font-black text-white">
+                <div className="text-white/80 text-xs mb-0.5">지출 금액</div>
+                <div className="text-xl font-black text-white leading-tight">
                   {formattedAmount}
                 </div>
               </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-5 py-3">
-                <div className="text-white/80 text-xs mb-1">결제 방식</div>
-                <div className="text-white font-bold text-lg">
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
+                <div className="text-white/80 text-xs mb-0.5">결제 방식</div>
+                <div className="text-white font-bold text-sm">
                   {payTypeLabel}
                 </div>
               </div>
@@ -430,31 +437,31 @@ function ScheduleDetailPageContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-4">
-              <div className="bg-gradient-to-br from-[#E5F3FF] to-[#D0E7FF] rounded-xl p-3">
-                <MapPin className="w-6 h-6 text-[#4A90E2]" />
+          <div className="bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-2.5">
+              <div className="bg-gradient-to-br from-[#E5F3FF] to-[#D0E7FF] rounded-lg p-2">
+                <MapPin className="w-4 h-4 text-[#4A90E2]" />
               </div>
-              <div className="flex-1">
-                <div className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-1">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-0.5">
                   장소
                 </div>
-                <div className="text-lg font-bold text-[#1b0d14] mb-3">
+                <div className="text-sm font-bold text-[#1b0d14] mb-1.5">
                   {detail.location?.trim() || "장소 미정"}
                 </div>
                 {mapCoords ? (
                   <div
                     id="schedule-detail-map"
-                    className="w-full h-32 rounded-xl overflow-hidden border border-gray-200 bg-gray-100"
+                    className="w-full h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-100"
                   />
                 ) : (
-                  <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl h-32 flex items-center justify-center border border-gray-200">
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg h-24 flex items-center justify-center border border-gray-200">
                     <div className="text-center">
-                      <MapPin className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <div className="text-sm text-gray-500">
+                      <MapPin className="w-5 h-5 text-gray-400 mx-auto mb-0.5" />
+                      <div className="text-xs text-gray-500">
                         위도: {latStr}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs text-gray-500">
                         경도: {lngStr}
                       </div>
                     </div>
@@ -465,7 +472,7 @@ function ScheduleDetailPageContent() {
                     href={mapLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#ee2b8c] px-4 py-2 text-sm font-semibold text-[#ee2b8c] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                    className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-[#ee2b8c] px-2.5 py-1 text-xs font-semibold text-[#ee2b8c] transition-transform hover:scale-[1.02] active:scale-[0.98]"
                   >
                     카카오맵에서 보기
                   </a>
@@ -481,48 +488,23 @@ function ScheduleDetailPageContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
+            className="mt-4"
           >
-            <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="bg-gradient-to-br from-[#FFF3E0] to-[#FFE0B2] rounded-xl p-3">
-                  <FileText className="w-6 h-6 text-[#FF9800]" />
+            <div className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start gap-3">
+                <div className="bg-gradient-to-br from-[#FFF3E0] to-[#FFE0B2] rounded-xl p-2.5">
+                  <FileText className="w-5 h-5 text-[#FF9800]" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-1">
+                  <div className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-0.5">
                     메모
                   </div>
-                  <div className="text-lg font-medium text-[#1b0d14] leading-relaxed whitespace-pre-wrap">
+                  <div className="text-base font-medium text-[#1b0d14] leading-relaxed whitespace-pre-wrap">
                     {detail.memo}
                   </div>
                 </div>
               </div>
             </div>
-          </motion.div>
-        )}
-
-        {/* Action Buttons (logged-in only) */}
-        {getToken() && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex gap-3 mt-6"
-          >
-            <button
-              type="button"
-              onClick={() =>
-                router.push(`/add-plen?id=${encodeURIComponent(detail.id)}`)
-              }
-              className="flex-1 bg-[#ee2b8c] hover:bg-[#d4237b] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#ee2b8c33] transition-all transform active:scale-95"
-            >
-              수정하기
-            </button>
-            <button
-              type="button"
-              className="flex-1 bg-white hover:bg-gray-50 text-[#1b0d14] py-4 rounded-2xl font-bold border-2 border-gray-100 hover:border-[#ee2b8c33] transition-all transform active:scale-95"
-            >
-              삭제하기
-            </button>
           </motion.div>
         )}
 
@@ -533,7 +515,7 @@ function ScheduleDetailPageContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="mt-6 bg-white rounded-2xl p-6 shadow-sm"
+              className="mt-3 bg-white rounded-2xl p-4 shadow-sm"
             >
               <div className="text-sm text-gray-500 mb-3 font-medium">
                 추가 카테고리
@@ -557,10 +539,10 @@ function ScheduleDetailPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fcfbfc]">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#fcfbfc]">
       <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
-      <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
-        <div className="absolute top-0 left-0 z-50 w-full pointer-events-none">
+      <div className="min-h-screen w-full max-w-md mx-auto bg-white shadow-2xl relative overflow-x-hidden flex flex-col grid-bg z-10 left-0 right-0">
+        <div className="absolute top-0 left-0 right-0 z-50 w-full pointer-events-none">
           <div className="px-6 py-4 pointer-events-auto">
             <button
               type="button"
@@ -576,10 +558,33 @@ function ScheduleDetailPageContent() {
 
         <main
           ref={mainScrollRef}
-          className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 pt-14 pb-24"
+          className={`flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-6 pt-5 min-w-0 w-full max-w-full box-border ${getToken() ? "pb-36" : "pb-24"}`}
         >
-          {content}
+          <div className="w-full max-w-full min-w-0">{content}</div>
         </main>
+
+        {/* Action Buttons: fixed above BottomTabBar (logged-in only) */}
+        {getToken() && detail && (
+          <div className="fixed bottom-[75px] left-0 right-0 z-[90] flex justify-center px-8 pb-4 pointer-events-none">
+            <div className="w-full max-w-md pointer-events-auto flex gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(`/add-plen?id=${encodeURIComponent(detail.id)}`)
+                }
+                className="flex-1 bg-[#ee2b8c] hover:bg-[#d4237b] text-white py-3 rounded-2xl font-bold shadow-lg shadow-[#ee2b8c33] transition-all transform active:scale-95"
+              >
+                수정하기
+              </button>
+              <button
+                type="button"
+                className="flex-1 bg-white hover:bg-gray-50 text-[#1b0d14] py-3 rounded-2xl font-bold border-2 border-gray-100 hover:border-[#ee2b8c33] transition-all transform active:scale-95"
+              >
+                삭제하기
+              </button>
+            </div>
+          </div>
+        )}
 
         <BottomTabBar
           activeTab="home"
