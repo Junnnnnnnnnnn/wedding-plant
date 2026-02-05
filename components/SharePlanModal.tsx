@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import {
   X,
@@ -6,8 +8,8 @@ import {
   Shield,
   ShieldAlert,
   Check,
-  Copy,
 } from "lucide-react";
+import { useApi } from "@/app/contexts/ApiContext";
 
 interface SharePlanModalProps {
   isOpen: boolean;
@@ -17,15 +19,45 @@ interface SharePlanModalProps {
 const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
   const [permission, setPermission] = useState<"view" | "edit">("view");
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const { fetchWithAuth } = useApi();
 
   if (!isOpen) return null;
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(
-      "https://wedding-plan.example.com/share/jh28-x92",
-    );
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyLink = async () => {
+    if (permission !== "view") {
+      // 읽기 전용일 때만 링크 복사 API 호출
+      setCopyError("읽기 전용 모드에서만 링크 복사가 가능합니다.");
+      return;
+    }
+    setCopyError(null);
+    try {
+      const res = await fetchWithAuth("/plan/user/room", {
+        method: "POST",
+      });
+      if (!res.ok) {
+        throw new Error("공유 링크 생성에 실패했습니다.");
+      }
+      const json = (await res.json()) as {
+        result?: boolean;
+        data?: { shareCode?: string };
+      };
+      const shareCode = json?.data?.shareCode;
+      if (!shareCode) {
+        throw new Error("shareCode를 받지 못했습니다.");
+      }
+      const url =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/share/${shareCode}`
+          : "";
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      setCopyError(
+        err instanceof Error ? err.message : "링크 복사에 실패했습니다.",
+      );
+    }
   };
 
   return (
@@ -74,12 +106,20 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
 
           {/* Permission Toggle */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] px-1">
-              접근 권한 설정
-            </h4>
+            <div className="flex items-center gap-2 px-1">
+              <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">
+                접근 권한 설정
+              </h4>
+              <span className="px-2 py-0.5 rounded-full bg-[#ee2b8c] text-white text-[9px] font-black uppercase tracking-wider">
+                회원 전용
+              </span>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => setPermission("view")}
+                onClick={() => {
+                  setPermission("view");
+                  setCopyError(null);
+                }}
                 className={`flex flex-col items-center gap-3 p-4 rounded-3xl border-2 transition-all ${
                   permission === "view"
                     ? "border-[#ee2b8c] bg-[#ee2b8c08]"
@@ -100,7 +140,10 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
               </button>
 
               <button
-                onClick={() => setPermission("edit")}
+                onClick={() => {
+                  setPermission("edit");
+                  setCopyError(null);
+                }}
                 className={`flex flex-col items-center gap-3 p-4 rounded-3xl border-2 transition-all ${
                   permission === "edit"
                     ? "border-[#ee2b8c] bg-[#ee2b8c08]"
@@ -129,10 +172,18 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
             <h4 className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] px-1">
               공유 방법 선택
             </h4>
+            {copyError && (
+              <p className="text-sm font-bold text-red-500 -mt-2">
+                {copyError}
+              </p>
+            )}
             <div className="flex gap-4">
               <button
                 onClick={handleCopyLink}
-                className="flex-1 h-16 bg-white border border-gray-100 rounded-3xl flex items-center justify-center gap-3 font-bold text-[#1b0d14] shadow-sm hover:shadow-md transition-all active:scale-95"
+                disabled={permission !== "view"}
+                className={`flex-1 h-16 bg-white border border-gray-100 rounded-3xl flex items-center justify-center gap-3 font-bold text-[#1b0d14] shadow-sm hover:shadow-md transition-all active:scale-95 ${
+                  permission !== "view" ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 {copied ? (
                   <Check className="w-5 h-5 text-green-500" />

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useKakaoAuth } from "../hooks/useKakaoAuth";
 
 const TITLE = "로그인이 필요해요!";
@@ -17,7 +18,13 @@ export default function LoginRequiredModal({
   onClose,
   title,
 }: LoginRequiredModalProps) {
+  const router = useRouter();
   const { handleKakaoAuth, loading } = useKakaoAuth();
+
+  const handleClose = () => {
+    onClose();
+    router.replace("/");
+  };
 
   if (!show) return null;
 
@@ -27,9 +34,9 @@ export default function LoginRequiredModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      onClick={onClose}
-      onKeyDown={(e) => e.key === "Escape" && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+      onClick={handleClose}
+      onKeyDown={(e) => e.key === "Escape" && handleClose()}
       role="presentation"
     >
       <div
@@ -81,7 +88,7 @@ export default function LoginRequiredModal({
           </button>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className={`${baseBtnClass} border-2 border-stone-300 bg-white text-stone-700`}
           >
             닫기
