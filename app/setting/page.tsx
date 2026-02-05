@@ -438,7 +438,7 @@ function SettingPageContent() {
           >
             <LandingHero
               title="앗.. 실망하셨다고요?"
-              subtitle="열심히 준비 했지만 제 마음이 닿지 않았나봐요 ㅠ"
+              subtitle="열심히 했지만 마음이 닿지 않았나봐요"
               titleSize="text-3xl sm:text-4xl"
               subtitleSize="text-base sm:text-lg"
             />

@@ -30,8 +30,8 @@ export default function Home() {
       </div>
 
       {/* Login Options Section */}
-      <div className="w-full space-y-3 z-10 flex flex-col items-center">
-        <div className="w-full mt-6 flex justify-center">
+      <div className="w-full space-y-3 z-10 flex flex-col items-center mb-20">
+        <div className="w-full mt-0 flex justify-center">
           <AuthButtons />
         </div>
       </div>

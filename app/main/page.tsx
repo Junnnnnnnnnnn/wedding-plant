@@ -1308,10 +1308,13 @@ function MainPageContent() {
           onClose={() => setShowGuestPlanLimitModal(false)}
           onConfirm={() => router.push("/add-plen")}
         />
-        {/* 플랜 공유하기 모달 */}
+        {/* 플랜 공유하기 모달: 닫을 때 plan/user 재조회하여 members 반영 */}
         <SharePlanModal
           isOpen={showShareModal}
-          onClose={() => setShowShareModal(false)}
+          onClose={() => {
+            setShowShareModal(false);
+            fetchPlanUser(handleApiError);
+          }}
         />
       </div>
     </div>
