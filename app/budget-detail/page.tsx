@@ -460,12 +460,13 @@ const BudgetDetailsPage = () => {
                 />
 
                 <BottomTabBar
-                    activeTab="stats"
+                    activeTab="home"
                     showLoginButton={false}
                     onTabClick={(tab) => {
                         if (tab === 'home') router.push('/main');
                         if (tab === 'calendar') router.push('/main');
-                        if (tab === 'stats') router.push('/budget-detail');
+                        // TODO: rooms 탭 - 룸 리스트 페이지 연동 예정
+                        if (tab === 'rooms') void 0;
                         if (tab === 'settings') router.push('/setting');
                     }}
                 />
