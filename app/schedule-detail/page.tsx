@@ -26,6 +26,7 @@ import { useApi } from "../contexts/ApiContext";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { getToken } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
+import { parseLocalDate } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -86,11 +87,11 @@ function extractDetailFromResponse(value: unknown): ScheduleDetailData | null {
   return null;
 }
 
-/** "2026년 6월 17일 (목)" 형식 */
+/** "2026년 6월 17일 (목)" 형식 (로컬 파싱으로 타임존 오차 방지) */
 function formatDate(dateStr?: string | null) {
   if (!dateStr) return "일정 미정";
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return dateStr;
+  const date = parseLocalDate(dateStr);
+  if (!date) return dateStr;
   const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
   const y = date.getFullYear();
   const m = date.getMonth() + 1;

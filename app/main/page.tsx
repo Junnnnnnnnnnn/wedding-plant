@@ -36,6 +36,7 @@ import {
   clearAllStoredData,
 } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
+import { parseLocalDate } from "@/lib/utils";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 
 /** API weddingDate "YYYY-MM-DD" → { year, month, day } */
@@ -513,9 +514,10 @@ function MainPageContent() {
 
   const budgetGradient = getGradientColors(budgetUsagePercentage);
 
-  // 날짜 포맷팅 함수 (YYYY년 MM월 DD일 + 요일)
+  // 날짜 포맷팅 함수 (YYYY년 MM월 DD일 + 요일, 로컬 파싱으로 타임존 오차 방지)
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = parseLocalDate(dateString);
+    if (!date) return { dateText: "날짜 미정", weekday: "" };
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
@@ -756,25 +758,38 @@ function MainPageContent() {
                           className="relative flex-shrink-0"
                           style={{ zIndex: i }}
                         >
-                          {(String(member.permission ?? "").toUpperCase() === "OWNER" ||
-                            String(member.planUserId ?? "").trim().toLowerCase() ===
-                              String(sharedRoomUser.id).trim().toLowerCase()) && (
+                          {(String(member.permission ?? "").toUpperCase() ===
+                            "OWNER" ||
+                            String(member.planUserId ?? "")
+                              .trim()
+                              .toLowerCase() ===
+                              String(sharedRoomUser.id)
+                                .trim()
+                                .toLowerCase()) && (
                             <span
                               className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
                               aria-hidden
                             >
-                              <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
+                              <Crown
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
                             </span>
                           )}
-                          {String(member.permission ?? "").toUpperCase() === "WRITE" &&
-                            String(member.permission ?? "").toUpperCase() !== "OWNER" && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
-                              aria-hidden
-                            >
-                              <Pencil className="w-2.5 h-2.5" strokeWidth={2.5} />
-                            </span>
-                          )}
+                          {String(member.permission ?? "").toUpperCase() ===
+                            "WRITE" &&
+                            String(member.permission ?? "").toUpperCase() !==
+                              "OWNER" && (
+                              <span
+                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
+                                aria-hidden
+                              >
+                                <Pencil
+                                  className="w-2.5 h-2.5"
+                                  strokeWidth={2.5}
+                                />
+                              </span>
+                            )}
                           <div
                             className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
                             style={{
@@ -812,7 +827,8 @@ function MainPageContent() {
                         const list = [...apiPlanData.members];
                         const ownerIdx = list.findIndex(
                           (m) =>
-                            String(m.permission ?? "").toUpperCase() === "OWNER",
+                            String(m.permission ?? "").toUpperCase() ===
+                            "OWNER",
                         );
                         if (ownerIdx >= 0 && ownerIdx !== 0) {
                           const [owner] = list.splice(ownerIdx, 1);
@@ -825,23 +841,32 @@ function MainPageContent() {
                           className="relative flex-shrink-0"
                           style={{ zIndex: i }}
                         >
-                          {String(member.permission ?? "").toUpperCase() === "OWNER" && (
+                          {String(member.permission ?? "").toUpperCase() ===
+                            "OWNER" && (
                             <span
                               className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
                               aria-hidden
                             >
-                              <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
+                              <Crown
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
                             </span>
                           )}
-                          {String(member.permission ?? "").toUpperCase() === "WRITE" &&
-                            String(member.permission ?? "").toUpperCase() !== "OWNER" && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
-                              aria-hidden
-                            >
-                              <Pencil className="w-2.5 h-2.5" strokeWidth={2.5} />
-                            </span>
-                          )}
+                          {String(member.permission ?? "").toUpperCase() ===
+                            "WRITE" &&
+                            String(member.permission ?? "").toUpperCase() !==
+                              "OWNER" && (
+                              <span
+                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
+                                aria-hidden
+                              >
+                                <Pencil
+                                  className="w-2.5 h-2.5"
+                                  strokeWidth={2.5}
+                                />
+                              </span>
+                            )}
                           <div
                             className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
                             style={{

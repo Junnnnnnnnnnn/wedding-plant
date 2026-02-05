@@ -14,12 +14,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(url);
   };
 
-  const redirectWithLoginSuccess = (
-    kakaoToken: string,
-    state: string | null,
-  ) => {
-    const path = state === "main" ? "/main" : "/setting";
-    const url = new URL(path, request.url);
+  const redirectWithLoginSuccess = (kakaoToken: string) => {
+    // 로그인 직후 항상 /setting으로 이동. KakaoLoginAlert가 플랜 데이터 확인 후
+    // 있으면 /main으로 리다이렉트, 없으면 /setting에 머뭄
+    const url = new URL("/setting", request.url);
     url.search = "kakao_login=1";
     url.hash = `kakao_token=${encodeURIComponent(kakaoToken)}`;
     return NextResponse.redirect(url.toString());
@@ -90,8 +88,7 @@ export async function GET(request: NextRequest) {
       return redirectToHome("?login_error=1");
     }
 
-    const state = searchParams.get("state");
-    return redirectWithLoginSuccess(accessToken, state);
+    return redirectWithLoginSuccess(accessToken);
   } catch {
     return redirectToHome("?login_error=1");
   }

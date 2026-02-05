@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { parseLocalDate } from "@/lib/utils";
 import {
   X,
   Calendar,
@@ -44,8 +45,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   const selectedDate = useMemo(() => {
     if (!formData.weddingDate) return new Date();
-    const d = new Date(formData.weddingDate);
-    return Number.isNaN(d.getTime()) ? new Date() : d;
+    const d = parseLocalDate(formData.weddingDate);
+    return d ?? new Date();
   }, [formData.weddingDate]);
 
   const handleSave = () => {
@@ -58,11 +59,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     setFormData({ ...formData, weddingDate: formatDate(date) });
   };
 
-  // 결혼식까지 D-day 계산
-  const daysRemaining = Math.ceil(
-    (new Date(formData.weddingDate).getTime() - new Date().getTime()) /
-      (1000 * 60 * 60 * 24),
-  );
+  // 결혼식까지 D-day 계산 (로컬 날짜 파싱으로 타임존 오차 방지)
+  const daysRemaining = (() => {
+    const d = parseLocalDate(formData.weddingDate);
+    if (!d) return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    d.setHours(0, 0, 0, 0);
+    return Math.ceil(
+      (d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+    );
+  })();
 
   return (
     <div className="flex-1 flex flex-col bg-[#fcfbfc] animate-in slide-in-from-right duration-300 relative overflow-hidden">

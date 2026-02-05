@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 type DatePickerWheelProps = {
   initialDate?: { year: number; month: number; day: number };
@@ -36,6 +36,25 @@ export default function DatePickerWheel({
   const onDateChangeRef = useRef(onDateChange);
   onDateChangeRef.current = onDateChange;
 
+  // 스크롤/클릭 시점에 항상 최신 값 보장 (React 배칭으로 인한 stale closure 방지)
+  const selectedRef = useRef({
+    year: defaultDate.year,
+    month: defaultDate.month,
+    day: defaultDate.day,
+  });
+  const setYearAndRef = useCallback((v: number) => {
+    selectedRef.current.year = v;
+    setSelectedYear(v);
+  }, []);
+  const setMonthAndRef = useCallback((v: number) => {
+    selectedRef.current.month = v;
+    setSelectedMonth(v);
+  }, []);
+  const setDayAndRef = useCallback((v: number) => {
+    selectedRef.current.day = v;
+    setSelectedDay(v);
+  }, []);
+
   // 드래그 상태 관리
   const dragStateRef = useRef<{
     isDragging: boolean;
@@ -51,6 +70,8 @@ export default function DatePickerWheel({
 
   const years = Array.from({ length: 100 }, (_, i) => currentYear - 50 + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  // month: 1-12 (Jan=1, Dec=12). new Date(y, m, 0) = last day of (m-1) in 0-indexed.
+  // For 1-indexed month M: last day = new Date(year, M, 0).getDate()
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month, 0).getDate();
   };
@@ -67,9 +88,9 @@ export default function DatePickerWheel({
   const maxDay = getDaysInMonth(selectedYear, selectedMonth);
   useEffect(() => {
     if (selectedDay > maxDay) {
-      setSelectedDay(maxDay);
+      setDayAndRef(maxDay);
     }
-  }, [selectedMonth, selectedYear, selectedDay, maxDay]);
+  }, [selectedMonth, selectedYear, selectedDay, maxDay, setDayAndRef]);
 
   useEffect(() => {
     const cb = onDateChangeRef.current;
@@ -89,7 +110,14 @@ export default function DatePickerWheel({
     return c0 ? c0.offsetHeight : 0;
   };
 
-  // value = 스크롤 인덱스 (0부터)
+  /** 뷰포트 중앙에 오는 아이템 인덱스 계산 (하이라이트가 가운데이므로) */
+  const getIndexFromScroll = (container: HTMLDivElement): number => {
+    const topPadding = getTopPadding(container);
+    const centerY = container.scrollTop + container.clientHeight / 2;
+    return Math.round((centerY - topPadding - itemHeight / 2) / itemHeight);
+  };
+
+  /** 인덱스 아이템이 뷰포트 중앙에 오도록 스크롤 */
   const scrollToValue = (
     containerRef: React.RefObject<HTMLDivElement | null>,
     index: number,
@@ -98,8 +126,10 @@ export default function DatePickerWheel({
     if (containerRef.current) {
       const container = containerRef.current;
       const topPadding = getTopPadding(container);
+      const targetScroll =
+        topPadding + (index + 0.5) * itemHeight - container.clientHeight / 2;
       container.scrollTo({
-        top: topPadding + index * itemHeight,
+        top: Math.max(0, targetScroll),
         behavior: immediate ? "auto" : "smooth",
       });
     }
@@ -115,10 +145,7 @@ export default function DatePickerWheel({
     if (containerRef.current && !dragStateRef.current.isDragging) {
       const container = containerRef.current;
       const blockSize = options?.wrapTriple ?? 0;
-      const topPadding = getTopPadding(container);
-      const { scrollTop } = container;
-      const adjustedScrollTop = scrollTop - topPadding;
-      let index = Math.round(adjustedScrollTop / itemHeight);
+      let index = getIndexFromScroll(container);
 
       if (blockSize > 0 && items.length === blockSize * 3) {
         if (index < blockSize) {
@@ -132,19 +159,13 @@ export default function DatePickerWheel({
           return;
         }
         setValue(items[index - blockSize]);
-        container.scrollTo({
-          top: topPadding + index * itemHeight,
-          behavior: "smooth",
-        });
+        scrollToValue(containerRef, index, false);
         return;
       }
 
       index = Math.max(0, Math.min(index, items.length - 1));
       setValue(items[index]);
-      container.scrollTo({
-        top: topPadding + index * itemHeight,
-        behavior: "smooth",
-      });
+      scrollToValue(containerRef, index, false);
     }
   };
 
@@ -183,7 +204,6 @@ export default function DatePickerWheel({
 
     const container = dragStateRef.current.containerRef.current;
     const blockSize = options?.wrapTriple ?? 0;
-    const topPadding = getTopPadding(container);
     const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
     const deltaY = dragStateRef.current.startY - clientY;
     const newScrollTop = dragStateRef.current.startScrollTop + deltaY;
@@ -192,8 +212,7 @@ export default function DatePickerWheel({
     const clampedScrollTop = Math.max(0, Math.min(newScrollTop, maxScroll));
     container.scrollTop = clampedScrollTop;
 
-    const adjustedScrollTop = clampedScrollTop - topPadding;
-    let index = Math.round(adjustedScrollTop / itemHeight);
+    let index = getIndexFromScroll(container);
 
     if (blockSize > 0 && items.length === blockSize * 3) {
       if (index < blockSize) {
@@ -223,13 +242,10 @@ export default function DatePickerWheel({
 
     const container = dragStateRef.current.containerRef.current;
     const blockSize = options?.wrapTriple ?? 0;
-    const topPadding = getTopPadding(container);
     container.style.cursor = "grab";
     container.style.userSelect = "";
 
-    const { scrollTop } = container;
-    const adjustedScrollTop = scrollTop - topPadding;
-    let index = Math.round(adjustedScrollTop / itemHeight);
+    let index = getIndexFromScroll(container);
 
     const containerRefForJump = dragStateRef.current.containerRef;
     if (blockSize > 0 && items.length === blockSize * 3) {
@@ -245,18 +261,12 @@ export default function DatePickerWheel({
         }
       } else {
         setValue(items[index - blockSize]);
-        container.scrollTo({
-          top: topPadding + index * itemHeight,
-          behavior: "smooth",
-        });
+        scrollToValue(containerRefForJump, index, false);
       }
     } else {
       index = Math.max(0, Math.min(index, items.length - 1));
       setValue(items[index]);
-      container.scrollTo({
-        top: topPadding + index * itemHeight,
-        behavior: "smooth",
-      });
+      scrollToValue(containerRefForJump, index, false);
     }
 
     dragStateRef.current = {
@@ -278,13 +288,13 @@ export default function DatePickerWheel({
 
       const { containerRef } = dragStateRef.current;
       if (containerRef === yearRef) {
-        handleDragMove(e, years, setSelectedYear);
+        handleDragMove(e, years, setYearAndRef);
       } else if (containerRef === monthRef) {
-        handleDragMove(e, monthsTriple, setSelectedMonth, {
+        handleDragMove(e, monthsTriple, setMonthAndRef, {
           wrapTriple: MONTH_BLOCK,
         });
       } else if (containerRef === dayRef) {
-        handleDragMove(e, daysTriple, setSelectedDay, {
+        handleDragMove(e, daysTriple, setDayAndRef, {
           wrapTriple: days.length,
         });
       }
@@ -299,13 +309,13 @@ export default function DatePickerWheel({
 
       const { containerRef } = dragStateRef.current;
       if (containerRef === yearRef) {
-        handleDragEnd(years, setSelectedYear);
+        handleDragEnd(years, setYearAndRef);
       } else if (containerRef === monthRef) {
-        handleDragEnd(monthsTriple, setSelectedMonth, {
+        handleDragEnd(monthsTriple, setMonthAndRef, {
           wrapTriple: MONTH_BLOCK,
         });
       } else if (containerRef === dayRef) {
-        handleDragEnd(daysTriple, setSelectedDay, {
+        handleDragEnd(daysTriple, setDayAndRef, {
           wrapTriple: days.length,
         });
       }
@@ -321,13 +331,13 @@ export default function DatePickerWheel({
 
       const { containerRef } = dragStateRef.current;
       if (containerRef === yearRef) {
-        handleDragMove(e, years, setSelectedYear);
+        handleDragMove(e, years, setYearAndRef);
       } else if (containerRef === monthRef) {
-        handleDragMove(e, monthsTriple, setSelectedMonth, {
+        handleDragMove(e, monthsTriple, setMonthAndRef, {
           wrapTriple: MONTH_BLOCK,
         });
       } else if (containerRef === dayRef) {
-        handleDragMove(e, daysTriple, setSelectedDay, {
+        handleDragMove(e, daysTriple, setDayAndRef, {
           wrapTriple: days.length,
         });
       }
@@ -342,13 +352,13 @@ export default function DatePickerWheel({
 
       const { containerRef } = dragStateRef.current;
       if (containerRef === yearRef) {
-        handleDragEnd(years, setSelectedYear);
+        handleDragEnd(years, setYearAndRef);
       } else if (containerRef === monthRef) {
-        handleDragEnd(monthsTriple, setSelectedMonth, {
+        handleDragEnd(monthsTriple, setMonthAndRef, {
           wrapTriple: MONTH_BLOCK,
         });
       } else if (containerRef === dayRef) {
-        handleDragEnd(daysTriple, setSelectedDay, {
+        handleDragEnd(daysTriple, setDayAndRef, {
           wrapTriple: days.length,
         });
       }
@@ -440,7 +450,7 @@ export default function DatePickerWheel({
               className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory cursor-grab active:cursor-grabbing"
               role="listbox"
               tabIndex={0}
-              onScroll={() => handleScroll(yearRef, years, setSelectedYear)}
+              onScroll={() => handleScroll(yearRef, years, setYearAndRef)}
               onTouchStart={(e) => handleDragStart(e, yearRef)}
               onMouseDown={(e) => handleDragStart(e, yearRef)}
               onKeyDown={(e) => {
@@ -451,7 +461,7 @@ export default function DatePickerWheel({
                     e.key === "ArrowUp"
                       ? Math.max(0, currentIndex - 1)
                       : Math.min(years.length - 1, currentIndex + 1);
-                  setSelectedYear(years[newIndex]);
+                  setYearAndRef(years[newIndex]);
                   scrollToValue(yearRef, newIndex);
                 }
               }}
@@ -491,7 +501,7 @@ export default function DatePickerWheel({
               role="listbox"
               tabIndex={0}
               onScroll={() =>
-                handleScroll(monthRef, monthsTriple, setSelectedMonth, {
+                handleScroll(monthRef, monthsTriple, setMonthAndRef, {
                   wrapTriple: MONTH_BLOCK,
                 })
               }
@@ -509,7 +519,7 @@ export default function DatePickerWheel({
                     newIndex =
                       currentIndex >= months.length - 1 ? 0 : currentIndex + 1;
                   }
-                  setSelectedMonth(months[newIndex]);
+                  setMonthAndRef(months[newIndex]);
                   scrollToValue(monthRef, MONTH_BLOCK + newIndex, false);
                 }
               }}
@@ -545,7 +555,7 @@ export default function DatePickerWheel({
               role="listbox"
               tabIndex={0}
               onScroll={() =>
-                handleScroll(dayRef, daysTriple, setSelectedDay, {
+                handleScroll(dayRef, daysTriple, setDayAndRef, {
                   wrapTriple: days.length,
                 })
               }
@@ -563,7 +573,7 @@ export default function DatePickerWheel({
                     newIndex =
                       currentIndex >= days.length - 1 ? 0 : currentIndex + 1;
                   }
-                  setSelectedDay(days[newIndex]);
+                  setDayAndRef(days[newIndex]);
                   scrollToValue(dayRef, days.length + newIndex, false);
                 }
               }}
@@ -586,11 +596,18 @@ export default function DatePickerWheel({
         </div>
       </div>
 
-      {/* 다음 버튼 */}
+      {/* 다음 버튼 - 클릭 시 최종 선택 날짜를 명시적으로 저장 후 전환 */}
       <button
         type="button"
         onClick={() => {
-          // 날짜는 onDateChange로 context에 반영되며, context에서 sessionStorage에 저장
+          const cb = onDateChangeRef.current;
+          if (cb) {
+            cb({
+              year: selectedRef.current.year,
+              month: selectedRef.current.month,
+              day: selectedRef.current.day,
+            });
+          }
           if (onNext) {
             onNext();
           }

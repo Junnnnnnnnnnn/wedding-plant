@@ -18,8 +18,8 @@ const Lanyard = dynamic(() => import("../../components/Lanyard"), {
   loading: () => (
     <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#fcfbfc] grid-bg">
       {/* Decorative Blur Elements (match app/page.tsx) */}
-      <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none" />
 
       <span className="relative z-10 text-stone-500">출입증 준비 중...</span>
     </div>
@@ -254,8 +254,8 @@ function SettingPageContent() {
       <KakaoLoginAlert show={showKakaoLogin} />
       <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#fcfbfc] px-6 py-8 overscroll-none grid-bg">
         {/* Decorative Blur Elements (match app/page.tsx) */}
-        <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none" />
 
         {(showThird || showFourth || showFifth || showSixth || showSeventh) && (
           <button
@@ -365,31 +365,31 @@ function SettingPageContent() {
             className={`flex flex-1 flex-col items-center justify-center ${isNameFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
           >
             <LandingHero
-              title="혹시.. 이름도 괜찮을까요?"
+              title="이름도 괜찮을까요?"
               subtitle="닉네임도 괜찮아요!"
               titleSize="text-3xl sm:text-4xl"
               subtitleSize="text-base sm:text-lg"
             />
             <div className="flex flex-col items-center mt-24 mb-20">
-              <p className="text-sm text-stone-500 mb-2">최대 5 글자</p>
+              <p className="text-sm text-stone-500 mb-2">최대 3 글자</p>
               <div className="flex items-center justify-center gap-4 mb-4">
                 <input
                   type="text"
                   value={weddingData.name}
                   onChange={(e) => {
                     const newValue = e.target.value;
-                    if (newValue.length > 5) {
-                      // 5글자 초과 시 흔들림 애니메이션
+                    if (newValue.length > 3) {
+                      // 3글자 초과 시 흔들림 애니메이션
                       setIsNameShaking(true);
                       setTimeout(() => setIsNameShaking(false), 400);
-                      // 5글자까지만 저장
-                      setName(newValue.slice(0, 5));
+                      // 3글자까지만 저장
+                      setName(newValue.slice(0, 3));
                     } else {
                       setName(newValue);
                     }
                   }}
                   placeholder="이름 또는 닉네임"
-                  maxLength={5}
+                  maxLength={3}
                   className={`px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-64 text-center ${isNameShaking ? "animate-shake" : ""}`}
                 />
               </div>
