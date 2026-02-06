@@ -20,7 +20,10 @@ import { motion, AnimatePresence } from "motion/react";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import { getToken } from "@/lib/api";
-import { addGuestScheduleItem, getGuestScheduleList } from "@/lib/guestSchedule";
+import {
+  addGuestScheduleItem,
+  getGuestScheduleList,
+} from "@/lib/guestSchedule";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import DatePickerModal from "../components/DatePickerModal";
 import { useApi } from "../contexts/ApiContext";
@@ -245,10 +248,20 @@ function AddPlanPageContent() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const res = await fetchWithAuth("/plen/category/list", { method: "GET" });
+        const res = await fetchWithAuth("/plen/category/list", {
+          method: "GET",
+        });
         const json = (await res.json().catch(() => null)) as {
           result?: boolean;
-          data?: { total?: number; list?: Array<{ id: number; name: string; color: string; type: "SYSTEM" | "USER" }> };
+          data?: {
+            total?: number;
+            list?: Array<{
+              id: number;
+              name: string;
+              color: string;
+              type: "SYSTEM" | "USER";
+            }>;
+          };
         };
         if (!json.result || !json.data?.list) return;
         const list = json.data.list
@@ -316,17 +329,13 @@ function AddPlanPageContent() {
           return;
         }
 
-        const data = json.data;
+        const { data } = json;
         setInputValue(data.title?.trim() ?? "");
 
         const catLabel = data.categoryName?.trim();
         if (catLabel) {
-          const found = allCategories.find(
-            (c) => c.label === catLabel,
-          );
-          setSelectedCategory(
-            found ?? { color: "#FFE4E9", label: catLabel },
-          );
+          const found = allCategories.find((c) => c.label === catLabel);
+          setSelectedCategory(found ?? { color: "#FFE4E9", label: catLabel });
         }
 
         if (data.amount != null && !Number.isNaN(Number(data.amount))) {
@@ -352,14 +361,14 @@ function AddPlanPageContent() {
         setLocation(data.location?.trim() ?? "");
 
         const lat =
-          data.locationLat != null
-            ? parseFloat(String(data.locationLat))
-            : NaN;
+          data.locationLat != null ? parseFloat(String(data.locationLat)) : NaN;
         const lng =
-          data.locationLng != null
-            ? parseFloat(String(data.locationLng))
-            : NaN;
-        if (!Number.isNaN(lat) && !Number.isNaN(lng) && (lat !== 0 || lng !== 0)) {
+          data.locationLng != null ? parseFloat(String(data.locationLng)) : NaN;
+        if (
+          !Number.isNaN(lat) &&
+          !Number.isNaN(lng) &&
+          (lat !== 0 || lng !== 0)
+        ) {
           setMapCoords({ lat, lng });
           setShowMap(true);
         }
@@ -371,7 +380,10 @@ function AddPlanPageContent() {
           data.addCategoryNameList.length > 0
         ) {
           const added = data.addCategoryNameList
-            .filter((name): name is string => typeof name === "string" && name.trim() !== "")
+            .filter(
+              (name): name is string =>
+                typeof name === "string" && name.trim() !== "",
+            )
             .map((label) => ({
               color: "#FFE4E9",
               label: label.trim(),
@@ -814,7 +826,9 @@ function AddPlanPageContent() {
                 {editId ? "수정하기" : "플랜 추가"}
               </span>
               {editId && isLoadingDetail && (
-                <span className="text-sm text-stone-500 mt-2">불러오는 중...</span>
+                <span className="text-sm text-stone-500 mt-2">
+                  불러오는 중...
+                </span>
               )}
             </div>
           </div>
@@ -867,12 +881,15 @@ function AddPlanPageContent() {
                 <button
                   type="button"
                   onClick={handleOpenModal}
-                  className={`flex-1 px-5 py-4 rounded-2xl border-2 font-semibold transition-all text-left ${selectedCategory
-                    ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300 text-stone-800 shadow-sm"
-                    : "border-amber-200 text-stone-400 bg-amber-50/30 hover:border-amber-300"
-                    }`}
+                  className={`flex-1 px-5 py-4 rounded-2xl border-2 font-semibold transition-all text-left ${
+                    selectedCategory
+                      ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300 text-stone-800 shadow-sm"
+                      : "border-amber-200 text-stone-400 bg-amber-50/30 hover:border-amber-300"
+                  }`}
                 >
-                  {selectedCategory ? `✨ ${selectedCategory.label}` : "카테고리 선택해주세요"}
+                  {selectedCategory
+                    ? `✨ ${selectedCategory.label}`
+                    : "카테고리 선택해주세요"}
                 </button>
                 <button
                   type="button"
@@ -934,10 +951,11 @@ function AddPlanPageContent() {
                     key={type}
                     type="button"
                     onClick={() => setPaymentType(type)}
-                    className={`py-4 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 ${paymentType === type
-                      ? "bg-[#ee2b8c] text-white shadow-lg scale-105"
-                      : "bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-blue-200 text-stone-600 hover:border-blue-300"
-                      }`}
+                    className={`py-4 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 ${
+                      paymentType === type
+                        ? "bg-[#ee2b8c] text-white shadow-lg scale-105"
+                        : "bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-blue-200 text-stone-600 hover:border-blue-300"
+                    }`}
                   >
                     {type === "현금" && <Wallet className="w-6 h-6" />}
                     {type === "카드" && <CreditCard className="w-6 h-6" />}
@@ -978,7 +996,9 @@ function AddPlanPageContent() {
                     }
                   }}
                 />
-                <span className="text-stone-700 font-bold text-lg pr-4">만 원</span>
+                <span className="text-stone-700 font-bold text-lg pr-4">
+                  만 원
+                </span>
               </div>
             </div>
             {/* 일자 */}
@@ -994,10 +1014,11 @@ function AddPlanPageContent() {
               </label>
               <div className="flex items-center gap-3">
                 <div
-                  className={`flex-1 min-w-0 px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate ${isDateUndecided
-                    ? "bg-stone-100 border-stone-200 text-stone-400 cursor-default"
-                    : "text-stone-900 bg-purple-50/20 border-stone-200 cursor-pointer hover:border-purple-300 focus:border-purple-300 focus:outline-none"
-                    }`}
+                  className={`flex-1 min-w-0 px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate ${
+                    isDateUndecided
+                      ? "bg-stone-100 border-stone-200 text-stone-400 cursor-default"
+                      : "text-stone-900 bg-purple-50/20 border-stone-200 cursor-pointer hover:border-purple-300 focus:border-purple-300 focus:outline-none"
+                  }`}
                   onClick={() => {
                     if (!isDateUndecided) {
                       setIsDatePickerOpen(true);
@@ -1006,7 +1027,10 @@ function AddPlanPageContent() {
                   role="button"
                   tabIndex={isDateUndecided ? -1 : 0}
                   onKeyDown={(e) => {
-                    if (!isDateUndecided && (e.key === "Enter" || e.key === " ")) {
+                    if (
+                      !isDateUndecided &&
+                      (e.key === "Enter" || e.key === " ")
+                    ) {
                       e.preventDefault();
                       setIsDatePickerOpen(true);
                     }
@@ -1021,10 +1045,11 @@ function AddPlanPageContent() {
                 <button
                   type="button"
                   onClick={() => setIsDateUndecided(true)}
-                  className={`px-5 py-4 rounded-2xl font-bold transition-all flex-shrink-0 ${isDateUndecided
-                    ? "bg-stone-300 text-stone-600 border-2 border-stone-300"
-                    : "bg-gradient-to-br from-gray-100 to-gray-200 text-stone-600 border-2 border-stone-200 hover:from-gray-200 hover:to-gray-300"
-                    }`}
+                  className={`px-5 py-4 rounded-2xl font-bold transition-all flex-shrink-0 ${
+                    isDateUndecided
+                      ? "bg-stone-300 text-stone-600 border-2 border-stone-300"
+                      : "bg-gradient-to-br from-gray-100 to-gray-200 text-stone-600 border-2 border-stone-200 hover:from-gray-200 hover:to-gray-300"
+                  }`}
                   aria-label="날짜 미정"
                 >
                   미정
@@ -1090,10 +1115,11 @@ function AddPlanPageContent() {
                   type="button"
                   onClick={handleSearchLocation}
                   disabled={!location.trim()}
-                  className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${location.trim()
-                    ? "bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700 shadow-md hover:shadow-lg cursor-pointer"
-                    : "bg-stone-300 text-stone-500 cursor-not-allowed"
-                    }`}
+                  className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${
+                    location.trim()
+                      ? "bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700 shadow-md hover:shadow-lg cursor-pointer"
+                      : "bg-stone-300 text-stone-500 cursor-not-allowed"
+                  }`}
                 >
                   <Search className="w-5 h-5" />
                   검색
@@ -1158,7 +1184,9 @@ function AddPlanPageContent() {
                         }}
                         className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors flex items-center justify-center gap-2"
                       >
-                        <span className="text-lg font-bold text-[#ee2b8c]">+</span>
+                        <span className="text-lg font-bold text-[#ee2b8c]">
+                          +
+                        </span>
                         <span className="text-sm font-semibold text-[#1b0d14]">
                           {locationSearchResults.length}개 더보기
                         </span>
@@ -1277,14 +1305,18 @@ function AddPlanPageContent() {
                       categoryName: selectedCategory.label,
                       title: inputValue.trim(),
                       amount: amountValue ? parseInt(amountValue, 10) : 0,
-                      startDate: isDateUndecided ? null : formatDate(selectedDate),
+                      startDate: isDateUndecided
+                        ? null
+                        : formatDate(selectedDate),
                       status: "NORMAL",
                       location: location.trim() || "",
                       locationLat: mapCoords?.lat ?? 0,
                       locationLng: mapCoords?.lng ?? 0,
                       memo: memo.trim() || "",
                       payType: PAY_TYPE_MAP[paymentType],
-                      addCategoryNameList: userAddedCategories.map((c) => c.label),
+                      addCategoryNameList: userAddedCategories.map(
+                        (c) => c.label,
+                      ),
                     };
                     addGuestScheduleItem(guestItem);
                     setShowPlanSavedModal(true);
@@ -1301,7 +1333,9 @@ function AddPlanPageContent() {
                     locationLat: mapCoords?.lat ?? 0,
                     locationLng: mapCoords?.lng ?? 0,
                     memo: memo.trim() || "",
-                    addCategoryNameList: userAddedCategories.map((c) => c.label),
+                    addCategoryNameList: userAddedCategories.map(
+                      (c) => c.label,
+                    ),
                   };
                   if (!isDateUndecided) {
                     body.startDate = formatDate(selectedDate);
@@ -1422,7 +1456,11 @@ function AddPlanPageContent() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className={category.label === highlightCategoryLabel ? "scroll-mt-8" : ""}
+                      className={
+                        category.label === highlightCategoryLabel
+                          ? "scroll-mt-8"
+                          : ""
+                      }
                     >
                       <button
                         type="button"
@@ -1435,13 +1473,16 @@ function AddPlanPageContent() {
                                 borderColor: category.color,
                               }
                         }
-                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${selectedCategory?.label === category.label
-                          ? "text-[#1b0d14] shadow-lg scale-[1.02]"
-                          : "text-[#1b0d14] hover:opacity-90"
-                          } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
+                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${
+                          selectedCategory?.label === category.label
+                            ? "text-[#1b0d14] shadow-lg scale-[1.02]"
+                            : "text-[#1b0d14] hover:opacity-90"
+                        } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
                       >
                         <span className="font-bold text-lg flex items-center gap-2">
-                          {selectedCategory?.label === category.label ? "✨ " : ""}
+                          {selectedCategory?.label === category.label
+                            ? "✨ "
+                            : ""}
                           {category.label}
                           {userAddedLabels.has(category.label) && (
                             <span
@@ -1567,7 +1608,9 @@ function AddPlanPageContent() {
           <div
             className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
             onClick={() => setShowSystemErrorModal(false)}
-            onKeyDown={(e) => e.key === "Escape" && setShowSystemErrorModal(false)}
+            onKeyDown={(e) =>
+              e.key === "Escape" && setShowSystemErrorModal(false)
+            }
           >
             <div
               className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl"
@@ -1638,7 +1681,7 @@ function AddPlanPageContent() {
           onClose={() => setIsDatePickerOpen(false)}
         />
       </div>
-    </div >
+    </div>
   );
 }
 

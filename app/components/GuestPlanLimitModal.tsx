@@ -53,9 +53,7 @@ export default function GuestPlanLimitModal({
         <p className="mt-3 text-center text-[15px] font-normal leading-relaxed text-stone-700">
           {BODY}
         </p>
-        <p className="mt-2 text-center text-[13px] text-gray-500">
-          {TIP}
-        </p>
+        <p className="mt-2 text-center text-[13px] text-gray-500">{TIP}</p>
         <div className="mt-6">
           <button
             type="button"

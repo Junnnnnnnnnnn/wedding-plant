@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { parseLocalDate } from "@/lib/utils";
 import {
   X,
   Calendar,
@@ -12,6 +11,7 @@ import {
   Heart,
   Sparkles,
 } from "lucide-react";
+import { parseLocalDate } from "@/lib/utils";
 import DatePickerModal from "./DatePickerModal";
 
 interface SettingsPageProps {
@@ -66,9 +66,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     d.setHours(0, 0, 0, 0);
-    return Math.ceil(
-      (d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-    );
+    return Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   })();
 
   return (
