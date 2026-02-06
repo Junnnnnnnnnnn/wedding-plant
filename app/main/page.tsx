@@ -466,6 +466,17 @@ function MainPageContent() {
     !!shareCode && sharedRoomUser && sharedRoomUser !== "error";
   const isSharedLoading = !!shareCode && sharedRoomUser === null;
   const isRoomView = !!roomId?.trim();
+  /** roomId 모드에서 현재 로그인 유저의 해당 방 권한. READ면 플랜 추가 버튼 숨김 */
+  const myRoomPermission = useMemo(() => {
+    if (!isRoomView || !apiPlanData || apiPlanData === "none" || !apiPlanData.members?.length)
+      return undefined;
+    const myId = String(getPlanUserIdFromToken() ?? "").trim().toLowerCase();
+    if (!myId) return undefined;
+    const me = apiPlanData.members.find(
+      (m) => String(m.planUserId ?? "").trim().toLowerCase() === myId,
+    );
+    return me?.permission ?? undefined;
+  }, [isRoomView, apiPlanData]);
 
   const isPlanLoading = Boolean(
     !tokenChecked ||
@@ -991,9 +1002,7 @@ function MainPageContent() {
               {(shareCode || roomId) && (
                 <button
                   type="button"
-                  onClick={() =>
-                    roomId ? router.push("/plan-list") : router.push("/main")
-                  }
+                  onClick={() => router.push("/plan-list")}
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-600 text-white cursor-pointer hover:bg-stone-700 transition-colors"
                   aria-label="나가기"
                 >
@@ -1125,11 +1134,15 @@ function MainPageContent() {
                   </span>
                 )}
               </div>
+              {!(isRoomView && String(myRoomPermission ?? "").toUpperCase() === "READ") && (
               <button
                 type="button"
                 onClick={() => {
+                  const addPlanPath = roomId
+                    ? `/add-plen?roomId=${roomId}`
+                    : "/add-plen";
                   if (getToken()) {
-                    router.push("/add-plen");
+                    router.push(addPlanPath);
                     return;
                   }
                   if (isSharedView) {
@@ -1150,7 +1163,7 @@ function MainPageContent() {
                     setShowLoginRequiredModal(true);
                     return;
                   }
-                  router.push("/add-plen");
+                  router.push(addPlanPath);
                 }}
                 className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-bold text-lg transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
                 style={{
@@ -1171,6 +1184,7 @@ function MainPageContent() {
                 플랜 추가
                 <CirclePlus className="h-5 w-5 text-white" strokeWidth={2.5} />
               </button>
+              )}
             </div>
             <ul className="mt-4 w-full flex flex-col gap-3 min-h-[200px] relative">
               {(scheduleLoading || isSharedLoading) &&
@@ -1310,7 +1324,11 @@ function MainPageContent() {
           scrollDirection={scrollDirection}
           onTabClick={(tab) => {
             if (tab === "home") {
-              if (window.location.pathname === "/main") {
+              // /main?roomId= 또는 /main?share= 일 때는 /main으로 이동(쿼리 제거), 그 외 /main이면 새로고침
+              if (
+                window.location.pathname === "/main" &&
+                !window.location.search
+              ) {
                 router.refresh();
               } else {
                 router.push("/main");

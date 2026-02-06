@@ -2,6 +2,7 @@
 
 import { Home, Calendar, LayoutGrid, Settings } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { getToken } from "@/lib/api";
 
 export type TabType = "home" | "calendar" | "rooms" | "settings";
 
@@ -42,6 +43,7 @@ export default function BottomTabBar({
   const pathname = usePathname();
   const router = useRouter();
   const resolvedActiveTab = activeTab ?? pathnameToTab(pathname);
+  const isLoggedIn = !!getToken();
 
   const tabs: Array<{
     id: TabType;
@@ -55,6 +57,7 @@ export default function BottomTabBar({
   ];
 
   const handleClick = (tab: TabType) => {
+    if (!isLoggedIn && tab !== "home") return;
     if (onTabClick) {
       onTabClick(tab);
     } else {
@@ -92,13 +95,15 @@ export default function BottomTabBar({
             const isActive = resolvedActiveTab === tab.id;
             const iconColor = isActive ? "#ffaab8" : "#99a1af";
             const textColor = isActive ? "#ffaab8" : "#99a1af";
+            const isDisabled = !isLoggedIn && tab.id !== "home";
 
             return (
               <button
                 key={tab.id}
                 type="button"
-                className="flex flex-col items-center gap-1 px-4 py-2 -m-2"
+                className={`flex flex-col items-center gap-1 px-4 py-2 -m-2 transition-all ${isDisabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
                 onClick={() => handleClick(tab.id)}
+                aria-disabled={isDisabled}
               >
                 <Icon
                   className="h-6 w-6"

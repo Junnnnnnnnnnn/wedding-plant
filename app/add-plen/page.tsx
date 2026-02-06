@@ -60,6 +60,12 @@ function AddPlanPageContent() {
     const parsed = Number(idParam);
     return Number.isNaN(parsed) ? null : parsed;
   }, [searchParams]);
+  const roomIdParam = searchParams.get("roomId");
+  const roomId = useMemo(() => {
+    if (!roomIdParam?.trim()) return null;
+    const n = Number(roomIdParam.trim());
+    return Number.isNaN(n) ? null : n;
+  }, [roomIdParam]);
 
   const [inputValue, setInputValue] = useState("");
   const [searchResults, setSearchResults] = useState<
@@ -1339,6 +1345,9 @@ function AddPlanPageContent() {
                   };
                   if (!isDateUndecided) {
                     body.startDate = formatDate(selectedDate);
+                  }
+                  if (!editId && roomId != null) {
+                    body.roomId = roomId;
                   }
 
                   setIsSaving(true);
