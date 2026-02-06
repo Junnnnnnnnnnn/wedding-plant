@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Heart } from "lucide-react";
 import AuthButtons from "./components/AuthButtons";
+import HomeKakaoLoginHandler from "./components/HomeKakaoLoginHandler";
 import LoginErrorModal from "./components/LoginErrorModal";
 
 export default function Home() {
@@ -8,6 +9,9 @@ export default function Home() {
     <div className="min-h-screen max-w-md mx-auto bg-[#fcfbfc] relative overflow-hidden flex flex-col items-center justify-between px-8 py-20 grid-bg">
       <Suspense fallback={null}>
         <LoginErrorModal />
+      </Suspense>
+      <Suspense fallback={null}>
+        <HomeKakaoLoginHandler />
       </Suspense>
 
       {/* Decorative Blur Elements */}

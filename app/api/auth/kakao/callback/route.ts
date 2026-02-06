@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
   };
 
   const redirectWithLoginSuccess = (kakaoToken: string) => {
-    // 로그인 직후 항상 /setting으로 이동. KakaoLoginAlert가 플랜 데이터 확인 후
-    // 있으면 /main으로 리다이렉트, 없으면 /setting에 머뭄
-    const url = new URL("/setting", request.url);
+    // 로그인 직후 / 로 이동. KakaoLoginAlert가 로딩 모달 표시 후 플랜 데이터 확인하여
+    // 있으면 /main, 없으면 /setting으로 리다이렉트
+    const url = new URL("/", request.url);
     url.search = "kakao_login=1";
     url.hash = `kakao_token=${encodeURIComponent(kakaoToken)}`;
     return NextResponse.redirect(url.toString());

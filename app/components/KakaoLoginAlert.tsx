@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useApi } from "@/app/contexts/ApiContext";
 import { useWedding } from "@/app/contexts/WeddingContext";
@@ -14,6 +14,8 @@ type KakaoLoginAlertProps = {
   show: boolean;
   /** /main에서 로그인 성공 후 GET /plan/user로 데이터를 불러올 때 호출 */
   onSuccessFromMain?: () => void | Promise<void>;
+  /** true이면 로그인·데이터 로드 중 로딩 모달 표시 (예: / 경로) */
+  showLoadingOverlay?: boolean;
 };
 
 function getKakaoTokenFromHash(): string | null {
@@ -42,12 +44,14 @@ function isPlanDataComplete(data: {
 export default function KakaoLoginAlert({
   show,
   onSuccessFromMain,
+  showLoadingOverlay = false,
 }: KakaoLoginAlertProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { fetchBackend, fetchWithAuth } = useApi();
   const { weddingData } = useWedding();
   const shownRef = useRef(false);
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (!show || shownRef.current) return;
@@ -61,6 +65,7 @@ export default function KakaoLoginAlert({
     }
 
     shownRef.current = true;
+    setProcessing(true);
     const run = async () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -79,12 +84,14 @@ export default function KakaoLoginAlert({
 
         if (res.status === 401) {
           clearTimeout(timeoutId);
+          setProcessing(false);
           clearToken();
           router.replace("/");
           return;
         }
         if (!res.ok) {
           clearTimeout(timeoutId);
+          setProcessing(false);
           clearToken();
           router.replace("/?login_error=1");
           return;
@@ -119,6 +126,7 @@ export default function KakaoLoginAlert({
               if (pathname === "/main") {
                 await onSuccessFromMain?.();
               }
+              setProcessing(false);
               router.replace("/main");
               return;
             }
@@ -172,21 +180,26 @@ export default function KakaoLoginAlert({
                 clearGuestScheduleList();
               }
               await onSuccessFromMain?.();
+              setProcessing(false);
               router.replace("/main");
             } else {
               // 홈 등에서 로그인 후 /main으로 왔지만 저장된 플랜 없음 → 설정 페이지로
+              setProcessing(false);
               router.push("/setting");
             }
           } else if (!pathname.startsWith("/setting")) {
+            setProcessing(false);
             router.push("/setting");
           }
         } else {
           clearTimeout(timeoutId);
+          setProcessing(false);
           clearToken();
           router.replace("/?login_error=1");
         }
       } catch {
         clearTimeout(timeoutId);
+        setProcessing(false);
         clearToken();
         router.replace("/?login_error=1");
       }
@@ -202,6 +215,44 @@ export default function KakaoLoginAlert({
     weddingData,
     onSuccessFromMain,
   ]);
+
+  if (showLoadingOverlay && processing) {
+    return (
+      <div
+        className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 bg-black/20"
+        aria-busy
+        aria-live="polite"
+        aria-label="로그인 및 데이터 불러오는 중"
+      >
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg">
+          <svg
+            className="h-7 w-7 animate-spin text-[#ee2b8c]"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-hidden
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-[#1b0d14]">
+          로그인 및 데이터 불러오는 중...
+        </p>
+      </div>
+    );
+  }
 
   return null;
 }
