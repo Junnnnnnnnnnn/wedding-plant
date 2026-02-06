@@ -237,7 +237,7 @@ function ScheduleDetailPageContent() {
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&libraries=services`;
     script.async = true;
     script.onload = () => {
-      window.kakao?.maps?.load(() => {});
+      window.kakao?.maps?.load(() => { });
     };
     document.head.appendChild(script);
     return () => {
@@ -592,6 +592,8 @@ function ScheduleDetailPageContent() {
           onTabClick={(tab) => {
             if (tab === "home") {
               router.push("/main");
+            } else if (tab === "rooms") {
+              router.push("/plan-list");
             }
             // TODO: 캘린더, 통계, 설정 탭 라우팅 추가 예정
           }}

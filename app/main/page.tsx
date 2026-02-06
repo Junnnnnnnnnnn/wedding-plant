@@ -763,23 +763,23 @@ function MainPageContent() {
                             String(member.planUserId ?? "")
                               .trim()
                               .toLowerCase() ===
-                              String(sharedRoomUser.id)
-                                .trim()
-                                .toLowerCase()) && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                              aria-hidden
-                            >
-                              <Crown
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
+                            String(sharedRoomUser.id)
+                              .trim()
+                              .toLowerCase()) && (
+                              <span
+                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                                aria-hidden
+                              >
+                                <Crown
+                                  className="w-2.5 h-2.5"
+                                  strokeWidth={2.5}
+                                />
+                              </span>
+                            )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                              "OWNER" && (
+                            "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -843,20 +843,20 @@ function MainPageContent() {
                         >
                           {String(member.permission ?? "").toUpperCase() ===
                             "OWNER" && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                              aria-hidden
-                            >
-                              <Crown
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
+                              <span
+                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                                aria-hidden
+                              >
+                                <Crown
+                                  className="w-2.5 h-2.5"
+                                  strokeWidth={2.5}
+                                />
+                              </span>
+                            )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                              "OWNER" && (
+                            "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1129,14 +1129,14 @@ function MainPageContent() {
                 style={{
                   backgroundColor:
                     !getToken() &&
-                    !isSharedView &&
-                    effectiveScheduleList.length >= 3
+                      !isSharedView &&
+                      effectiveScheduleList.length >= 3
                       ? "#cbd5e1"
                       : "#ee2b8c",
                   boxShadow:
                     !getToken() &&
-                    !isSharedView &&
-                    effectiveScheduleList.length >= 3
+                      !isSharedView &&
+                      effectiveScheduleList.length >= 3
                       ? "0 4px 12px rgba(148, 163, 184, 0.35)"
                       : "0 4px 12px rgba(238, 43, 140, 0.3)",
                 }}
@@ -1147,7 +1147,7 @@ function MainPageContent() {
             </div>
             <ul className="mt-4 w-full flex flex-col gap-3 min-h-[200px] relative">
               {(scheduleLoading || isSharedLoading) &&
-              effectiveScheduleList.length === 0 ? (
+                effectiveScheduleList.length === 0 ? (
                 ["a", "b", "c", "d", "e"].map((id) => (
                   <li
                     key={`skeleton-plan-${id}`}
@@ -1188,11 +1188,11 @@ function MainPageContent() {
                     const detailHref = `/schedule-detail?id=${plan.id}`;
                     const dateLabel = plan.startDate?.trim()
                       ? (() => {
-                          const { dateText, weekday } = formatDate(
-                            plan.startDate as string,
-                          );
-                          return `${dateText} (${weekday})`;
-                        })()
+                        const { dateText, weekday } = formatDate(
+                          plan.startDate as string,
+                        );
+                        return `${dateText} (${weekday})`;
+                      })()
                       : "미정";
                     return (
                       <li key={plan.id}>
@@ -1214,11 +1214,10 @@ function MainPageContent() {
                                 e.stopPropagation();
                                 handleToggleCheck(plan.id);
                               }}
-                              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
-                                isChecked
+                              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
                                   ? "bg-[#ee2b8c] border-[#ee2b8c]"
                                   : "bg-white/80 border-[#ee2b8c]"
-                              }`}
+                                }`}
                             >
                               {isChecked && (
                                 <Check
@@ -1246,11 +1245,10 @@ function MainPageContent() {
                                 : "미정"}
                             </div>
                             <span
-                              className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
-                                isChecked
+                              className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
                                   ? "bg-[#ee2b8c] text-white"
                                   : "bg-gray-100 text-gray-500"
-                              }`}
+                                }`}
                             >
                               {isChecked ? "완료" : "예정"}
                             </span>
@@ -1291,6 +1289,8 @@ function MainPageContent() {
               } else {
                 router.push("/main");
               }
+            } else if (tab === "rooms") {
+              router.push("/plan-list");
             }
             // TODO: 나머지 탭들은 나중에 처리
           }}

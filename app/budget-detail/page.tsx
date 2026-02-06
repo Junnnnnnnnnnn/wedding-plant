@@ -465,11 +465,10 @@ function BudgetDetailsPage() {
                         <button
                           key={tab}
                           onClick={() => setActiveTab(tab)}
-                          className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${
-                            activeTab === tab
+                          className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${activeTab === tab
                               ? "text-[#ee2b8c] border-[#ee2b8c]"
                               : "text-gray-400 border-transparent hover:text-gray-600"
-                          }`}
+                            }`}
                         >
                           {tab}
                         </button>
@@ -524,8 +523,7 @@ function BudgetDetailsPage() {
           onTabClick={(tab) => {
             if (tab === "home") router.push("/main");
             if (tab === "calendar") router.push("/main");
-            // TODO: rooms 탭 - 룸 리스트 페이지 연동 예정
-            if (tab === "rooms") void 0;
+            if (tab === "rooms") router.push("/plan-list");
             if (tab === "settings") router.push("/setting");
           }}
         />
