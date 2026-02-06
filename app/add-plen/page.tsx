@@ -1378,15 +1378,8 @@ function AddPlanPageContent() {
         </main>
         {/* 하단 탭바 - Sticky로 최상단에 고정 */}
         <BottomTabBar
-          activeTab="home"
           showLoginButton={false}
           scrollDirection={scrollDirection}
-          onTabClick={(tab) => {
-            if (tab === "home") {
-              router.push("/main");
-            }
-            // TODO: 나머지 탭들은 나중에 처리
-          }}
         />
         <LoginRequiredModal
           show={showLoginRequiredModal}

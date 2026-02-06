@@ -1,12 +1,29 @@
 "use client";
 
 import { Home, Calendar, LayoutGrid, Settings } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 
-type TabType = "home" | "calendar" | "rooms" | "settings";
+export type TabType = "home" | "calendar" | "rooms" | "settings";
+
+const TAB_ROUTES: Record<TabType, string> = {
+  home: "/main",
+  calendar: "/main",
+  rooms: "/plan-list",
+  settings: "/user",
+};
+
+function pathnameToTab(pathname: string): TabType {
+  if (pathname === "/main") return "home";
+  if (pathname === "/plan-list") return "rooms";
+  if (pathname === "/user" || pathname === "/setting") return "settings";
+  return "home";
+}
 
 /* eslint-disable react/require-default-props */
 interface BottomTabBarProps {
+  /** 활성 탭. 없으면 pathname으로 자동 결정 */
   activeTab?: TabType;
+  /** 탭 클릭 핸들러. 없으면 기본 라우팅 사용 (home→/main, rooms→/plan-list, settings→/user) */
   onTabClick?: (tab: TabType) => void;
   showLoginButton?: boolean;
   onLoginClick?: () => void;
@@ -16,12 +33,16 @@ interface BottomTabBarProps {
 /* eslint-enable react/require-default-props */
 
 export default function BottomTabBar({
-  activeTab = "home",
+  activeTab,
   onTabClick,
   showLoginButton = false,
   onLoginClick,
   scrollDirection = null,
 }: BottomTabBarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const resolvedActiveTab = activeTab ?? pathnameToTab(pathname);
+
   const tabs: Array<{
     id: TabType;
     label: string;
@@ -36,6 +57,8 @@ export default function BottomTabBar({
   const handleClick = (tab: TabType) => {
     if (onTabClick) {
       onTabClick(tab);
+    } else {
+      router.push(TAB_ROUTES[tab]);
     }
   };
 
@@ -66,7 +89,7 @@ export default function BottomTabBar({
         <div className="flex w-full max-w-[500px] items-center justify-around px-6 py-4">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+            const isActive = resolvedActiveTab === tab.id;
             const iconColor = isActive ? "#ffaab8" : "#99a1af";
             const textColor = isActive ? "#ffaab8" : "#99a1af";
 

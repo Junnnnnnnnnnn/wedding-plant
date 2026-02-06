@@ -6,10 +6,10 @@ import {
   CircleDollarSign,
   CirclePlus,
   Crown,
+  LogOut,
   Mail,
   Pencil,
   Plus,
-  User,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -174,6 +174,7 @@ function MainPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const shareCode = searchParams.get("share");
+  const roomId = searchParams.get("roomId");
   const { weddingData, resetData } = useWedding();
   const { fetchWithAuth, fetchBackend } = useApi();
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
@@ -281,13 +282,19 @@ function MainPageContent() {
   );
 
   const fetchPlanUser = useCallback(
-    async (onApiError: (status?: number) => void) => {
+    async (
+      onApiError: (status?: number) => void,
+      roomIdParam?: string,
+    ) => {
       if (!getToken()) {
         setApiPlanData("none");
         return;
       }
       try {
-        const res = await fetchWithAuth("/plan/user");
+        const url = roomIdParam?.trim()
+          ? `/plan/user/room/${encodeURIComponent(roomIdParam.trim())}`
+          : "/plan/user";
+        const res = await fetchWithAuth(url);
         if (cancelledRef.current) return;
         const json = (await res.json()) as {
           result?: boolean;
@@ -308,8 +315,16 @@ function MainPageContent() {
   );
 
   const fetchTotalAmount = useCallback(
-    async (onApiError: (status?: number) => void) => {
+    async (
+      onApiError: (status?: number) => void,
+      roomIdParam?: string,
+    ) => {
       if (!getToken()) {
+        setTotalAmountManwon(0);
+        return;
+      }
+      // 참여 플랜(roomId) 모드에서는 total-amount API 없음 → 스케줄 합산으로 사용
+      if (roomIdParam?.trim()) {
         setTotalAmountManwon(0);
         return;
       }
@@ -322,7 +337,6 @@ function MainPageContent() {
         };
         if (cancelledRef.current) return;
         if (json.result === true && json.data?.totalAmount != null) {
-          // API totalAmount는 만원 단위 (예: 240149 → 24억 1백49만원)
           setTotalAmountManwon(json.data.totalAmount);
         } else {
           setTotalAmountManwon(0);
@@ -362,7 +376,7 @@ function MainPageContent() {
       return;
     }
     cancelledRef.current = false;
-    // share 파라미터 있으면 본인 플랜(/plan/user) 먼저 호출 후, 공유 방(plan/user/{shareCode} 등) 호출
+    const roomIdParam = roomId?.trim();
     if (shareCode?.trim()) {
       (async () => {
         await Promise.all([
@@ -373,7 +387,17 @@ function MainPageContent() {
           fetchSharedRoomWithAuth(shareCode.trim());
         }
       })();
+    } else if (roomIdParam) {
+      setApiPlanData(null);
+      setScheduleList([]);
+      setScheduleInitialFetched(false);
+      fetchPlanUser(handleApiError, roomIdParam);
+      fetchTotalAmount(handleApiError, roomIdParam);
     } else {
+      // /main으로 돌아왔을 때 본인 플랜 데이터 다시 로드 (이전 room/share 데이터 제거)
+      setApiPlanData(null);
+      setScheduleList([]);
+      setScheduleInitialFetched(false);
       fetchPlanUser(handleApiError);
       fetchTotalAmount(handleApiError);
     }
@@ -387,6 +411,7 @@ function MainPageContent() {
     fetchSharedRoomWithAuth,
     handleApiError,
     shareCode,
+    roomId,
   ]);
 
   // JWT 없고 share 파라미터 있으면 공유 방 public API 호출
@@ -440,6 +465,7 @@ function MainPageContent() {
   const isSharedView =
     !!shareCode && sharedRoomUser && sharedRoomUser !== "error";
   const isSharedLoading = !!shareCode && sharedRoomUser === null;
+  const isRoomView = !!roomId?.trim();
 
   const isPlanLoading = Boolean(
     !tokenChecked ||
@@ -483,9 +509,11 @@ function MainPageContent() {
       return sum + amount;
     }, 0);
   }, [effectiveScheduleList]);
-  // 공유 뷰(isSharedView) 또는 비로그인 시 스케줄 합산, 로그인 본인 플랜 시 totalAmountManwon
+  // 공유 뷰·참여 플랜(roomId) 또는 비로그인 시 스케줄 합산, 로그인 본인 플랜 시 totalAmountManwon
   const usedBudget =
-    !isSharedView && getToken() ? (totalAmountManwon ?? 0) : guestUsedBudget; // 지출 예정 총액 (만원)
+    !isSharedView && !isRoomView && getToken()
+      ? (totalAmountManwon ?? 0)
+      : guestUsedBudget; // 지출 예정 총액 (만원)
   const remainingBudget = initialBudget - usedBudget; // 남은 예산 실시간 계산
 
   // 예산 사용률 계산
@@ -537,46 +565,52 @@ function MainPageContent() {
     };
   };
 
-  const fetchScheduleList = useCallback(async () => {
-    if (scheduleFetchingRef.current) return;
-    const token = getToken();
-    if (!token) {
-      setScheduleInitialFetched(true);
-      return;
-    }
-    scheduleFetchingRef.current = true;
-    setScheduleLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: "1",
-        count: String(SCHEDULE_FETCH_COUNT),
-        sort: SCHEDULE_SORT,
-        sortColumn: SCHEDULE_SORT_COLUMN,
-      });
-      const res = await fetchWithAuth(
-        `/plan/schedule/list?${params.toString()}`,
-      );
-      const json = (await res.json()) as {
-        result?: boolean;
-        data?: { total: number; list: ScheduleListItem[] };
-      };
-      if (json.result === true && json.data) {
-        const { total, list } = json.data;
-        setScheduleTotal(total);
-        setScheduleList(list);
-      } else {
-        setScheduleList([]);
+  const fetchScheduleList = useCallback(
+    async (roomIdParam?: string) => {
+      if (scheduleFetchingRef.current) return;
+      const token = getToken();
+      if (!token) {
+        setScheduleInitialFetched(true);
+        return;
       }
-    } catch {
-      setScheduleList([]);
-    } finally {
-      setScheduleLoading(false);
-      setScheduleInitialFetched(true);
-      scheduleFetchingRef.current = false;
-    }
-  }, [fetchWithAuth]);
+      scheduleFetchingRef.current = true;
+      setScheduleLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: "1",
+          count: String(SCHEDULE_FETCH_COUNT),
+          sort: SCHEDULE_SORT,
+          sortColumn: roomIdParam?.trim()
+            ? "startDate"
+            : SCHEDULE_SORT_COLUMN,
+        });
+        const url = roomIdParam?.trim()
+          ? `/plan/schedule/room/${encodeURIComponent(roomIdParam.trim())}/list?${params.toString()}`
+          : `/plan/schedule/list?${params.toString()}`;
+        const res = await fetchWithAuth(url);
+        const json = (await res.json()) as {
+          result?: boolean;
+          data?: { total: number; list: ScheduleListItem[] };
+        };
+        if (json.result === true && json.data) {
+          const { total, list } = json.data;
+          setScheduleTotal(total);
+          setScheduleList(list);
+        } else {
+          setScheduleList([]);
+        }
+      } catch {
+        setScheduleList([]);
+      } finally {
+        setScheduleLoading(false);
+        setScheduleInitialFetched(true);
+        scheduleFetchingRef.current = false;
+      }
+    },
+    [fetchWithAuth],
+  );
 
-  // 로그인되어 있을 때만 GET /plan/schedule/list 호출. share 있으면 fetchSharedRoomWithAuth에서 스케줄 로드
+  // 로그인되어 있을 때만 스케줄 API 호출. share 있으면 fetchSharedRoomWithAuth에서 스케줄 로드
   useEffect(() => {
     if (!getToken()) {
       setScheduleInitialFetched(true);
@@ -587,8 +621,13 @@ function MainPageContent() {
       setScheduleInitialFetched(true);
       return;
     }
-    fetchScheduleList();
-  }, [fetchScheduleList, shareCode]);
+    const roomIdParam = roomId?.trim();
+    if (roomIdParam) {
+      fetchScheduleList(roomIdParam);
+    } else {
+      fetchScheduleList();
+    }
+  }, [fetchScheduleList, shareCode, roomId]);
 
   // 각 계획의 체크 상태 관리
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
@@ -669,15 +708,6 @@ function MainPageContent() {
       return;
     }
     router.push(`/schedule-detail?id=${id}`);
-  };
-
-  // 프로필 버튼 클릭 핸들러
-  const handleUserClick = () => {
-    if (getToken()) {
-      router.push("/user");
-    } else {
-      setShowLoginRequiredModal(true);
-    }
   };
 
   return (
@@ -957,23 +987,20 @@ function MainPageContent() {
                   )}
                 </div>
               </div>
-              {/* 오른쪽: 프로필 (기존 위치) */}
-              {isPlanLoading ? (
-                <span
-                  className="skeleton-shimmer h-12 w-12 shrink-0 rounded-full"
-                  aria-hidden
-                />
-              ) : (
+              {/* roomId 또는 shareCode일 때 우측 상단 나가기 버튼 */}
+              {(shareCode || roomId) && (
                 <button
                   type="button"
-                  onClick={handleUserClick}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full cursor-pointer hover:opacity-90 transition-opacity"
-                  style={{
-                    background: "#ee2b8c",
-                    boxShadow: "0 4px 12px rgba(238, 43, 140, 0.25)",
-                  }}
+                  onClick={() =>
+                    roomId ? router.push("/plan-list") : router.push("/main")
+                  }
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-600 text-white cursor-pointer hover:bg-stone-700 transition-colors"
+                  aria-label="나가기"
                 >
-                  <User className="h-6 w-6 text-white" strokeWidth={2} />
+                  <LogOut
+                    className="h-6 w-6"
+                    strokeWidth={2}
+                  />
                 </button>
               )}
             </div>
@@ -1278,21 +1305,21 @@ function MainPageContent() {
         </main>
         {/* 하단 탭바 - Sticky로 최상단에 고정 */}
         <BottomTabBar
-          activeTab="home"
+          activeTab={roomId ? "rooms" : undefined}
           showLoginButton={false}
           scrollDirection={scrollDirection}
           onTabClick={(tab) => {
             if (tab === "home") {
-              // 이미 /main 페이지에 있으면 새로고침, 아니면 이동
               if (window.location.pathname === "/main") {
                 router.refresh();
               } else {
                 router.push("/main");
               }
-            } else if (tab === "rooms") {
-              router.push("/plan-list");
+            } else {
+              router.push(
+                tab === "rooms" ? "/plan-list" : tab === "settings" ? "/user" : "/main",
+              );
             }
-            // TODO: 나머지 탭들은 나중에 처리
           }}
         />
         <LoginRequiredModal

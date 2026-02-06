@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SettingsPage from "../components/SettingsPage";
+import BottomTabBar from "../components/BottomTabBar";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import { getToken, clearAllStoredData } from "@/lib/api";
@@ -131,13 +132,14 @@ export default function UserPage() {
 
   return (
     <div className="min-h-[100dvh] bg-[#fcfbfc]">
-      <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg">
+      <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10 pb-24">
         <SettingsPage
           user={userData}
           onSave={handleSave}
           onClose={handleClose}
           onSignOut={handleSignOut}
         />
+        <BottomTabBar />
       </div>
     </div>
   );

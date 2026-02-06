@@ -60,8 +60,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     if (onSelectPlan) {
       onSelectPlan(id);
     } else {
-      console.log("Selected plan:", id);
-      // Add navigation logic if needed, e.g., router.push(`/plan/${id}`);
+      router.push(`/main?roomId=${id}`);
     }
   };
 
@@ -201,11 +200,11 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                           Remaining Budget
                         </p>
                         <p className="text-xl font-black text-[#1b0d14]">
-                          ${plan.remainingBudget.toLocaleString()}
+                          {plan.remainingBudget.toLocaleString()}만 원
                         </p>
                       </div>
                       <p className="text-xs font-bold text-gray-400">
-                        / ${plan.budget.toLocaleString()}
+                        / {plan.budget.toLocaleString()}만 원
                       </p>
                     </div>
                     <div className="h-2 w-full bg-[#ee2b8c0a] rounded-full overflow-hidden">
@@ -221,13 +220,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
           )}
         </div>
 
-        <BottomTabBar
-          activeTab="rooms"
-          onTabClick={(tab) => {
-            if (tab === "home") router.push("/main");
-            if (tab === "rooms") router.push("/plan-list");
-          }}
-        />
+        <BottomTabBar />
       </div>
     </div>
   );

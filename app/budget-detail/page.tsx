@@ -517,16 +517,7 @@ function BudgetDetailsPage() {
           onClose={() => setShowLoginRequiredModal(false)}
         />
 
-        <BottomTabBar
-          activeTab="home"
-          showLoginButton={false}
-          onTabClick={(tab) => {
-            if (tab === "home") router.push("/main");
-            if (tab === "calendar") router.push("/main");
-            if (tab === "rooms") router.push("/plan-list");
-            if (tab === "settings") router.push("/setting");
-          }}
-        />
+        <BottomTabBar showLoginButton={false} />
       </div>
     </div>
   );

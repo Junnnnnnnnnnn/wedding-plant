@@ -588,15 +588,6 @@ function ScheduleDetailPageContent() {
         )}
 
         <BottomTabBar
-          activeTab="home"
-          onTabClick={(tab) => {
-            if (tab === "home") {
-              router.push("/main");
-            } else if (tab === "rooms") {
-              router.push("/plan-list");
-            }
-            // TODO: 캘린더, 통계, 설정 탭 라우팅 추가 예정
-          }}
           scrollDirection={scrollDirection}
           showLoginButton={false}
         />
