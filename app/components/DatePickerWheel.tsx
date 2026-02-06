@@ -68,6 +68,9 @@ export default function DatePickerWheel({
     containerRef: null,
   });
 
+  /** 프로그램 스크롤 직후 발생하는 scroll 이벤트로 handleScroll이 재실행되어 스냅이 덮어씌워지는 것 방지 */
+  const programmaticScrollRef = useRef(false);
+
   const years = Array.from({ length: 100 }, (_, i) => currentYear - 50 + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   // month: 1-12 (Jan=1, Dec=12). new Date(y, m, 0) = last day of (m-1) in 0-indexed.
@@ -107,31 +110,48 @@ export default function DatePickerWheel({
 
   const getTopPadding = (container: HTMLDivElement): number => {
     const c0 = container.firstElementChild as HTMLElement;
-    return c0 ? c0.offsetHeight : 0;
+    return c0 ? Math.round(c0.offsetHeight) : 0;
   };
 
-  /** 뷰포트 중앙에 오는 아이템 인덱스 계산 (하이라이트가 가운데이므로) */
-  const getIndexFromScroll = (container: HTMLDivElement): number => {
+  /**
+   * 뷰포트 중앙에 오는 아이템 인덱스 계산 (하이라이트가 가운데이므로).
+   * roundUpThreshold(0~1): 경계에서 다음 아이템으로 스냅하기 쉬우면 0.4 등 지정 (예: 28→1 전환 시 1에 안착).
+   */
+  const getIndexFromScroll = (
+    container: HTMLDivElement,
+    roundUpThreshold?: number,
+  ): number => {
     const topPadding = getTopPadding(container);
     const centerY = container.scrollTop + container.clientHeight / 2;
-    return Math.round((centerY - topPadding - itemHeight / 2) / itemHeight);
+    const exact = (centerY - topPadding - itemHeight / 2) / itemHeight;
+    if (roundUpThreshold != null) {
+      const frac = exact - Math.floor(exact);
+      return frac >= roundUpThreshold ? Math.ceil(exact) : Math.floor(exact);
+    }
+    return Math.round(exact);
   };
 
-  /** 인덱스 아이템이 뷰포트 중앙에 오도록 스크롤 */
+  /** 인덱스 아이템이 뷰포트 중앙에 오도록 스크롤. targetScroll는 정수로 맞춰 읽기/쓰기 일치시킴. */
   const scrollToValue = (
     containerRef: React.RefObject<HTMLDivElement | null>,
     index: number,
     immediate: boolean = false,
   ) => {
     if (containerRef.current) {
+      programmaticScrollRef.current = true;
       const container = containerRef.current;
       const topPadding = getTopPadding(container);
       const targetScroll =
         topPadding + (index + 0.5) * itemHeight - container.clientHeight / 2;
+      const topRounded = Math.max(0, Math.round(targetScroll));
       container.scrollTo({
-        top: Math.max(0, targetScroll),
+        top: topRounded,
         behavior: immediate ? "auto" : "smooth",
       });
+      const guardMs = immediate ? 180 : 380;
+      setTimeout(() => {
+        programmaticScrollRef.current = false;
+      }, guardMs);
     }
   };
 
@@ -142,12 +162,15 @@ export default function DatePickerWheel({
     setValue: (value: number) => void,
     options?: { wrapTriple: number },
   ) => {
+    if (programmaticScrollRef.current) return;
     if (containerRef.current && !dragStateRef.current.isDragging) {
       const container = containerRef.current;
       const blockSize = options?.wrapTriple ?? 0;
-      let index = getIndexFromScroll(container);
+      const roundUp = blockSize > 0 ? 0.4 : undefined;
+      let index = getIndexFromScroll(container, roundUp);
 
       if (blockSize > 0 && items.length === blockSize * 3) {
+        index = Math.max(0, Math.min(index, items.length - 1));
         if (index < blockSize) {
           setValue(items[index]);
           scrollToValue(containerRef, index + blockSize, true);
@@ -159,7 +182,14 @@ export default function DatePickerWheel({
           return;
         }
         setValue(items[index - blockSize]);
-        scrollToValue(containerRef, index, false);
+        const topPaddingInner = getTopPadding(container);
+        const targetScrollInner =
+          topPaddingInner +
+          (index + 0.5) * itemHeight -
+          container.clientHeight / 2;
+        if (Math.abs(container.scrollTop - targetScrollInner) > 2) {
+          scrollToValue(containerRef, index, true);
+        }
         return;
       }
 
@@ -212,9 +242,11 @@ export default function DatePickerWheel({
     const clampedScrollTop = Math.max(0, Math.min(newScrollTop, maxScroll));
     container.scrollTop = clampedScrollTop;
 
-    let index = getIndexFromScroll(container);
+    const roundUp = blockSize > 0 ? 0.4 : undefined;
+    let index = getIndexFromScroll(container, roundUp);
 
     if (blockSize > 0 && items.length === blockSize * 3) {
+      index = Math.max(0, Math.min(index, items.length - 1));
       if (index < blockSize) {
         setValue(items[index]);
       } else if (index >= blockSize * 2) {
@@ -245,28 +277,35 @@ export default function DatePickerWheel({
     container.style.cursor = "grab";
     container.style.userSelect = "";
 
-    let index = getIndexFromScroll(container);
+    const roundUp = blockSize > 0 ? 0.4 : undefined;
+    const index = getIndexFromScroll(container, roundUp);
 
     const containerRefForJump = dragStateRef.current.containerRef;
+    const resolvedIndex =
+      blockSize > 0 && items.length === blockSize * 3
+        ? Math.max(0, Math.min(index, items.length - 1))
+        : Math.max(0, Math.min(index, items.length - 1));
+
     if (blockSize > 0 && items.length === blockSize * 3) {
-      if (index < blockSize) {
-        setValue(items[index]);
+      if (resolvedIndex < blockSize) {
+        setValue(items[resolvedIndex]);
         if (containerRefForJump) {
-          scrollToValue(containerRefForJump, index + blockSize, true);
+          scrollToValue(containerRefForJump, resolvedIndex + blockSize, true);
         }
-      } else if (index >= blockSize * 2) {
-        setValue(items[index - blockSize * 2]);
+      } else if (resolvedIndex >= blockSize * 2) {
+        setValue(items[resolvedIndex - blockSize * 2]);
         if (containerRefForJump) {
-          scrollToValue(containerRefForJump, index - blockSize, true);
+          scrollToValue(containerRefForJump, resolvedIndex - blockSize, true);
         }
       } else {
-        setValue(items[index - blockSize]);
-        scrollToValue(containerRefForJump, index, false);
+        setValue(items[resolvedIndex - blockSize]);
+        if (containerRefForJump) {
+          scrollToValue(containerRefForJump, resolvedIndex, true);
+        }
       }
     } else {
-      index = Math.max(0, Math.min(index, items.length - 1));
-      setValue(items[index]);
-      scrollToValue(containerRefForJump, index, false);
+      setValue(items[resolvedIndex]);
+      scrollToValue(containerRefForJump, resolvedIndex, false);
     }
 
     dragStateRef.current = {

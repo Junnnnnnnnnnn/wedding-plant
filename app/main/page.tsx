@@ -220,7 +220,7 @@ function MainPageContent() {
         };
         const memberJson = (await memberRes.json()) as {
           result?: boolean;
-          data?: { total?: number; list?: RoomMember[] };
+          data?: { total?: number; list?: RoomMember[]; members?: RoomMember[] };
         };
         if (userJson.result === true && userJson.data) {
           setSharedRoomUser(userJson.data);
@@ -230,8 +230,12 @@ function MainPageContent() {
         if (scheduleJson.result === true && scheduleJson.data?.list) {
           setSharedRoomScheduleList(scheduleJson.data.list);
         }
-        if (memberJson.result === true && memberJson.data?.list) {
-          setRoomMembers(memberJson.data.list);
+        if (memberJson.result === true && memberJson.data) {
+          const list =
+            memberJson.data.list ??
+            memberJson.data.members ??
+            [];
+          setRoomMembers(Array.isArray(list) ? list : []);
         }
       } catch {
         setSharedRoomUser("error");
@@ -242,19 +246,23 @@ function MainPageContent() {
     [fetchWithAuth],
   );
 
-  // JWT 없고 share 파라미터 있으면 공유 방 호스트 정보 + 스케줄 목록 조회
+  // JWT 없고 share 파라미터 있으면 공유 방 호스트 정보 + 스케줄 + 멤버 목록 조회
   const fetchSharedRoom = useCallback(
     async (code: string) => {
       if (sharedFetchingRef.current) return;
       sharedFetchingRef.current = true;
       setSharedRoomUser(null);
       setSharedRoomScheduleList([]);
+      setRoomMembers([]);
       try {
-        const [userRes, scheduleRes] = await Promise.all([
+        const [userRes, scheduleRes, memberRes] = await Promise.all([
           fetchBackend(`/plan/user/public/room/${encodeURIComponent(code)}`),
           fetchBackend(
             `/plan/schedule/public/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=DESC&sortColumn=startDate`,
           ),
+          fetchBackend(
+            `/plan/user/public/room/${encodeURIComponent(code)}/member`,
+          ).catch(() => null),
         ]);
         const userJson = (await userRes.json()) as {
           result?: boolean;
@@ -271,6 +279,17 @@ function MainPageContent() {
         }
         if (scheduleJson.result === true && scheduleJson.data?.list) {
           setSharedRoomScheduleList(scheduleJson.data.list);
+        }
+        if (memberRes?.ok) {
+          const memberJson = (await memberRes.json()) as {
+            result?: boolean;
+            data?: { list?: RoomMember[]; members?: RoomMember[] };
+          };
+          if (memberJson.result === true && memberJson.data) {
+            const list =
+              memberJson.data.list ?? memberJson.data.members ?? [];
+            setRoomMembers(Array.isArray(list) ? list : []);
+          }
         }
       } catch {
         setSharedRoomUser("error");
@@ -1319,7 +1338,7 @@ function MainPageContent() {
         </main>
         {/* 하단 탭바 - Sticky로 최상단에 고정 */}
         <BottomTabBar
-          activeTab={roomId ? "rooms" : undefined}
+          activeTab={roomId || shareCode ? "rooms" : undefined}
           showLoginButton={false}
           scrollDirection={scrollDirection}
           onTabClick={(tab) => {

@@ -2,7 +2,8 @@
 
 import { Home, Calendar, LayoutGrid, Settings } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { getToken } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { AUTH_TOKEN_CHANGED_EVENT, getToken } from "@/lib/api";
 
 export type TabType = "home" | "calendar" | "rooms" | "settings";
 
@@ -43,7 +44,21 @@ export default function BottomTabBar({
   const pathname = usePathname();
   const router = useRouter();
   const resolvedActiveTab = activeTab ?? pathnameToTab(pathname);
-  const isLoggedIn = !!getToken();
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!getToken());
+
+  // 로그인 후(같은 탭/다른 탭) 포커스·가시성·pathname 변경 시 토큰 다시 읽어서 참여플랜/Settings 클릭 가능하도록
+  useEffect(() => {
+    const sync = () => setIsLoggedIn(!!getToken());
+    window.addEventListener("focus", sync);
+    document.addEventListener("visibilitychange", sync);
+    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, sync);
+    sync();
+    return () => {
+      window.removeEventListener("focus", sync);
+      document.removeEventListener("visibilitychange", sync);
+      window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, sync);
+    };
+  }, [pathname]);
 
   const tabs: Array<{
     id: TabType;
@@ -57,7 +72,6 @@ export default function BottomTabBar({
   ];
 
   const handleClick = (tab: TabType) => {
-    if (!isLoggedIn && tab !== "home") return;
     if (onTabClick) {
       onTabClick(tab);
     } else {
@@ -95,7 +109,7 @@ export default function BottomTabBar({
             const isActive = resolvedActiveTab === tab.id;
             const iconColor = isActive ? "#ffaab8" : "#99a1af";
             const textColor = isActive ? "#ffaab8" : "#99a1af";
-            const isDisabled = !isLoggedIn && tab.id !== "home";
+            const isDisabled = false;
 
             return (
               <button

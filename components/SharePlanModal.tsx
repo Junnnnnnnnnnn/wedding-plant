@@ -25,11 +25,6 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const handleCopyLink = async () => {
-    if (permission !== "view") {
-      // 읽기 전용일 때만 링크 복사 API 호출
-      setCopyError("읽기 전용 모드에서만 링크 복사가 가능합니다.");
-      return;
-    }
     setCopyError(null);
     try {
       const res = await fetchWithAuth("/plan/user/room", {
@@ -40,15 +35,22 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
       }
       const json = (await res.json()) as {
         result?: boolean;
-        data?: { shareCode?: string };
+        data?: { shareCode?: string; writeShareCode?: string };
       };
-      const shareCode = json?.data?.shareCode;
-      if (!shareCode) {
-        throw new Error("shareCode를 받지 못했습니다.");
+      const code =
+        permission === "edit"
+          ? json?.data?.writeShareCode
+          : json?.data?.shareCode;
+      if (!code) {
+        throw new Error(
+          permission === "edit"
+            ? "writeShareCode를 받지 못했습니다."
+            : "shareCode를 받지 못했습니다.",
+        );
       }
       const url =
         typeof window !== "undefined"
-          ? `${window.location.origin}/share/${shareCode}`
+          ? `${window.location.origin}/share/${code}`
           : "";
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -180,10 +182,7 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
             <div className="flex gap-4">
               <button
                 onClick={handleCopyLink}
-                disabled={permission !== "view"}
-                className={`flex-1 h-16 bg-white border border-gray-100 rounded-3xl flex items-center justify-center gap-3 font-bold text-[#1b0d14] shadow-sm hover:shadow-md transition-all active:scale-95 ${
-                  permission !== "view" ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className="flex-1 h-16 bg-white border border-gray-100 rounded-3xl flex items-center justify-center gap-3 font-bold text-[#1b0d14] shadow-sm hover:shadow-md transition-all active:scale-95"
               >
                 {copied ? (
                   <Check className="w-5 h-5 text-green-500" />

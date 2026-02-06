@@ -194,6 +194,19 @@ function Band({
     return undefined;
   }, [hovered, dragged]);
 
+  // 모바일: 터치 끝났을 때 캔버스에 pointerup이 안 오는 경우가 있어, 전역에서 해제
+  useEffect(() => {
+    const releaseDrag = () => drag(false);
+    window.addEventListener("pointerup", releaseDrag);
+    window.addEventListener("pointercancel", releaseDrag);
+    window.addEventListener("touchend", releaseDrag, { passive: true });
+    return () => {
+      window.removeEventListener("pointerup", releaseDrag);
+      window.removeEventListener("pointercancel", releaseDrag);
+      window.removeEventListener("touchend", releaseDrag);
+    };
+  }, []);
+
   useFrame((state, delta) => {
     if (dragged && typeof dragged !== "boolean") {
       vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
@@ -306,6 +319,10 @@ function Band({
             onPointerOver={() => hover(true)}
             onPointerOut={() => hover(false)}
             onPointerUp={(e: any) => {
+              e.target.releasePointerCapture(e.pointerId);
+              drag(false);
+            }}
+            onPointerCancel={(e: any) => {
               e.target.releasePointerCapture(e.pointerId);
               drag(false);
             }}
@@ -460,6 +477,7 @@ export default function Lanyard({
         camera={{ position, fov }}
         dpr={[1, isMobile ? 1.5 : 2]}
         gl={{ alpha: transparent }}
+        style={{ touchAction: "none" }}
         onCreated={({ gl }) =>
           gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)
         }

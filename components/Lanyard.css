@@ -10,6 +10,11 @@
   align-items: center;
   transform: scale(1);
   transform-origin: center;
+  /* 모바일: 터치를 스크롤이 아닌 캔버스 드래그로 전달 */
+  touch-action: none;
+}
+.lanyard-wrapper canvas {
+  touch-action: none;
 }
 .next-button-container {
   position: absolute;

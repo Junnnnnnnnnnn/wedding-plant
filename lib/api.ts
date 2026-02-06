@@ -1,22 +1,32 @@
 /** sessionStorage key for backend JWT */
 export const AUTH_TOKEN_KEY = "plan_auth_token";
+export const AUTH_TOKEN_CHANGED_EVENT = "plan-auth-token-changed";
 
 /** OAuth 로그인 전 공유 링크 shareCode 저장용 (로그인 후 /main?share=xxx로 복원) */
 export const SHARE_AFTER_LOGIN_KEY = "plan_share_after_login";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
-  return sessionStorage.getItem(AUTH_TOKEN_KEY);
+  // sessionStorage는 탭(창) 단위라 공유 링크를 새 탭에서 열면 토큰이 없을 수 있음
+  // localStorage도 함께 확인해 로그인 상태를 탭 간에 유지
+  return (
+    sessionStorage.getItem(AUTH_TOKEN_KEY) ??
+    localStorage.getItem(AUTH_TOKEN_KEY)
+  );
 }
 
 export function setToken(token: string): void {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(AUTH_TOKEN_KEY, token);
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  window.dispatchEvent(new Event(AUTH_TOKEN_CHANGED_EVENT));
 }
 
 export function clearToken(): void {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  window.dispatchEvent(new Event(AUTH_TOKEN_CHANGED_EVENT));
 }
 
 /** JWT payload 타입 */
@@ -69,6 +79,7 @@ export function clearAllStoredData(): void {
   if (typeof window === "undefined") return;
   sessionStorage.clear();
   localStorage.clear();
+  window.dispatchEvent(new Event(AUTH_TOKEN_CHANGED_EVENT));
 }
 
 /** Client-side API base URL (NEXT_PUBLIC_API_BASE_URL). */
