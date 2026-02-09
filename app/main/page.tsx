@@ -27,6 +27,7 @@ import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import GuestPlanLimitModal from "../components/GuestPlanLimitModal";
 import SharePlanModal from "@/components/SharePlanModal";
+import NoPlanFoundModal from "../components/NoPlanFoundModal";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import {
@@ -36,7 +37,7 @@ import {
   clearAllStoredData,
 } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
-import { parseLocalDate } from "@/lib/utils";
+import { parseLocalDate, getKstDate } from "@/lib/utils";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 
 /** API weddingDate "YYYY-MM-DD" → { year, month, day } */
@@ -70,8 +71,7 @@ function getDDay(weddingDate?: { year: number; month: number; day: number }) {
     weddingDate.month - 1,
     weddingDate.day,
   );
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getKstDate();
   wedding.setHours(0, 0, 0, 0);
   const diffMs = wedding.getTime() - today.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -176,7 +176,7 @@ function MainPageContent() {
   const shareCode = searchParams.get("share");
   const roomId = searchParams.get("roomId");
   const { weddingData, resetData } = useWedding();
-  const { fetchWithAuth, fetchBackend } = useApi();
+  const { fetchWithAuth } = useApi();
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
     null,
   );
@@ -191,6 +191,8 @@ function MainPageContent() {
     ScheduleListItem[]
   >([]);
   const [roomMembers, setRoomMembers] = useState<RoomMember[]>([]);
+  const [showNoPlanModal, setShowNoPlanModal] = useState(false);
+  const [isNoPlanBlur, setIsNoPlanBlur] = useState(false);
   const sharedFetchingRef = useRef(false);
   const cancelledRef = useRef(false);
 
@@ -246,59 +248,6 @@ function MainPageContent() {
     [fetchWithAuth],
   );
 
-  // JWT 없고 share 파라미터 있으면 공유 방 호스트 정보 + 스케줄 + 멤버 목록 조회
-  const fetchSharedRoom = useCallback(
-    async (code: string) => {
-      if (sharedFetchingRef.current) return;
-      sharedFetchingRef.current = true;
-      setSharedRoomUser(null);
-      setSharedRoomScheduleList([]);
-      setRoomMembers([]);
-      try {
-        const [userRes, scheduleRes, memberRes] = await Promise.all([
-          fetchBackend(`/plan/user/public/room/${encodeURIComponent(code)}`),
-          fetchBackend(
-            `/plan/schedule/public/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=DESC&sortColumn=startDate`,
-          ),
-          fetchBackend(
-            `/plan/user/public/room/${encodeURIComponent(code)}/member`,
-          ).catch(() => null),
-        ]);
-        const userJson = (await userRes.json()) as {
-          result?: boolean;
-          data?: SharedRoomUser;
-        };
-        const scheduleJson = (await scheduleRes.json()) as {
-          result?: boolean;
-          data?: { total: number; list: ScheduleListItem[] };
-        };
-        if (userJson.result === true && userJson.data) {
-          setSharedRoomUser(userJson.data);
-        } else {
-          setSharedRoomUser("error");
-        }
-        if (scheduleJson.result === true && scheduleJson.data?.list) {
-          setSharedRoomScheduleList(scheduleJson.data.list);
-        }
-        if (memberRes?.ok) {
-          const memberJson = (await memberRes.json()) as {
-            result?: boolean;
-            data?: { list?: RoomMember[]; members?: RoomMember[] };
-          };
-          if (memberJson.result === true && memberJson.data) {
-            const list =
-              memberJson.data.list ?? memberJson.data.members ?? [];
-            setRoomMembers(Array.isArray(list) ? list : []);
-          }
-        }
-      } catch {
-        setSharedRoomUser("error");
-      } finally {
-        sharedFetchingRef.current = false;
-      }
-    },
-    [fetchBackend],
-  );
 
   const fetchPlanUser = useCallback(
     async (
@@ -311,7 +260,7 @@ function MainPageContent() {
       }
       try {
         const url = roomIdParam?.trim()
-          ? `/plan/user/room/${encodeURIComponent(roomIdParam.trim())}`
+          ? `/plan/room/${encodeURIComponent(roomIdParam.trim())}`
           : "/plan/user";
         const res = await fetchWithAuth(url);
         if (cancelledRef.current) return;
@@ -433,19 +382,33 @@ function MainPageContent() {
     roomId,
   ]);
 
-  // JWT 없고 share 파라미터 있으면 공유 방 public API 호출
+  // 자신의 플랜이 없는 경우 안내 모달 표시 및 블러 처리
   useEffect(() => {
-    const token = getToken();
-    if (token || !shareCode?.trim()) {
-      if (!shareCode?.trim()) {
-        setSharedRoomUser(null);
-        setSharedRoomScheduleList([]);
-        setRoomMembers([]);
-      }
-      return;
+    const isPlanIncomplete = () => {
+      if (apiPlanData === "none") return true;
+      if (!apiPlanData || typeof apiPlanData === "string") return false;
+      const hasWeddingDate = !!apiPlanData.weddingDate?.trim();
+      const hasName = !!apiPlanData.name?.trim();
+      // budget은 0일 수도 있으므로 null/undefined만 체크하거나 0 이상 조건 (여기서는 null체크)
+      const hasBudget = apiPlanData.budget !== null && apiPlanData.budget !== undefined;
+      return !hasWeddingDate || !hasName || !hasBudget;
+    };
+
+    if (
+      tokenChecked &&
+      getToken() &&
+      !shareCode &&
+      !roomId &&
+      isPlanIncomplete()
+    ) {
+      setShowNoPlanModal(true);
+      setIsNoPlanBlur(true);
+    } else {
+      setShowNoPlanModal(false);
+      setIsNoPlanBlur(false);
     }
-    fetchSharedRoom(shareCode.trim());
-  }, [shareCode, fetchSharedRoom]);
+  }, [tokenChecked, shareCode, roomId, apiPlanData]);
+
 
   // 공유 링크로 접속한 비로그인 유저에게 로그인 모달 표시
   useEffect(() => {
@@ -754,7 +717,7 @@ function MainPageContent() {
         />
         <main
           ref={mainScrollRef}
-          className="flex flex-1 flex-col items-center overflow-y-auto w-full px-6"
+          className={`flex flex-1 flex-col items-center overflow-y-auto w-full px-4 sm:px-6 transition-all duration-500 ${isNoPlanBlur ? "blur-xl scale-[0.98] pointer-events-none select-none opacity-60" : ""}`}
         >
           {shareCode && sharedRoomUser === "error" && (
             <div className="w-full mt-4 px-4 py-3 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
@@ -774,7 +737,7 @@ function MainPageContent() {
                       aria-hidden
                     />
                   ) : (
-                    <span className="text-[42px] font-semibold text-[#1b0d14] leading-none shrink-0 min-w-0">
+                    <span className="text-3xl sm:text-[42px] font-semibold text-[#1b0d14] leading-tight shrink-0 min-w-0 break-keep line-clamp-2">
                       {displayData.name || "이름"}
                     </span>
                   )}
@@ -984,7 +947,7 @@ function MainPageContent() {
                   )}
                 </div>
                 {/* 2행: 결혼식 날짜(좌측) + D-day(날짜 오른쪽에 붙임) */}
-                <div className="mt-[5px] flex w-[200px] items-center justify-between gap-1 flex-nowrap">
+                <div className="mt-[5px] flex items-center gap-1.5 flex-nowrap min-w-0 max-w-[200px] sm:max-w-none">
                   {isPlanLoading ? (
                     <>
                       <span
@@ -1154,55 +1117,55 @@ function MainPageContent() {
                 )}
               </div>
               {!(isRoomView && String(myRoomPermission ?? "").toUpperCase() === "READ") && (
-              <button
-                type="button"
-                onClick={() => {
-                  const addPlanPath = roomId
-                    ? `/add-plen?roomId=${roomId}`
-                    : "/add-plen";
-                  if (getToken()) {
-                    router.push(addPlanPath);
-                    return;
-                  }
-                  if (isSharedView) {
-                    setLoginRequiredTitle("플랜을 추가하려면 로그인해 주세요");
-                    setShowLoginRequiredModal(true);
-                    return;
-                  }
+                <button
+                  type="button"
+                  onClick={() => {
+                    const addPlanPath = roomId
+                      ? `/add-plen?roomId=${roomId}`
+                      : "/add-plen";
+                    if (getToken()) {
+                      router.push(addPlanPath);
+                      return;
+                    }
+                    if (isSharedView) {
+                      setLoginRequiredTitle("플랜을 추가하려면 로그인해 주세요");
+                      setShowLoginRequiredModal(true);
+                      return;
+                    }
 
-                  // Guest: allow up to 3 plans saved in sessionStorage
-                  const guestCount = effectiveScheduleList.length;
-                  if (guestCount === 0) {
-                    // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
-                    setShowGuestPlanLimitModal(true);
-                    return;
-                  }
-                  if (guestCount >= 3) {
-                    setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
-                    setShowLoginRequiredModal(true);
-                    return;
-                  }
-                  router.push(addPlanPath);
-                }}
-                className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-bold text-lg transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
-                style={{
-                  backgroundColor:
-                    !getToken() &&
-                      !isSharedView &&
-                      effectiveScheduleList.length >= 3
-                      ? "#cbd5e1"
-                      : "#ee2b8c",
-                  boxShadow:
-                    !getToken() &&
-                      !isSharedView &&
-                      effectiveScheduleList.length >= 3
-                      ? "0 4px 12px rgba(148, 163, 184, 0.35)"
-                      : "0 4px 12px rgba(238, 43, 140, 0.3)",
-                }}
-              >
-                플랜 추가
-                <CirclePlus className="h-5 w-5 text-white" strokeWidth={2.5} />
-              </button>
+                    // Guest: allow up to 3 plans saved in sessionStorage
+                    const guestCount = effectiveScheduleList.length;
+                    if (guestCount === 0) {
+                      // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
+                      setShowGuestPlanLimitModal(true);
+                      return;
+                    }
+                    if (guestCount >= 3) {
+                      setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
+                      setShowLoginRequiredModal(true);
+                      return;
+                    }
+                    router.push(addPlanPath);
+                  }}
+                  className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-bold text-lg transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
+                  style={{
+                    backgroundColor:
+                      !getToken() &&
+                        !isSharedView &&
+                        effectiveScheduleList.length >= 3
+                        ? "#cbd5e1"
+                        : "#ee2b8c",
+                    boxShadow:
+                      !getToken() &&
+                        !isSharedView &&
+                        effectiveScheduleList.length >= 3
+                        ? "0 4px 12px rgba(148, 163, 184, 0.35)"
+                        : "0 4px 12px rgba(238, 43, 140, 0.3)",
+                  }}
+                >
+                  플랜 추가
+                  <CirclePlus className="h-5 w-5 text-white" strokeWidth={2.5} />
+                </button>
               )}
             </div>
             <ul className="mt-4 w-full flex flex-col gap-3 min-h-[200px] relative">
@@ -1275,8 +1238,8 @@ function MainPageContent() {
                                 handleToggleCheck(plan.id);
                               }}
                               className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
-                                  ? "bg-[#ee2b8c] border-[#ee2b8c]"
-                                  : "bg-white/80 border-[#ee2b8c]"
+                                ? "bg-[#ee2b8c] border-[#ee2b8c]"
+                                : "bg-white/80 border-[#ee2b8c]"
                                 }`}
                             >
                               {isChecked && (
@@ -1306,8 +1269,8 @@ function MainPageContent() {
                             </div>
                             <span
                               className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
-                                  ? "bg-[#ee2b8c] text-white"
-                                  : "bg-gray-100 text-gray-500"
+                                ? "bg-[#ee2b8c] text-white"
+                                : "bg-gray-100 text-gray-500"
                                 }`}
                             >
                               {isChecked ? "완료" : "예정"}
@@ -1379,6 +1342,11 @@ function MainPageContent() {
             setShowShareModal(false);
             fetchPlanUser(handleApiError);
           }}
+        />
+        <NoPlanFoundModal
+          show={showNoPlanModal}
+          onConfirm={() => router.push("/setting")}
+          onCancel={() => router.push("/plan-list")}
         />
       </div>
     </div>

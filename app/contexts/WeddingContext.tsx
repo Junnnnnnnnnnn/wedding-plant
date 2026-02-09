@@ -8,6 +8,7 @@ import {
   useMemo,
   useCallback,
 } from "react";
+import { getKstToday } from "@/lib/utils";
 
 export interface User {
   id: string;
@@ -82,7 +83,9 @@ function loadWeddingData(): WeddingData {
       }
     }
 
-    if (!parsed) return { budget: "1000", name: "" };
+    const todayDate = getKstToday();
+
+    if (!parsed) return { budget: "1000", name: "", date: todayDate };
     const p = parsed;
     const budget = typeof p.budget === "string" ? p.budget : "1000";
     const name = typeof p.name === "string" ? p.name : "";
@@ -104,9 +107,13 @@ function loadWeddingData(): WeddingData {
         date = { year: d.year, month: d.month, day: d.day };
       }
     }
-    return { budget, name, date };
+    return { budget, name, date: date ?? getKstToday() };
   } catch {
-    return { budget: "1000", name: "" };
+    return {
+      budget: "1000",
+      name: "",
+      date: getKstToday(),
+    };
   }
 }
 
@@ -149,7 +156,11 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
   );
 
   const resetData = useCallback(() => {
-    const initial = { budget: "1000", name: "" };
+    const initial = {
+      budget: "1000",
+      name: "",
+      date: getKstToday(),
+    };
     setWeddingData(initial);
     if (typeof window !== "undefined") {
       sessionStorage.removeItem(WEDDING_DATA_KEY);

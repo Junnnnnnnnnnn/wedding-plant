@@ -75,24 +75,14 @@ export default function AuthButtons({
   guestLabel = "로그인 없이 둘러보기",
 }: AuthButtonsProps) {
   return (
-    <div className="w-full max-w-[320px] pb-[5px]">
-      <div className="flex flex-col items-center gap-3">
-        <AuthButton
-          label="네이버로 시작하기"
-          className="bg-[#03c75a] text-white"
-          preparing
-        />
+    <div className="w-full max-w-[320px]">
+      <div className="flex flex-col items-center gap-4">
         <KakaoAuthButton />
-        <AuthButton
-          label="Apple로 시작하기"
-          className="bg-black text-white"
-          preparing
-        />
 
         <Link href="/setting">
           <button
             type="button"
-            className="mt-2 text-xs font-medium text-stone-600 underline underline-offset-4 cursor-pointer"
+            className="mt-1 text-xs font-medium text-stone-600 underline underline-offset-4 cursor-pointer"
           >
             {guestLabel}
           </button>

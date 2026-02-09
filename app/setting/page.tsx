@@ -252,7 +252,7 @@ function SettingPageContent() {
   return (
     <div className="flex h-[100dvh] justify-center bg-[#fcfbfc] px-0 text-stone-900 lg:bg-white lg:px-6 overflow-hidden overscroll-none">
       <KakaoLoginAlert show={showKakaoLogin} />
-      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#fcfbfc] px-6 py-8 overscroll-none grid-bg">
+      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#fcfbfc] px-4 sm:px-6 py-8 overscroll-none grid-bg">
         {/* Decorative Blur Elements (match app/page.tsx) */}
         <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none" />
@@ -295,8 +295,8 @@ function SettingPageContent() {
             <LandingHero
               title="우리 날짜가 언제인가요"
               subtitle="우신, 우랑님. 가장 빛날 그날까지 함께해요."
-              titleSize="text-3xl sm:text-4xl"
-              subtitleSize="text-base sm:text-lg"
+              titleSize="text-2xl sm:text-4xl"
+              subtitleSize="text-sm sm:text-lg"
             />
             <DatePickerWheel
               initialDate={weddingData.date}
@@ -312,8 +312,8 @@ function SettingPageContent() {
             <LandingHero
               title="예산도 살짝 알려주세요!"
               subtitle="마음 편하시게 제가 꼼꼼히 챙겨드릴게요."
-              titleSize="text-3xl sm:text-4xl"
-              subtitleSize="text-base sm:text-lg"
+              titleSize="text-2xl sm:text-4xl"
+              subtitleSize="text-sm sm:text-lg"
             />
             <div className="flex flex-col items-center flex-1 justify-center">
               <div className="flex items-center justify-center gap-4 mb-4">
@@ -367,8 +367,8 @@ function SettingPageContent() {
             <LandingHero
               title="이름도 괜찮을까요?"
               subtitle="닉네임도 괜찮아요!"
-              titleSize="text-3xl sm:text-4xl"
-              subtitleSize="text-base sm:text-lg"
+              titleSize="text-2xl sm:text-4xl"
+              subtitleSize="text-sm sm:text-lg"
             />
             <div className="flex flex-col items-center mt-24 mb-20">
               <p className="text-sm text-stone-500 mb-2">최대 3 글자</p>
@@ -390,7 +390,7 @@ function SettingPageContent() {
                   }}
                   placeholder="이름 또는 닉네임"
                   maxLength={3}
-                  className={`px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-64 text-center ${isNameShaking ? "animate-shake" : ""}`}
+                  className={`px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-full max-w-[240px] text-center ${isNameShaking ? "animate-shake" : ""}`}
                 />
               </div>
               <button
@@ -411,8 +411,8 @@ function SettingPageContent() {
             <LandingHero
               title={`${weddingData.name} 님 환영합니다~`}
               subtitle="제가 작은 선물을 준비했어요"
-              titleSize="text-3xl sm:text-4xl"
-              subtitleSize="text-base sm:text-lg"
+              titleSize="text-2xl sm:text-4xl"
+              subtitleSize="text-sm sm:text-lg"
             />
           </div>
         )}
@@ -439,8 +439,8 @@ function SettingPageContent() {
             <LandingHero
               title="앗.. 실망하셨다고요?"
               subtitle="열심히 했지만 마음이 닿지 않았나봐요"
-              titleSize="text-3xl sm:text-4xl"
-              subtitleSize="text-base sm:text-lg"
+              titleSize="text-2xl sm:text-4xl"
+              subtitleSize="text-sm sm:text-lg"
             />
           </div>
         )}
@@ -449,8 +449,8 @@ function SettingPageContent() {
             <LandingHero
               title="자 이제 시작해볼까요?"
               subtitle="우리식까지 든든한 플랜을 같이 짜보아요"
-              titleSize="text-3xl sm:text-4xl"
-              subtitleSize="text-base sm:text-lg"
+              titleSize="text-2xl sm:text-4xl"
+              subtitleSize="text-sm sm:text-lg"
             />
             <button
               type="button"

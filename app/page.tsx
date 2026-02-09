@@ -6,7 +6,7 @@ import LoginErrorModal from "./components/LoginErrorModal";
 
 export default function Home() {
   return (
-    <div className="min-h-screen max-w-md mx-auto bg-[#fcfbfc] relative overflow-hidden flex flex-col items-center justify-between px-8 py-20 grid-bg">
+    <div className="min-h-screen max-w-md mx-auto bg-[#fcfbfc] relative overflow-hidden flex flex-col items-center justify-center px-8 py-20 grid-bg">
       <Suspense fallback={null}>
         <LoginErrorModal />
       </Suspense>
@@ -19,7 +19,7 @@ export default function Home() {
       <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Main Branding Section */}
-      <div className="w-full space-y-4 text-center mt-[25px] z-10">
+      <div className="w-full space-y-4 text-center z-10">
         <div className="inline-flex items-center justify-center p-4 bg-white rounded-[32px] shadow-xl shadow-[#ee2b8c11] border border-[#ee2b8c0a] mb-6">
           <Heart className="w-10 h-10 text-[#ee2b8c] fill-[#ee2b8c]" />
         </div>
@@ -34,8 +34,8 @@ export default function Home() {
       </div>
 
       {/* Login Options Section */}
-      <div className="w-full space-y-3 z-10 flex flex-col items-center mb-20">
-        <div className="w-full mt-0 flex justify-center">
+      <div className="w-full mt-24 z-10 flex flex-col items-center">
+        <div className="w-full flex justify-center">
           <AuthButtons />
         </div>
       </div>

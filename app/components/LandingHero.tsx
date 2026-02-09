@@ -13,7 +13,7 @@ export default function LandingHero({
 }: LandingHeroProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center">
-      <div className="animate-rise mb-6 flex flex-col items-center gap-2">
+      <div className="animate-rise mb-6 flex flex-col items-center gap-2 text-center break-keep">
         <p className={`${titleSize} font-bold tracking-tight text-stone-900`}>
           {title}
         </p>

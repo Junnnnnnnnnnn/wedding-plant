@@ -13,6 +13,6 @@ export default function HomeKakaoLoginHandler() {
   const show = searchParams.get("kakao_login") === "1";
 
   return (
-    <KakaoLoginAlert show={show} showLoadingOverlay={true} />
+    <KakaoLoginAlert show={show} />
   );
 }

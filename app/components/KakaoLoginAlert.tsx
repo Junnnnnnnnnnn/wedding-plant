@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useApi } from "@/app/contexts/ApiContext";
 import { useWedding } from "@/app/contexts/WeddingContext";
-import { clearToken, setToken } from "@/lib/api";
+import {
+  clearToken,
+  setToken,
+  getShareAfterLogin,
+  clearShareAfterLogin,
+} from "@/lib/api";
 import {
   getGuestScheduleList,
   clearGuestScheduleList,
@@ -48,8 +53,8 @@ export default function KakaoLoginAlert({
 }: KakaoLoginAlertProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { fetchBackend, fetchWithAuth } = useApi();
-  const { weddingData } = useWedding();
+  const { fetchBackend, fetchWithAuth, setLoading } = useApi();
+  const { weddingData, resetData } = useWedding();
   const shownRef = useRef(false);
   const [processing, setProcessing] = useState(false);
 
@@ -66,6 +71,8 @@ export default function KakaoLoginAlert({
 
     shownRef.current = true;
     setProcessing(true);
+    setLoading(true); // 글로벌 로딩 시작
+
     const run = async () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -85,6 +92,7 @@ export default function KakaoLoginAlert({
         if (res.status === 401) {
           clearTimeout(timeoutId);
           setProcessing(false);
+          setLoading(false); // 글로벌 로딩 종료
           clearToken();
           router.replace("/");
           return;
@@ -92,6 +100,7 @@ export default function KakaoLoginAlert({
         if (!res.ok) {
           clearTimeout(timeoutId);
           setProcessing(false);
+          setLoading(false); // 글로벌 로딩 종료
           clearToken();
           router.replace("/?login_error=1");
           return;
@@ -105,6 +114,26 @@ export default function KakaoLoginAlert({
           url.searchParams.delete("kakao_login");
           url.hash = "";
           window.history.replaceState({}, "", url.pathname + url.search);
+
+          // 공유 링크(shareCode) 복원 여부 확인
+          const shareCode = getShareAfterLogin();
+          // @ts-ignore
+          if (shareCode) {
+            try {
+              // 방 참여 API 호출
+              await fetchWithAuth(`/plan/room/${shareCode}`, {
+                method: "POST",
+              });
+            } catch (err) {
+              console.error("Failed to join room after login:", err);
+            } finally {
+              clearShareAfterLogin();
+              setProcessing(false);
+              resetData();
+              router.replace("/plan-list");
+              return;
+            }
+          }
 
           // GET /plan/user로 플랜 데이터 확인 - weddingDate, budget, name이 있으면 /main에 머물며 사용자·플랜·스케줄 데이터 로드
           try {
@@ -127,11 +156,35 @@ export default function KakaoLoginAlert({
                 await onSuccessFromMain?.();
               }
               setProcessing(false);
+              setLoading(false); // 글로벌 로딩 종료
+              resetData();
               router.replace("/main");
               return;
             }
           } catch {
             // GET 실패 시 기존 로직으로 fallback
+          }
+
+          // 개인 플랜이 불완전한 경우 참여 중인 방이 있는지 확인
+          try {
+            const roomRes = await fetchWithAuth("/plan/room/list");
+            const roomJson = (await roomRes.json()) as {
+              result?: boolean;
+              data?: { total: number };
+            };
+            if (
+              roomJson.result === true &&
+              roomJson.data &&
+              roomJson.data.total > 0
+            ) {
+              setProcessing(false);
+              setLoading(false);
+              resetData();
+              router.replace("/plan-list");
+              return;
+            }
+          } catch (err) {
+            console.error("Failed to fetch room list during login redirect:", err);
           }
 
           const isFromMain = pathname === "/main";
@@ -181,25 +234,28 @@ export default function KakaoLoginAlert({
               }
               await onSuccessFromMain?.();
               setProcessing(false);
+              setLoading(false); // 글로벌 로딩 종료
+              resetData();
               router.replace("/main");
-            } else {
-              // 홈 등에서 로그인 후 /main으로 왔지만 저장된 플랜 없음 → 설정 페이지로
-              setProcessing(false);
-              router.push("/setting");
+              return;
             }
-          } else if (!pathname.startsWith("/setting")) {
-            setProcessing(false);
-            router.push("/setting");
           }
+
+          // 개인 플랜도 없고 참여 중인 방도 없으면 /setting으로
+          setProcessing(false);
+          setLoading(false); // 글로벌 로딩 종료
+          router.push("/setting");
         } else {
           clearTimeout(timeoutId);
           setProcessing(false);
+          setLoading(false); // 글로벌 로딩 종료
           clearToken();
           router.replace("/?login_error=1");
         }
       } catch {
         clearTimeout(timeoutId);
         setProcessing(false);
+        setLoading(false); // 글로벌 로딩 종료
         clearToken();
         router.replace("/?login_error=1");
       }
@@ -210,49 +266,12 @@ export default function KakaoLoginAlert({
     show,
     fetchBackend,
     fetchWithAuth,
+    setLoading, // 추가
     router,
     pathname,
     weddingData,
     onSuccessFromMain,
   ]);
-
-  if (showLoadingOverlay && processing) {
-    return (
-      <div
-        className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 bg-black/20"
-        aria-busy
-        aria-live="polite"
-        aria-label="로그인 및 데이터 불러오는 중"
-      >
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg">
-          <svg
-            className="h-7 w-7 animate-spin text-[#ee2b8c]"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            aria-hidden
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-        </div>
-        <p className="text-sm font-medium text-[#1b0d14]">
-          로그인 및 데이터 불러오는 중...
-        </p>
-      </div>
-    );
-  }
 
   return null;
 }

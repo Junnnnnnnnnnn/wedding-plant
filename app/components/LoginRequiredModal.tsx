@@ -40,7 +40,7 @@ export default function LoginRequiredModal({
       role="presentation"
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+        className="w-full max-w-sm rounded-2xl bg-white px-5 py-6 sm:p-6 shadow-xl"
         role="dialog"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
@@ -48,14 +48,14 @@ export default function LoginRequiredModal({
         aria-modal="true"
         aria-label={resolvedTitle}
       >
-        <h2 className="text-center text-lg font-semibold text-stone-900">
+        <h2 className="text-center text-base sm:text-lg font-bold text-stone-900 break-keep line-clamp-2">
           {resolvedTitle}
         </h2>
-        <p className="mt-3 text-center text-[15px] font-normal leading-relaxed text-stone-700">
+        <p className="mt-3 text-center text-[14px] sm:text-[15px] font-normal leading-relaxed text-stone-700 break-keep">
           {BODY}
         </p>
-        <p className="mt-2 text-center text-[13px] text-gray-500">{TIP}</p>
-        <div className="mt-6 flex flex-col gap-3">
+        <p className="mt-2 text-center text-[12px] sm:text-[13px] text-gray-500 break-keep">{TIP}</p>
+        <div className="mt-6 flex flex-col gap-2.5 sm:gap-3">
           <button
             type="button"
             disabled

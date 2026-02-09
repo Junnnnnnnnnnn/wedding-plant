@@ -40,7 +40,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
       return;
     }
     try {
-      const res = await fetchWithAuth("/plan/user/room/list");
+      const res = await fetchWithAuth("/plan/room/list");
       const json = await res.json();
       if (json.result && json.data?.list) {
         setPlans(json.data.list);
@@ -80,11 +80,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
         </header>
 
         <div className="flex-1 px-6 space-y-6 relative z-10 overflow-y-auto no-scrollbar">
-          {loading ? (
-            <div className="flex justify-center py-20">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ee2b8c] border-t-transparent" />
-            </div>
-          ) : plans.length === 0 ? (
+          {loading ? null : plans.length === 0 ? (
             <div className="text-center py-20 text-gray-400">
               <p>참여 중인 플랜이 없습니다.</p>
             </div>
@@ -133,22 +129,22 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                         >
                           {String(member.permission ?? "").toUpperCase() ===
                             "OWNER" && (
-                            <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
-                              <Crown
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
+                              <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
+                                <Crown
+                                  className="w-2.5 h-2.5"
+                                  strokeWidth={2.5}
+                                />
+                              </span>
+                            )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" && (
-                            <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm">
-                              <Pencil
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
+                              <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm">
+                                <Pencil
+                                  className="w-2.5 h-2.5"
+                                  strokeWidth={2.5}
+                                />
+                              </span>
+                            )}
 
                           <div
                             className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
@@ -156,8 +152,8 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                               background: member.image
                                 ? undefined
                                 : AVATAR_GRADIENTS[
-                                    idx % AVATAR_GRADIENTS.length
-                                  ],
+                                idx % AVATAR_GRADIENTS.length
+                                ],
                             }}
                           >
                             {member.image ? (

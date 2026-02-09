@@ -25,24 +25,33 @@ interface ApiContextType {
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
 
 export function ApiProvider({ children }: { children: ReactNode }) {
-  const [loading, setLoading] = useState(false);
+  const [loadingCount, setLoadingCount] = useState(0);
 
-  const request = useCallback(async (url: string, options?: RequestInit) => {
-    setLoading(true);
-    try {
-      const res = await fetch(url, {
-        ...options,
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          ...options?.headers,
-        },
-      });
-      return res;
-    } finally {
-      setLoading(false);
-    }
+  const setLoading = useCallback((value: boolean) => {
+    setLoadingCount((prev) => (value ? prev + 1 : Math.max(0, prev - 1)));
   }, []);
+
+  const loading = loadingCount > 0;
+
+  const request = useCallback(
+    async (url: string, options?: RequestInit) => {
+      setLoading(true);
+      try {
+        const res = await fetch(url, {
+          ...options,
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            ...options?.headers,
+          },
+        });
+        return res;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading],
+  );
 
   const buildBackendUrl = useCallback((path: string) => {
     const baseUrl = getApiBaseUrl();
@@ -67,7 +76,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     },
-    [buildBackendUrl],
+    [buildBackendUrl, setLoading],
   );
 
   const fetchWithAuth = useCallback(
@@ -90,12 +99,12 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     },
-    [buildBackendUrl],
+    [buildBackendUrl, setLoading],
   );
 
   const value = useMemo(
     () => ({ loading, setLoading, request, fetchBackend, fetchWithAuth }),
-    [loading, request, fetchBackend, fetchWithAuth],
+    [loading, setLoading, request, fetchBackend, fetchWithAuth],
   );
 
   return <ApiContext.Provider value={value}>{children}</ApiContext.Provider>;
