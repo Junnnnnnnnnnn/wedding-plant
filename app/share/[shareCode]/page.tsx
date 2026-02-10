@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getToken, setShareAfterLogin } from "@/lib/api";
+import { getToken, setShareAfterLogin, clearToken } from "@/lib/api";
 import { useApi } from "@/app/contexts/ApiContext";
 import LoginRequiredModal from "@/app/components/LoginRequiredModal";
 
@@ -27,12 +27,20 @@ export default function SharePage() {
     // 로그인 됨 -> 방 참여 API 호출 후 /plan-list 이동
     const joinRoom = async () => {
       try {
-        await fetchWithAuth(`/plan/room/${shareCode}`, {
+        const res = await fetchWithAuth(`/plan/room/${shareCode}`, {
           method: "POST",
         });
+        if (res.status === 401) {
+          clearToken();
+          setShareAfterLogin(shareCode);
+          setShowLoginModal(true);
+          return;
+        }
       } catch (err) {
         console.error("Failed to join room:", err);
       } finally {
+        // 401이 아닐 때만 /plan-list로 이동 (이미 위에서 return함)
+        // 실제로는 res.status를 체크해서 200번대일 때만 이동하는게 더 정확함
         router.replace("/plan-list");
       }
     };

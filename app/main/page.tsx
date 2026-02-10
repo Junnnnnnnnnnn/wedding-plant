@@ -91,6 +91,7 @@ interface PlanUserData {
   weddingDate: string;
   budget: number;
   name: string;
+  roomId?: number | null;
   members?: PlanUserMember[];
 }
 
@@ -447,7 +448,12 @@ function MainPageContent() {
   const isSharedView =
     !!shareCode && sharedRoomUser && sharedRoomUser !== "error";
   const isSharedLoading = !!shareCode && sharedRoomUser === null;
-  const isRoomView = !!roomId?.trim();
+  const isRoomView =
+    !!roomId?.trim() ||
+    (apiPlanData &&
+      apiPlanData !== "none" &&
+      !!apiPlanData.roomId);
+
   /** roomId 모드에서 현재 로그인 유저의 해당 방 권한. READ면 플랜 추가 버튼 숨김 */
   const myRoomPermission = useMemo(() => {
     if (!isRoomView || !apiPlanData || apiPlanData === "none" || !apiPlanData.members?.length)
@@ -610,17 +616,25 @@ function MainPageContent() {
       setScheduleList(getGuestScheduleList());
       return;
     }
-    if (shareCode?.trim()) {
-      setScheduleInitialFetched(true);
-      return;
-    }
-    const roomIdParam = roomId?.trim();
+    // share 모드에서는 fetchSharedRoomWithAuth가 스케줄을 로드하므로 여기서는 skip
+    if (shareCode?.trim()) return;
+
+    // apiPlanData가 아직 로드되지 않았으면(null) 대기 — roomId 여부를 판단할 수 없으므로
+    if (apiPlanData === null) return;
+
+    const roomIdParam =
+      roomId?.trim() ||
+      (apiPlanData && apiPlanData !== "none" && apiPlanData.roomId
+        ? String(apiPlanData.roomId)
+        : null);
+
     if (roomIdParam) {
       fetchScheduleList(roomIdParam);
     } else {
       fetchScheduleList();
     }
-  }, [fetchScheduleList, shareCode, roomId]);
+  }, [fetchScheduleList, shareCode, roomId, apiPlanData]);
+
 
   // 각 계획의 체크 상태 관리
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
@@ -774,7 +788,7 @@ function MainPageContent() {
                           const [me] = list.splice(idx, 1);
                           list.unshift(me);
                         }
-                        return list.slice(0, 5);
+                        return list.slice(0, 2);
                       })().map((member, i) => (
                         <div
                           key={member.planUserId}
@@ -837,6 +851,16 @@ function MainPageContent() {
                           </div>
                         </div>
                       ))}
+                      {roomMembers.length === 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowShareModal(true)}
+                          className="relative flex-shrink-0 z-10 w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 bg-stone-50 hover:bg-stone-100 transition-colors shadow-sm"
+                          aria-label="멤버 초대하기"
+                        >
+                          <Plus className="w-5 h-5" strokeWidth={3} />
+                        </button>
+                      )}
                     </div>
                   ) : apiPlanData &&
                     apiPlanData !== "none" &&
@@ -857,7 +881,7 @@ function MainPageContent() {
                           const [owner] = list.splice(ownerIdx, 1);
                           list.unshift(owner);
                         }
-                        return list.slice(0, 5);
+                        return list.slice(0, 2);
                       })().map((member, i) => (
                         <div
                           key={member.planUserId}
@@ -914,15 +938,18 @@ function MainPageContent() {
                           </div>
                         </div>
                       ))}
-                      <button
-                        type="button"
-                        onClick={() => setShowShareModal(true)}
-                        className="w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 hover:border-pink-300 hover:text-pink-400 hover:bg-pink-50/50 transition-colors flex-shrink-0 ml-2"
-                        aria-label="멤버 초대하기"
-                        style={{ zIndex: 5 }}
-                      >
-                        <Plus className="w-5 h-5" strokeWidth={2.5} />
-                      </button>
+                      {apiPlanData &&
+                        apiPlanData !== "none" &&
+                        apiPlanData.members?.length === 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowShareModal(true)}
+                            className="relative flex-shrink-0 z-10 w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 bg-stone-50 hover:bg-stone-100 transition-colors shadow-sm"
+                            aria-label="멤버 초대하기"
+                          >
+                            <Plus className="w-5 h-5" strokeWidth={3} />
+                          </button>
+                        )}
                     </div>
                   ) : (
                     <button
@@ -1120,8 +1147,16 @@ function MainPageContent() {
                 <button
                   type="button"
                   onClick={() => {
-                    const addPlanPath = roomId
-                      ? `/add-plen?roomId=${roomId}`
+                    const roomIdValue =
+                      roomId ??
+                      (apiPlanData &&
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
+                        ? String(apiPlanData.roomId)
+                        : null);
+
+                    const addPlanPath = roomIdValue
+                      ? `/add-plen?roomId=${roomIdValue}`
                       : "/add-plen";
                     if (getToken()) {
                       router.push(addPlanPath);

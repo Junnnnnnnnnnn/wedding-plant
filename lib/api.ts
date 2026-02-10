@@ -90,3 +90,21 @@ export function getApiBaseUrl(): string {
   }
   return url.replace(/\/$/, "");
 }
+
+/** 로그인 후 복귀할 경로 저장용 */
+export const RETURN_PATH_AFTER_LOGIN_KEY = "plan_return_path_after_login";
+
+export function getReturnPathAfterLogin(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(RETURN_PATH_AFTER_LOGIN_KEY);
+}
+
+export function setReturnPathAfterLogin(path: string): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(RETURN_PATH_AFTER_LOGIN_KEY, path);
+}
+
+export function clearReturnPathAfterLogin(): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(RETURN_PATH_AFTER_LOGIN_KEY);
+}

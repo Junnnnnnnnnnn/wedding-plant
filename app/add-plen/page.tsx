@@ -125,6 +125,8 @@ function AddPlanPageContent() {
     string | null
   >(null);
   const highlightedCategoryRef = useRef<HTMLDivElement>(null);
+  /** 모달/칩으로 카테고리를 직접 선택했을 때 true → 제목 추천 칩 영역 숨김. 제목 입력 변경 시 false로 리셋되어 제목 매칭 시 다시 표시 */
+  const [categorySelectedByUser, setCategorySelectedByUser] = useState(false);
   const [userAddedCategories, setUserAddedCategories] = useState<
     Array<{ color: string; label: string }>
   >([]);
@@ -515,10 +517,12 @@ function AddPlanPageContent() {
     // 드래그 중이거나 드래그가 발생했으면 클릭 무시
     if (isDragging || hasMoved) return;
     setSelectedCategory(category);
+    setCategorySelectedByUser(true);
   };
 
   const handleRemoveCategory = () => {
     setSelectedCategory(null);
+    setCategorySelectedByUser(false);
   };
 
   const handleOpenModal = () => {
@@ -536,6 +540,7 @@ function AddPlanPageContent() {
     label: string;
   }) => {
     setSelectedCategory(category);
+    setCategorySelectedByUser(true);
     setIsModalOpen(false);
   };
 
@@ -598,6 +603,7 @@ function AddPlanPageContent() {
     };
     setUserAddedCategories((prev) => [...prev, newCategory]);
     setSelectedCategory(newCategory);
+    setCategorySelectedByUser(true);
     setIsModalOpen(false);
     setIsAddingCategory(false);
     setNewCategoryName("");
@@ -856,7 +862,10 @@ function AddPlanPageContent() {
                 id="plan-name"
                 type="text"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  setCategorySelectedByUser(false);
+                }}
                 placeholder="✨ 추가할 플랜 제목을 입력해주세요"
                 className="w-full px-5 py-4 border-2 border-[#ee2b8c22] rounded-2xl focus:border-[#ee2b8c] focus:outline-none transition-all text-[#1b0d14] placeholder:text-stone-400 bg-pink-50/50"
                 onKeyDown={(e) => {
@@ -887,11 +896,10 @@ function AddPlanPageContent() {
                 <button
                   type="button"
                   onClick={handleOpenModal}
-                  className={`flex-1 px-5 py-4 rounded-2xl border-2 font-semibold transition-all text-left ${
-                    selectedCategory
+                  className={`flex-1 px-5 py-4 rounded-2xl border-2 font-semibold transition-all text-left ${selectedCategory
                       ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300 text-stone-800 shadow-sm"
                       : "border-amber-200 text-stone-400 bg-amber-50/30 hover:border-amber-300"
-                  }`}
+                    }`}
                 >
                   {selectedCategory
                     ? `✨ ${selectedCategory.label}`
@@ -906,38 +914,40 @@ function AddPlanPageContent() {
                   <Plus className="w-6 h-6 text-amber-600" />
                 </button>
               </div>
-              {/* 검색 결과 - 제목 입력 시 추천 카테고리 */}
-              {inputValue.trim() && (
-                <div
-                  ref={scrollRef}
-                  className="mt-3 w-full overflow-x-auto overflow-y-hidden scrollbar-hide flex gap-3 flex-nowrap pr-2 select-none cursor-grab active:cursor-grabbing"
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUpOrLeave}
-                  onMouseLeave={handleMouseUpOrLeave}
-                >
-                  {displayItems.map((category) => (
-                    <div
-                      key={category.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleCategoryClick(category)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          handleCategoryClick(category);
-                        }
-                      }}
-                      className="h-10 px-4 flex-shrink-0 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: category.color }}
-                    >
-                      <span className="text-sm font-semibold text-stone-700 whitespace-nowrap">
-                        {category.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* 검색 결과 - 제목 입력 시 추천 카테고리 (모달/칩으로 직접 선택했을 때는 숨김, 제목 수정 시 다시 표시) */}
+              {inputValue.trim() &&
+                displayItems.length > 0 &&
+                !categorySelectedByUser && (
+                  <div
+                    ref={scrollRef}
+                    className="mt-3 w-full overflow-x-auto overflow-y-hidden scrollbar-hide flex gap-3 flex-nowrap pr-2 select-none cursor-grab active:cursor-grabbing"
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUpOrLeave}
+                    onMouseLeave={handleMouseUpOrLeave}
+                  >
+                    {displayItems.map((category) => (
+                      <div
+                        key={category.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleCategoryClick(category)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleCategoryClick(category);
+                          }
+                        }}
+                        className="h-10 px-4 flex-shrink-0 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                        style={{ backgroundColor: category.color }}
+                      >
+                        <span className="text-sm font-semibold text-stone-700 whitespace-nowrap">
+                          {category.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
             </div>
             {/* 결제 유형 */}
             <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-blue-200">
@@ -957,11 +967,10 @@ function AddPlanPageContent() {
                     key={type}
                     type="button"
                     onClick={() => setPaymentType(type)}
-                    className={`py-4 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 ${
-                      paymentType === type
+                    className={`py-4 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 ${paymentType === type
                         ? "bg-[#ee2b8c] text-white shadow-lg scale-105"
                         : "bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-blue-200 text-stone-600 hover:border-blue-300"
-                    }`}
+                      }`}
                   >
                     {type === "현금" && <Wallet className="w-6 h-6" />}
                     {type === "카드" && <CreditCard className="w-6 h-6" />}
@@ -1020,11 +1029,10 @@ function AddPlanPageContent() {
               </label>
               <div className="flex items-center gap-3">
                 <div
-                  className={`flex-1 min-w-0 px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate ${
-                    isDateUndecided
+                  className={`flex-1 min-w-0 px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate ${isDateUndecided
                       ? "bg-stone-100 border-stone-200 text-stone-400 cursor-default"
                       : "text-stone-900 bg-purple-50/20 border-stone-200 cursor-pointer hover:border-purple-300 focus:border-purple-300 focus:outline-none"
-                  }`}
+                    }`}
                   onClick={() => {
                     if (!isDateUndecided) {
                       setIsDatePickerOpen(true);
@@ -1051,11 +1059,10 @@ function AddPlanPageContent() {
                 <button
                   type="button"
                   onClick={() => setIsDateUndecided(true)}
-                  className={`px-5 py-4 rounded-2xl font-bold transition-all flex-shrink-0 ${
-                    isDateUndecided
+                  className={`px-5 py-4 rounded-2xl font-bold transition-all flex-shrink-0 ${isDateUndecided
                       ? "bg-stone-300 text-stone-600 border-2 border-stone-300"
                       : "bg-gradient-to-br from-gray-100 to-gray-200 text-stone-600 border-2 border-stone-200 hover:from-gray-200 hover:to-gray-300"
-                  }`}
+                    }`}
                   aria-label="날짜 미정"
                 >
                   미정
@@ -1121,11 +1128,10 @@ function AddPlanPageContent() {
                   type="button"
                   onClick={handleSearchLocation}
                   disabled={!location.trim()}
-                  className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${
-                    location.trim()
+                  className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${location.trim()
                       ? "bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700 shadow-md hover:shadow-lg cursor-pointer"
                       : "bg-stone-300 text-stone-500 cursor-not-allowed"
-                  }`}
+                    }`}
                 >
                   <Search className="w-5 h-5" />
                   검색
@@ -1471,15 +1477,14 @@ function AddPlanPageContent() {
                           selectedCategory?.label === category.label
                             ? { backgroundColor: category.color }
                             : {
-                                backgroundColor: `${category.color}20`,
-                                borderColor: category.color,
-                              }
+                              backgroundColor: `${category.color}20`,
+                              borderColor: category.color,
+                            }
                         }
-                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${
-                          selectedCategory?.label === category.label
+                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${selectedCategory?.label === category.label
                             ? "text-[#1b0d14] shadow-lg scale-[1.02]"
                             : "text-[#1b0d14] hover:opacity-90"
-                        } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
+                          } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
                       >
                         <span className="font-bold text-lg flex items-center gap-2">
                           {selectedCategory?.label === category.label
@@ -1567,12 +1572,12 @@ function AddPlanPageContent() {
             className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
             onClick={() => {
               setShowPlanSavedModal(false);
-              router.push("/main");
+              router.push(roomId ? `/main?roomId=${roomId}` : "/main");
             }}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
                 setShowPlanSavedModal(false);
-                router.push("/main");
+                router.push(roomId ? `/main?roomId=${roomId}` : "/main");
               }
             }}
           >
@@ -1594,7 +1599,7 @@ function AddPlanPageContent() {
                 type="button"
                 onClick={() => {
                   setShowPlanSavedModal(false);
-                  router.push("/main");
+                  router.push(roomId ? `/main?roomId=${roomId}` : "/main");
                 }}
                 className="mt-4 w-full rounded-xl bg-[#ee2b8c] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#d4237b]"
               >

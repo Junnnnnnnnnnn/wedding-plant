@@ -138,6 +138,7 @@ function BudgetDetailsPage() {
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
   const scheduleFetchingRef = useRef(false);
   const isFirstFilterRun = useRef(true);
 
@@ -175,9 +176,10 @@ function BudgetDetailsPage() {
     setScheduleLoading(true);
     try {
       const params = buildScheduleParams(1, activeTab, selectedCategory);
-      const res = await fetchWithAuth(
-        `/plan/schedule/list?${params.toString()}`,
-      );
+      const url = roomId
+        ? `/plan/schedule/room/${encodeURIComponent(roomId)}/list?${params.toString()}`
+        : `/plan/schedule/list?${params.toString()}`;
+      const res = await fetchWithAuth(url);
       const json = (await res.json()) as {
         result?: boolean;
         data?: { list?: ScheduleListItem[] } & Record<string, unknown>;
@@ -192,7 +194,7 @@ function BudgetDetailsPage() {
       setScheduleLoading(false);
       scheduleFetchingRef.current = false;
     }
-  }, [fetchWithAuth, buildScheduleParams, activeTab, selectedCategory]);
+  }, [fetchWithAuth, buildScheduleParams, activeTab, selectedCategory, roomId]);
 
   const loadData = useCallback(async () => {
     if (!getToken()) {
@@ -245,10 +247,27 @@ function BudgetDetailsPage() {
     setError(null);
     try {
       const scheduleParams = buildScheduleParams(1, "전체", null);
+
+      // 먼저 유저 정보를 가져와서 roomId가 있는지 확인
+      const userRes = await fetchWithAuth("/plan/user");
+      const userJson = (await userRes.json().catch(() => null)) as {
+        result?: boolean;
+        data?: { roomId?: number | null };
+      } | null;
+
+      const currentRoomId = userJson?.result && userJson.data?.roomId
+        ? String(userJson.data.roomId)
+        : null;
+      setRoomId(currentRoomId);
+
+      const scheduleUrl = currentRoomId
+        ? `/plan/schedule/room/${encodeURIComponent(currentRoomId)}/list?${scheduleParams.toString()}`
+        : `/plan/schedule/list?${scheduleParams.toString()}`;
+
       const [detailRes, chartRes, scheduleRes] = await Promise.all([
         fetchWithAuth("/plan/user/amount/detail"),
         fetchWithAuth("/plan/user/amount/category-chart"),
-        fetchWithAuth(`/plan/schedule/list?${scheduleParams.toString()}`),
+        fetchWithAuth(scheduleUrl),
       ]);
       const detailJson = (await detailRes.json().catch(() => null)) as {
         result?: boolean;
@@ -466,8 +485,8 @@ function BudgetDetailsPage() {
                           key={tab}
                           onClick={() => setActiveTab(tab)}
                           className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${activeTab === tab
-                              ? "text-[#ee2b8c] border-[#ee2b8c]"
-                              : "text-gray-400 border-transparent hover:text-gray-600"
+                            ? "text-[#ee2b8c] border-[#ee2b8c]"
+                            : "text-gray-400 border-transparent hover:text-gray-600"
                             }`}
                         >
                           {tab}

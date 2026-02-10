@@ -13,8 +13,10 @@ import {
 import { useRouter } from "next/navigation";
 import { Plan } from "@/types";
 import { useApi } from "../contexts/ApiContext";
-import { getToken } from "@/lib/api";
+import { getToken, clearToken } from "@/lib/api";
 import BottomTabBar from "../components/BottomTabBar";
+import LoginRequiredModal from "../components/LoginRequiredModal";
+import NameInputModal from "../components/NameInputModal";
 
 interface PlanListPageProps {
   onSelectPlan?: (id: number) => void;
@@ -33,6 +35,8 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const { fetchWithAuth } = useApi();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
 
   const fetchPlans = useCallback(async () => {
     if (!getToken()) {
@@ -41,6 +45,12 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     }
     try {
       const res = await fetchWithAuth("/plan/room/list");
+      if (res.status === 401) {
+        clearToken();
+        setShowLoginModal(true);
+        setLoading(false);
+        return;
+      }
       const json = await res.json();
       if (json.result && json.data?.list) {
         setPlans(json.data.list);
@@ -53,6 +63,38 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   }, [fetchWithAuth]);
 
   useEffect(() => {
+    // Check user name first
+    const checkUserName = async () => {
+      if (!getToken()) {
+        fetchPlans();
+        return;
+      }
+      try {
+        const res = await fetchWithAuth("/plan/user");
+        const json = (await res.json()) as {
+          result?: boolean;
+          data?: { name?: string | null };
+        };
+        if (
+          json.result === true &&
+          json.data &&
+          (!json.data.name || !json.data.name.trim())
+        ) {
+          setLoading(false);
+          setShowNameModal(true);
+          return; // don't fetch plans yet
+        }
+      } catch {
+        // ignore, proceed with plan fetch
+      }
+      fetchPlans();
+    };
+    checkUserName();
+  }, [fetchPlans, fetchWithAuth]);
+
+  const handleNameComplete = useCallback(() => {
+    setShowNameModal(false);
+    setLoading(true);
     fetchPlans();
   }, [fetchPlans]);
 
@@ -217,6 +259,13 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
         </div>
 
         <BottomTabBar />
+
+        <LoginRequiredModal
+          show={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          title="세션이 만료되었습니다. 다시 로그인해 주세요."
+        />
+        <NameInputModal show={showNameModal} onComplete={handleNameComplete} />
       </div>
     </div>
   );

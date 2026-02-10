@@ -3,7 +3,11 @@
 import { useRouter, usePathname } from "next/navigation";
 import { useCallback } from "react";
 import { useApi } from "../contexts/ApiContext";
-import { getToken, setShareAfterLogin } from "@/lib/api";
+import {
+  getToken,
+  setShareAfterLogin,
+  setReturnPathAfterLogin,
+} from "@/lib/api";
 
 function isPlanDataComplete(data: {
   weddingDate?: string | null;
@@ -37,9 +41,15 @@ export function useKakaoAuth() {
         : null;
       if (share?.trim()) setShareAfterLogin(share.trim());
 
+      // 현재 경로 저장 (메인/랜딩 제외하고 목록 등 특정 페이지에서 온 경우)
+      if (pathname !== "/" && pathname !== "/main") {
+        setReturnPathAfterLogin(pathname);
+      }
+
       // /main 또는 / 에서 로그인 시 콜백에서 /main으로 보냄 → 플랜 데이터 있으면 /main 유지, 없으면 /setting으로
       const goToMainAfterLogin = pathname === "/main" || pathname === "/";
       const url = goToMainAfterLogin ? "/api/auth/kakao?from=main" : "/api/auth/kakao";
+      setLoading(false);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           window.location.href = url;
