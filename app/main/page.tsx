@@ -21,7 +21,7 @@ import {
   useRef,
   useCallback,
 } from "react";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion, useScroll, useTransform, AnimatePresence } from "motion/react";
 import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
@@ -503,6 +503,7 @@ function MainPageContent() {
       ? sharedRoomUser !== null
       : scheduleInitialFetched;
 
+
   // 예산 관리 변수 (지출 예정 = GET /plan/user/total-amount)
   const initialBudget = Number(displayData.budget) || 1000; // 초기 예산 (만원)
   const guestUsedBudget = useMemo(() => {
@@ -636,8 +637,20 @@ function MainPageContent() {
     }
   }, [fetchScheduleList, shareCode, roomId, apiPlanData]);
 
-  // 각 계획의 체크 상태 관리
+  // 각 계획의 체크 상태 관리 (UI 즉시 반영용)
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  // 목록에서 실제로 사라지는 상태 (애니메이션 시작 지점용)
+  const [removedItems, setRemovedItems] = useState<Set<number>>(new Set());
+
+  // 체크되지 않은(미완료) 항목들만 필터링하여 표시
+  const visibleScheduleList = useMemo(() => {
+    return effectiveScheduleList.filter((plan) => {
+      // 서버 데이터가 COMPLETED 이거나, 아직 removedItems로 확정되지 않은 것만 표시
+      // (checkedItems는 UI 표현만 담당하고, removedItems가 실제로 DOM에서 제거를 트리거함)
+      const isActuallyRemoved = removedItems.has(plan.id) || plan.status === "COMPLETED";
+      return !isActuallyRemoved;
+    });
+  }, [effectiveScheduleList, removedItems]);
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [loginRequiredTitle, setLoginRequiredTitle] = useState<
     string | undefined
@@ -704,6 +717,20 @@ function MainPageContent() {
         else next.add(id);
         return next;
       });
+
+      // 체크 시: 잠깐 대기 후 removedItems에 추가하여 날아가기 시작
+      if (!isCurrentlyChecked) {
+        setTimeout(() => {
+          setRemovedItems((prev) => new Set(prev).add(id));
+        }, 300);
+      } else {
+        // 해제 시 (다시 나타나야 할 경우를 대비해 초기화 - 현재 기획상 사라진 뒤 해제는 없지만 안전장치)
+        setRemovedItems((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
 
       try {
         const res = await fetchWithAuth(`/plan/schedule/status/${id}`, {
@@ -838,23 +865,23 @@ function MainPageContent() {
                             String(member.planUserId ?? "")
                               .trim()
                               .toLowerCase() ===
-                              String(sharedRoomUser.id)
-                                .trim()
-                                .toLowerCase()) && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                              aria-hidden
-                            >
-                              <Crown
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
+                            String(sharedRoomUser.id)
+                              .trim()
+                              .toLowerCase()) && (
+                              <span
+                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                                aria-hidden
+                              >
+                                <Crown
+                                  className="w-2.5 h-2.5"
+                                  strokeWidth={2.5}
+                                />
+                              </span>
+                            )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                              "OWNER" && (
+                            "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -928,20 +955,20 @@ function MainPageContent() {
                         >
                           {String(member.permission ?? "").toUpperCase() ===
                             "OWNER" && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                              aria-hidden
-                            >
-                              <Crown
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
+                              <span
+                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                                aria-hidden
+                              >
+                                <Crown
+                                  className="w-2.5 h-2.5"
+                                  strokeWidth={2.5}
+                                />
+                              </span>
+                            )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                              "OWNER" && (
+                            "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1168,11 +1195,9 @@ function MainPageContent() {
                   />
                 ) : (
                   <span className="text-lg text-gray-500">
-                    {effectiveScheduleTotal > 0
-                      ? `${effectiveScheduleTotal}개의 플랜이 있어요`
-                      : effectiveScheduleList.length > 0
-                        ? `${effectiveScheduleList.length}개의 플랜이 있어요`
-                        : "플랜을 추가해볼까요?"}
+                    {visibleScheduleList.length > 0
+                      ? `${visibleScheduleList.length}개의 플랜이 있어요`
+                      : "플랜을 추가해볼까요?"}
                   </span>
                 )}
               </div>
@@ -1180,69 +1205,69 @@ function MainPageContent() {
                 isRoomView &&
                 String(myRoomPermission ?? "").toUpperCase() === "READ"
               ) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const roomIdValue =
-                      roomId ??
-                      (apiPlanData &&
-                      apiPlanData !== "none" &&
-                      apiPlanData.roomId
-                        ? String(apiPlanData.roomId)
-                        : null);
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const roomIdValue =
+                        roomId ??
+                        (apiPlanData &&
+                          apiPlanData !== "none" &&
+                          apiPlanData.roomId
+                          ? String(apiPlanData.roomId)
+                          : null);
 
-                    const addPlanPath = roomIdValue
-                      ? `/add-plen?roomId=${roomIdValue}`
-                      : "/add-plen";
-                    if (getToken()) {
+                      const addPlanPath = roomIdValue
+                        ? `/add-plen?roomId=${roomIdValue}`
+                        : "/add-plen";
+                      if (getToken()) {
+                        router.push(addPlanPath);
+                        return;
+                      }
+                      if (isSharedView) {
+                        setLoginRequiredTitle(
+                          "플랜을 추가하려면 로그인해 주세요",
+                        );
+                        setShowLoginRequiredModal(true);
+                        return;
+                      }
+
+                      // Guest: allow up to 3 plans saved in sessionStorage
+                      const guestCount = effectiveScheduleList.length;
+                      if (guestCount === 0) {
+                        // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
+                        setShowGuestPlanLimitModal(true);
+                        return;
+                      }
+                      if (guestCount >= 3) {
+                        setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
+                        setShowLoginRequiredModal(true);
+                        return;
+                      }
                       router.push(addPlanPath);
-                      return;
-                    }
-                    if (isSharedView) {
-                      setLoginRequiredTitle(
-                        "플랜을 추가하려면 로그인해 주세요",
-                      );
-                      setShowLoginRequiredModal(true);
-                      return;
-                    }
-
-                    // Guest: allow up to 3 plans saved in sessionStorage
-                    const guestCount = effectiveScheduleList.length;
-                    if (guestCount === 0) {
-                      // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
-                      setShowGuestPlanLimitModal(true);
-                      return;
-                    }
-                    if (guestCount >= 3) {
-                      setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
-                      setShowLoginRequiredModal(true);
-                      return;
-                    }
-                    router.push(addPlanPath);
-                  }}
-                  className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-bold text-lg transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
-                  style={{
-                    backgroundColor:
-                      !getToken() &&
-                      !isSharedView &&
-                      effectiveScheduleList.length >= 3
-                        ? "#cbd5e1"
-                        : "#ee2b8c",
-                    boxShadow:
-                      !getToken() &&
-                      !isSharedView &&
-                      effectiveScheduleList.length >= 3
-                        ? "0 4px 12px rgba(148, 163, 184, 0.35)"
-                        : "0 4px 12px rgba(238, 43, 140, 0.3)",
-                  }}
-                >
-                  추가
-                  <CirclePlus
-                    className="h-5 w-5 text-white"
-                    strokeWidth={2.5}
-                  />
-                </button>
-              )}
+                    }}
+                    className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-bold text-lg transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
+                    style={{
+                      backgroundColor:
+                        !getToken() &&
+                          !isSharedView &&
+                          effectiveScheduleList.length >= 3
+                          ? "#cbd5e1"
+                          : "#ee2b8c",
+                      boxShadow:
+                        !getToken() &&
+                          !isSharedView &&
+                          effectiveScheduleList.length >= 3
+                          ? "0 4px 12px rgba(148, 163, 184, 0.35)"
+                          : "0 4px 12px rgba(238, 43, 140, 0.3)",
+                    }}
+                  >
+                    추가
+                    <CirclePlus
+                      className="h-5 w-5 text-white"
+                      strokeWidth={2.5}
+                    />
+                  </button>
+                )}
             </div>
             <div
               className={`flex-1 w-full pb-24 min-h-0 scrollbar-hide ${allowPlanListScroll ? "overflow-y-auto" : "overflow-hidden touch-pan-y"}`}
@@ -1255,7 +1280,7 @@ function MainPageContent() {
             >
               <ul className="mt-4 w-full flex flex-col gap-3 min-h-[200px] relative">
                 {(scheduleLoading || isSharedLoading) &&
-                effectiveScheduleList.length === 0 ? (
+                  effectiveScheduleList.length === 0 ? (
                   ["a", "b", "c", "d", "e"].map((id) => (
                     <li
                       key={`skeleton-plan-${id}`}
@@ -1287,88 +1312,115 @@ function MainPageContent() {
                     <p className="text-4xl font-semibold text-stone-400">텅~</p>
                   </li>
                 ) : (
-                  <>
-                    {effectiveScheduleList.map((plan) => {
-                      const isChecked =
-                        checkedItems.has(plan.id) ||
-                        plan.status === "COMPLETED";
-                      const amount = plan.amount ?? 0;
-                      const categoryColor = getCategoryColor(plan.categoryName);
-                      const detailHref = `/schedule-detail?id=${plan.id}`;
-                      const dateLabel = plan.startDate?.trim()
-                        ? (() => {
+                  <AnimatePresence>
+                    {visibleScheduleList.length === 0 ? (
+                      <motion.li
+                        key="all-completed-message"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-1 flex-col items-center justify-center py-16"
+                      >
+                        <p className="text-xl font-semibold text-stone-400">
+                          모든 플랜을 완료했어요! 🎉
+                        </p>
+                      </motion.li>
+                    ) : (
+                      visibleScheduleList.map((plan) => {
+                        const isChecked =
+                          checkedItems.has(plan.id) ||
+                          plan.status === "COMPLETED";
+                        const amount = plan.amount ?? 0;
+                        const categoryColor = getCategoryColor(plan.categoryName);
+                        const detailHref = `/schedule-detail?id=${plan.id}`;
+                        const dateLabel = plan.startDate?.trim()
+                          ? (() => {
                             const { dateText, weekday } = formatDate(
                               plan.startDate as string,
                             );
                             return `${dateText} (${weekday})`;
                           })()
-                        : "미정";
-                      return (
-                        <li key={plan.id}>
-                          <Link
-                            href={detailHref}
-                            className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
-                            aria-label={`플랜 상세 보기: ${plan.title}`}
+                          : "미정";
+                        return (
+                          <motion.li
+                            key={plan.id}
+                            layout
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{
+                              opacity: [1, 1, 0],
+                              y: [0, -20, -20],
+                              x: [0, 0, 500],
+                              scale: [1, 1.05, 1.05],
+                              transition: {
+                                duration: 0.6,
+                                times: [0, 0.4, 1],
+                                ease: "easeInOut",
+                              },
+                            }}
                           >
-                            <div
-                              className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                              style={{ backgroundColor: `${categoryColor}` }}
+                            <Link
+                              href={detailHref}
+                              className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
+                              aria-label={`플랜 상세 보기: ${plan.title}`}
                             >
-                              <button
-                                type="button"
-                                id={String(plan.id)}
-                                disabled={togglingIds.has(plan.id)}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleToggleCheck(plan.id);
-                                }}
-                                className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
-                                  isChecked
+                              <div
+                                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+                                style={{ backgroundColor: `${categoryColor}` }}
+                              >
+                                <button
+                                  type="button"
+                                  id={String(plan.id)}
+                                  disabled={togglingIds.has(plan.id)}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleToggleCheck(plan.id);
+                                  }}
+                                  className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
                                     ? "bg-[#ee2b8c] border-[#ee2b8c]"
                                     : "bg-white/80 border-[#ee2b8c]"
-                                }`}
-                              >
-                                {isChecked && (
-                                  <Check
-                                    className="h-3 w-3 text-white"
-                                    strokeWidth={3}
-                                  />
-                                )}
-                              </button>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4
-                                className={`text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
-                              >
-                                {plan.title}
-                              </h4>
-                              <div className="text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
-                                <p className="truncate">{plan.categoryName}</p>
-                                <p className="truncate">{dateLabel}</p>
+                                    }`}
+                                >
+                                  {isChecked && (
+                                    <Check
+                                      className="h-3 w-3 text-white"
+                                      strokeWidth={3}
+                                    />
+                                  )}
+                                </button>
                               </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
-                                {amount > 0
-                                  ? `${amount.toLocaleString()}만 원`
-                                  : "미정"}
+                              <div className="flex-1 min-w-0">
+                                <h4
+                                  className={`text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
+                                >
+                                  {plan.title}
+                                </h4>
+                                <div className="text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
+                                  <p className="truncate">{plan.categoryName}</p>
+                                  <p className="truncate">{dateLabel}</p>
+                                </div>
                               </div>
-                              <span
-                                className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
-                                  isChecked
+                              <div className="text-right shrink-0">
+                                <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
+                                  {amount > 0
+                                    ? `${amount.toLocaleString()}만 원`
+                                    : "미정"}
+                                </div>
+                                <span
+                                  className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
                                     ? "bg-[#ee2b8c] text-white"
                                     : "bg-gray-100 text-gray-500"
-                                }`}
-                              >
-                                {isChecked ? "완료" : "예정"}
-                              </span>
-                            </div>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </>
+                                    }`}
+                                >
+                                  {isChecked ? "완료" : "예정"}
+                                </span>
+                              </div>
+                            </Link>
+                          </motion.li>
+                        );
+                      })
+                    )}
+                  </AnimatePresence>
                 )}
               </ul>
               {tokenChecked &&
