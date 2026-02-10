@@ -21,6 +21,7 @@ import {
   useRef,
   useCallback,
 } from "react";
+import { motion, useScroll, useTransform } from "motion/react";
 import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
@@ -223,7 +224,11 @@ function MainPageContent() {
         };
         const memberJson = (await memberRes.json()) as {
           result?: boolean;
-          data?: { total?: number; list?: RoomMember[]; members?: RoomMember[] };
+          data?: {
+            total?: number;
+            list?: RoomMember[];
+            members?: RoomMember[];
+          };
         };
         if (userJson.result === true && userJson.data) {
           setSharedRoomUser(userJson.data);
@@ -234,10 +239,7 @@ function MainPageContent() {
           setSharedRoomScheduleList(scheduleJson.data.list);
         }
         if (memberJson.result === true && memberJson.data) {
-          const list =
-            memberJson.data.list ??
-            memberJson.data.members ??
-            [];
+          const list = memberJson.data.list ?? memberJson.data.members ?? [];
           setRoomMembers(Array.isArray(list) ? list : []);
         }
       } catch {
@@ -249,12 +251,8 @@ function MainPageContent() {
     [fetchWithAuth],
   );
 
-
   const fetchPlanUser = useCallback(
-    async (
-      onApiError: (status?: number) => void,
-      roomIdParam?: string,
-    ) => {
+    async (onApiError: (status?: number) => void, roomIdParam?: string) => {
       if (!getToken()) {
         setApiPlanData("none");
         return;
@@ -284,10 +282,7 @@ function MainPageContent() {
   );
 
   const fetchTotalAmount = useCallback(
-    async (
-      onApiError: (status?: number) => void,
-      roomIdParam?: string,
-    ) => {
+    async (onApiError: (status?: number) => void, roomIdParam?: string) => {
       if (!getToken()) {
         setTotalAmountManwon(0);
         return;
@@ -391,7 +386,8 @@ function MainPageContent() {
       const hasWeddingDate = !!apiPlanData.weddingDate?.trim();
       const hasName = !!apiPlanData.name?.trim();
       // budget은 0일 수도 있으므로 null/undefined만 체크하거나 0 이상 조건 (여기서는 null체크)
-      const hasBudget = apiPlanData.budget !== null && apiPlanData.budget !== undefined;
+      const hasBudget =
+        apiPlanData.budget !== null && apiPlanData.budget !== undefined;
       return !hasWeddingDate || !hasName || !hasBudget;
     };
 
@@ -409,7 +405,6 @@ function MainPageContent() {
       setIsNoPlanBlur(false);
     }
   }, [tokenChecked, shareCode, roomId, apiPlanData]);
-
 
   // 공유 링크로 접속한 비로그인 유저에게 로그인 모달 표시
   useEffect(() => {
@@ -450,18 +445,26 @@ function MainPageContent() {
   const isSharedLoading = !!shareCode && sharedRoomUser === null;
   const isRoomView =
     !!roomId?.trim() ||
-    (apiPlanData &&
-      apiPlanData !== "none" &&
-      !!apiPlanData.roomId);
+    (apiPlanData && apiPlanData !== "none" && !!apiPlanData.roomId);
 
   /** roomId 모드에서 현재 로그인 유저의 해당 방 권한. READ면 플랜 추가 버튼 숨김 */
   const myRoomPermission = useMemo(() => {
-    if (!isRoomView || !apiPlanData || apiPlanData === "none" || !apiPlanData.members?.length)
+    if (
+      !isRoomView ||
+      !apiPlanData ||
+      apiPlanData === "none" ||
+      !apiPlanData.members?.length
+    )
       return undefined;
-    const myId = String(getPlanUserIdFromToken() ?? "").trim().toLowerCase();
+    const myId = String(getPlanUserIdFromToken() ?? "")
+      .trim()
+      .toLowerCase();
     if (!myId) return undefined;
     const me = apiPlanData.members.find(
-      (m) => String(m.planUserId ?? "").trim().toLowerCase() === myId,
+      (m) =>
+        String(m.planUserId ?? "")
+          .trim()
+          .toLowerCase() === myId,
     );
     return me?.permission ?? undefined;
   }, [isRoomView, apiPlanData]);
@@ -579,9 +582,7 @@ function MainPageContent() {
           page: "1",
           count: String(SCHEDULE_FETCH_COUNT),
           sort: SCHEDULE_SORT,
-          sortColumn: roomIdParam?.trim()
-            ? "startDate"
-            : SCHEDULE_SORT_COLUMN,
+          sortColumn: roomIdParam?.trim() ? "startDate" : SCHEDULE_SORT_COLUMN,
         });
         const url = roomIdParam?.trim()
           ? `/plan/schedule/room/${encodeURIComponent(roomIdParam.trim())}/list?${params.toString()}`
@@ -635,7 +636,6 @@ function MainPageContent() {
     }
   }, [fetchScheduleList, shareCode, roomId, apiPlanData]);
 
-
   // 각 계획의 체크 상태 관리
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
@@ -645,7 +645,36 @@ function MainPageContent() {
   const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const mainScrollRef = useRef<HTMLElement>(null);
+  const firstSectionRef = useRef<HTMLDivElement>(null);
+  const [allowPlanListScroll, setAllowPlanListScroll] = useState(false);
   const scrollDirection = useScrollDirection(mainScrollRef);
+
+  const { scrollY } = useScroll({ container: mainScrollRef });
+
+  // 메인 스크롤이 상단 섹션(헤더+예산)을 완전히 올린 뒤에만 플랜 리스트 스크롤 허용
+  useEffect(() => {
+    const main = mainScrollRef.current;
+    if (!main) return;
+    const check = () => {
+      const first = firstSectionRef.current;
+      const threshold = first ? first.offsetHeight : 280;
+      const scrolledEnough = main.scrollTop >= Math.max(0, threshold - 10);
+      setAllowPlanListScroll((prev) => {
+        if (scrolledEnough && !prev) return true;
+        if (!scrolledEnough && prev) return false;
+        return prev;
+      });
+    };
+    main.addEventListener("scroll", check, { passive: true });
+    const raf = requestAnimationFrame(check);
+    return () => {
+      main.removeEventListener("scroll", check);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+  const headerOpacity = useTransform(scrollY, [50, 200], [1, 0.2]);
+  const headerScale = useTransform(scrollY, [0, 200], [1, 0.9]);
+
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const togglingIdsRef = useRef<Set<number>>(new Set());
   const checkedItemsRef = useRef<Set<number>>(checkedItems);
@@ -718,9 +747,9 @@ function MainPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfbfc]">
+    <div className="h-[100dvh] bg-[#fcfbfc] overflow-hidden">
       <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
-      <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
+      <div className="h-full max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
         <KakaoLoginAlert
           show={searchParams.get("kakao_login") === "1"}
           onSuccessFromMain={() => {
@@ -731,14 +760,23 @@ function MainPageContent() {
         />
         <main
           ref={mainScrollRef}
-          className={`flex flex-1 flex-col items-center overflow-y-auto w-full px-4 sm:px-6 transition-all duration-500 ${isNoPlanBlur ? "blur-xl scale-[0.98] pointer-events-none select-none opacity-60" : ""}`}
+          className={`flex flex-1 flex-col items-center overflow-y-auto w-full px-4 sm:px-6 transition-all duration-500 snap-y snap-mandatory scroll-smooth ${isNoPlanBlur ? "blur-xl scale-[0.98] pointer-events-none select-none opacity-60" : ""}`}
         >
           {shareCode && sharedRoomUser === "error" && (
             <div className="w-full mt-4 px-4 py-3 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
               공유 링크가 유효하지 않거나 만료되었습니다.
             </div>
           )}
-          <div className="w-full pt-8">
+          <motion.div
+            ref={firstSectionRef}
+            className="w-full shrink-0 pt-8 pb-10 origin-top snap-start flex flex-col justify-start"
+            style={{
+              height: "340px",
+              opacity: headerOpacity,
+              scale: headerScale,
+              transformPerspective: 1000,
+            }}
+          >
             {/* 상단 영역: 1행=이름·초대(이름 우측), 2행=결혼식 날짜(좌측)·D-day(날짜 오른쪽), 오른쪽=프로필 */}
             <div className="w-full flex items-start justify-between gap-4">
               {/* 왼쪽: [이름(좌)·초대(우)] + [결혼식 날짜(좌)·D-day(우)] */}
@@ -800,23 +838,23 @@ function MainPageContent() {
                             String(member.planUserId ?? "")
                               .trim()
                               .toLowerCase() ===
-                            String(sharedRoomUser.id)
-                              .trim()
-                              .toLowerCase()) && (
-                              <span
-                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                                aria-hidden
-                              >
-                                <Crown
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
+                              String(sharedRoomUser.id)
+                                .trim()
+                                .toLowerCase()) && (
+                            <span
+                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                              aria-hidden
+                            >
+                              <Crown
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
+                            </span>
+                          )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                            "OWNER" && (
+                              "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -890,20 +928,20 @@ function MainPageContent() {
                         >
                           {String(member.permission ?? "").toUpperCase() ===
                             "OWNER" && (
-                              <span
-                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                                aria-hidden
-                              >
-                                <Crown
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
+                            <span
+                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                              aria-hidden
+                            >
+                              <Crown
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
+                            </span>
+                          )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                            "OWNER" && (
+                              "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1013,10 +1051,7 @@ function MainPageContent() {
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-600 text-white cursor-pointer hover:bg-stone-700 transition-colors"
                   aria-label="나가기"
                 >
-                  <LogOut
-                    className="h-6 w-6"
-                    strokeWidth={2}
-                  />
+                  <LogOut className="h-6 w-6" strokeWidth={2} />
                 </button>
               )}
             </div>
@@ -1118,13 +1153,13 @@ function MainPageContent() {
                 </div>
               )}
             </div>
-          </div>
-          <div className="w-full mt-8 pb-24">
+          </motion.div>
+          <motion.div className="w-full min-h-[100dvh] h-[100dvh] pt-4 snap-start bg-transparent relative flex flex-col shrink-0">
             {/* 하단 영역 */}
             <div className="flex justify-between">
               <div className="flex flex-col items-start justify-start">
                 <span className="text-lg font-bold text-[#1b0d14]">
-                  플랜 가이드
+                  플랜 리스트
                 </span>
                 {isPlanLoading ? (
                   <span
@@ -1141,15 +1176,18 @@ function MainPageContent() {
                   </span>
                 )}
               </div>
-              {!(isRoomView && String(myRoomPermission ?? "").toUpperCase() === "READ") && (
+              {!(
+                isRoomView &&
+                String(myRoomPermission ?? "").toUpperCase() === "READ"
+              ) && (
                 <button
                   type="button"
                   onClick={() => {
                     const roomIdValue =
                       roomId ??
                       (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
+                      apiPlanData !== "none" &&
+                      apiPlanData.roomId
                         ? String(apiPlanData.roomId)
                         : null);
 
@@ -1161,7 +1199,9 @@ function MainPageContent() {
                       return;
                     }
                     if (isSharedView) {
-                      setLoginRequiredTitle("플랜을 추가하려면 로그인해 주세요");
+                      setLoginRequiredTitle(
+                        "플랜을 추가하려면 로그인해 주세요",
+                      );
                       setShowLoginRequiredModal(true);
                       return;
                     }
@@ -1184,153 +1224,169 @@ function MainPageContent() {
                   style={{
                     backgroundColor:
                       !getToken() &&
-                        !isSharedView &&
-                        effectiveScheduleList.length >= 3
+                      !isSharedView &&
+                      effectiveScheduleList.length >= 3
                         ? "#cbd5e1"
                         : "#ee2b8c",
                     boxShadow:
                       !getToken() &&
-                        !isSharedView &&
-                        effectiveScheduleList.length >= 3
+                      !isSharedView &&
+                      effectiveScheduleList.length >= 3
                         ? "0 4px 12px rgba(148, 163, 184, 0.35)"
                         : "0 4px 12px rgba(238, 43, 140, 0.3)",
                   }}
                 >
-                  플랜 추가
-                  <CirclePlus className="h-5 w-5 text-white" strokeWidth={2.5} />
+                  추가
+                  <CirclePlus
+                    className="h-5 w-5 text-white"
+                    strokeWidth={2.5}
+                  />
                 </button>
               )}
             </div>
-            <ul className="mt-4 w-full flex flex-col gap-3 min-h-[200px] relative">
-              {(scheduleLoading || isSharedLoading) &&
+            <div
+              className={`flex-1 w-full pb-24 min-h-0 scrollbar-hide ${allowPlanListScroll ? "overflow-y-auto" : "overflow-hidden touch-pan-y"}`}
+              style={{
+                maskImage:
+                  "linear-gradient(to bottom, transparent 0%, black 24px, black 100%)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, transparent 0%, black 24px, black 100%)",
+              }}
+            >
+              <ul className="mt-4 w-full flex flex-col gap-3 min-h-[200px] relative">
+                {(scheduleLoading || isSharedLoading) &&
                 effectiveScheduleList.length === 0 ? (
-                ["a", "b", "c", "d", "e"].map((id) => (
-                  <li
-                    key={`skeleton-plan-${id}`}
-                    className="flex items-center gap-4 rounded-3xl border border-[#ee2b8c0a] bg-white p-4 shadow-sm"
-                  >
-                    <span
-                      className="skeleton-shimmer h-6 w-6 shrink-0 rounded-full"
-                      aria-hidden
-                    />
-                    <div className="min-w-0 flex-1 space-y-2">
+                  ["a", "b", "c", "d", "e"].map((id) => (
+                    <li
+                      key={`skeleton-plan-${id}`}
+                      className="flex items-center gap-4 rounded-3xl border border-[#ee2b8c0a] bg-white p-4 shadow-sm"
+                    >
                       <span
-                        className="skeleton-shimmer block h-[22px] max-w-[200px] rounded"
-                        style={{ width: "75%" }}
+                        className="skeleton-shimmer h-6 w-6 shrink-0 rounded-full"
                         aria-hidden
                       />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <span
+                          className="skeleton-shimmer block h-[22px] max-w-[200px] rounded"
+                          style={{ width: "75%" }}
+                          aria-hidden
+                        />
+                        <span
+                          className="skeleton-shimmer block h-4 w-32 rounded"
+                          aria-hidden
+                        />
+                      </div>
                       <span
-                        className="skeleton-shimmer block h-4 w-32 rounded"
+                        className="skeleton-shimmer h-5 w-16 shrink-0 rounded"
                         aria-hidden
                       />
-                    </div>
-                    <span
-                      className="skeleton-shimmer h-5 w-16 shrink-0 rounded"
-                      aria-hidden
-                    />
+                    </li>
+                  ))
+                ) : isListLoaded && effectiveScheduleList.length === 0 ? (
+                  <li className="flex flex-1 flex-col items-center justify-center py-16">
+                    <p className="text-4xl font-semibold text-stone-400">텅~</p>
                   </li>
-                ))
-              ) : isListLoaded && effectiveScheduleList.length === 0 ? (
-                <li className="flex flex-1 flex-col items-center justify-center py-16">
-                  <p className="text-4xl font-semibold text-stone-400">텅~</p>
-                </li>
-              ) : (
-                <>
-                  {effectiveScheduleList.map((plan) => {
-                    const isChecked =
-                      checkedItems.has(plan.id) || plan.status === "COMPLETED";
-                    const amount = plan.amount ?? 0;
-                    const categoryColor = getCategoryColor(plan.categoryName);
-                    const detailHref = `/schedule-detail?id=${plan.id}`;
-                    const dateLabel = plan.startDate?.trim()
-                      ? (() => {
-                        const { dateText, weekday } = formatDate(
-                          plan.startDate as string,
-                        );
-                        return `${dateText} (${weekday})`;
-                      })()
-                      : "미정";
-                    return (
-                      <li key={plan.id}>
-                        <Link
-                          href={detailHref}
-                          className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
-                          aria-label={`플랜 상세 보기: ${plan.title}`}
-                        >
-                          <div
-                            className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                            style={{ backgroundColor: `${categoryColor}` }}
+                ) : (
+                  <>
+                    {effectiveScheduleList.map((plan) => {
+                      const isChecked =
+                        checkedItems.has(plan.id) ||
+                        plan.status === "COMPLETED";
+                      const amount = plan.amount ?? 0;
+                      const categoryColor = getCategoryColor(plan.categoryName);
+                      const detailHref = `/schedule-detail?id=${plan.id}`;
+                      const dateLabel = plan.startDate?.trim()
+                        ? (() => {
+                            const { dateText, weekday } = formatDate(
+                              plan.startDate as string,
+                            );
+                            return `${dateText} (${weekday})`;
+                          })()
+                        : "미정";
+                      return (
+                        <li key={plan.id}>
+                          <Link
+                            href={detailHref}
+                            className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
+                            aria-label={`플랜 상세 보기: ${plan.title}`}
                           >
-                            <button
-                              type="button"
-                              id={String(plan.id)}
-                              disabled={togglingIds.has(plan.id)}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleToggleCheck(plan.id);
-                              }}
-                              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
-                                ? "bg-[#ee2b8c] border-[#ee2b8c]"
-                                : "bg-white/80 border-[#ee2b8c]"
+                            <div
+                              className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: `${categoryColor}` }}
+                            >
+                              <button
+                                type="button"
+                                id={String(plan.id)}
+                                disabled={togglingIds.has(plan.id)}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleToggleCheck(plan.id);
+                                }}
+                                className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
+                                  isChecked
+                                    ? "bg-[#ee2b8c] border-[#ee2b8c]"
+                                    : "bg-white/80 border-[#ee2b8c]"
                                 }`}
-                            >
-                              {isChecked && (
-                                <Check
-                                  className="h-3 w-3 text-white"
-                                  strokeWidth={3}
-                                />
-                              )}
-                            </button>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4
-                              className={`text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
-                            >
-                              {plan.title}
-                            </h4>
-                            <div className="text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
-                              <p className="truncate">{plan.categoryName}</p>
-                              <p className="truncate">{dateLabel}</p>
+                              >
+                                {isChecked && (
+                                  <Check
+                                    className="h-3 w-3 text-white"
+                                    strokeWidth={3}
+                                  />
+                                )}
+                              </button>
                             </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
-                              {amount > 0
-                                ? `${amount.toLocaleString()}만 원`
-                                : "미정"}
+                            <div className="flex-1 min-w-0">
+                              <h4
+                                className={`text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
+                              >
+                                {plan.title}
+                              </h4>
+                              <div className="text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
+                                <p className="truncate">{plan.categoryName}</p>
+                                <p className="truncate">{dateLabel}</p>
+                              </div>
                             </div>
-                            <span
-                              className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
-                                ? "bg-[#ee2b8c] text-white"
-                                : "bg-gray-100 text-gray-500"
+                            <div className="text-right shrink-0">
+                              <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
+                                {amount > 0
+                                  ? `${amount.toLocaleString()}만 원`
+                                  : "미정"}
+                              </div>
+                              <span
+                                className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
+                                  isChecked
+                                    ? "bg-[#ee2b8c] text-white"
+                                    : "bg-gray-100 text-gray-500"
                                 }`}
-                            >
-                              {isChecked ? "완료" : "예정"}
-                            </span>
-                          </div>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </>
-              )}
-            </ul>
-            {tokenChecked &&
-              !getToken() &&
-              !showGuestPlanLimitModal &&
-              !showLoginRequiredModal && (
-                <div className="mt-4 w-full">
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginRequiredModal(true)}
-                    className="w-full h-16 bg-[#ee2b8c] text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-lg shadow-xl shadow-[#ee2b8c44] hover:bg-[#d4237b] transition-all transform hover:scale-[1.02] active:scale-95"
-                  >
-                    로그인 하기
-                  </button>
-                </div>
-              )}
-          </div>
+                              >
+                                {isChecked ? "완료" : "예정"}
+                              </span>
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </>
+                )}
+              </ul>
+              {tokenChecked &&
+                !getToken() &&
+                !showGuestPlanLimitModal &&
+                !showLoginRequiredModal && (
+                  <div className="mt-4 w-full">
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginRequiredModal(true)}
+                      className="w-full h-16 bg-[#ee2b8c] text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-lg shadow-xl shadow-[#ee2b8c44] hover:bg-[#d4237b] transition-all transform hover:scale-[1.02] active:scale-95"
+                    >
+                      로그인 하기
+                    </button>
+                  </div>
+                )}
+            </div>
+          </motion.div>
         </main>
         {/* 하단 탭바 - Sticky로 최상단에 고정 */}
         <BottomTabBar
@@ -1350,7 +1406,11 @@ function MainPageContent() {
               }
             } else {
               router.push(
-                tab === "rooms" ? "/plan-list" : tab === "settings" ? "/user" : "/main",
+                tab === "rooms"
+                  ? "/plan-list"
+                  : tab === "settings"
+                    ? "/user"
+                    : "/main",
               );
             }
           }}
