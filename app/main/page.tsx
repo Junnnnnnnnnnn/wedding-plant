@@ -938,18 +938,16 @@ function MainPageContent() {
                           </div>
                         </div>
                       ))}
-                      {apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.members?.length === 1 && (
-                          <button
-                            type="button"
-                            onClick={() => setShowShareModal(true)}
-                            className="relative flex-shrink-0 z-10 w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 bg-stone-50 hover:bg-stone-100 transition-colors shadow-sm"
-                            aria-label="멤버 초대하기"
-                          >
-                            <Plus className="w-5 h-5" strokeWidth={3} />
-                          </button>
-                        )}
+                      {apiPlanData.members?.length === 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowShareModal(true)}
+                          className="relative flex-shrink-0 z-10 w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 bg-stone-50 hover:bg-stone-100 transition-colors shadow-sm"
+                          aria-label="멤버 초대하기"
+                        >
+                          <Plus className="w-5 h-5" strokeWidth={3} />
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <button
