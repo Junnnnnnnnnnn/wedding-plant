@@ -6,9 +6,10 @@ import React, {
   useEffect,
   useCallback,
   useRef,
+  Suspense,
 } from "react";
 import { ArrowLeft, Sparkles } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useApi } from "../contexts/ApiContext";
 import { getToken } from "@/lib/api";
@@ -126,6 +127,8 @@ function mapScheduleListToExpenses(list: ScheduleListItem[]): Expense[] {
 
 function BudgetDetailsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roomIdFromUrl = searchParams.get("roomId")?.trim() || null;
   const { fetchWithAuth } = useApi();
   const { weddingData } = useWedding();
   const isGuest = !getToken();
@@ -248,25 +251,34 @@ function BudgetDetailsPage() {
     try {
       const scheduleParams = buildScheduleParams(1, "전체", null);
 
-      // 먼저 유저 정보를 가져와서 roomId가 있는지 확인
+      // roomId: URL 쿼리 우선, 없으면 /plan/user 응답의 roomId 사용
       const userRes = await fetchWithAuth("/plan/user");
       const userJson = (await userRes.json().catch(() => null)) as {
         result?: boolean;
         data?: { roomId?: number | null };
       } | null;
 
-      const currentRoomId = userJson?.result && userJson.data?.roomId
-        ? String(userJson.data.roomId)
-        : null;
+      const currentRoomId =
+        roomIdFromUrl ??
+        (userJson?.result && userJson.data?.roomId
+          ? String(userJson.data.roomId)
+          : null);
       setRoomId(currentRoomId);
 
       const scheduleUrl = currentRoomId
         ? `/plan/schedule/room/${encodeURIComponent(currentRoomId)}/list?${scheduleParams.toString()}`
         : `/plan/schedule/list?${scheduleParams.toString()}`;
 
+      const amountDetailUrl = currentRoomId
+        ? `/plan/room/amount/detail/${encodeURIComponent(currentRoomId)}`
+        : "/plan/user/amount/detail";
+      const categoryChartUrl = currentRoomId
+        ? `/plan/room/amount/category-chart/${encodeURIComponent(currentRoomId)}`
+        : "/plan/user/amount/category-chart";
+
       const [detailRes, chartRes, scheduleRes] = await Promise.all([
-        fetchWithAuth("/plan/user/amount/detail"),
-        fetchWithAuth("/plan/user/amount/category-chart"),
+        fetchWithAuth(amountDetailUrl),
+        fetchWithAuth(categoryChartUrl),
         fetchWithAuth(scheduleUrl),
       ]);
       const detailJson = (await detailRes.json().catch(() => null)) as {
@@ -306,7 +318,7 @@ function BudgetDetailsPage() {
     } finally {
       setLoading(false);
     }
-  }, [fetchWithAuth, buildScheduleParams]);
+  }, [fetchWithAuth, buildScheduleParams, roomIdFromUrl]);
 
   useEffect(() => {
     loadData();
@@ -542,4 +554,14 @@ function BudgetDetailsPage() {
   );
 }
 
-export default BudgetDetailsPage;
+export default function BudgetDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#fcfbfc]" />
+      }
+    >
+      <BudgetDetailsPage />
+    </Suspense>
+  );
+}

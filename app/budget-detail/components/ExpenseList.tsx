@@ -17,7 +17,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses }) => {
         expenses.map((expense) => (
           <div
             key={expense.id}
-            className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${expense.status === ExpenseStatus.PLANNED ? "opacity-60 grayscale-[0.3]" : ""}`}
+            className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${expense.status === ExpenseStatus.PLANNED ? "opacity-90" : ""}`}
           >
             <div className="w-14 h-14 bg-[#ee2b8c0a] rounded-2xl flex items-center justify-center text-[#ee2b8c] shrink-0">
               {CATEGORY_ICONS[expense.category] || CATEGORY_ICONS.Others}

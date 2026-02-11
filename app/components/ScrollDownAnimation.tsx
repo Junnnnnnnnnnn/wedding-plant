@@ -22,12 +22,9 @@ export default function ScrollDownAnimation({
       style={{ opacity, scale }}
       className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 z-30 w-16 h-16 flex flex-col items-center justify-center"
     >
-      <div className="w-12 h-12 opacity-40">
+      <div className="w-12 h-12 brightness-0">
         <Lottie animationData={scrollAnimationData} loop />
       </div>
-      <span className="text-[9px] font-black text-[#ee2b8c] opacity-40 uppercase tracking-[0.2em] -mt-1">
-        Scroll
-      </span>
     </motion.div>
   );
 }

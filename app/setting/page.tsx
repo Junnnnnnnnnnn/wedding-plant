@@ -50,6 +50,99 @@ function SettingPageContent() {
   const [countUpKey, setCountUpKey] = useState(0);
   const [showLanyard, setShowLanyard] = useState(false);
   const [isLanyardFadingOut, setIsLanyardFadingOut] = useState(false);
+  const [userCheckDone, setUserCheckDone] = useState(false);
+
+  function isPlanDataComplete(data: {
+    weddingDate?: string | null;
+    budget?: number | string | null;
+    name?: string | null;
+  }): boolean {
+    const hasWeddingDate =
+      typeof data.weddingDate === "string" && data.weddingDate.trim() !== "";
+    const hasBudget =
+      data.budget != null &&
+      (typeof data.budget === "number" ||
+        (typeof data.budget === "string" &&
+          data.budget.toString().trim() !== ""));
+    const hasName = typeof data.name === "string" && data.name.trim() !== "";
+    return Boolean(hasWeddingDate && hasBudget && hasName);
+  }
+
+  // 토큰 있으면 GET /plan/user 조회. weddingDate·budget 없으면 setting 플로우 진행
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setUserCheckDone(true);
+      return;
+    }
+
+    const check = async () => {
+      try {
+        const res = await fetchWithAuth("/plan/user");
+        const json = (await res.json()) as {
+          result?: boolean;
+          data?: {
+            weddingDate?: string | null;
+            budget?: number | string | null;
+            name?: string | null;
+          };
+        };
+        if (json.result !== true || !json.data) {
+          setUserCheckDone(true);
+          return;
+        }
+        const d = json.data;
+
+        if (isPlanDataComplete(d)) {
+          router.replace("/main");
+          return;
+        }
+
+        // prefill
+        if (d.name) setName(d.name);
+        if (d.budget != null) setBudget(String(d.budget));
+        if (d.weddingDate) {
+          const parts = d.weddingDate.split("-").map(Number);
+          if (parts.length === 3 && !parts.some(Number.isNaN)) {
+            setDate({ year: parts[0], month: parts[1], day: parts[2] });
+          }
+        }
+
+        // weddingDate·budget 없으면 setting 플로우 진행, 처음에 누락된 단계부터
+        const hasDate =
+          typeof d.weddingDate === "string" && d.weddingDate.trim() !== "";
+        const hasBudget =
+          d.budget != null &&
+          (typeof d.budget === "number" ||
+            (typeof d.budget === "string" &&
+              d.budget.toString().trim() !== ""));
+
+        if (!hasDate) {
+          setShowFirst(false);
+          setShowSecond(true);
+        } else if (!hasBudget) {
+          setShowFirst(false);
+          setShowSecond(false);
+          setShowThird(true);
+          setIsCountUpComplete(true);
+          if (d.budget != null) setBudget(String(d.budget));
+        } else {
+          setShowFirst(false);
+          setShowSecond(false);
+          setShowThird(false);
+          setShowFourth(true);
+        }
+      } catch {
+        // fetch 실패 시 날짜 단계부터 진행
+        setShowFirst(false);
+        setShowSecond(true);
+      } finally {
+        setUserCheckDone(true);
+      }
+    };
+
+    check();
+  }, [fetchWithAuth, router, setName, setBudget, setDate]);
 
   useEffect(() => {
     // 페이지 전체 스크롤 방지 및 오버스크롤 방지
@@ -76,11 +169,10 @@ function SettingPageContent() {
   }, []);
 
   useEffect(() => {
-    // 첫 번째 메시지가 3초 후 사라지고, 그 다음 두 번째 메시지가 나타남
-    const timer1 = setTimeout(() => {
-      setIsFadingOut(true);
-    }, 3000);
+    // 비로그인(게스트)만: 첫 번째 메시지 3초 후 → 두 번째(날짜)로 전환
+    if (getToken() || !userCheckDone) return undefined;
 
+    const timer1 = setTimeout(() => setIsFadingOut(true), 3000);
     const timer2 = setTimeout(() => {
       setShowFirst(false);
       setShowSecond(true);
@@ -90,7 +182,7 @@ function SettingPageContent() {
       clearTimeout(timer1);
       clearTimeout(timer2);
     };
-  }, []);
+  }, [userCheckDone]);
 
   useEffect(() => {
     if (showFifth) {

@@ -1424,7 +1424,11 @@ function MainPageContent() {
               ) : (
                 <div
                   onClick={() => {
-                    router.push("/budget-detail");
+                    router.push(
+                      roomIdForDetail
+                        ? `/budget-detail?roomId=${roomIdForDetail}`
+                        : "/budget-detail",
+                    );
                   }}
                   className="flex w-full flex-col rounded-[24px] p-6 cursor-pointer hover:opacity-95 transition-opacity"
                   style={{
@@ -1738,9 +1742,10 @@ function MainPageContent() {
                               className={`relative flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
                               aria-label={`플랜 상세 보기: ${plan.title}`}
                             >
-                              {isStartDatePast(plan.startDate) && (
-                                <PastDateIndicator />
-                              )}
+                              {activeTab === "planned" &&
+                                isStartDatePast(plan.startDate) && (
+                                  <PastDateIndicator />
+                                )}
                               <div
                                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
                                 style={{
