@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertTriangle,
   Calendar,
   Check,
   CircleDollarSign,
@@ -148,6 +149,17 @@ function getDotColorByDate(startDate: string | null): string {
   return "#bbf7d0"; // 그 이상: 연한 녹색
 }
 
+/** startDate가 오늘보다 이전(지난 날짜)이면 true */
+function isStartDatePast(startDate: string | null): boolean {
+  if (!startDate?.trim()) return false;
+  const start = parseLocalDate(startDate);
+  if (!start) return false;
+  const today = getKstDate();
+  start.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  return start.getTime() < today.getTime();
+}
+
 /** 공유 방 호스트 정보 (public API 응답) */
 interface SharedRoomUser {
   id: string;
@@ -172,6 +184,63 @@ const AVATAR_GRADIENTS = [
   "linear-gradient(135deg, #d97706 0%, #fbbf24 100%)",
   "linear-gradient(135deg, #0ea5e9 0%, #7dd3fc 100%)",
 ];
+
+const PAST_DATE_TOOLTIP =
+  "예정된 날짜가 지났어요. 완료하지 않았다면 플랜을 확인해 주세요.";
+
+function PastDateIndicator() {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showTooltip) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setShowTooltip(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showTooltip]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="absolute -top-3 right-1 z-10"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setShowTooltip((prev) => !prev);
+        }}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors shadow-sm border-2 border-white"
+        aria-label="지난 날짜 안내"
+      >
+        <AlertTriangle
+          className="h-5 w-5 fill-amber-500 text-amber-600"
+          strokeWidth={2.5}
+        />
+      </button>
+      {showTooltip && (
+        <div
+          className="absolute right-0 top-full mt-2 z-20 w-56 rounded-xl bg-[#1b0d14] text-white text-xs leading-relaxed p-3 shadow-xl -translate-x-6"
+          role="tooltip"
+        >
+          {PAST_DATE_TOOLTIP}
+          <span className="absolute -top-3.5 right-8 w-3 h-3 bg-[#1b0d14] rotate-45" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 function MainPageContent() {
   const router = useRouter();
@@ -288,44 +357,52 @@ function MainPageContent() {
     [fetchWithAuth, shareCode],
   );
 
-  const fetchSharedRoomCounts = useCallback(async (code: string) => {
-    if (!getToken()) return;
-    try {
-      const [normRes, compRes] = await Promise.all([
-        fetchWithAuth(
-          `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=1&status=NORMAL`,
-        ),
-        fetchWithAuth(
-          `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=1&status=COMPLETED`,
-        ),
-      ]);
-      const normJson = await normRes.json();
-      const compJson = await compRes.json();
-      if (normJson.result === true) setPlannedTotal(normJson.data.total ?? 0);
-      if (compJson.result === true) setCompletedTotal(compJson.data.total ?? 0);
-    } catch {
-      // ignore
-    }
-  }, [fetchWithAuth]);
+  const fetchSharedRoomCounts = useCallback(
+    async (code: string) => {
+      if (!getToken()) return;
+      try {
+        const [normRes, compRes] = await Promise.all([
+          fetchWithAuth(
+            `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=1&status=NORMAL`,
+          ),
+          fetchWithAuth(
+            `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=1&status=COMPLETED`,
+          ),
+        ]);
+        const normJson = await normRes.json();
+        const compJson = await compRes.json();
+        if (normJson.result === true) setPlannedTotal(normJson.data.total ?? 0);
+        if (compJson.result === true)
+          setCompletedTotal(compJson.data.total ?? 0);
+      } catch {
+        // ignore
+      }
+    },
+    [fetchWithAuth],
+  );
 
-  const fetchPersonalCounts = useCallback(async (roomIdParam?: string) => {
-    if (!getToken()) return;
-    try {
-      const baseUrl = roomIdParam?.trim()
-        ? `/plan/schedule/room/${encodeURIComponent(roomIdParam.trim())}/list`
-        : "/plan/schedule/list";
-      const [normRes, compRes] = await Promise.all([
-        fetchWithAuth(`${baseUrl}?page=1&count=1&status=NORMAL`),
-        fetchWithAuth(`${baseUrl}?page=1&count=1&status=COMPLETED`),
-      ]);
-      const normJson = await normRes.json();
-      const compJson = await compRes.json();
-      if (normJson.result === true) setPlannedTotal(normJson.data.total ?? 0);
-      if (compJson.result === true) setCompletedTotal(compJson.data.total ?? 0);
-    } catch {
-      // ignore
-    }
-  }, [fetchWithAuth]);
+  const fetchPersonalCounts = useCallback(
+    async (roomIdParam?: string) => {
+      if (!getToken()) return;
+      try {
+        const baseUrl = roomIdParam?.trim()
+          ? `/plan/schedule/room/${encodeURIComponent(roomIdParam.trim())}/list`
+          : "/plan/schedule/list";
+        const [normRes, compRes] = await Promise.all([
+          fetchWithAuth(`${baseUrl}?page=1&count=1&status=NORMAL`),
+          fetchWithAuth(`${baseUrl}?page=1&count=1&status=COMPLETED`),
+        ]);
+        const normJson = await normRes.json();
+        const compJson = await compRes.json();
+        if (normJson.result === true) setPlannedTotal(normJson.data.total ?? 0);
+        if (compJson.result === true)
+          setCompletedTotal(compJson.data.total ?? 0);
+      } catch {
+        // ignore
+      }
+    },
+    [fetchWithAuth],
+  );
 
   const fetchPlanUser = useCallback(
     async (
@@ -791,14 +868,18 @@ function MainPageContent() {
   // 탭별 리스트 카운킹 (게스트 모드는 로컬 리스트 기준, 로그인 모드는 명시적 상태 활용)
   const plannedCount = useMemo(() => {
     if (!getToken()) {
-      return effectiveScheduleList.filter(p => p.status === "NORMAL" && !removedItems.has(p.id)).length;
+      return effectiveScheduleList.filter(
+        (p) => p.status === "NORMAL" && !removedItems.has(p.id),
+      ).length;
     }
     return plannedTotal;
   }, [effectiveScheduleList.length, plannedTotal, removedItems.size]);
 
   const completedCount = useMemo(() => {
     if (!getToken()) {
-      return effectiveScheduleList.filter(p => p.status === "COMPLETED" && !removedItems.has(p.id)).length;
+      return effectiveScheduleList.filter(
+        (p) => p.status === "COMPLETED" && !removedItems.has(p.id),
+      ).length;
     }
     return completedTotal;
   }, [effectiveScheduleList.length, completedTotal, removedItems.size]);
@@ -900,11 +981,11 @@ function MainPageContent() {
 
       // 낙관적 업데이트: 카운트 즉시 반영
       if (newStatus === "COMPLETED") {
-        setPlannedTotal(prev => Math.max(0, prev - 1));
-        setCompletedTotal(prev => prev + 1);
+        setPlannedTotal((prev) => Math.max(0, prev - 1));
+        setCompletedTotal((prev) => prev + 1);
       } else {
-        setCompletedTotal(prev => Math.max(0, prev - 1));
-        setPlannedTotal(prev => prev + 1);
+        setCompletedTotal((prev) => Math.max(0, prev - 1));
+        setPlannedTotal((prev) => prev + 1);
       }
 
       // 체크 또는 해제 시: 잠깐 대기 후 removedItems에 추가하여 날아가기 시작
@@ -927,11 +1008,11 @@ function MainPageContent() {
         } else {
           // 실패 시 카운트 복구
           if (newStatus === "COMPLETED") {
-            setPlannedTotal(prev => prev + 1);
-            setCompletedTotal(prev => Math.max(0, prev - 1));
+            setPlannedTotal((prev) => prev + 1);
+            setCompletedTotal((prev) => Math.max(0, prev - 1));
           } else {
-            setCompletedTotal(prev => prev + 1);
-            setPlannedTotal(prev => Math.max(0, prev - 1));
+            setCompletedTotal((prev) => prev + 1);
+            setPlannedTotal((prev) => Math.max(0, prev - 1));
           }
           setCheckedItems((prev) => {
             const revert = new Set(prev);
@@ -948,11 +1029,11 @@ function MainPageContent() {
       } catch {
         // 에러 시 카운트 복구
         if (newStatus === "COMPLETED") {
-          setPlannedTotal(prev => prev + 1);
-          setCompletedTotal(prev => Math.max(0, prev - 1));
+          setPlannedTotal((prev) => prev + 1);
+          setCompletedTotal((prev) => Math.max(0, prev - 1));
         } else {
-          setCompletedTotal(prev => prev + 1);
-          setPlannedTotal(prev => Math.max(0, prev - 1));
+          setCompletedTotal((prev) => prev + 1);
+          setPlannedTotal((prev) => Math.max(0, prev - 1));
         }
         setCheckedItems((prev) => {
           const revert = new Set(prev);
@@ -977,7 +1058,11 @@ function MainPageContent() {
     [fetchWithAuth],
   );
 
-  const roomIdForDetail = roomId?.trim() || (apiPlanData && apiPlanData !== "none" && apiPlanData.roomId ? String(apiPlanData.roomId) : null);
+  const roomIdForDetail =
+    roomId?.trim() ||
+    (apiPlanData && apiPlanData !== "none" && apiPlanData.roomId
+      ? String(apiPlanData.roomId)
+      : null);
 
   const handleOpenScheduleDetail = (id: number) => {
     if (!getToken()) {
@@ -1084,23 +1169,23 @@ function MainPageContent() {
                             String(member.planUserId ?? "")
                               .trim()
                               .toLowerCase() ===
-                            String(sharedRoomUser.id)
-                              .trim()
-                              .toLowerCase()) && (
-                              <span
-                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                                aria-hidden
-                              >
-                                <Crown
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
+                              String(sharedRoomUser.id)
+                                .trim()
+                                .toLowerCase()) && (
+                            <span
+                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                              aria-hidden
+                            >
+                              <Crown
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
+                            </span>
+                          )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                            "OWNER" && (
+                              "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1174,20 +1259,20 @@ function MainPageContent() {
                         >
                           {String(member.permission ?? "").toUpperCase() ===
                             "OWNER" && (
-                              <span
-                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                                aria-hidden
-                              >
-                                <Crown
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
+                            <span
+                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                              aria-hidden
+                            >
+                              <Crown
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
+                            </span>
+                          )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                            "OWNER" && (
+                              "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1426,69 +1511,69 @@ function MainPageContent() {
                 isRoomView &&
                 String(myRoomPermission ?? "").toUpperCase() === "READ"
               ) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const roomIdValue =
-                        roomId ??
-                        (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
-                          ? String(apiPlanData.roomId)
-                          : null);
+                <button
+                  type="button"
+                  onClick={() => {
+                    const roomIdValue =
+                      roomId ??
+                      (apiPlanData &&
+                      apiPlanData !== "none" &&
+                      apiPlanData.roomId
+                        ? String(apiPlanData.roomId)
+                        : null);
 
-                      const addPlanPath = roomIdValue
-                        ? `/add-plen?roomId=${roomIdValue}`
-                        : "/add-plen";
-                      if (getToken()) {
-                        router.push(addPlanPath);
-                        return;
-                      }
-                      if (isSharedView) {
-                        setLoginRequiredTitle(
-                          "플랜을 추가하려면 로그인해 주세요",
-                        );
-                        setShowLoginRequiredModal(true);
-                        return;
-                      }
-
-                      // Guest: allow up to 3 plans saved in sessionStorage
-                      const guestCount = effectiveScheduleList.length;
-                      if (guestCount === 0) {
-                        // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
-                        setShowGuestPlanLimitModal(true);
-                        return;
-                      }
-                      if (guestCount >= 3) {
-                        setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
-                        setShowLoginRequiredModal(true);
-                        return;
-                      }
+                    const addPlanPath = roomIdValue
+                      ? `/add-plen?roomId=${roomIdValue}`
+                      : "/add-plen";
+                    if (getToken()) {
                       router.push(addPlanPath);
-                    }}
-                    className="flex h-[42px] items-center gap-2 px-4 py-0 text-white rounded-xl font-bold text-sm transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
-                    style={{
-                      backgroundColor:
-                        !getToken() &&
-                          !isSharedView &&
-                          effectiveScheduleList.length >= 3
-                          ? "#cbd5e1"
-                          : "#ee2b8c",
-                      boxShadow:
-                        !getToken() &&
-                          !isSharedView &&
-                          effectiveScheduleList.length >= 3
-                          ? "0 4px 12px rgba(148, 163, 184, 0.35)"
-                          : "0 4px 12px rgba(238, 43, 140, 0.3)",
-                    }}
-                  >
-                    추가
-                    <CirclePlus
-                      className="h-4 w-4 shrink-0 text-white"
-                      strokeWidth={2.5}
-                    />
-                  </button>
-                )}
+                      return;
+                    }
+                    if (isSharedView) {
+                      setLoginRequiredTitle(
+                        "플랜을 추가하려면 로그인해 주세요",
+                      );
+                      setShowLoginRequiredModal(true);
+                      return;
+                    }
+
+                    // Guest: allow up to 3 plans saved in sessionStorage
+                    const guestCount = effectiveScheduleList.length;
+                    if (guestCount === 0) {
+                      // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
+                      setShowGuestPlanLimitModal(true);
+                      return;
+                    }
+                    if (guestCount >= 3) {
+                      setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
+                      setShowLoginRequiredModal(true);
+                      return;
+                    }
+                    router.push(addPlanPath);
+                  }}
+                  className="flex h-[42px] items-center gap-2 px-4 py-0 text-white rounded-xl font-bold text-sm transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
+                  style={{
+                    backgroundColor:
+                      !getToken() &&
+                      !isSharedView &&
+                      effectiveScheduleList.length >= 3
+                        ? "#cbd5e1"
+                        : "#ee2b8c",
+                    boxShadow:
+                      !getToken() &&
+                      !isSharedView &&
+                      effectiveScheduleList.length >= 3
+                        ? "0 4px 12px rgba(148, 163, 184, 0.35)"
+                        : "0 4px 12px rgba(238, 43, 140, 0.3)",
+                  }}
+                >
+                  추가
+                  <CirclePlus
+                    className="h-4 w-4 shrink-0 text-white"
+                    strokeWidth={2.5}
+                  />
+                </button>
+              )}
             </div>
             {/* 탭 영역 - Sticky 고정 */}
             <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm px-0 sm:px-2 py-2 -mx-4 sm:mx-0 px-4 sm:px-2 border-b border-gray-50/50">
@@ -1503,20 +1588,23 @@ function MainPageContent() {
                       const roomIdParam =
                         roomId?.trim() ||
                         (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       fetchScheduleList(roomIdParam ?? undefined, "NORMAL");
                     }
                   }}
-                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === "planned"
-                    ? "bg-white text-[#ee2b8c] shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                    }`}
+                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
+                    activeTab === "planned"
+                      ? "bg-white text-[#ee2b8c] shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
                 >
                   <span>계획 중</span>
-                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "planned" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "planned" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}
+                  >
                     {plannedCount}
                   </span>
                 </button>
@@ -1530,20 +1618,23 @@ function MainPageContent() {
                       const roomIdParam =
                         roomId?.trim() ||
                         (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       fetchScheduleList(roomIdParam ?? undefined, "COMPLETED");
                     }
                   }}
-                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === "completed"
-                    ? "bg-white text-[#ee2b8c] shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                    }`}
+                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
+                    activeTab === "completed"
+                      ? "bg-white text-[#ee2b8c] shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
                 >
                   <span>완료</span>
-                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "completed" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "completed" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}
+                  >
                     {completedCount}
                   </span>
                 </button>
@@ -1617,11 +1708,11 @@ function MainPageContent() {
                         const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
                         const dateLabel = plan.startDate?.trim()
                           ? (() => {
-                            const { dateText, weekday } = formatDate(
-                              plan.startDate as string,
-                            );
-                            return `${dateText} (${weekday})`;
-                          })()
+                              const { dateText, weekday } = formatDate(
+                                plan.startDate as string,
+                              );
+                              return `${dateText} (${weekday})`;
+                            })()
                           : "미정";
 
                         return (
@@ -1644,9 +1735,12 @@ function MainPageContent() {
                           >
                             <Link
                               href={detailHref}
-                              className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
+                              className={`relative flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
                               aria-label={`플랜 상세 보기: ${plan.title}`}
                             >
+                              {isStartDatePast(plan.startDate) && (
+                                <PastDateIndicator />
+                              )}
                               <div
                                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
                                 style={{
@@ -1662,10 +1756,11 @@ function MainPageContent() {
                                     e.stopPropagation();
                                     handleToggleCheck(plan.id);
                                   }}
-                                  className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
-                                    ? "bg-[#ee2b8c] border-[#ee2b8c]"
-                                    : "bg-white/80 border-[#ee2b8c]"
-                                    }`}
+                                  className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
+                                    isChecked
+                                      ? "bg-[#ee2b8c] border-[#ee2b8c]"
+                                      : "bg-white/80 border-[#ee2b8c]"
+                                  }`}
                                 >
                                   {isChecked && (
                                     <Check
@@ -1695,10 +1790,11 @@ function MainPageContent() {
                                     : "미정"}
                                 </div>
                                 <span
-                                  className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
-                                    ? "bg-[#ee2b8c] text-white"
-                                    : "bg-gray-100 text-gray-500"
-                                    }`}
+                                  className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
+                                    isChecked
+                                      ? "bg-[#ee2b8c] text-white"
+                                      : "bg-gray-100 text-gray-500"
+                                  }`}
                                 >
                                   {isChecked ? "완료" : "예정"}
                                 </span>
