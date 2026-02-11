@@ -29,6 +29,7 @@ import LoginRequiredModal from "../components/LoginRequiredModal";
 import GuestPlanLimitModal from "../components/GuestPlanLimitModal";
 import SharePlanModal from "@/components/SharePlanModal";
 import NoPlanFoundModal from "../components/NoPlanFoundModal";
+import ScrollDownAnimation from "../components/ScrollDownAnimation";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import {
@@ -185,6 +186,10 @@ function MainPageContent() {
   const [totalAmountManwon, setTotalAmountManwon] = useState<number | null>(
     null,
   );
+  const [usedAmountManwon, setUsedAmountManwon] = useState<number | null>(null);
+  const [remainingAmountManwon, setRemainingAmountManwon] = useState<
+    number | null
+  >(null);
   const [tokenChecked, setTokenChecked] = useState(false);
   const [sharedRoomUser, setSharedRoomUser] = useState<
     SharedRoomUser | null | "error"
@@ -210,7 +215,7 @@ function MainPageContent() {
         const [userRes, scheduleRes, memberRes] = await Promise.all([
           fetchWithAuth(`/plan/user/${encodeURIComponent(code)}`),
           fetchWithAuth(
-            `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=DESC&sortColumn=startDate`,
+            `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=DESC&sortColumn=startDate&status=NORMAL`,
           ),
           fetchWithAuth(`/plan/user/room/member/${encodeURIComponent(code)}`),
         ]);
@@ -251,31 +256,107 @@ function MainPageContent() {
     [fetchWithAuth],
   );
 
+  const fetchingSharedStatusRef = useRef<"NORMAL" | "COMPLETED" | null>(null);
+  const fetchSharedRoomScheduleList = useCallback(
+    async (status: "NORMAL" | "COMPLETED") => {
+      const code = shareCode?.trim();
+      if (!code || !getToken()) return;
+      fetchingSharedStatusRef.current = status;
+      setScheduleLoading(true);
+      try {
+        const res = await fetchWithAuth(
+          `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=DESC&sortColumn=startDate&status=${status}`,
+        );
+        const json = (await res.json()) as {
+          result?: boolean;
+          data?: { total: number; list: ScheduleListItem[] };
+        };
+        if (fetchingSharedStatusRef.current !== status) return;
+        if (json.result === true && json.data?.list) {
+          setSharedRoomScheduleList(json.data.list);
+        } else {
+          setSharedRoomScheduleList([]);
+        }
+      } catch {
+        if (fetchingSharedStatusRef.current === status) {
+          setSharedRoomScheduleList([]);
+        }
+      } finally {
+        setScheduleLoading(false);
+      }
+    },
+    [fetchWithAuth, shareCode],
+  );
+
+  const fetchSharedRoomCounts = useCallback(async (code: string) => {
+    if (!getToken()) return;
+    try {
+      const [normRes, compRes] = await Promise.all([
+        fetchWithAuth(
+          `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=1&status=NORMAL`,
+        ),
+        fetchWithAuth(
+          `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=1&status=COMPLETED`,
+        ),
+      ]);
+      const normJson = await normRes.json();
+      const compJson = await compRes.json();
+      if (normJson.result === true) setPlannedTotal(normJson.data.total ?? 0);
+      if (compJson.result === true) setCompletedTotal(compJson.data.total ?? 0);
+    } catch {
+      // ignore
+    }
+  }, [fetchWithAuth]);
+
+  const fetchPersonalCounts = useCallback(async (roomIdParam?: string) => {
+    if (!getToken()) return;
+    try {
+      const baseUrl = roomIdParam?.trim()
+        ? `/plan/schedule/room/${encodeURIComponent(roomIdParam.trim())}/list`
+        : "/plan/schedule/list";
+      const [normRes, compRes] = await Promise.all([
+        fetchWithAuth(`${baseUrl}?page=1&count=1&status=NORMAL`),
+        fetchWithAuth(`${baseUrl}?page=1&count=1&status=COMPLETED`),
+      ]);
+      const normJson = await normRes.json();
+      const compJson = await compRes.json();
+      if (normJson.result === true) setPlannedTotal(normJson.data.total ?? 0);
+      if (compJson.result === true) setCompletedTotal(compJson.data.total ?? 0);
+    } catch {
+      // ignore
+    }
+  }, [fetchWithAuth]);
+
   const fetchPlanUser = useCallback(
-    async (onApiError: (status?: number) => void, roomIdParam?: string) => {
+    async (
+      onApiError: (status?: number) => void,
+      roomIdParam?: string,
+    ): Promise<PlanUserData | null | "none"> => {
       if (!getToken()) {
         setApiPlanData("none");
-        return;
+        return "none";
       }
       try {
         const url = roomIdParam?.trim()
           ? `/plan/room/${encodeURIComponent(roomIdParam.trim())}`
           : "/plan/user";
         const res = await fetchWithAuth(url);
-        if (cancelledRef.current) return;
+        if (cancelledRef.current) return null;
         const json = (await res.json()) as {
           result?: boolean;
           data?: PlanUserData;
         };
-        if (cancelledRef.current) return;
+        if (cancelledRef.current) return null;
         if (json.result === true && json.data) {
           setApiPlanData(json.data);
-        } else {
-          setApiPlanData("none");
-          if (!res.ok) onApiError(res.status);
+          return json.data;
         }
+        setApiPlanData("none");
+        if (!res.ok) onApiError(res.status);
+        return "none";
       } catch {
         if (!cancelledRef.current) onApiError();
+        return null;
       }
     },
     [fetchWithAuth],
@@ -285,30 +366,40 @@ function MainPageContent() {
     async (onApiError: (status?: number) => void, roomIdParam?: string) => {
       if (!getToken()) {
         setTotalAmountManwon(0);
+        setUsedAmountManwon(null);
+        setRemainingAmountManwon(null);
         return;
       }
-      // 참여 플랜(roomId) 모드에서는 total-amount API 없음 → 스케줄 합산으로 사용
-      if (roomIdParam?.trim()) {
-        setTotalAmountManwon(0);
-        return;
-      }
+      const url = roomIdParam?.trim()
+        ? `/plan/room/total-amount/${encodeURIComponent(roomIdParam.trim())}`
+        : "/plan/user/total-amount";
       try {
-        const res = await fetchWithAuth("/plan/user/total-amount");
+        const res = await fetchWithAuth(url);
         if (cancelledRef.current) return;
         const json = (await res.json()) as {
           result?: boolean;
-          data?: { totalAmount?: number };
+          data?: {
+            totalAmount?: number;
+            usedAmount?: number;
+            remainingAmount?: number;
+          };
         };
         if (cancelledRef.current) return;
-        if (json.result === true && json.data?.totalAmount != null) {
-          setTotalAmountManwon(json.data.totalAmount);
+        if (json.result === true && json.data) {
+          setTotalAmountManwon(json.data.totalAmount ?? 0);
+          setUsedAmountManwon(json.data.usedAmount ?? 0);
+          setRemainingAmountManwon(json.data.remainingAmount ?? 0);
         } else {
           setTotalAmountManwon(0);
+          setUsedAmountManwon(0);
+          setRemainingAmountManwon(0);
           if (!res.ok) onApiError(res.status);
         }
       } catch {
         if (!cancelledRef.current) {
           setTotalAmountManwon(0);
+          setUsedAmountManwon(0);
+          setRemainingAmountManwon(0);
           onApiError();
         }
       }
@@ -337,6 +428,8 @@ function MainPageContent() {
     if (!token) {
       setApiPlanData("none");
       setTotalAmountManwon(0);
+      setUsedAmountManwon(null);
+      setRemainingAmountManwon(null);
       return;
     }
     cancelledRef.current = false;
@@ -349,6 +442,7 @@ function MainPageContent() {
         ]);
         if (!cancelledRef.current) {
           fetchSharedRoomWithAuth(shareCode.trim());
+          fetchSharedRoomCounts(shareCode.trim());
         }
       })();
     } else if (roomIdParam) {
@@ -357,13 +451,22 @@ function MainPageContent() {
       setScheduleInitialFetched(false);
       fetchPlanUser(handleApiError, roomIdParam);
       fetchTotalAmount(handleApiError, roomIdParam);
+      fetchPersonalCounts(roomIdParam);
     } else {
-      // /main으로 돌아왔을 때 본인 플랜 데이터 다시 로드 (이전 room/share 데이터 제거)
+      // /main 접속: /plan/user 응답에 roomId가 있으면 /plan/room/total-amount/{id} 호출
       setApiPlanData(null);
       setScheduleList([]);
       setScheduleInitialFetched(false);
-      fetchPlanUser(handleApiError);
-      fetchTotalAmount(handleApiError);
+      (async () => {
+        const planData = await fetchPlanUser(handleApiError);
+        if (cancelledRef.current) return;
+        const roomIdForAmount =
+          planData && planData !== "none" && planData.roomId != null
+            ? String(planData.roomId)
+            : undefined;
+        fetchTotalAmount(handleApiError, roomIdForAmount);
+        fetchPersonalCounts(roomIdForAmount);
+      })();
     }
     // eslint-disable-next-line consistent-return -- useEffect cleanup is valid
     return () => {
@@ -395,7 +498,7 @@ function MainPageContent() {
       tokenChecked &&
       getToken() &&
       !shareCode &&
-      !roomId &&
+      !roomId?.trim() &&
       isPlanIncomplete()
     ) {
       setShowNoPlanModal(true);
@@ -472,7 +575,8 @@ function MainPageContent() {
   const isPlanLoading = Boolean(
     !tokenChecked ||
     isSharedLoading ||
-    (getToken() && !shareCode && apiPlanData === null),
+    (getToken() && !shareCode && !roomId?.trim() && apiPlanData === null) ||
+    (getToken() && roomId?.trim() && apiPlanData === null),
   );
 
   const dDay = useMemo(() => getDDay(displayData.date), [displayData.date]);
@@ -490,6 +594,7 @@ function MainPageContent() {
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleInitialFetched, setScheduleInitialFetched] = useState(false);
   const scheduleFetchingRef = useRef(false);
+  const fetchingStatusRef = useRef<"NORMAL" | "COMPLETED" | null>(null);
 
   const effectiveScheduleList = isSharedView
     ? sharedRoomScheduleList
@@ -503,7 +608,6 @@ function MainPageContent() {
       ? sharedRoomUser !== null
       : scheduleInitialFetched;
 
-
   // 예산 관리 변수 (지출 예정 = GET /plan/user/total-amount)
   const initialBudget = Number(displayData.budget) || 1000; // 초기 예산 (만원)
   const guestUsedBudget = useMemo(() => {
@@ -512,17 +616,34 @@ function MainPageContent() {
       return sum + amount;
     }, 0);
   }, [effectiveScheduleList]);
-  // 공유 뷰·참여 플랜(roomId) 또는 비로그인 시 스케줄 합산, 로그인 본인 플랜 시 totalAmountManwon
-  const usedBudget =
-    !isSharedView && !isRoomView && getToken()
-      ? (totalAmountManwon ?? 0)
-      : guestUsedBudget; // 지출 예정 총액 (만원)
-  const remainingBudget = initialBudget - usedBudget; // 남은 예산 실시간 계산
+  // 공유 뷰·참여 플랜(roomId) 또는 비로그인 시 스케줄 합산, 로그인 시 API 값 사용 (user: /plan/user/total-amount, room: /plan/room/total-amount/{id})
+  const useApiAmounts =
+    !isSharedView &&
+    getToken() &&
+    (remainingAmountManwon != null || usedAmountManwon != null);
+  const usedBudget = useApiAmounts
+    ? (usedAmountManwon ?? totalAmountManwon ?? 0)
+    : guestUsedBudget; // 지출 예정 총액 (만원)
+  const remainingBudget =
+    useApiAmounts && remainingAmountManwon != null
+      ? remainingAmountManwon
+      : initialBudget - usedBudget; // 남은 예산: API remainingAmount 우선, 없으면 계산값
 
-  // 예산 사용률 계산
-  const budgetUsagePercentage = Math.round(
-    initialBudget > 0 ? (usedBudget / initialBudget) * 100 : 0,
-  );
+  // 예산 사용률 계산: 로그인 시 API totalAmount·usedAmount 기준 (user/room 공통), 그 외에는 initialBudget·usedBudget
+  const budgetUsagePercentage = (() => {
+    if (
+      !isSharedView &&
+      getToken() &&
+      totalAmountManwon != null &&
+      totalAmountManwon > 0 &&
+      usedAmountManwon != null
+    ) {
+      return Math.round((usedAmountManwon / totalAmountManwon) * 100);
+    }
+    return initialBudget > 0
+      ? Math.round((usedBudget / initialBudget) * 100)
+      : 0;
+  })();
   const budgetUsagePercentageForBar = Math.max(
     0,
     Math.min(100, budgetUsagePercentage),
@@ -569,13 +690,19 @@ function MainPageContent() {
   };
 
   const fetchScheduleList = useCallback(
-    async (roomIdParam?: string) => {
-      if (scheduleFetchingRef.current) return;
+    async (roomIdParam?: string, status?: "NORMAL" | "COMPLETED") => {
       const token = getToken();
       if (!token) {
+        // 비로그인(게스트)은 로컬 스토리지 데이터 사용
+        const guestList = getGuestScheduleList();
+        setScheduleList(guestList);
+        setScheduleTotal(guestList.length);
         setScheduleInitialFetched(true);
+        setRemovedItems(new Set()); // 탭 전환 시 애니메이션 상태 초기화
         return;
       }
+      const requestedStatus = status ?? "NORMAL";
+      fetchingStatusRef.current = requestedStatus;
       scheduleFetchingRef.current = true;
       setScheduleLoading(true);
       try {
@@ -585,6 +712,7 @@ function MainPageContent() {
           sort: SCHEDULE_SORT,
           sortColumn: roomIdParam?.trim() ? "startDate" : SCHEDULE_SORT_COLUMN,
         });
+        if (requestedStatus) params.set("status", requestedStatus);
         const url = roomIdParam?.trim()
           ? `/plan/schedule/room/${encodeURIComponent(roomIdParam.trim())}/list?${params.toString()}`
           : `/plan/schedule/list?${params.toString()}`;
@@ -595,13 +723,22 @@ function MainPageContent() {
         };
         if (json.result === true && json.data) {
           const { total, list } = json.data;
-          setScheduleTotal(total);
-          setScheduleList(list);
-        } else {
+          if (fetchingStatusRef.current === requestedStatus) {
+            setScheduleTotal(total);
+            if (requestedStatus === "NORMAL") setPlannedTotal(total);
+            else setCompletedTotal(total);
+            setScheduleList(list);
+            setRemovedItems(new Set()); // 신규 리스트 로드 시 애니메이션 상태 초기화
+          }
+        } else if (fetchingStatusRef.current === requestedStatus) {
           setScheduleList([]);
+          setRemovedItems(new Set());
         }
       } catch {
-        setScheduleList([]);
+        if (fetchingStatusRef.current === requestedStatus) {
+          setScheduleList([]);
+          setRemovedItems(new Set());
+        }
       } finally {
         setScheduleLoading(false);
         setScheduleInitialFetched(true);
@@ -631,9 +768,9 @@ function MainPageContent() {
         : null);
 
     if (roomIdParam) {
-      fetchScheduleList(roomIdParam);
+      fetchScheduleList(roomIdParam, "NORMAL");
     } else {
-      fetchScheduleList();
+      fetchScheduleList(undefined, "NORMAL");
     }
   }, [fetchScheduleList, shareCode, roomId, apiPlanData]);
 
@@ -641,16 +778,58 @@ function MainPageContent() {
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   // 목록에서 실제로 사라지는 상태 (애니메이션 시작 지점용)
   const [removedItems, setRemovedItems] = useState<Set<number>>(new Set());
+  // 탭: 계획 중(NORMAL) / 완료(COMPLETED)
+  const [activeTab, setActiveTab] = useState<"planned" | "completed">(
+    "planned",
+  );
+  const plannedListRef = useRef<ScheduleListItem[]>([]);
+  const lastPlannedCountRef = useRef(0);
+  const lastCompletedCountRef = useRef(0);
+  const [plannedTotal, setPlannedTotal] = useState(0);
+  const [completedTotal, setCompletedTotal] = useState(0);
 
-  // 체크되지 않은(미완료) 항목들만 필터링하여 표시
+  // 탭별 리스트 카운킹 (게스트 모드는 로컬 리스트 기준, 로그인 모드는 명시적 상태 활용)
+  const plannedCount = useMemo(() => {
+    if (!getToken()) {
+      return effectiveScheduleList.filter(p => p.status === "NORMAL" && !removedItems.has(p.id)).length;
+    }
+    return plannedTotal;
+  }, [effectiveScheduleList.length, plannedTotal, removedItems.size]);
+
+  const completedCount = useMemo(() => {
+    if (!getToken()) {
+      return effectiveScheduleList.filter(p => p.status === "COMPLETED" && !removedItems.has(p.id)).length;
+    }
+    return completedTotal;
+  }, [effectiveScheduleList.length, completedTotal, removedItems.size]);
+
+  // 탭별 리스트: API가 status(NORMAL/COMPLETED)로 이미 필터링해서 오지만,
+  // 1. 게스트 모드 대응 (로컬 데이터를 쓰므로 명시적 필터링 필요)
+  // 2. API 전환 중/애니메이션 중 정합성 보장을 위해 로컬에서도 필터링
   const visibleScheduleList = useMemo(() => {
-    return effectiveScheduleList.filter((plan) => {
-      // 서버 데이터가 COMPLETED 이거나, 아직 removedItems로 확정되지 않은 것만 표시
-      // (checkedItems는 UI 표현만 담당하고, removedItems가 실제로 DOM에서 제거를 트리거함)
-      const isActuallyRemoved = removedItems.has(plan.id) || plan.status === "COMPLETED";
-      return !isActuallyRemoved;
-    });
-  }, [effectiveScheduleList, removedItems]);
+    const targetStatus = activeTab === "planned" ? "NORMAL" : "COMPLETED";
+    return effectiveScheduleList.filter(
+      (plan) => plan.status === targetStatus && !removedItems.has(plan.id),
+    );
+  }, [effectiveScheduleList, removedItems, activeTab]);
+
+  if (!scheduleLoading && !isSharedLoading) {
+    lastPlannedCountRef.current =
+      activeTab === "planned"
+        ? visibleScheduleList.length
+        : lastPlannedCountRef.current;
+    lastCompletedCountRef.current =
+      activeTab === "completed"
+        ? visibleScheduleList.length
+        : lastCompletedCountRef.current;
+  }
+  const displayCount =
+    scheduleLoading || isSharedLoading
+      ? activeTab === "planned"
+        ? lastPlannedCountRef.current
+        : lastCompletedCountRef.current
+      : visibleScheduleList.length;
+
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [loginRequiredTitle, setLoginRequiredTitle] = useState<
     string | undefined
@@ -694,6 +873,7 @@ function MainPageContent() {
   const scheduleListRef = useRef(scheduleList);
   checkedItemsRef.current = checkedItems;
   scheduleListRef.current = scheduleList;
+  if (activeTab === "planned") plannedListRef.current = visibleScheduleList;
 
   // 체크박스 토글 핸들러 (PATCH /plan/schedule/status/{id} — COMPLETED / NORMAL)
   const handleToggleCheck = useCallback(
@@ -718,19 +898,19 @@ function MainPageContent() {
         return next;
       });
 
-      // 체크 시: 잠깐 대기 후 removedItems에 추가하여 날아가기 시작
-      if (!isCurrentlyChecked) {
-        setTimeout(() => {
-          setRemovedItems((prev) => new Set(prev).add(id));
-        }, 300);
+      // 낙관적 업데이트: 카운트 즉시 반영
+      if (newStatus === "COMPLETED") {
+        setPlannedTotal(prev => Math.max(0, prev - 1));
+        setCompletedTotal(prev => prev + 1);
       } else {
-        // 해제 시 (다시 나타나야 할 경우를 대비해 초기화 - 현재 기획상 사라진 뒤 해제는 없지만 안전장치)
-        setRemovedItems((prev) => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
+        setCompletedTotal(prev => Math.max(0, prev - 1));
+        setPlannedTotal(prev => prev + 1);
       }
+
+      // 체크 또는 해제 시: 잠깐 대기 후 removedItems에 추가하여 날아가기 시작
+      setTimeout(() => {
+        setRemovedItems((prev) => new Set(prev).add(id));
+      }, 300);
 
       try {
         const res = await fetchWithAuth(`/plan/schedule/status/${id}`, {
@@ -738,20 +918,52 @@ function MainPageContent() {
           body: JSON.stringify({ status: newStatus }),
         });
         const json = (await res.json()) as { result?: boolean };
-        if (!res.ok || !json.result) {
+        if (res.ok && json.result) {
+          // 완료 탭에 바로 반영되도록 로컬 리스트의 status 갱신
+          const updateStatus = (list: ScheduleListItem[]) =>
+            list.map((p) => (p.id === id ? { ...p, status: newStatus } : p));
+          setScheduleList((prev) => updateStatus(prev));
+          setSharedRoomScheduleList((prev) => updateStatus(prev));
+        } else {
+          // 실패 시 카운트 복구
+          if (newStatus === "COMPLETED") {
+            setPlannedTotal(prev => prev + 1);
+            setCompletedTotal(prev => Math.max(0, prev - 1));
+          } else {
+            setCompletedTotal(prev => prev + 1);
+            setPlannedTotal(prev => Math.max(0, prev - 1));
+          }
           setCheckedItems((prev) => {
             const revert = new Set(prev);
             if (isCurrentlyChecked) revert.add(id);
             else revert.delete(id);
             return revert;
           });
+          setRemovedItems((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
         }
       } catch {
+        // 에러 시 카운트 복구
+        if (newStatus === "COMPLETED") {
+          setPlannedTotal(prev => prev + 1);
+          setCompletedTotal(prev => Math.max(0, prev - 1));
+        } else {
+          setCompletedTotal(prev => prev + 1);
+          setPlannedTotal(prev => Math.max(0, prev - 1));
+        }
         setCheckedItems((prev) => {
           const revert = new Set(prev);
           if (isCurrentlyChecked) revert.add(id);
           else revert.delete(id);
           return revert;
+        });
+        setRemovedItems((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
         });
       } finally {
         togglingIdsRef.current.delete(id);
@@ -765,12 +977,15 @@ function MainPageContent() {
     [fetchWithAuth],
   );
 
+  const roomIdForDetail = roomId?.trim() || (apiPlanData && apiPlanData !== "none" && apiPlanData.roomId ? String(apiPlanData.roomId) : null);
+
   const handleOpenScheduleDetail = (id: number) => {
     if (!getToken()) {
       setShowLoginRequiredModal(true);
       return;
     }
-    router.push(`/schedule-detail?id=${id}`);
+    const path = `/schedule-detail?id=${id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
+    router.push(path);
   };
 
   return (
@@ -779,9 +994,13 @@ function MainPageContent() {
       <div className="h-full max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
         <KakaoLoginAlert
           show={searchParams.get("kakao_login") === "1"}
-          onSuccessFromMain={() => {
-            fetchPlanUser(handleApiError);
-            fetchTotalAmount(handleApiError);
+          onSuccessFromMain={async () => {
+            const planData = await fetchPlanUser(handleApiError);
+            const roomIdForAmount =
+              planData && planData !== "none" && planData.roomId != null
+                ? String(planData.roomId)
+                : undefined;
+            fetchTotalAmount(handleApiError, roomIdForAmount);
             fetchScheduleList();
           }}
         />
@@ -1164,7 +1383,7 @@ function MainPageContent() {
                       duration={0.1}
                       className="inline"
                     />
-                    만 원 지출 예정
+                    만 원 지출 예정 및 지출
                   </p>
                   <div className="mt-4 flex items-center gap-2">
                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
@@ -1185,7 +1404,7 @@ function MainPageContent() {
             {/* 하단 영역 */}
             <div className="flex justify-between">
               <div className="flex flex-col items-start justify-start">
-                <span className="text-lg font-bold text-[#1b0d14]">
+                <span className="text-xl font-bold text-[#1b0d14]">
                   플랜 리스트
                 </span>
                 {isPlanLoading ? (
@@ -1195,8 +1414,10 @@ function MainPageContent() {
                   />
                 ) : (
                   <span className="text-lg text-gray-500">
-                    {visibleScheduleList.length > 0
-                      ? `${visibleScheduleList.length}개의 플랜이 있어요`
+                    {effectiveScheduleList.length > 0 || displayCount > 0
+                      ? activeTab === "planned"
+                        ? `${displayCount}개의 플랜이 있어요`
+                        : `${displayCount}개 완료했어요`
                       : "플랜을 추가해볼까요?"}
                   </span>
                 )}
@@ -1245,7 +1466,7 @@ function MainPageContent() {
                       }
                       router.push(addPlanPath);
                     }}
-                    className="flex items-center gap-2 px-4 py-3 text-white rounded-lg font-bold text-lg transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
+                    className="flex h-[42px] items-center gap-2 px-4 py-0 text-white rounded-xl font-bold text-sm transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
                     style={{
                       backgroundColor:
                         !getToken() &&
@@ -1263,11 +1484,70 @@ function MainPageContent() {
                   >
                     추가
                     <CirclePlus
-                      className="h-5 w-5 text-white"
+                      className="h-4 w-4 shrink-0 text-white"
                       strokeWidth={2.5}
                     />
                   </button>
                 )}
+            </div>
+            {/* 탭 영역 - Sticky 고정 */}
+            <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm px-0 sm:px-2 py-2 -mx-4 sm:mx-0 px-4 sm:px-2 border-b border-gray-50/50">
+              <div className="flex bg-gray-100/50 p-1.5 rounded-2xl border border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("planned");
+                    if (shareCode?.trim()) {
+                      fetchSharedRoomScheduleList("NORMAL");
+                    } else if (getToken()) {
+                      const roomIdParam =
+                        roomId?.trim() ||
+                        (apiPlanData &&
+                          apiPlanData !== "none" &&
+                          apiPlanData.roomId
+                          ? String(apiPlanData.roomId)
+                          : null);
+                      fetchScheduleList(roomIdParam ?? undefined, "NORMAL");
+                    }
+                  }}
+                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === "planned"
+                    ? "bg-white text-[#ee2b8c] shadow-sm"
+                    : "text-gray-400 hover:text-gray-600"
+                    }`}
+                >
+                  <span>계획 중</span>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "planned" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}>
+                    {plannedCount}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("completed");
+                    if (shareCode?.trim()) {
+                      fetchSharedRoomScheduleList("COMPLETED");
+                    } else if (getToken()) {
+                      const roomIdParam =
+                        roomId?.trim() ||
+                        (apiPlanData &&
+                          apiPlanData !== "none" &&
+                          apiPlanData.roomId
+                          ? String(apiPlanData.roomId)
+                          : null);
+                      fetchScheduleList(roomIdParam ?? undefined, "COMPLETED");
+                    }
+                  }}
+                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === "completed"
+                    ? "bg-white text-[#ee2b8c] shadow-sm"
+                    : "text-gray-400 hover:text-gray-600"
+                    }`}
+                >
+                  <span>완료</span>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "completed" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}>
+                    {completedCount}
+                  </span>
+                </button>
+              </div>
             </div>
             <div
               className={`flex-1 w-full pb-24 min-h-0 scrollbar-hide ${allowPlanListScroll ? "overflow-y-auto" : "overflow-hidden touch-pan-y"}`}
@@ -1278,9 +1558,8 @@ function MainPageContent() {
                   "linear-gradient(to bottom, transparent 0%, black 24px, black 100%)",
               }}
             >
-              <ul className="mt-4 w-full flex flex-col gap-3 min-h-[200px] relative">
-                {(scheduleLoading || isSharedLoading) &&
-                  effectiveScheduleList.length === 0 ? (
+              <ul className="mt-2 w-full flex flex-col gap-3 min-h-[200px] relative">
+                {scheduleLoading || isSharedLoading ? (
                   ["a", "b", "c", "d", "e"].map((id) => (
                     <li
                       key={`skeleton-plan-${id}`}
@@ -1312,16 +1591,18 @@ function MainPageContent() {
                     <p className="text-4xl font-semibold text-stone-400">텅~</p>
                   </li>
                 ) : (
-                  <AnimatePresence>
+                  <AnimatePresence mode="popLayout">
                     {visibleScheduleList.length === 0 ? (
                       <motion.li
-                        key="all-completed-message"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        key={`empty-${activeTab}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         className="flex flex-1 flex-col items-center justify-center py-16"
                       >
                         <p className="text-xl font-semibold text-stone-400">
-                          모든 플랜을 완료했어요! 🎉
+                          {activeTab === "completed"
+                            ? "완료한 플랜이 없어요"
+                            : "모든 플랜을 완료했어요! 🎉"}
                         </p>
                       </motion.li>
                     ) : (
@@ -1330,8 +1611,10 @@ function MainPageContent() {
                           checkedItems.has(plan.id) ||
                           plan.status === "COMPLETED";
                         const amount = plan.amount ?? 0;
-                        const categoryColor = getCategoryColor(plan.categoryName);
-                        const detailHref = `/schedule-detail?id=${plan.id}`;
+                        const categoryColor = getCategoryColor(
+                          plan.categoryName,
+                        );
+                        const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
                         const dateLabel = plan.startDate?.trim()
                           ? (() => {
                             const { dateText, weekday } = formatDate(
@@ -1340,6 +1623,7 @@ function MainPageContent() {
                             return `${dateText} (${weekday})`;
                           })()
                           : "미정";
+
                         return (
                           <motion.li
                             key={plan.id}
@@ -1349,7 +1633,7 @@ function MainPageContent() {
                             exit={{
                               opacity: [1, 1, 0],
                               y: [0, -20, -20],
-                              x: [0, 0, 500],
+                              x: [0, 0, activeTab === "planned" ? 500 : -500],
                               scale: [1, 1.05, 1.05],
                               transition: {
                                 duration: 0.6,
@@ -1365,7 +1649,9 @@ function MainPageContent() {
                             >
                               <div
                                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                                style={{ backgroundColor: `${categoryColor}` }}
+                                style={{
+                                  backgroundColor: `${categoryColor}`,
+                                }}
                               >
                                 <button
                                   type="button"
@@ -1396,7 +1682,9 @@ function MainPageContent() {
                                   {plan.title}
                                 </h4>
                                 <div className="text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
-                                  <p className="truncate">{plan.categoryName}</p>
+                                  <p className="truncate">
+                                    {plan.categoryName}
+                                  </p>
                                   <p className="truncate">{dateLabel}</p>
                                 </div>
                               </div>
@@ -1439,6 +1727,9 @@ function MainPageContent() {
                 )}
             </div>
           </motion.div>
+
+          {/* 스크롤 유도 애니메이션 */}
+          <ScrollDownAnimation scrollContainerRef={mainScrollRef} />
         </main>
         {/* 하단 탭바 - Sticky로 최상단에 고정 */}
         <BottomTabBar

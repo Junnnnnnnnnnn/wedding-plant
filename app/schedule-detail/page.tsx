@@ -14,6 +14,7 @@ import { motion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -21,6 +22,7 @@ import {
   type ReactElement,
 } from "react";
 import LoginRequiredModal from "../components/LoginRequiredModal";
+import FeedbackModal from "../components/FeedbackModal";
 import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
 import { useScrollDirection } from "../hooks/useScrollDirection";
@@ -111,6 +113,8 @@ function ScheduleDetailPageContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteFeedbackModal, setShowDeleteFeedbackModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -122,6 +126,8 @@ function ScheduleDetailPageContent() {
     const parsed = Number(idParam);
     return Number.isNaN(parsed) ? null : parsed;
   }, [searchParams]);
+
+  const roomId = searchParams.get("roomId");
 
   useEffect(() => {
     if (!scheduleId) {
@@ -230,6 +236,26 @@ function ScheduleDetailPageContent() {
     return { lat, lng };
   }, [detail?.locationLat, detail?.locationLng]);
 
+  const handleDelete = useCallback(async () => {
+    if (!detail?.id || deleting) return;
+    setDeleting(true);
+    try {
+      const res = await fetchWithAuth(`/plan/schedule/${detail.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setShowDeleteFeedbackModal(true);
+      } else {
+        const text = await res.text();
+        window.alert(text || "삭제에 실패했습니다.");
+      }
+    } catch (err) {
+      window.alert("삭제 중 오류가 발생했습니다.");
+    } finally {
+      setDeleting(false);
+    }
+  }, [detail?.id, deleting, fetchWithAuth, router]);
+
   useEffect(() => {
     if (window.kakao?.maps) return;
     const script = document.createElement("script");
@@ -237,7 +263,7 @@ function ScheduleDetailPageContent() {
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&libraries=services`;
     script.async = true;
     script.onload = () => {
-      window.kakao?.maps?.load(() => { });
+      window.kakao?.maps?.load(() => {});
     };
     document.head.appendChild(script);
     return () => {
@@ -290,6 +316,17 @@ function ScheduleDetailPageContent() {
       }
     }, 150);
     return () => clearTimeout(timer);
+  }, [mapCoords]);
+
+  // 컨테이너 크기 변경 시 Kakao 지도 relayout (높이 300px 등으로 변경 시 지도가 새 크기에 맞게 다시 그려지도록)
+  useEffect(() => {
+    const el = document.getElementById("schedule-detail-map");
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      if (mapRef.current?.relayout) mapRef.current.relayout();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [mapCoords]);
 
   let content: ReactElement | null = null;
@@ -347,7 +384,7 @@ function ScheduleDetailPageContent() {
           transition={{ duration: 0.5 }}
           className="mt-10 mb-2 relative"
         >
-          <div className="bg-[#ee2b8c] rounded-[32px] p-4 shadow-[0_8px_32px_rgba(238,43,140,0.25)] relative overflow-hidden">
+          <div className="bg-[#f14d8e] rounded-[32px] p-7 shadow-[0_8px_32px_rgba(238,43,140,0.25)] relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
 
@@ -357,7 +394,7 @@ function ScheduleDetailPageContent() {
                 {detail.categoryName}
               </span>
             </div>
-            <h2 className="text-xl font-black text-white mb-1.5 max-w-full leading-tight">
+            <h2 className="text-2xl font-black text-white mb-1.5 max-w-full leading-tight">
               {detail.title}
             </h2>
             <div className="flex items-center gap-2 mb-3 text-white/90">
@@ -366,10 +403,11 @@ function ScheduleDetailPageContent() {
                 {formatDate(detail.startDate)}
               </span>
             </div>
+            <div className="h-px bg-white/25 mb-3" />
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-white/80 text-xs mb-0.5">지출 금액</div>
-                <div className="text-xl font-black text-white leading-tight">
+                <div className="text-white/80 text-xs mb-1.5">지출 금액</div>
+                <div className="text-2xl font-black text-white leading-tight">
                   {formattedAmount}
                 </div>
               </div>
@@ -438,42 +476,45 @@ function ScheduleDetailPageContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <div className="bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-2.5">
-              <div className="bg-gradient-to-br from-[#E5F3FF] to-[#D0E7FF] rounded-lg p-2">
+          <div
+            className={`bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow flex flex-col ${detail.location?.trim() ? "h-[300px]" : ""}`}
+          >
+            <div className="flex items-start gap-2.5 flex-1 min-h-0">
+              <div className="bg-gradient-to-br from-[#E5F3FF] to-[#D0E7FF] rounded-lg p-2 shrink-0">
                 <MapPin className="w-4 h-4 text-[#4A90E2]" />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 flex flex-col min-h-0">
                 <div className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-0.5">
                   장소
                 </div>
-                <div className="text-sm font-bold text-[#1b0d14] mb-1.5">
+                <div className="text-sm font-bold text-[#1b0d14] mb-1.5 shrink-0">
                   {detail.location?.trim() || "장소 미정"}
                 </div>
-                {mapCoords ? (
-                  <div
-                    id="schedule-detail-map"
-                    className="w-full h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-100"
-                  />
-                ) : (
-                  <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg h-24 flex items-center justify-center border border-gray-200">
-                    <div className="text-center">
-                      <MapPin className="w-5 h-5 text-gray-400 mx-auto mb-0.5" />
-                      <div className="text-xs text-gray-500">
-                        위도: {latStr}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        경도: {lngStr}
+                {detail.location?.trim() &&
+                  (mapCoords ? (
+                    <div
+                      id="schedule-detail-map"
+                      className="w-full flex-1 min-h-[200px] rounded-lg overflow-hidden border border-gray-200 bg-gray-100"
+                    />
+                  ) : (
+                    <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg flex-1 min-h-[200px] flex items-center justify-center border border-gray-200">
+                      <div className="text-center">
+                        <MapPin className="w-5 h-5 text-gray-400 mx-auto mb-0.5" />
+                        <div className="text-xs text-gray-500">
+                          위도: {latStr}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          경도: {lngStr}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  ))}
                 {mapLink && (
                   <a
                     href={mapLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-[#ee2b8c] px-2.5 py-1 text-xs font-semibold text-[#ee2b8c] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                    className="mt-1.5 shrink-0 inline-flex items-center gap-1.5 rounded-full border border-[#ee2b8c] px-2.5 py-1 text-xs font-semibold text-[#ee2b8c] transition-transform hover:scale-[1.02] active:scale-[0.98]"
                   >
                     카카오맵에서 보기
                   </a>
@@ -562,30 +603,31 @@ function ScheduleDetailPageContent() {
           className={`flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-6 pt-5 min-w-0 w-full max-w-full box-border ${getToken() ? "pb-36" : "pb-24"}`}
         >
           <div className="w-full max-w-full min-w-0">{content}</div>
-        </main>
 
-        {/* Action Buttons: fixed above BottomTabBar (logged-in only) */}
-        {getToken() && detail && (
-          <div className="fixed bottom-[75px] left-0 right-0 z-[90] flex justify-center px-8 pb-4 pointer-events-none">
-            <div className="w-full max-w-md pointer-events-auto flex gap-3">
+          {/* Action Buttons: 본문 하단 (로그인 시에만) */}
+          {getToken() && detail && (
+            <div className="w-full max-w-full flex gap-3 mt-4 pb-2">
               <button
                 type="button"
-                onClick={() =>
-                  router.push(`/add-plen?id=${encodeURIComponent(detail.id)}`)
-                }
+                onClick={() => {
+                  const path = `/add-plen?id=${encodeURIComponent(detail.id)}${roomId ? `&roomId=${roomId}` : ""}`;
+                  router.push(path);
+                }}
                 className="flex-1 bg-[#ee2b8c] hover:bg-[#d4237b] text-white py-3 rounded-2xl font-bold shadow-lg shadow-[#ee2b8c33] transition-all transform active:scale-95"
               >
                 수정하기
               </button>
               <button
                 type="button"
-                className="flex-1 bg-white hover:bg-gray-50 text-[#1b0d14] py-3 rounded-2xl font-bold border-2 border-gray-100 hover:border-[#ee2b8c33] transition-all transform active:scale-95"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 bg-white hover:bg-gray-50 text-[#1b0d14] py-3 rounded-2xl font-bold border-2 border-gray-100 hover:border-[#ee2b8c33] transition-all transform active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                삭제하기
+                {deleting ? "삭제 중..." : "삭제하기"}
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </main>
 
         <BottomTabBar
           scrollDirection={scrollDirection}
@@ -599,6 +641,14 @@ function ScheduleDetailPageContent() {
               router.push("/");
             }
           }}
+        />
+        <FeedbackModal
+          isOpen={showDeleteFeedbackModal}
+          onClose={() => {
+            setShowDeleteFeedbackModal(false);
+            router.back();
+          }}
+          type="deleted"
         />
       </div>
     </div>

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import BottomTabBar from "../components/BottomTabBar";
+import FeedbackModal from "../components/FeedbackModal";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import { getToken } from "@/lib/api";
 import {
@@ -1565,49 +1566,21 @@ function AddPlanPageContent() {
           )}
         </AnimatePresence>
 
-        {/* 플랜 등록 완료 모달 */}
-        {showPlanSavedModal && (
-          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-          <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
-            onClick={() => {
-              setShowPlanSavedModal(false);
-              router.push(roomId ? `/main?roomId=${roomId}` : "/main");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setShowPlanSavedModal(false);
-                router.push(roomId ? `/main?roomId=${roomId}` : "/main");
-              }
-            }}
-          >
-            <div
-              className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="plan-saved-modal-title"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              <p
-                id="plan-saved-modal-title"
-                className="text-center text-lg font-semibold text-stone-900"
-              >
-                {editId ? "수정되었습니다" : "등록되었습니다"}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPlanSavedModal(false);
-                  router.push(roomId ? `/main?roomId=${roomId}` : "/main");
-                }}
-                className="mt-4 w-full rounded-xl bg-[#ee2b8c] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#d4237b]"
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        )}
+        {/* 플랜 등록/수정 완료 피드백 모달 */}
+        <FeedbackModal
+          isOpen={showPlanSavedModal}
+          onClose={() => {
+            setShowPlanSavedModal(false);
+            router.push(roomId ? `/main?roomId=${roomId}` : "/main");
+          }}
+          type={editId ? "updated" : "registered"}
+          title={editId ? "수정되었습니다" : "등록되었습니다"}
+          subtitle={
+            editId
+              ? "Successfully updated"
+              : "Successfully added to your plan"
+          }
+        />
 
         {/* 시스템 오류 모달 */}
         {showSystemErrorModal && (

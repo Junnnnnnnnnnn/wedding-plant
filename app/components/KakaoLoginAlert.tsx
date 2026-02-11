@@ -57,7 +57,7 @@ export default function KakaoLoginAlert({
   const router = useRouter();
   const pathname = usePathname();
   const { fetchBackend, fetchWithAuth, setLoading } = useApi();
-  const { weddingData, resetData } = useWedding();
+  const { weddingData, resetData, setName, setBudget, setDate } = useWedding();
   const shownRef = useRef(false);
   const [processing, setProcessing] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
@@ -200,11 +200,16 @@ export default function KakaoLoginAlert({
             };
             if (userJson.result === true && userJson.data) {
               fetchedRoomId = userJson.data.roomId ?? null;
+              const { name, weddingDate, budget } = userJson.data;
 
-              // 이름 없으면 먼저 입력받기
-              if (!userJson.data.name || !userJson.data.name.trim()) {
-                await waitForName();
-                setLoading(true); // re-show global loading
+              // /setting 또는 /main 진입 시 사용할 수 있도록 컨텍스트에 사용자 정보 저장
+              if (name) setName(name);
+              if (budget) setBudget(String(budget));
+              if (weddingDate) {
+                const parts = weddingDate.split("-").map(Number);
+                if (parts.length === 3 && !parts.some(Number.isNaN)) {
+                  setDate({ year: parts[0], month: parts[1], day: parts[2] });
+                }
               }
 
               if (isPlanDataComplete(userJson.data)) {
