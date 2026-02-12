@@ -8,8 +8,10 @@ import React, {
   useRef,
   Suspense,
 } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, CircleHelp } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+
+import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
 
 import { useApi } from "../contexts/ApiContext";
 import { getToken } from "@/lib/api";
@@ -150,6 +152,45 @@ function BudgetDetailsPage() {
     null,
   );
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+
+  // Guide State
+  const [showGuide, setShowGuide] = useState(false);
+
+  useEffect(() => {
+    const hasSeen = localStorage.getItem("hasSeenBudgetGuide");
+    if (!hasSeen) {
+      const timer = setTimeout(() => setShowGuide(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleCloseGuide = () => {
+    setShowGuide(false);
+    localStorage.setItem("hasSeenBudgetGuide", "true");
+  };
+
+  const guideSteps: GuideStep[] = [
+    {
+      id: "budget-stat-grid",
+      title: "예산 현황",
+      description: "초기 자본과 지출 예정/사용 금액을 한눈에 비교해보세요.",
+    },
+    {
+      id: "budget-ai-insight",
+      title: "AI 조언",
+      description: "현재 예산 사용 패턴을 분석해 AI가 조언해드립니다.",
+    },
+    {
+      id: "budget-analysis",
+      title: "지출 분석",
+      description: "카테고리별 예산 비중과 지출 현황을 그래프로 확인하세요.",
+    },
+    {
+      id: "budget-tab",
+      title: "상태별 필터",
+      description: "지출 예정인 항목과 실제 사용한 항목을 나누어 볼 수 있어요.",
+    },
+  ];
 
   /** 스케줄 목록 API 쿼리: 전체일 때는 status 생략, 그래프 클릭 시 categoryName 전달 */
   const buildScheduleParams = useCallback(
@@ -382,11 +423,11 @@ function BudgetDetailsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfbfc]">
+    <div className="h-[100dvh] bg-[#fcfbfc] overflow-hidden">
       <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
-      <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
-        <div className="absolute top-0 left-0 z-50 w-full pointer-events-none">
-          <div className="px-6 py-4 pointer-events-auto">
+      <div className="h-full max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide scroll-smooth min-h-0">
+          <div className="flex justify-between items-center px-6 py-3 shrink-0">
             <button
               type="button"
               onClick={() => router.back()}
@@ -396,10 +437,16 @@ function BudgetDetailsPage() {
               <ArrowLeft className="w-5 h-5" />
               <span className="font-bold">뒤로가기</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setShowGuide(true)}
+              className="flex h-10 w-10 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors backdrop-blur-sm bg-white/30 rounded-full"
+              aria-label="가이드 보기"
+            >
+              <CircleHelp className="h-6 w-6" strokeWidth={2} />
+            </button>
           </div>
-        </div>
-
-        <main className="flex-1 pt-14 pb-32 overflow-y-auto overflow-x-hidden">
+          <div className="pt-0 pb-32">
           {loading ? (
             <div className="px-4 py-6 flex flex-col items-center justify-center min-h-[200px]">
               <div
@@ -422,7 +469,7 @@ function BudgetDetailsPage() {
           ) : stats ? (
             <>
               {/* Prominent Stats Grid */}
-              <div className="px-4 py-4 space-y-3">
+              <div id="budget-stat-grid" className="px-4 py-4 space-y-3">
                 <div className="w-full">
                   <StatCard
                     label="초기 자본"
@@ -447,7 +494,7 @@ function BudgetDetailsPage() {
               </div>
 
               {/* AI Insight Trigger */}
-              <div className="px-4 mt-2">
+              <div id="budget-ai-insight" className="px-4 mt-2">
                 <button
                   onClick={() => setIsAIModalOpen(true)}
                   className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-purple-500 to-[#ee2b8c] text-white rounded-2xl font-bold shadow-lg shadow-[#ee2b8c22] hover:opacity-95 transition-all transform active:scale-[0.98]"
@@ -467,7 +514,7 @@ function BudgetDetailsPage() {
                   }
                 >
                   {/* Spending Analysis Section */}
-                  <div className="px-4 mt-8">
+                  <div id="budget-analysis" className="px-4 mt-8">
                     <div className="flex justify-between items-center mb-4">
                       <h2 className="text-xl font-bold text-[#1b0d14]">
                         지출 분석
@@ -490,7 +537,7 @@ function BudgetDetailsPage() {
                   </div>
 
                   {/* Tabs */}
-                  <div className="px-4 mt-8">
+                  <div id="budget-tab" className="px-4 mt-8">
                     <div className="flex border-b border-gray-100">
                       {(["전체", "예정", "사용"] as const).map((tab) => (
                         <button
@@ -508,7 +555,7 @@ function BudgetDetailsPage() {
                   </div>
 
                   {/* Expense List: count=10000으로 전체 한 번에 로드 */}
-                  <div className="mt-4">
+                  <div id="budget-list" className="mt-4">
                     {scheduleLoading && scheduleList.length === 0 ? (
                       <div className="px-4 py-4 text-center text-sm text-gray-500">
                         불러오는 중...
@@ -537,6 +584,7 @@ function BudgetDetailsPage() {
               <p className="text-gray-500 font-medium">데이터가 없습니다.</p>
             </div>
           )}
+          </div>
         </main>
 
         <AIInsightsModal
@@ -549,6 +597,11 @@ function BudgetDetailsPage() {
         />
 
         <BottomTabBar showLoginButton={false} />
+        <GuideOverlay
+          isOpen={showGuide}
+          onClose={handleCloseGuide}
+          steps={guideSteps}
+        />
       </div>
     </div>
   );

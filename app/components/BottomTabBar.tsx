@@ -80,7 +80,10 @@ export default function BottomTabBar({
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[100] flex flex-col items-center">
+    <div
+      id="main-bottom-nav"
+      className="fixed bottom-0 left-0 right-0 z-[100] flex flex-col items-center"
+    >
       {showLoginButton && onLoginClick && (
         <div
           className="w-full max-w-md px-6 flex items-center justify-center bg-transparent overflow-hidden"
