@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
 import { ChevronLeft, ChevronRight, Plus, Check, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -25,7 +25,7 @@ interface CalendarPlanItem {
     title: string;
 }
 
-export default function CalendarPage() {
+function CalendarPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const roomId = searchParams.get("roomId");
@@ -368,5 +368,17 @@ export default function CalendarPage() {
                 )}
             </AnimatePresence>
         </div>
+    );
+}
+
+export default function CalendarPage() {
+    return (
+        <Suspense fallback={
+            <div className="h-[100dvh] bg-[#fcfbfc] flex items-center justify-center">
+                <div className="animate-pulse text-gray-400 font-bold">로딩 중...</div>
+            </div>
+        }>
+            <CalendarPageContent />
+        </Suspense>
     );
 }
