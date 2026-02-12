@@ -23,7 +23,6 @@ export default function LoginRequiredModal({
 
   const handleClose = () => {
     onClose();
-    router.replace("/");
   };
 
   if (!show) return null;
