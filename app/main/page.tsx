@@ -1472,7 +1472,7 @@ function MainPageContent() {
                       duration={0.1}
                       className="inline"
                     />
-                    만 원 지출 예정 및 지출
+                    만 원 지출/예정
                   </p>
                   <div className="mt-4 flex items-center gap-2">
                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
@@ -1515,68 +1515,91 @@ function MainPageContent() {
                 isRoomView &&
                 String(myRoomPermission ?? "").toUpperCase() === "READ"
               ) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const roomIdValue =
-                      roomId ??
-                      (apiPlanData &&
-                      apiPlanData !== "none" &&
-                      apiPlanData.roomId
-                        ? String(apiPlanData.roomId)
-                        : null);
-
-                    const addPlanPath = roomIdValue
-                      ? `/add-plen?roomId=${roomIdValue}`
-                      : "/add-plen";
-                    if (getToken()) {
-                      router.push(addPlanPath);
-                      return;
-                    }
-                    if (isSharedView) {
-                      setLoginRequiredTitle(
-                        "플랜을 추가하려면 로그인해 주세요",
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const roomIdValue =
+                        roomId ??
+                        (apiPlanData &&
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
+                          ? String(apiPlanData.roomId)
+                          : null);
+                      router.push(
+                        roomIdValue
+                          ? `/calendar?roomId=${roomIdValue}`
+                          : "/calendar",
                       );
-                      setShowLoginRequiredModal(true);
-                      return;
-                    }
+                    }}
+                    className="p-2.5 text-gray-500 hover:text-[#ee2b8c] hover:bg-[#ee2b8c0a] transition-all rounded-xl active:scale-90"
+                    aria-label="캘린더 보기"
+                  >
+                    <Calendar className="h-6 w-6" strokeWidth={2.2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const roomIdValue =
+                        roomId ??
+                        (apiPlanData &&
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
+                          ? String(apiPlanData.roomId)
+                          : null);
 
-                    // Guest: allow up to 3 plans saved in sessionStorage
-                    const guestCount = effectiveScheduleList.length;
-                    if (guestCount === 0) {
-                      // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
-                      setShowGuestPlanLimitModal(true);
-                      return;
-                    }
-                    if (guestCount >= 3) {
-                      setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
-                      setShowLoginRequiredModal(true);
-                      return;
-                    }
-                    router.push(addPlanPath);
-                  }}
-                  className="flex h-[42px] items-center gap-2 px-4 py-0 text-white rounded-xl font-bold text-sm transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
-                  style={{
-                    backgroundColor:
-                      !getToken() &&
-                      !isSharedView &&
-                      effectiveScheduleList.length >= 3
-                        ? "#cbd5e1"
-                        : "#ee2b8c",
-                    boxShadow:
-                      !getToken() &&
-                      !isSharedView &&
-                      effectiveScheduleList.length >= 3
-                        ? "0 4px 12px rgba(148, 163, 184, 0.35)"
-                        : "0 4px 12px rgba(238, 43, 140, 0.3)",
-                  }}
-                >
-                  추가
-                  <CirclePlus
-                    className="h-4 w-4 shrink-0 text-white"
-                    strokeWidth={2.5}
-                  />
-                </button>
+                      const addPlanPath = roomIdValue
+                        ? `/add-plen?roomId=${roomIdValue}`
+                        : "/add-plen";
+                      if (getToken()) {
+                        router.push(addPlanPath);
+                        return;
+                      }
+                      if (isSharedView) {
+                        setLoginRequiredTitle(
+                          "플랜을 추가하려면 로그인해 주세요",
+                        );
+                        setShowLoginRequiredModal(true);
+                        return;
+                      }
+
+                      // Guest: allow up to 3 plans saved in sessionStorage
+                      const guestCount = effectiveScheduleList.length;
+                      if (guestCount === 0) {
+                        // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
+                        setShowGuestPlanLimitModal(true);
+                        return;
+                      }
+                      if (guestCount >= 3) {
+                        setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
+                        setShowLoginRequiredModal(true);
+                        return;
+                      }
+                      router.push(addPlanPath);
+                    }}
+                    className="flex h-[42px] items-center gap-2 px-4 py-0 text-white rounded-xl font-bold text-sm transition-colors shadow-lg hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
+                    style={{
+                      backgroundColor:
+                        !getToken() &&
+                        !isSharedView &&
+                        effectiveScheduleList.length >= 3
+                          ? "#cbd5e1"
+                          : "#ee2b8c",
+                      boxShadow:
+                        !getToken() &&
+                        !isSharedView &&
+                        effectiveScheduleList.length >= 3
+                          ? "0 4px 12px rgba(148, 163, 184, 0.35)"
+                          : "0 4px 12px rgba(238, 43, 140, 0.3)",
+                    }}
+                  >
+                    추가
+                    <CirclePlus
+                      className="h-4 w-4 shrink-0 text-white"
+                      strokeWidth={2.5}
+                    />
+                  </button>
+                </div>
               )}
             </div>
             {/* 탭 영역 - Sticky 고정 */}

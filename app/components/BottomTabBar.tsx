@@ -1,21 +1,21 @@
 "use client";
 
-import { Home, Calendar, LayoutGrid, Settings } from "lucide-react";
+import { Home, Search, LayoutGrid, Settings } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { AUTH_TOKEN_CHANGED_EVENT, getToken } from "@/lib/api";
 
-export type TabType = "home" | "calendar" | "rooms" | "settings";
+export type TabType = "home" | "feed" | "rooms" | "settings";
 
 const TAB_ROUTES: Record<TabType, string> = {
   home: "/main",
-  calendar: "/main",
+  feed: "/main",
   rooms: "/plan-list",
   settings: "/user",
 };
 
 function pathnameToTab(pathname: string): TabType {
-  if (pathname === "/main") return "home";
+  if (pathname === "/main" || pathname === "/calendar") return "home";
   if (pathname === "/plan-list") return "rooms";
   if (pathname === "/user" || pathname === "/setting") return "settings";
   return "home";
@@ -65,11 +65,11 @@ export default function BottomTabBar({
     label: string;
     icon: typeof Home;
   }> = [
-    { id: "home", label: "홈", icon: Home },
-    { id: "calendar", label: "캘린더", icon: Calendar },
-    { id: "rooms", label: "참여플랜", icon: LayoutGrid },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
+      { id: "home", label: "홈", icon: Home },
+      { id: "feed", label: "피드", icon: Search },
+      { id: "rooms", label: "참여플랜", icon: LayoutGrid },
+      { id: "settings", label: "Settings", icon: Settings },
+    ];
 
   const handleClick = (tab: TabType) => {
     if (onTabClick) {

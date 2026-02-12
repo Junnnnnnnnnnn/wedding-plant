@@ -128,6 +128,7 @@ function ScheduleDetailPageContent() {
   }, [searchParams]);
 
   const roomId = searchParams.get("roomId");
+  const fromParam = searchParams.get("from");
 
   useEffect(() => {
     if (!scheduleId) {
@@ -610,8 +611,10 @@ function ScheduleDetailPageContent() {
               <button
                 type="button"
                 onClick={() => {
-                  const path = `/add-plen?id=${encodeURIComponent(detail.id)}${roomId ? `&roomId=${roomId}` : ""}`;
-                  router.push(path);
+                  const params = new URLSearchParams({ id: String(detail.id) });
+                  if (roomId) params.set("roomId", roomId);
+                  if (fromParam === "calendar") params.set("from", "calendar");
+                  router.push(`/add-plen?${params.toString()}`);
                 }}
                 className="flex-1 bg-[#ee2b8c] hover:bg-[#d4237b] text-white py-3 rounded-2xl font-bold shadow-lg shadow-[#ee2b8c33] transition-all transform active:scale-95"
               >
@@ -646,7 +649,11 @@ function ScheduleDetailPageContent() {
           isOpen={showDeleteFeedbackModal}
           onClose={() => {
             setShowDeleteFeedbackModal(false);
-            router.back();
+            if (fromParam === "calendar") {
+              router.push(roomId ? `/calendar?roomId=${roomId}` : "/calendar");
+            } else {
+              router.back();
+            }
           }}
           type="deleted"
         />

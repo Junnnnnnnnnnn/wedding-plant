@@ -68,6 +68,9 @@ function AddPlanPageContent() {
     return Number.isNaN(n) ? null : n;
   }, [roomIdParam]);
 
+  const dateParam = searchParams.get("date");
+  const fromParam = searchParams.get("from");
+
   const [inputValue, setInputValue] = useState("");
   const [searchResults, setSearchResults] = useState<
     Array<{ color: string; label: string }>
@@ -139,6 +142,22 @@ function AddPlanPageContent() {
   useEffect(() => {
     setTokenChecked(true);
   }, []);
+
+  /** 캘린더에서 날짜 선택 후 플랜 추가 시 URL date 파라미터로 일자 초기화 */
+  useEffect(() => {
+    if (!dateParam?.trim()) return;
+    const match = dateParam.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (!match) return;
+    const [, y, m, d] = match;
+    const year = Number(y);
+    const month = Number(m) - 1;
+    const day = Number(d);
+    if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) return;
+    const date = new Date(year, month, day);
+    if (Number.isNaN(date.getTime())) return;
+    setSelectedDate(date);
+    setIsDateUndecided(false);
+  }, [dateParam]);
 
   /**
    * ============================================================================
@@ -816,7 +835,13 @@ function AddPlanPageContent() {
           <div className="px-6 py-4 pointer-events-auto">
             <button
               type="button"
-              onClick={() => router.push("/main")}
+              onClick={() => {
+                if (fromParam === "calendar") {
+                  router.push(roomId ? `/calendar?roomId=${roomId}` : "/calendar");
+                } else {
+                  router.push("/main");
+                }
+              }}
               className="flex items-center gap-2 text-[#ee2b8c] hover:bg-[#ee2b8c11] px-3 py-1.5 rounded-full transition-colors w-fit backdrop-blur-sm bg-white/30 shadow-sm"
               aria-label="뒤로가기"
             >
@@ -1571,7 +1596,11 @@ function AddPlanPageContent() {
           isOpen={showPlanSavedModal}
           onClose={() => {
             setShowPlanSavedModal(false);
-            router.push(roomId ? `/main?roomId=${roomId}` : "/main");
+            if (fromParam === "calendar") {
+              router.push(roomId ? `/calendar?roomId=${roomId}` : "/calendar");
+            } else {
+              router.push(roomId ? `/main?roomId=${roomId}` : "/main");
+            }
           }}
           type={editId ? "updated" : "registered"}
           title={editId ? "수정되었습니다" : "등록되었습니다"}
