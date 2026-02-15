@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
 import { getKstToday } from "@/lib/utils";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type DatePickerWheelProps = {
   initialDate?: { year: number; month: number; day: number };
@@ -21,8 +21,10 @@ export default function DatePickerWheel({
 }: DatePickerWheelProps) {
   const currentYear = getKstToday().year;
   const defaultDate = initialDate ?? getDefaultDate();
+  const minYear = currentYear;
+  const initialYear = Math.max(defaultDate.year, minYear);
 
-  const [selectedYear, setSelectedYear] = useState(defaultDate.year);
+  const [selectedYear, setSelectedYear] = useState(initialYear);
   const [selectedMonth, setSelectedMonth] = useState(defaultDate.month);
   const [selectedDay, setSelectedDay] = useState(defaultDate.day);
 
@@ -35,7 +37,7 @@ export default function DatePickerWheel({
 
   // 스크롤/클릭 시점에 항상 최신 값 보장 (React 배칭으로 인한 stale closure 방지)
   const selectedRef = useRef({
-    year: defaultDate.year,
+    year: initialYear,
     month: defaultDate.month,
     day: defaultDate.day,
   });
@@ -73,7 +75,7 @@ export default function DatePickerWheel({
   const programmaticScrollRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const years = Array.from({ length: 100 }, (_, i) => currentYear - 50 + i);
+  const years = Array.from({ length: 100 }, (_, i) => currentYear + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month, 0).getDate();
@@ -249,7 +251,12 @@ export default function DatePickerWheel({
 
     if (blockSize > 0 && items.length === blockSize * 3) {
       index = Math.max(0, Math.min(index, items.length - 1));
-      const val = index < blockSize ? items[index] : index >= blockSize * 2 ? items[index - blockSize * 2] : items[index - blockSize];
+      const val =
+        index < blockSize
+          ? items[index]
+          : index >= blockSize * 2
+            ? items[index - blockSize * 2]
+            : items[index - blockSize];
       setValue(val);
     } else {
       index = Math.max(0, Math.min(index, items.length - 1));
@@ -336,8 +343,12 @@ export default function DatePickerWheel({
         return;
 
       const { containerRef } = dragStateRef.current;
-      const { years: y, monthsTriple: mt, daysTriple: dt, daysLength: dl } =
-        dataRef.current;
+      const {
+        years: y,
+        monthsTriple: mt,
+        daysTriple: dt,
+        daysLength: dl,
+      } = dataRef.current;
 
       if (containerRef === yearRef) {
         handleDragMove(e, y, setYearAndRef);
@@ -360,8 +371,12 @@ export default function DatePickerWheel({
         return;
 
       const { containerRef } = dragStateRef.current;
-      const { years: y, monthsTriple: mt, daysTriple: dt, daysLength: dl } =
-        dataRef.current;
+      const {
+        years: y,
+        monthsTriple: mt,
+        daysTriple: dt,
+        daysLength: dl,
+      } = dataRef.current;
 
       if (containerRef === yearRef) {
         handleDragEnd(y, setYearAndRef);
@@ -385,8 +400,12 @@ export default function DatePickerWheel({
       e.preventDefault();
 
       const { containerRef } = dragStateRef.current;
-      const { years: y, monthsTriple: mt, daysTriple: dt, daysLength: dl } =
-        dataRef.current;
+      const {
+        years: y,
+        monthsTriple: mt,
+        daysTriple: dt,
+        daysLength: dl,
+      } = dataRef.current;
 
       if (containerRef === yearRef) {
         handleDragMove(e, y, setYearAndRef);
@@ -409,8 +428,12 @@ export default function DatePickerWheel({
         return;
 
       const { containerRef } = dragStateRef.current;
-      const { years: y, monthsTriple: mt, daysTriple: dt, daysLength: dl } =
-        dataRef.current;
+      const {
+        years: y,
+        monthsTriple: mt,
+        daysTriple: dt,
+        daysLength: dl,
+      } = dataRef.current;
 
       if (containerRef === yearRef) {
         handleDragEnd(y, setYearAndRef);
@@ -493,7 +516,8 @@ export default function DatePickerWheel({
     setDayAndRef(days[newIndex]);
   };
 
-  const arrowClass = "flex items-center justify-center w-full h-8 text-stone-400 hover:text-[#ee2b8c] active:scale-90 transition-all";
+  const arrowClass =
+    "flex items-center justify-center w-full h-8 text-stone-400 hover:text-[#ee2b8c] active:scale-90 transition-all";
 
   return (
     <div className="flex flex-col items-center mt-8">
@@ -501,7 +525,11 @@ export default function DatePickerWheel({
         {/* 년도 선택 */}
         <div className="flex flex-col items-center w-20">
           <div className="text-sm font-medium text-stone-600 mb-2">년</div>
-          <button type="button" onClick={() => handleYearClick("up")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleYearClick("up")}
+            className={arrowClass}
+          >
             <ChevronUp className="w-6 h-6" />
           </button>
           <div className="relative w-full h-40 overflow-hidden rounded-lg bg-white shadow-sm">
@@ -518,14 +546,21 @@ export default function DatePickerWheel({
             >
               <div className="h-[calc(50%-24px)]" />
               {years.map((year) => (
-                <div key={year} className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900">
+                <div
+                  key={year}
+                  className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900"
+                >
                   {year}
                 </div>
               ))}
               <div className="h-[calc(50%-24px)]" />
             </div>
           </div>
-          <button type="button" onClick={() => handleYearClick("down")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleYearClick("down")}
+            className={arrowClass}
+          >
             <ChevronDown className="w-6 h-6" />
           </button>
         </div>
@@ -533,7 +568,11 @@ export default function DatePickerWheel({
         {/* 월 선택 */}
         <div className="flex flex-col items-center w-16">
           <div className="text-sm font-medium text-stone-600 mb-2">월</div>
-          <button type="button" onClick={() => handleMonthClick("up")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleMonthClick("up")}
+            className={arrowClass}
+          >
             <ChevronUp className="w-6 h-6" />
           </button>
           <div className="relative w-full h-40 overflow-hidden rounded-lg bg-white shadow-sm">
@@ -544,7 +583,9 @@ export default function DatePickerWheel({
               role="listbox"
               tabIndex={0}
               onScroll={() =>
-                handleScroll(monthRef, monthsTriple, setMonthAndRef, { wrapTriple: MONTH_BLOCK })
+                handleScroll(monthRef, monthsTriple, setMonthAndRef, {
+                  wrapTriple: MONTH_BLOCK,
+                })
               }
               onTouchStart={(e) => handleDragStart(e, monthRef)}
               onMouseDown={(e) => handleDragStart(e, monthRef)}
@@ -552,14 +593,21 @@ export default function DatePickerWheel({
             >
               <div className="h-[calc(50%-24px)]" />
               {monthsTriple.map((month, i) => (
-                <div key={`month-${Math.floor(i / MONTH_BLOCK)}-${month}`} className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900">
+                <div
+                  key={`month-${Math.floor(i / MONTH_BLOCK)}-${month}`}
+                  className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900"
+                >
                   {month}
                 </div>
               ))}
               <div className="h-[calc(50%-24px)]" />
             </div>
           </div>
-          <button type="button" onClick={() => handleMonthClick("down")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleMonthClick("down")}
+            className={arrowClass}
+          >
             <ChevronDown className="w-6 h-6" />
           </button>
         </div>
@@ -567,7 +615,11 @@ export default function DatePickerWheel({
         {/* 일 선택 */}
         <div className="flex flex-col items-center w-16">
           <div className="text-sm font-medium text-stone-600 mb-2">일</div>
-          <button type="button" onClick={() => handleDayClick("up")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleDayClick("up")}
+            className={arrowClass}
+          >
             <ChevronUp className="w-6 h-6" />
           </button>
           <div className="relative w-full h-40 overflow-hidden rounded-lg bg-white shadow-sm">
@@ -578,7 +630,9 @@ export default function DatePickerWheel({
               role="listbox"
               tabIndex={0}
               onScroll={() =>
-                handleScroll(dayRef, daysTriple, setDayAndRef, { wrapTriple: days.length })
+                handleScroll(dayRef, daysTriple, setDayAndRef, {
+                  wrapTriple: days.length,
+                })
               }
               onTouchStart={(e) => handleDragStart(e, dayRef)}
               onMouseDown={(e) => handleDragStart(e, dayRef)}
@@ -586,14 +640,21 @@ export default function DatePickerWheel({
             >
               <div className="h-[calc(50%-24px)]" />
               {daysTriple.map((day, i) => (
-                <div key={`day-${Math.floor(i / days.length)}-${day}`} className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900">
+                <div
+                  key={`day-${Math.floor(i / days.length)}-${day}`}
+                  className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900"
+                >
                   {day}
                 </div>
               ))}
               <div className="h-[calc(50%-24px)]" />
             </div>
           </div>
-          <button type="button" onClick={() => handleDayClick("down")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleDayClick("down")}
+            className={arrowClass}
+          >
             <ChevronDown className="w-6 h-6" />
           </button>
         </div>
