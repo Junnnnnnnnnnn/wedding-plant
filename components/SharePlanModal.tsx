@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   Link2,
   MessageCircle,
-  Shield,
-  ShieldAlert,
   Check,
 } from "lucide-react";
 import { useApi } from "@/app/contexts/ApiContext";
@@ -16,44 +14,102 @@ interface SharePlanModalProps {
   onClose: () => void;
 }
 
+/** 클립보드에 쓰기. Clipboard API 실패 시 execCommand 폴백(사용자 제스처 컨텍스트 필요). */
+function copyTextToClipboard(text: string): boolean {
+  try {
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Clipboard API가 막힌 경우(비동기 후 호출 등) 폴백
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    ta.style.top = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareUrlLoading, setShareUrlLoading] = useState(false);
   const { fetchWithAuth } = useApi();
 
-  if (!isOpen) return null;
-
-  const handleCopyLink = async () => {
+  // 모달이 열릴 때 미리 share code 조회 (클릭 시에는 동기 복사만 하도록)
+  useEffect(() => {
+    if (!isOpen) {
+      setShareUrl(null);
+      setCopyError(null);
+      return;
+    }
+    let cancelled = false;
+    setShareUrlLoading(true);
     setCopyError(null);
-    try {
-      const res = await fetchWithAuth("/plan/room/share-code", {
-        method: "GET",
-      });
-      if (!res.ok) {
-        throw new Error("공유 링크 생성에 실패했습니다.");
+    (async () => {
+      try {
+        const res = await fetchWithAuth("/plan/room/share-code", {
+          method: "GET",
+        });
+        if (cancelled) return;
+        if (!res.ok) {
+          throw new Error("공유 링크 생성에 실패했습니다.");
+        }
+        const json = (await res.json()) as {
+          result?: boolean;
+          data?: { shareCode?: string };
+        };
+        const code = json?.data?.shareCode;
+        if (!code) {
+          throw new Error("shareCode를 받지 못했습니다.");
+        }
+        const url =
+          typeof window !== "undefined"
+            ? `${window.location.origin}/share/${code}`
+            : "";
+        setShareUrl(url);
+      } catch (err) {
+        if (!cancelled) {
+          setCopyError(
+            err instanceof Error ? err.message : "링크를 불러오지 못했습니다.",
+          );
+        }
+      } finally {
+        if (!cancelled) setShareUrlLoading(false);
       }
-      const json = (await res.json()) as {
-        result?: boolean;
-        data?: { shareCode?: string };
-      };
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, fetchWithAuth]);
 
-      const code = json?.data?.shareCode;
-      if (!code) {
-        throw new Error("shareCode를 받지 못했습니다.");
-      }
-      const url =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/share/${code}`
-          : "";
-      await navigator.clipboard.writeText(url);
+  const handleCopyLink = () => {
+    setCopyError(null);
+    if (!shareUrl) {
+      setCopyError(shareUrlLoading ? "준비 중입니다." : "링크를 불러오지 못했습니다.");
+      return;
+    }
+    if (copyTextToClipboard(shareUrl)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      setCopyError(
-        err instanceof Error ? err.message : "링크 복사에 실패했습니다.",
-      );
+    } else {
+      setCopyError("링크 복사에 실패했습니다. 주소를 직접 복사해 주세요.");
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -109,15 +165,19 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
             )}
             <div className="flex gap-3 sm:gap-4">
               <button
+                type="button"
                 onClick={handleCopyLink}
-                className="flex-1 h-14 sm:h-16 bg-white border border-gray-100 rounded-2xl sm:rounded-3xl flex items-center justify-center gap-2 sm:gap-3 font-bold text-sm sm:text-base text-[#1b0d14] shadow-sm hover:shadow-md transition-all active:scale-95 min-w-0"
+                disabled={shareUrlLoading}
+                className="flex-1 h-14 sm:h-16 bg-white border border-gray-100 rounded-2xl sm:rounded-3xl flex items-center justify-center gap-2 sm:gap-3 font-bold text-sm sm:text-base text-[#1b0d14] shadow-sm hover:shadow-md transition-all active:scale-95 min-w-0 disabled:opacity-60 disabled:pointer-events-none"
               >
                 {copied ? (
                   <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" />
                 ) : (
                   <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#ee2b8c] flex-shrink-0" />
                 )}
-                <span className="truncate">{copied ? "복사됨" : "링크 복사"}</span>
+                <span className="truncate">
+                  {shareUrlLoading ? "준비 중" : copied ? "복사됨" : "링크 복사"}
+                </span>
               </button>
 
               <button className="w-14 h-14 sm:w-16 sm:h-16 bg-[#FEE500] rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-lg shadow-[#FEE50033] hover:opacity-90 active:scale-95 transition-all flex-shrink-0">

@@ -636,6 +636,7 @@ function MainPageContent() {
     ) {
       setShowNoPlanModal(true);
       setIsNoPlanBlur(true);
+      setShowGuide(false); // 노플랜 모달이 뜰 때는 가이드 오버레이 표시 안 함
     } else {
       setShowNoPlanModal(false);
       setIsNoPlanBlur(false);
@@ -1980,11 +1981,13 @@ function MainPageContent() {
           onConfirm={() => router.push("/setting")}
           onCancel={() => router.push("/plan-list")}
         />
-        <GuideOverlay
-          isOpen={showGuide}
-          onClose={handleCloseGuide}
-          steps={guideSteps}
-        />
+        {!showNoPlanModal && (
+          <GuideOverlay
+            isOpen={showGuide}
+            onClose={handleCloseGuide}
+            steps={guideSteps}
+          />
+        )}
       </div>
     </div >
   );
