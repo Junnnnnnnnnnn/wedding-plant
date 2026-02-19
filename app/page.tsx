@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Heart } from "lucide-react";
+import Image from "next/image";
 import AuthButtons from "./components/AuthButtons";
 import HomeKakaoLoginHandler from "./components/HomeKakaoLoginHandler";
 import LoginErrorModal from "./components/LoginErrorModal";
@@ -21,7 +21,14 @@ export default function Home() {
       {/* Main Branding Section */}
       <div className="w-full space-y-4 text-center z-10">
         <div className="inline-flex items-center justify-center p-4 bg-white rounded-[32px] shadow-xl shadow-[#ee2b8c11] border border-[#ee2b8c0a] mb-6">
-          <Heart className="w-10 h-10 text-[#ee2b8c] fill-[#ee2b8c]" />
+          <Image
+            src="/images/icon.png"
+            alt="웨딩 플랜트"
+            width={128}
+            height={128}
+            quality={100}
+            className="rounded-[16px] object-contain w-16 h-16"
+          />
         </div>
         <h1 className="text-5xl font-black text-[#1b0d14] tracking-tight">
           웨딩 플랜트
