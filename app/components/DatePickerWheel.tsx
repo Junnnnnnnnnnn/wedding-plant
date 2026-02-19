@@ -249,7 +249,12 @@ export default function DatePickerWheel({
 
     if (blockSize > 0 && items.length === blockSize * 3) {
       index = Math.max(0, Math.min(index, items.length - 1));
-      const val = index < blockSize ? items[index] : index >= blockSize * 2 ? items[index - blockSize * 2] : items[index - blockSize];
+      const val =
+        index < blockSize
+          ? items[index]
+          : index >= blockSize * 2
+            ? items[index - blockSize * 2]
+            : items[index - blockSize];
       setValue(val);
     } else {
       index = Math.max(0, Math.min(index, items.length - 1));
@@ -336,8 +341,12 @@ export default function DatePickerWheel({
         return;
 
       const { containerRef } = dragStateRef.current;
-      const { years: y, monthsTriple: mt, daysTriple: dt, daysLength: dl } =
-        dataRef.current;
+      const {
+        years: y,
+        monthsTriple: mt,
+        daysTriple: dt,
+        daysLength: dl,
+      } = dataRef.current;
 
       if (containerRef === yearRef) {
         handleDragMove(e, y, setYearAndRef);
@@ -360,8 +369,12 @@ export default function DatePickerWheel({
         return;
 
       const { containerRef } = dragStateRef.current;
-      const { years: y, monthsTriple: mt, daysTriple: dt, daysLength: dl } =
-        dataRef.current;
+      const {
+        years: y,
+        monthsTriple: mt,
+        daysTriple: dt,
+        daysLength: dl,
+      } = dataRef.current;
 
       if (containerRef === yearRef) {
         handleDragEnd(y, setYearAndRef);
@@ -385,8 +398,12 @@ export default function DatePickerWheel({
       e.preventDefault();
 
       const { containerRef } = dragStateRef.current;
-      const { years: y, monthsTriple: mt, daysTriple: dt, daysLength: dl } =
-        dataRef.current;
+      const {
+        years: y,
+        monthsTriple: mt,
+        daysTriple: dt,
+        daysLength: dl,
+      } = dataRef.current;
 
       if (containerRef === yearRef) {
         handleDragMove(e, y, setYearAndRef);
@@ -409,8 +426,12 @@ export default function DatePickerWheel({
         return;
 
       const { containerRef } = dragStateRef.current;
-      const { years: y, monthsTriple: mt, daysTriple: dt, daysLength: dl } =
-        dataRef.current;
+      const {
+        years: y,
+        monthsTriple: mt,
+        daysTriple: dt,
+        daysLength: dl,
+      } = dataRef.current;
 
       if (containerRef === yearRef) {
         handleDragEnd(y, setYearAndRef);
@@ -445,19 +466,19 @@ export default function DatePickerWheel({
     if (yearRef.current) {
       const yearIndex = years.indexOf(selectedYear);
       if (yearIndex !== -1) {
-        scrollToValue(yearRef, yearIndex, false);
+        scrollToValue(yearRef, yearIndex, true);
       }
     }
     if (monthRef.current) {
       const monthIndex = months.indexOf(selectedMonth);
       if (monthIndex !== -1) {
-        scrollToValue(monthRef, MONTH_BLOCK + monthIndex, false);
+        scrollToValue(monthRef, MONTH_BLOCK + monthIndex, true);
       }
     }
     if (dayRef.current) {
       const dayIndex = days.indexOf(selectedDay);
       if (dayIndex !== -1) {
-        scrollToValue(dayRef, days.length + dayIndex, false);
+        scrollToValue(dayRef, days.length + dayIndex, true);
       }
     }
   }, [selectedYear, selectedMonth, selectedDay, years, months, days]);
@@ -493,15 +514,20 @@ export default function DatePickerWheel({
     setDayAndRef(days[newIndex]);
   };
 
-  const arrowClass = "flex items-center justify-center w-full h-8 text-stone-400 hover:text-[#ee2b8c] active:scale-90 transition-all";
+  const arrowClass =
+    "flex items-center justify-center w-full h-8 text-stone-400 hover:text-[#ee2b8c] active:scale-90 transition-all";
 
   return (
     <div className="flex flex-col items-center mt-8">
-      <div className="flex items-start justify-center gap-4 mb-16">
+      <div className="flex items-start justify-center gap-4">
         {/* 년도 선택 */}
         <div className="flex flex-col items-center w-20">
           <div className="text-sm font-medium text-stone-600 mb-2">년</div>
-          <button type="button" onClick={() => handleYearClick("up")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleYearClick("up")}
+            className={arrowClass}
+          >
             <ChevronUp className="w-6 h-6" />
           </button>
           <div className="relative w-full h-40 overflow-hidden rounded-lg bg-white shadow-sm">
@@ -518,14 +544,21 @@ export default function DatePickerWheel({
             >
               <div className="h-[calc(50%-24px)]" />
               {years.map((year) => (
-                <div key={year} className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900">
+                <div
+                  key={year}
+                  className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900"
+                >
                   {year}
                 </div>
               ))}
               <div className="h-[calc(50%-24px)]" />
             </div>
           </div>
-          <button type="button" onClick={() => handleYearClick("down")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleYearClick("down")}
+            className={arrowClass}
+          >
             <ChevronDown className="w-6 h-6" />
           </button>
         </div>
@@ -533,7 +566,11 @@ export default function DatePickerWheel({
         {/* 월 선택 */}
         <div className="flex flex-col items-center w-16">
           <div className="text-sm font-medium text-stone-600 mb-2">월</div>
-          <button type="button" onClick={() => handleMonthClick("up")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleMonthClick("up")}
+            className={arrowClass}
+          >
             <ChevronUp className="w-6 h-6" />
           </button>
           <div className="relative w-full h-40 overflow-hidden rounded-lg bg-white shadow-sm">
@@ -544,7 +581,9 @@ export default function DatePickerWheel({
               role="listbox"
               tabIndex={0}
               onScroll={() =>
-                handleScroll(monthRef, monthsTriple, setMonthAndRef, { wrapTriple: MONTH_BLOCK })
+                handleScroll(monthRef, monthsTriple, setMonthAndRef, {
+                  wrapTriple: MONTH_BLOCK,
+                })
               }
               onTouchStart={(e) => handleDragStart(e, monthRef)}
               onMouseDown={(e) => handleDragStart(e, monthRef)}
@@ -552,14 +591,21 @@ export default function DatePickerWheel({
             >
               <div className="h-[calc(50%-24px)]" />
               {monthsTriple.map((month, i) => (
-                <div key={`month-${Math.floor(i / MONTH_BLOCK)}-${month}`} className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900">
+                <div
+                  key={`month-${Math.floor(i / MONTH_BLOCK)}-${month}`}
+                  className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900"
+                >
                   {month}
                 </div>
               ))}
               <div className="h-[calc(50%-24px)]" />
             </div>
           </div>
-          <button type="button" onClick={() => handleMonthClick("down")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleMonthClick("down")}
+            className={arrowClass}
+          >
             <ChevronDown className="w-6 h-6" />
           </button>
         </div>
@@ -567,7 +613,11 @@ export default function DatePickerWheel({
         {/* 일 선택 */}
         <div className="flex flex-col items-center w-16">
           <div className="text-sm font-medium text-stone-600 mb-2">일</div>
-          <button type="button" onClick={() => handleDayClick("up")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleDayClick("up")}
+            className={arrowClass}
+          >
             <ChevronUp className="w-6 h-6" />
           </button>
           <div className="relative w-full h-40 overflow-hidden rounded-lg bg-white shadow-sm">
@@ -578,7 +628,9 @@ export default function DatePickerWheel({
               role="listbox"
               tabIndex={0}
               onScroll={() =>
-                handleScroll(dayRef, daysTriple, setDayAndRef, { wrapTriple: days.length })
+                handleScroll(dayRef, daysTriple, setDayAndRef, {
+                  wrapTriple: days.length,
+                })
               }
               onTouchStart={(e) => handleDragStart(e, dayRef)}
               onMouseDown={(e) => handleDragStart(e, dayRef)}
@@ -586,39 +638,25 @@ export default function DatePickerWheel({
             >
               <div className="h-[calc(50%-24px)]" />
               {daysTriple.map((day, i) => (
-                <div key={`day-${Math.floor(i / days.length)}-${day}`} className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900">
+                <div
+                  key={`day-${Math.floor(i / days.length)}-${day}`}
+                  className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900"
+                >
                   {day}
                 </div>
               ))}
               <div className="h-[calc(50%-24px)]" />
             </div>
           </div>
-          <button type="button" onClick={() => handleDayClick("down")} className={arrowClass}>
+          <button
+            type="button"
+            onClick={() => handleDayClick("down")}
+            className={arrowClass}
+          >
             <ChevronDown className="w-6 h-6" />
           </button>
         </div>
       </div>
-
-      <button
-        type="button"
-        onClick={() => {
-          const cb = onDateChangeRef.current;
-          if (cb) {
-            cb({
-              year: selectedRef.current.year,
-              month: selectedRef.current.month,
-              day: selectedRef.current.day,
-            });
-          }
-          if (onNext) {
-            onNext();
-          }
-        }}
-        className="px-8 py-3 text-white rounded-lg font-semibold text-lg transition-colors shadow-md hover:opacity-90 active:opacity-80"
-        style={{ backgroundColor: "#FFAAB8" }}
-      >
-        다음
-      </button>
     </div>
   );
 }

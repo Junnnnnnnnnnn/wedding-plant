@@ -421,7 +421,7 @@ function Band({
               anchorY="bottom"
               font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
             >
-              우리 플랜트
+              웨딩 플랜트
             </Text>
           </group>
         </RigidBody>

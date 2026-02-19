@@ -24,7 +24,7 @@ export default function Home() {
           <Heart className="w-10 h-10 text-[#ee2b8c] fill-[#ee2b8c]" />
         </div>
         <h1 className="text-5xl font-black text-[#1b0d14] tracking-tight">
-          우리 플랜트
+          웨딩 플랜트
         </h1>
         <p className="text-gray-400 font-bold text-lg leading-snug">
           우리만의 특별한 웨딩 플랜,

@@ -33,8 +33,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "우리 플랜트",
-  description: "우리만의 우리 플랜, 지금 시작해요",
+  title: "웨딩 플랜트",
+  description: "우리만의 웨딩 플랜, 지금 시작해요",
 };
 
 export default function RootLayout({

@@ -37,7 +37,6 @@ function SettingPageContent() {
   const [showThird, setShowThird] = useState(false);
   const [showFourth, setShowFourth] = useState(false);
   const [showFifth, setShowFifth] = useState(false);
-  const [showSixth, setShowSixth] = useState(false);
   const [showSeventh, setShowSeventh] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isDatePickerFadingOut, setIsDatePickerFadingOut] = useState(false);
@@ -45,12 +44,12 @@ function SettingPageContent() {
   const [isNameFadingOut, setIsNameFadingOut] = useState(false);
   const [isNameShaking, setIsNameShaking] = useState(false);
   const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
-  const [isSixthFadingOut, setIsSixthFadingOut] = useState(false);
   const [isCountUpComplete, setIsCountUpComplete] = useState(false);
   const [countUpKey, setCountUpKey] = useState(0);
   const [showLanyard, setShowLanyard] = useState(false);
   const [isLanyardFadingOut, setIsLanyardFadingOut] = useState(false);
   const [userCheckDone, setUserCheckDone] = useState(false);
+  const [nextStep, setNextStep] = useState<"second" | "third" | "fourth">("second");
 
   function isPlanDataComplete(data: {
     weddingDate?: string | null;
@@ -118,24 +117,17 @@ function SettingPageContent() {
               d.budget.toString().trim() !== ""));
 
         if (!hasDate) {
-          setShowFirst(false);
-          setShowSecond(true);
+          setNextStep("second");
         } else if (!hasBudget) {
-          setShowFirst(false);
-          setShowSecond(false);
-          setShowThird(true);
+          setNextStep("third");
           setIsCountUpComplete(true);
           if (d.budget != null) setBudget(String(d.budget));
         } else {
-          setShowFirst(false);
-          setShowSecond(false);
-          setShowThird(false);
-          setShowFourth(true);
+          setNextStep("fourth");
         }
       } catch {
         // fetch 실패 시 날짜 단계부터 진행
-        setShowFirst(false);
-        setShowSecond(true);
+        setNextStep("second");
       } finally {
         setUserCheckDone(true);
       }
@@ -169,20 +161,26 @@ function SettingPageContent() {
   }, []);
 
   useEffect(() => {
-    // 비로그인(게스트)만: 첫 번째 메시지 3초 후 → 두 번째(날짜)로 전환
-    if (getToken() || !userCheckDone) return undefined;
+    // 첫 번째 축하 메시지 3초 표시 후 → 다음 단계로 전환
+    if (!userCheckDone) return undefined;
 
     const timer1 = setTimeout(() => setIsFadingOut(true), 3000);
     const timer2 = setTimeout(() => {
       setShowFirst(false);
-      setShowSecond(true);
+      if (nextStep === "third") {
+        setShowThird(true);
+      } else if (nextStep === "fourth") {
+        setShowFourth(true);
+      } else {
+        setShowSecond(true);
+      }
     }, 3500);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
     };
-  }, [userCheckDone]);
+  }, [userCheckDone, nextStep]);
 
   useEffect(() => {
     if (showFifth) {
@@ -204,26 +202,7 @@ function SettingPageContent() {
     return undefined;
   }, [showFifth]);
 
-  useEffect(() => {
-    if (showSixth) {
-      // fade in 완료(500ms) 후 2초간 보여주고 fade out 시작
-      const timer = setTimeout(() => {
-        setIsSixthFadingOut(true);
-      }, 4500); // 500ms (fade-in duration) + 2000ms (display time)
 
-      // fade out 시작 후 showSeventh 표시
-      const seventhTimer = setTimeout(() => {
-        setShowSixth(false);
-        setShowSeventh(true);
-      }, 5000); // 500ms (fade-in) + 4000ms (display) + 500ms (fade-out)
-
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(seventhTimer);
-      };
-    }
-    return undefined;
-  }, [showSixth]);
 
   const handleDateChange = (date: {
     year: number;
@@ -272,7 +251,7 @@ function SettingPageContent() {
     setTimeout(() => {
       setShowLanyard(false);
       setShowFifth(false);
-      setShowSixth(true);
+      setShowSeventh(true);
     }, 500); // fade-out 애니메이션 시간과 동일
   };
 
@@ -305,17 +284,11 @@ function SettingPageContent() {
   };
 
   const handleBack = () => {
-    // 일곱 번째 화면에서 여섯 번째 화면으로
+    // 일곱 번째 화면에서 Lanyard로
     if (showSeventh) {
       setShowSeventh(false);
-      setShowSixth(true);
-      setIsSixthFadingOut(false);
-    } else if (showSixth) {
-      // 여섯 번째 화면에서 Lanyard로
-      setShowSixth(false);
       setShowLanyard(true);
       setIsLanyardFadingOut(false);
-      setIsSixthFadingOut(false);
     } else if (showFifth) {
       // 다섯 번째 화면에서 네 번째 화면으로
       setShowFifth(false);
@@ -349,7 +322,7 @@ function SettingPageContent() {
         <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none" />
 
-        {(showThird || showFourth || showFifth || showSixth || showSeventh) && (
+        {(showThird || showFourth || showFifth || showSeventh) && (
           <button
             type="button"
             onClick={handleBack}
@@ -375,31 +348,42 @@ function SettingPageContent() {
         {showFirst && !isFadingOut && <CelebrationEffects />}
         {showFirst && (
           <div
-            className={`absolute inset-0 flex flex-1 flex-col items-center justify-center ${isFadingOut ? "animate-fade-out" : ""}`}
+            className={`absolute inset-0 flex flex-col items-center justify-center ${isFadingOut ? "animate-fade-out" : ""}`}
           >
-            <LandingHero title="우리" subtitle="🎉 축하드려요 🎉" />
+            <LandingHero title="결혼" subtitle="🎉 축하드려요 🎉" />
           </div>
         )}
         {showSecond && (
           <div
-            className={`flex flex-1 flex-col items-center justify-center ${isDatePickerFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+            className={`flex flex-1 flex-col items-center pt-20 pb-12 ${isDatePickerFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
           >
             <LandingHero
-              title="우리 날짜가 언제인가요"
-              subtitle="우신, 우랑님. 가장 빛날 그날까지 함께해요."
+              title="결혼 날짜가 언제인가요"
+              subtitle="예신, 예랑님. 가장 빛날 그날까지 함께해요."
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"
             />
-            <DatePickerWheel
-              initialDate={weddingData.date}
-              onDateChange={handleDateChange}
-              onNext={handleDateNext}
-            />
+            <div className="flex flex-1 flex-col items-center justify-center">
+              <DatePickerWheel
+                initialDate={weddingData.date}
+                onDateChange={handleDateChange}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                handleDateChange(weddingData.date || { year: new Date().getFullYear(), month: new Date().getMonth() + 1, day: new Date().getDate() });
+                handleDateNext();
+              }}
+              className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
+            >
+              다음
+            </button>
           </div>
         )}
         {showThird && (
           <div
-            className={`flex flex-1 flex-col items-center justify-center ${isBudgetFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+            className={`flex flex-1 flex-col items-center pt-20 pb-12 ${isBudgetFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
           >
             <LandingHero
               title="예산도 살짝 알려주세요!"
@@ -407,8 +391,9 @@ function SettingPageContent() {
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"
             />
-            <div className="flex flex-col items-center flex-1 justify-center">
-              <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="flex flex-1" />
+            <div className="flex flex-col items-center mb-6">
+              <div className="flex items-center justify-center gap-4">
                 <div className="flex items-center gap-2">
                   {!isCountUpComplete ? (
                     <div className="px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 w-32 text-center flex items-center justify-center">
@@ -442,19 +427,19 @@ function SettingPageContent() {
                   </span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleBudgetNext}
-                className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
-              >
-                다음
-              </button>
             </div>
+            <button
+              type="button"
+              onClick={handleBudgetNext}
+              className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
+            >
+              다음
+            </button>
           </div>
         )}
         {showFourth && (
           <div
-            className={`flex flex-1 flex-col items-center justify-center ${isNameFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+            className={`flex flex-1 flex-col items-center pt-20 pb-12 ${isNameFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
           >
             <LandingHero
               title="이름도 괜찮을까요?"
@@ -462,9 +447,10 @@ function SettingPageContent() {
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"
             />
-            <div className="flex flex-col items-center mt-24 mb-20">
+            <div className="flex flex-1" />
+            <div className="flex flex-col items-center mb-6">
               <p className="text-sm text-stone-500 mb-2">최대 3 글자</p>
-              <div className="flex items-center justify-center gap-4 mb-4">
+              <div className="flex items-center justify-center gap-4">
                 <input
                   type="text"
                   value={weddingData.name}
@@ -485,15 +471,15 @@ function SettingPageContent() {
                   className={`px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-full max-w-[240px] text-center ${isNameShaking ? "animate-shake" : ""}`}
                 />
               </div>
-              <button
-                type="button"
-                onClick={handleNameNext}
-                disabled={!weddingData.name || weddingData.name.trim() === ""}
-                className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
-              >
-                다음
-              </button>
             </div>
+            <button
+              type="button"
+              onClick={handleNameNext}
+              disabled={!weddingData.name || weddingData.name.trim() === ""}
+              className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
+            >
+              다음
+            </button>
           </div>
         )}
         {showFifth && !showLanyard && (
@@ -524,30 +510,22 @@ function SettingPageContent() {
             </button>
           </div>
         )}
-        {showSixth && (
-          <div
-            className={`flex flex-1 flex-col items-center justify-center ${isSixthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
-          >
-            <LandingHero
-              title="앗.. 실망하셨다고요?"
-              subtitle="열심히 했지만 마음이 닿지 않았나봐요"
-              titleSize="text-2xl sm:text-4xl"
-              subtitleSize="text-sm sm:text-lg"
-            />
-          </div>
-        )}
+
         {showSeventh && (
-          <div className="flex flex-1 flex-col items-center justify-center animate-fade-in">
+          <div className="flex flex-1 flex-col items-center pt-20 pb-12 animate-fade-in">
             <LandingHero
               title="자 이제 시작해볼까요?"
-              subtitle="우리식까지 든든한 플랜을 같이 짜보아요"
+              subtitle="결혼식까지 든든한 플랜을 같이 짜보아요"
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"
             />
+            <div className="relative flex flex-1 w-full max-h-[50vh] items-center justify-center overflow-hidden rounded-xl">
+              <Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
+            </div>
             <button
               type="button"
               onClick={handleGoToMain}
-              className="px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
+              className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
             >
               계획 짜러 가기
             </button>
