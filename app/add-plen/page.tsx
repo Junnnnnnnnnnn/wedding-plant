@@ -86,8 +86,8 @@ function AddPlanPageContent() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isDateUndecided, setIsDateUndecided] = useState(false);
-  const [paymentType, setPaymentType] = useState<"현금" | "카드" | "기타">(
-    "기타",
+  const [paymentType, setPaymentType] = useState<"현금" | "카드" | "기타" | null>(
+    null,
   );
   const [location, setLocation] = useState("");
   const [memo, setMemo] = useState("");
@@ -137,6 +137,12 @@ function AddPlanPageContent() {
   const mainScrollRef = useRef<HTMLElement>(null);
   const scrollDirection = useScrollDirection(mainScrollRef);
   const loadedEditIdRef = useRef<number | null>(null);
+
+  // ── 순차 표시 플래그 ──
+  const isEditMode = !!editId && !isLoadingDetail;
+  const showCategory = isEditMode || inputValue.trim().length > 0;
+  const showPaymentType = isEditMode || !!selectedCategory;
+  const showRestFields = isEditMode || !!paymentType;
 
   /** 클라이언트 마운트 후에만 토큰 기준 표시 (로그인 버튼 플래시 방지) */
   useEffect(() => {
@@ -907,423 +913,461 @@ function AddPlanPageContent() {
               />
             </div>
             {/* 카테고리 */}
-            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-amber-200">
-              <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
-                  <Tag className="w-4 h-4 text-amber-600" />
-                </div>
-                <span className="text-lg">카테고리</span>
-                <span className="text-[#ee2b8c] text-xl">*</span>
-                <span className="ml-auto text-xs bg-[#ee2b8c] text-white px-3 py-1 rounded-full font-bold">
-                  필수
-                </span>
-              </label>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleOpenModal}
-                  className={`flex-1 px-5 py-4 rounded-2xl border-2 font-semibold transition-all text-left ${selectedCategory
-                      ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300 text-stone-800 shadow-sm"
-                      : "border-amber-200 text-stone-400 bg-amber-50/30 hover:border-amber-300"
-                    }`}
+            <AnimatePresence>
+              {showCategory && (
+                <motion.div
+                  key="category-section"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
                 >
-                  {selectedCategory
-                    ? `✨ ${selectedCategory.label}`
-                    : "카테고리 선택해주세요"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpenModal}
-                  className="w-14 h-14 rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center hover:from-amber-100 hover:to-amber-200 transition-all shadow-sm hover:shadow-md flex-shrink-0"
-                  aria-label="카테고리 추가"
+                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-amber-200">
+                    <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
+                        <Tag className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <span className="text-lg">카테고리</span>
+                      <span className="text-[#ee2b8c] text-xl">*</span>
+                      <span className="ml-auto text-xs bg-[#ee2b8c] text-white px-3 py-1 rounded-full font-bold">
+                        필수
+                      </span>
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleOpenModal}
+                        className={`flex-1 px-5 py-4 rounded-2xl border-2 font-semibold transition-all text-left ${selectedCategory
+                          ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300 text-stone-800 shadow-sm"
+                          : "border-amber-200 text-stone-400 bg-amber-50/30 hover:border-amber-300"
+                          }`}
+                      >
+                        {selectedCategory
+                          ? `✨ ${selectedCategory.label}`
+                          : "카테고리 선택해주세요"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleOpenModal}
+                        className="w-14 h-14 rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center hover:from-amber-100 hover:to-amber-200 transition-all shadow-sm hover:shadow-md flex-shrink-0"
+                        aria-label="카테고리 추가"
+                      >
+                        <Plus className="w-6 h-6 text-amber-600" />
+                      </button>
+                    </div>
+                    {/* 검색 결과 - 제목 입력 시 추천 카테고리 (모달/칩으로 직접 선택했을 때는 숨김, 제목 수정 시 다시 표시) */}
+                    {inputValue.trim() &&
+                      displayItems.length > 0 &&
+                      !categorySelectedByUser && (
+                        <div
+                          ref={scrollRef}
+                          className="mt-3 w-full overflow-x-auto overflow-y-hidden scrollbar-hide flex gap-3 flex-nowrap pr-2 select-none cursor-grab active:cursor-grabbing"
+                          onMouseDown={handleMouseDown}
+                          onMouseMove={handleMouseMove}
+                          onMouseUp={handleMouseUpOrLeave}
+                          onMouseLeave={handleMouseUpOrLeave}
+                        >
+                          {displayItems.map((category) => (
+                            <div
+                              key={category.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => handleCategoryClick(category)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  handleCategoryClick(category);
+                                }
+                              }}
+                              className="h-10 px-4 flex-shrink-0 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                              style={{ backgroundColor: category.color }}
+                            >
+                              <span className="text-sm font-semibold text-stone-700 whitespace-nowrap">
+                                {category.label}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {/* 결제 유형 */}
+            <AnimatePresence>
+              {showPaymentType && (
+                <motion.div
+                  key="payment-type-section"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
                 >
-                  <Plus className="w-6 h-6 text-amber-600" />
-                </button>
-              </div>
-              {/* 검색 결과 - 제목 입력 시 추천 카테고리 (모달/칩으로 직접 선택했을 때는 숨김, 제목 수정 시 다시 표시) */}
-              {inputValue.trim() &&
-                displayItems.length > 0 &&
-                !categorySelectedByUser && (
-                  <div
-                    ref={scrollRef}
-                    className="mt-3 w-full overflow-x-auto overflow-y-hidden scrollbar-hide flex gap-3 flex-nowrap pr-2 select-none cursor-grab active:cursor-grabbing"
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUpOrLeave}
-                    onMouseLeave={handleMouseUpOrLeave}
-                  >
-                    {displayItems.map((category) => (
+                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-blue-200">
+                    <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                        <CreditCard className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <span className="text-lg">결제 유형</span>
+                      <span className="text-[#ee2b8c] text-xl">*</span>
+                      <span className="ml-auto text-xs bg-[#ee2b8c] text-white px-3 py-1 rounded-full font-bold">
+                        필수
+                      </span>
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {(["현금", "카드", "기타"] as const).map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setPaymentType(type)}
+                          className={`py-4 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 ${paymentType === type
+                            ? "bg-[#ee2b8c] text-white shadow-lg scale-105"
+                            : "bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-blue-200 text-stone-600 hover:border-blue-300"
+                            }`}
+                        >
+                          {type === "현금" && <Wallet className="w-6 h-6" />}
+                          {type === "카드" && <CreditCard className="w-6 h-6" />}
+                          {type === "기타" && <DollarSign className="w-6 h-6" />}
+                          <span>{type}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {/* 나머지 필드: 금액·일자·위치·메모 */}
+            <AnimatePresence>
+              {showRestFields && (
+                <motion.div
+                  key="rest-fields-section"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="space-y-5"
+                >
+                  {/* 금액 */}
+                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
+                    <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
+                        <DollarSign className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <span className="text-lg">금액</span>
+                      <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
+                        선택
+                      </span>
+                    </label>
+                    <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 rounded-2xl p-1">
+                      <input
+                        id="plan-amount"
+                        type="text"
+                        inputMode="numeric"
+                        value={amount}
+                        onChange={handleAmountChange}
+                        placeholder="금액을 입력해주세요"
+                        className="flex-1 min-w-0 px-5 py-4 bg-white rounded-xl focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 border-2 border-transparent focus:border-emerald-200"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            if (!amount.trim()) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            } else {
+                              e.stopPropagation();
+                            }
+                          }
+                        }}
+                      />
+                      <span className="text-stone-700 font-bold text-lg pr-4">
+                        만 원
+                      </span>
+                    </div>
+                  </div>
+                  {/* 일자 */}
+                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
+                    <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                        <Calendar className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <span className="text-lg">일자</span>
+                      <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
+                        선택
+                      </span>
+                    </label>
+                    <div className="flex flex-col gap-3">
                       <div
-                        key={category.id}
+                        className={`w-full px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate cursor-pointer hover:border-purple-300 focus:border-purple-300 focus:outline-none ${isDateUndecided
+                          ? "bg-stone-100 border-stone-200 text-stone-400"
+                          : "text-stone-900 bg-purple-50/20 border-stone-200"
+                          }`}
+                        onClick={() => {
+                          setIsDateUndecided(false);
+                          setIsDatePickerOpen(true);
+                        }}
                         role="button"
                         tabIndex={0}
-                        onClick={() => handleCategoryClick(category)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            handleCategoryClick(category);
+                            setIsDateUndecided(false);
+                            setIsDatePickerOpen(true);
                           }
                         }}
-                        className="h-10 px-4 flex-shrink-0 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
-                        style={{ backgroundColor: category.color }}
                       >
-                        <span className="text-sm font-semibold text-stone-700 whitespace-nowrap">
-                          {category.label}
-                        </span>
+                        {isDateUndecided ? (
+                          <span className="text-stone-400">미정</span>
+                        ) : (
+                          formatDate(selectedDate)
+                        )}
                       </div>
-                    ))}
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setIsDateUndecided(true)}
+                          className={`flex-[1] min-w-0 px-5 py-4 rounded-2xl font-bold transition-all ${isDateUndecided
+                            ? "bg-stone-300 text-stone-600 border-2 border-stone-300"
+                            : "bg-gradient-to-br from-gray-100 to-gray-200 text-stone-600 border-2 border-stone-200 hover:from-gray-200 hover:to-gray-300"
+                            }`}
+                          aria-label="날짜 미정"
+                        >
+                          미정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsDateUndecided(false);
+                            setIsDatePickerOpen(true);
+                          }}
+                          className="flex-[2] min-w-0 py-4 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm"
+                          aria-label="날짜 선택"
+                        >
+                          <Calendar className="w-6 h-6 text-purple-600" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                )}
-            </div>
-            {/* 결제 유형 */}
-            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-blue-200">
-              <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                  <CreditCard className="w-4 h-4 text-blue-600" />
-                </div>
-                <span className="text-lg">결제 유형</span>
-                <span className="text-[#ee2b8c] text-xl">*</span>
-                <span className="ml-auto text-xs bg-[#ee2b8c] text-white px-3 py-1 rounded-full font-bold">
-                  필수
-                </span>
-              </label>
-              <div className="grid grid-cols-3 gap-3">
-                {(["현금", "카드", "기타"] as const).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setPaymentType(type)}
-                    className={`py-4 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 ${paymentType === type
-                        ? "bg-[#ee2b8c] text-white shadow-lg scale-105"
-                        : "bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-blue-200 text-stone-600 hover:border-blue-300"
-                      }`}
-                  >
-                    {type === "현금" && <Wallet className="w-6 h-6" />}
-                    {type === "카드" && <CreditCard className="w-6 h-6" />}
-                    {type === "기타" && <DollarSign className="w-6 h-6" />}
-                    <span>{type}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* 금액 */}
-            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-              <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-emerald-600" />
-                </div>
-                <span className="text-lg">금액</span>
-                <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                  선택
-                </span>
-              </label>
-              <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 rounded-2xl p-1">
-                <input
-                  id="plan-amount"
-                  type="text"
-                  inputMode="numeric"
-                  value={amount}
-                  onChange={handleAmountChange}
-                  placeholder="금액을 입력해주세요"
-                  className="flex-1 min-w-0 px-5 py-4 bg-white rounded-xl focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 border-2 border-transparent focus:border-emerald-200"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      if (!amount.trim()) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      } else {
-                        e.stopPropagation();
-                      }
-                    }
-                  }}
-                />
-                <span className="text-stone-700 font-bold text-lg pr-4">
-                  만 원
-                </span>
-              </div>
-            </div>
-            {/* 일자 */}
-            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-              <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-purple-600" />
-                </div>
-                <span className="text-lg">일자</span>
-                <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                  선택
-                </span>
-              </label>
-              <div className="flex flex-col gap-3">
-                <div
-                  className={`w-full px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate cursor-pointer hover:border-purple-300 focus:border-purple-300 focus:outline-none ${isDateUndecided
-                      ? "bg-stone-100 border-stone-200 text-stone-400"
-                      : "text-stone-900 bg-purple-50/20 border-stone-200"
-                    }`}
-                  onClick={() => {
-                    setIsDateUndecided(false);
-                    setIsDatePickerOpen(true);
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setIsDateUndecided(false);
-                      setIsDatePickerOpen(true);
-                    }
-                  }}
-                >
-                  {isDateUndecided ? (
-                    <span className="text-stone-400">미정</span>
-                  ) : (
-                    formatDate(selectedDate)
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsDateUndecided(true)}
-                    className={`flex-[1] min-w-0 px-5 py-4 rounded-2xl font-bold transition-all ${isDateUndecided
-                        ? "bg-stone-300 text-stone-600 border-2 border-stone-300"
-                        : "bg-gradient-to-br from-gray-100 to-gray-200 text-stone-600 border-2 border-stone-200 hover:from-gray-200 hover:to-gray-300"
-                      }`}
-                    aria-label="날짜 미정"
-                  >
-                    미정
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsDateUndecided(false);
-                      setIsDatePickerOpen(true);
-                    }}
-                    className="flex-[2] min-w-0 py-4 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm"
-                    aria-label="날짜 선택"
-                  >
-                    <Calendar className="w-6 h-6 text-purple-600" />
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* 위치 */}
-            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-              <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
-                  <MapPin className="w-4 h-4 text-red-600" />
-                </div>
-                <span className="text-lg">위치</span>
-                <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                  선택
-                </span>
-              </label>
-              <div className="flex items-center gap-3 mb-4">
-                <input
-                  id="plan-location"
-                  type="text"
-                  value={location}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setLocation(newValue);
-                    if (!newValue.trim()) {
-                      setLocationSearchResults([]);
-                      setShowMap(false);
-                      setMapCoords(null);
-                      setHasSearched(false);
-                      setShowAllLocationResults(false);
-                    }
-                  }}
-                  placeholder="🔍 위치를 검색해주세요"
-                  className="flex-1 min-w-0 px-5 py-4 border-2 border-stone-200 rounded-2xl focus:border-red-300 focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 bg-red-50/20"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.stopPropagation();
-                      if (!location.trim()) {
-                        e.preventDefault();
-                      } else {
-                        handleSearchLocation();
-                      }
-                    }
-                    if (e.key === " ") {
-                      if (!location.trim()) e.preventDefault();
-                      e.stopPropagation();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleSearchLocation}
-                  disabled={!location.trim()}
-                  className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${location.trim()
-                      ? "bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700 shadow-md hover:shadow-lg cursor-pointer"
-                      : "bg-stone-300 text-stone-500 cursor-not-allowed"
-                    }`}
-                >
-                  <Search className="w-5 h-5" />
-                  검색
-                </button>
-              </div>
-              {/* 검색 결과 목록 */}
-              {hasSearched && locationSearchResults.length > 0 && (
-                <div className="mt-3 w-full">
-                  <div className="flex flex-col gap-2">
-                    {/* 지도가 표시되지 않았을 때만 검색 결과 목록 표시 */}
-                    {!showMap && (
-                      <>
-                        {(showAllLocationResults
-                          ? locationSearchResults
-                          : locationSearchResults.slice(0, 3)
-                        ).map((result) => (
-                          <div
-                            key={`${result.x}-${result.y}-${result.place_name}`}
-                            onClick={() => handleSelectLocation(result)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                handleSelectLocation(result);
-                              }
-                            }}
-                            role="button"
-                            tabIndex={0}
-                            className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] cursor-pointer transition-colors"
-                          >
-                            <div className="font-bold text-stone-900 mb-1">
-                              {result.place_name}
-                            </div>
-                            <div className="text-sm text-stone-600">
-                              {result.road_address_name || result.address_name}
-                            </div>
-                          </div>
-                        ))}
-                        {locationSearchResults.length > 3 &&
-                          !showAllLocationResults && (
+                  {/* 위치 */}
+                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
+                    <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
+                        <MapPin className="w-4 h-4 text-red-600" />
+                      </div>
+                      <span className="text-lg">위치</span>
+                      <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
+                        선택
+                      </span>
+                    </label>
+                    <div className="flex items-center gap-3 mb-4">
+                      <input
+                        id="plan-location"
+                        type="text"
+                        value={location}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setLocation(newValue);
+                          if (!newValue.trim()) {
+                            setLocationSearchResults([]);
+                            setShowMap(false);
+                            setMapCoords(null);
+                            setHasSearched(false);
+                            setShowAllLocationResults(false);
+                          }
+                        }}
+                        placeholder="🔍 위치를 검색해주세요"
+                        className="flex-1 min-w-0 px-5 py-4 border-2 border-stone-200 rounded-2xl focus:border-red-300 focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 bg-red-50/20"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.stopPropagation();
+                            if (!location.trim()) {
+                              e.preventDefault();
+                            } else {
+                              handleSearchLocation();
+                            }
+                          }
+                          if (e.key === " ") {
+                            if (!location.trim()) e.preventDefault();
+                            e.stopPropagation();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSearchLocation}
+                        disabled={!location.trim()}
+                        className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${location.trim()
+                          ? "bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700 shadow-md hover:shadow-lg cursor-pointer"
+                          : "bg-stone-300 text-stone-500 cursor-not-allowed"
+                          }`}
+                      >
+                        <Search className="w-5 h-5" />
+                        검색
+                      </button>
+                    </div>
+                    {/* 검색 결과 목록 */}
+                    {hasSearched && locationSearchResults.length > 0 && (
+                      <div className="mt-3 w-full">
+                        <div className="flex flex-col gap-2">
+                          {/* 지도가 표시되지 않았을 때만 검색 결과 목록 표시 */}
+                          {!showMap && (
+                            <>
+                              {(showAllLocationResults
+                                ? locationSearchResults
+                                : locationSearchResults.slice(0, 3)
+                              ).map((result) => (
+                                <div
+                                  key={`${result.x}-${result.y}-${result.place_name}`}
+                                  onClick={() => handleSelectLocation(result)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      handleSelectLocation(result);
+                                    }
+                                  }}
+                                  role="button"
+                                  tabIndex={0}
+                                  className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] cursor-pointer transition-colors"
+                                >
+                                  <div className="font-bold text-stone-900 mb-1">
+                                    {result.place_name}
+                                  </div>
+                                  <div className="text-sm text-stone-600">
+                                    {result.road_address_name || result.address_name}
+                                  </div>
+                                </div>
+                              ))}
+                              {locationSearchResults.length > 3 &&
+                                !showAllLocationResults && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowAllLocationResults(true)}
+                                    className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors flex items-center justify-center gap-2"
+                                  >
+                                    <span className="text-lg font-bold text-[#ee2b8c]">
+                                      +
+                                    </span>
+                                    <span className="text-sm font-semibold text-[#1b0d14]">
+                                      {locationSearchResults.length - 3}개 더보기
+                                    </span>
+                                  </button>
+                                )}
+                            </>
+                          )}
+                          {/* 지도가 표시되었을 때는 버튼만 표시 (전체 개수) */}
+                          {showMap && locationSearchResults.length > 0 && (
                             <button
                               type="button"
-                              onClick={() => setShowAllLocationResults(true)}
+                              onClick={() => {
+                                setShowMap(false);
+                                setShowAllLocationResults(false);
+                              }}
                               className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors flex items-center justify-center gap-2"
                             >
                               <span className="text-lg font-bold text-[#ee2b8c]">
                                 +
                               </span>
                               <span className="text-sm font-semibold text-[#1b0d14]">
-                                {locationSearchResults.length - 3}개 더보기
+                                {locationSearchResults.length}개 더보기
                               </span>
                             </button>
                           )}
-                      </>
-                    )}
-                    {/* 지도가 표시되었을 때는 버튼만 표시 (전체 개수) */}
-                    {showMap && locationSearchResults.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowMap(false);
-                          setShowAllLocationResults(false);
-                        }}
-                        className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors flex items-center justify-center gap-2"
-                      >
-                        <span className="text-lg font-bold text-[#ee2b8c]">
-                          +
-                        </span>
-                        <span className="text-sm font-semibold text-[#1b0d14]">
-                          {locationSearchResults.length}개 더보기
-                        </span>
-                      </button>
-                    )}
-                    {/* 원하는 결과가 없을 때 */}
-                    {!showMap && (
-                      <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
-                        <div className="text-base font-semibold text-stone-600 mb-2">
-                          원하는 결과가 없습니다
+                          {/* 원하는 결과가 없을 때 */}
+                          {!showMap && (
+                            <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
+                              <div className="text-base font-semibold text-stone-600 mb-2">
+                                원하는 결과가 없습니다
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleSaveWithoutLocation}
+                                className="px-6 py-2 bg-[#ee2b8c] text-white font-semibold rounded-xl hover:bg-[#d4237b] transition-colors text-sm"
+                              >
+                                건너뛰기
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleSaveWithoutLocation}
-                          className="px-6 py-2 bg-[#ee2b8c] text-white font-semibold rounded-xl hover:bg-[#d4237b] transition-colors text-sm"
-                        >
-                          건너뛰기
-                        </button>
+                      </div>
+                    )}
+                    {/* 검색 결과 없음 */}
+                    {hasSearched && locationSearchResults.length === 0 && (
+                      <div className="mt-3 w-full">
+                        <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
+                          <div className="text-base font-semibold text-stone-600 mb-2">
+                            검색 결과가 없습니다.
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleSaveWithoutLocation}
+                            className="px-6 py-2 bg-[#ee2b8c] text-white font-semibold rounded-xl hover:bg-[#d4237b] transition-colors text-sm"
+                          >
+                            건너뛰기
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {/* 지도 - 위치 선택 시 카드 내에 표시 */}
+                    {showMap && (
+                      <div ref={mapContainerRef} className="mt-4 w-full">
+                        <div
+                          id="map"
+                          className="w-full h-[200px] rounded-2xl overflow-hidden border-2 border-stone-200"
+                          style={{ pointerEvents: "auto" }}
+                        />
                       </div>
                     )}
                   </div>
-                </div>
-              )}
-              {/* 검색 결과 없음 */}
-              {hasSearched && locationSearchResults.length === 0 && (
-                <div className="mt-3 w-full">
-                  <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
-                    <div className="text-base font-semibold text-stone-600 mb-2">
-                      검색 결과가 없습니다.
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSaveWithoutLocation}
-                      className="px-6 py-2 bg-[#ee2b8c] text-white font-semibold rounded-xl hover:bg-[#d4237b] transition-colors text-sm"
-                    >
-                      건너뛰기
-                    </button>
-                  </div>
-                </div>
-              )}
-              {/* 지도 - 위치 선택 시 카드 내에 표시 */}
-              {showMap && (
-                <div ref={mapContainerRef} className="mt-4 w-full">
-                  <div
-                    id="map"
-                    className="w-full h-[200px] rounded-2xl overflow-hidden border-2 border-stone-200"
-                    style={{ pointerEvents: "auto" }}
-                  />
-                </div>
-              )}
-            </div>
 
-            {/* 메모 */}
-            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-              <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-orange-600" />
-                </div>
-                <span className="text-lg">메모</span>
-                <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                  선택
-                </span>
-              </label>
-              <div className="relative">
-                <textarea
-                  ref={memoTextareaRef}
-                  id="plan-memo"
-                  value={memo}
-                  maxLength={500}
-                  onChange={(e) => {
-                    const newValue = e.target.value.slice(0, 500);
-                    setMemo(newValue);
-                    if (memoTextareaRef.current) {
-                      memoTextareaRef.current.style.height = "auto";
-                      memoTextareaRef.current.style.height = `${memoTextareaRef.current.scrollHeight}px`;
-                    }
-                  }}
-                  placeholder="📝 메모를 입력해주세요"
-                  className="w-full min-h-[112px] px-5 py-4 pb-10 border-2 border-stone-200 rounded-2xl focus:border-orange-300 focus:outline-none transition-all resize-none overflow-hidden text-stone-700 placeholder:text-stone-400 bg-orange-50/20"
-                  style={{ height: "auto" }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      if (!memo.trim()) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      } else {
-                        e.stopPropagation();
-                      }
-                    }
-                  }}
-                />
-                <div className="absolute bottom-3 right-3 text-sm text-stone-400 font-medium">
-                  {memo.length}/500
-                </div>
-              </div>
-            </div>
+                  {/* 메모 */}
+                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
+                    <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                        <FileText className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <span className="text-lg">메모</span>
+                      <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
+                        선택
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        ref={memoTextareaRef}
+                        id="plan-memo"
+                        value={memo}
+                        maxLength={500}
+                        onChange={(e) => {
+                          const newValue = e.target.value.slice(0, 500);
+                          setMemo(newValue);
+                          if (memoTextareaRef.current) {
+                            memoTextareaRef.current.style.height = "auto";
+                            memoTextareaRef.current.style.height = `${memoTextareaRef.current.scrollHeight}px`;
+                          }
+                        }}
+                        placeholder="📝 메모를 입력해주세요"
+                        className="w-full min-h-[112px] px-5 py-4 pb-10 border-2 border-stone-200 rounded-2xl focus:border-orange-300 focus:outline-none transition-all resize-none overflow-hidden text-stone-700 placeholder:text-stone-400 bg-orange-50/20"
+                        style={{ height: "auto" }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            if (!memo.trim()) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            } else {
+                              e.stopPropagation();
+                            }
+                          }
+                        }}
+                      />
+                      <div className="absolute bottom-3 right-3 text-sm text-stone-400 font-medium">
+                        {memo.length}/500
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* 저장 버튼 - 제목과 카테고리가 모두 있을 때만 표시 */}
-          {inputValue.trim() && selectedCategory && !isLoadingDetail && (
+          {inputValue.trim() && selectedCategory && paymentType && !isLoadingDetail && (
             <div className="mt-8 w-full">
               <button
                 type="button"
@@ -1350,7 +1394,7 @@ function AddPlanPageContent() {
                       locationLat: mapCoords?.lat ?? 0,
                       locationLng: mapCoords?.lng ?? 0,
                       memo: memo.trim() || "",
-                      payType: PAY_TYPE_MAP[paymentType],
+                      payType: paymentType ? PAY_TYPE_MAP[paymentType] : "OTHER",
                       addCategoryNameList: userAddedCategories.map(
                         (c) => c.label,
                       ),
@@ -1364,7 +1408,7 @@ function AddPlanPageContent() {
                   const body: Record<string, unknown> = {
                     categoryName: selectedCategory.label,
                     title: inputValue.trim(),
-                    payType: PAY_TYPE_MAP[paymentType],
+                    payType: paymentType ? PAY_TYPE_MAP[paymentType] : "OTHER",
                     amount: amountValue ? parseInt(amountValue, 10) : 0,
                     location: location.trim() || "",
                     locationLat: mapCoords?.lat ?? 0,
@@ -1507,8 +1551,8 @@ function AddPlanPageContent() {
                             }
                         }
                         className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${selectedCategory?.label === category.label
-                            ? "text-[#1b0d14] shadow-lg scale-[1.02]"
-                            : "text-[#1b0d14] hover:opacity-90"
+                          ? "text-[#1b0d14] shadow-lg scale-[1.02]"
+                          : "text-[#1b0d14] hover:opacity-90"
                           } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
                       >
                         <span className="font-bold text-lg flex items-center gap-2">
