@@ -1053,25 +1053,22 @@ function AddPlanPageContent() {
                   선택
                 </span>
               </label>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-3">
                 <div
-                  className={`flex-1 min-w-0 px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate ${isDateUndecided
-                      ? "bg-stone-100 border-stone-200 text-stone-400 cursor-default"
-                      : "text-stone-900 bg-purple-50/20 border-stone-200 cursor-pointer hover:border-purple-300 focus:border-purple-300 focus:outline-none"
+                  className={`w-full px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate cursor-pointer hover:border-purple-300 focus:border-purple-300 focus:outline-none ${isDateUndecided
+                      ? "bg-stone-100 border-stone-200 text-stone-400"
+                      : "text-stone-900 bg-purple-50/20 border-stone-200"
                     }`}
                   onClick={() => {
-                    if (!isDateUndecided) {
-                      setIsDatePickerOpen(true);
-                    }
+                    setIsDateUndecided(false);
+                    setIsDatePickerOpen(true);
                   }}
                   role="button"
-                  tabIndex={isDateUndecided ? -1 : 0}
+                  tabIndex={0}
                   onKeyDown={(e) => {
-                    if (
-                      !isDateUndecided &&
-                      (e.key === "Enter" || e.key === " ")
-                    ) {
+                    if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
+                      setIsDateUndecided(false);
                       setIsDatePickerOpen(true);
                     }
                   }}
@@ -1082,28 +1079,30 @@ function AddPlanPageContent() {
                     formatDate(selectedDate)
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsDateUndecided(true)}
-                  className={`px-5 py-4 rounded-2xl font-bold transition-all flex-shrink-0 ${isDateUndecided
-                      ? "bg-stone-300 text-stone-600 border-2 border-stone-300"
-                      : "bg-gradient-to-br from-gray-100 to-gray-200 text-stone-600 border-2 border-stone-200 hover:from-gray-200 hover:to-gray-300"
-                    }`}
-                  aria-label="날짜 미정"
-                >
-                  미정
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDateUndecided(false);
-                    setIsDatePickerOpen(true);
-                  }}
-                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm flex-shrink-0"
-                  aria-label="날짜 선택"
-                >
-                  <Calendar className="w-6 h-6 text-purple-600" />
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsDateUndecided(true)}
+                    className={`flex-[1] min-w-0 px-5 py-4 rounded-2xl font-bold transition-all ${isDateUndecided
+                        ? "bg-stone-300 text-stone-600 border-2 border-stone-300"
+                        : "bg-gradient-to-br from-gray-100 to-gray-200 text-stone-600 border-2 border-stone-200 hover:from-gray-200 hover:to-gray-300"
+                      }`}
+                    aria-label="날짜 미정"
+                  >
+                    미정
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDateUndecided(false);
+                      setIsDatePickerOpen(true);
+                    }}
+                    className="flex-[2] min-w-0 py-4 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm"
+                    aria-label="날짜 선택"
+                  >
+                    <Calendar className="w-6 h-6 text-purple-600" />
+                  </button>
+                </div>
               </div>
             </div>
             {/* 위치 */}

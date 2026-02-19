@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
 import { getKstToday } from "@/lib/utils";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type DatePickerWheelProps = {
   initialDate?: { year: number; month: number; day: number };
@@ -21,8 +21,10 @@ export default function DatePickerWheel({
 }: DatePickerWheelProps) {
   const currentYear = getKstToday().year;
   const defaultDate = initialDate ?? getDefaultDate();
+  const minYear = currentYear;
+  const initialYear = Math.max(defaultDate.year, minYear);
 
-  const [selectedYear, setSelectedYear] = useState(defaultDate.year);
+  const [selectedYear, setSelectedYear] = useState(initialYear);
   const [selectedMonth, setSelectedMonth] = useState(defaultDate.month);
   const [selectedDay, setSelectedDay] = useState(defaultDate.day);
 
@@ -35,7 +37,7 @@ export default function DatePickerWheel({
 
   // 스크롤/클릭 시점에 항상 최신 값 보장 (React 배칭으로 인한 stale closure 방지)
   const selectedRef = useRef({
-    year: defaultDate.year,
+    year: initialYear,
     month: defaultDate.month,
     day: defaultDate.day,
   });
@@ -73,7 +75,7 @@ export default function DatePickerWheel({
   const programmaticScrollRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const years = Array.from({ length: 100 }, (_, i) => currentYear - 50 + i);
+  const years = Array.from({ length: 100 }, (_, i) => currentYear + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month, 0).getDate();
