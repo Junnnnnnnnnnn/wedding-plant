@@ -99,6 +99,8 @@ interface PlanUserData {
   name: string;
   roomId?: number | null;
   members?: PlanUserMember[];
+  hasSeenMainGuide?: boolean;
+  hasSeenBudgetGuide?: boolean;
 }
 
 /** GET /plan/schedule/list 응답 항목 */
@@ -271,7 +273,10 @@ function MainPageContent() {
   const sharedFetchingRef = useRef(false);
   const cancelledRef = useRef(false);
 
-  // Guide Overlay State
+  // Guide Overlay State. 로그인 시: GET /plan/user 응답으로만 설정·참조( localStorage 미참조 )
+  const [hasSeenMainGuide, setHasSeenMainGuide] = useState<boolean | null>(
+    null,
+  );
   const [showGuide, setShowGuide] = useState(false);
 
   // Hydration: date-dependent UI only after mount so server and first client render match
@@ -280,25 +285,35 @@ function MainPageContent() {
     setMounted(true);
   }, []);
 
-  // Check if it's the first visit (or guide not seen yet)
+  // 가이드 표시: 로그인 시 GET /plan/user 응답만 사용( localStorage 참조 금지 ), 비로그인 시에만 localStorage
   useEffect(() => {
-    // 임시: 로컬 스토리지 키를 확인하여 가이드 표시 여부 결정
-    // 사용자가 요청한 "main 접속 시" 조건에 맞게, 일단은 세션 당 1회 혹은 최초 1회 등으로 설정 가능
-    // 여기서는 '항상' 혹은 '키가 없을 때' 띄우도록 설정. 테스트를 위해 키 체크 로직 추가.
-    const hasSeenGuide = localStorage.getItem("hasSeenMainGuide");
-    if (!hasSeenGuide) {
-      // 약간의 딜레이 후 표시 (페이지 로드 애니메이션 고려)
-      const timer = setTimeout(() => {
-        setShowGuide(true);
-      }, 1000);
-      return () => clearTimeout(timer);
+    if (getToken()) {
+      // 로그인: API 응답(hasSeenMainGuide)으로만 판단
+      if (hasSeenMainGuide !== false) return;
+    } else {
+      if (typeof window === "undefined") return;
+      if (localStorage.getItem("hasSeenMainGuide") === "true") return;
     }
-  }, []);
+    const timer = setTimeout(() => setShowGuide(true), 1000);
+    return () => clearTimeout(timer);
+  }, [hasSeenMainGuide, tokenChecked]);
 
-  const handleCloseGuide = () => {
+  const handleCloseGuide = useCallback(async () => {
     setShowGuide(false);
-    localStorage.setItem("hasSeenMainGuide", "true");
-  };
+    setHasSeenMainGuide(true);
+    if (getToken()) {
+      try {
+        await fetchWithAuth("/plan/user/has-seen-main-guide", {
+          method: "POST",
+        });
+      } catch {
+        // 무시
+      }
+    } else {
+      if (typeof window !== "undefined")
+        localStorage.setItem("hasSeenMainGuide", "true");
+    }
+  }, [fetchWithAuth]);
 
   const guideSteps: GuideStep[] = [
     {
@@ -583,9 +598,40 @@ function MainPageContent() {
       return;
     }
     cancelledRef.current = false;
+
+    // 비로그인에서 가이드 본 뒤 로그인: POST has-seen 두 개 먼저 호출 후 GET /plan/user
+    const syncGuestGuideThenProceed = async () => {
+      const seenMain =
+        typeof window !== "undefined" &&
+        localStorage.getItem("hasSeenMainGuide") === "true";
+      const seenBudget =
+        typeof window !== "undefined" &&
+        localStorage.getItem("hasSeenBudgetGuide") === "true";
+      if (seenMain || seenBudget) {
+        try {
+          await fetchWithAuth("/plan/user/has-seen-main-guide", {
+            method: "POST",
+          });
+          await fetchWithAuth("/plan/user/has-seen-budget-guide", {
+            method: "POST",
+          });
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("hasSeenMainGuide");
+            localStorage.removeItem("hasSeenBudgetGuide");
+            sessionStorage.removeItem("hasSeenMainGuide");
+            sessionStorage.removeItem("hasSeenBudgetGuide");
+          }
+        } catch {
+          // 무시
+        }
+      }
+    };
+
     const roomIdParam = roomId?.trim();
     if (shareCode?.trim()) {
       (async () => {
+        await syncGuestGuideThenProceed();
+        if (cancelledRef.current) return;
         await Promise.all([
           fetchPlanUser(handleApiError),
           fetchTotalAmount(handleApiError),
@@ -602,14 +648,39 @@ function MainPageContent() {
       fetchPlanUser(handleApiError, roomIdParam);
       fetchTotalAmount(handleApiError, roomIdParam);
       fetchPersonalCounts(roomIdParam);
+      // main?roomId 일 때도 가이드 플래그를 위해 POST 동기화 후 GET /plan/user
+      (async () => {
+        await syncGuestGuideThenProceed();
+        if (cancelledRef.current) return;
+        try {
+          const res = await fetchWithAuth("/plan/user");
+          if (cancelledRef.current) return;
+          const json = (await res.json()) as {
+            result?: boolean;
+            data?: PlanUserData;
+          };
+          if (json?.result && json?.data)
+            setHasSeenMainGuide(json.data.hasSeenMainGuide ?? true);
+          else setHasSeenMainGuide(true);
+        } catch {
+          if (!cancelledRef.current) setHasSeenMainGuide(true);
+        }
+      })();
     } else {
-      // /main 접속: /plan/user 응답에 roomId가 있으면 /plan/room/total-amount/{id} 호출
+      // /main 접속: POST 동기화 후 GET /plan/user, 응답에 roomId 있으면 /plan/room/total-amount/{id} 호출
       setApiPlanData(null);
       setScheduleList([]);
       setScheduleInitialFetched(false);
       (async () => {
+        await syncGuestGuideThenProceed();
+        if (cancelledRef.current) return;
         const planData = await fetchPlanUser(handleApiError);
         if (cancelledRef.current) return;
+        setHasSeenMainGuide(
+          planData && planData !== "none"
+            ? planData.hasSeenMainGuide ?? true
+            : true,
+        );
         const roomIdForAmount =
           planData && planData !== "none" && planData.roomId != null
             ? String(planData.roomId)
@@ -625,6 +696,7 @@ function MainPageContent() {
   }, [
     fetchPlanUser,
     fetchTotalAmount,
+    fetchWithAuth,
     fetchSharedRoomWithAuth,
     handleApiError,
     shareCode,

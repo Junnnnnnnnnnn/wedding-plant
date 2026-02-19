@@ -20,7 +20,7 @@ export default function NameInputModal({
   if (!show) return null;
 
   const trimmed = name.trim();
-  const isValid = trimmed.length > 0 && trimmed.length <= 3;
+  const isValid = trimmed.length > 0 && trimmed.length <= 6;
 
   const handleSubmit = async () => {
     if (!isValid || saving) return;
@@ -64,13 +64,13 @@ export default function NameInputModal({
           이름을 입력해 주세요
         </h2>
         <p className="mt-2 text-center text-sm text-stone-500">
-          다른 멤버에게 보여지는 이름이에요 (최대 3글자)
+          다른 멤버에게 보여지는 이름이에요 (최대 6글자)
         </p>
 
         <div className="mt-5">
           <input
             type="text"
-            maxLength={3}
+            maxLength={6}
             value={name}
             onChange={(e) => {
               setName(e.target.value);

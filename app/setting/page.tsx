@@ -379,7 +379,11 @@ function SettingPageContent() {
           <div
             className={`absolute inset-0 flex flex-col items-center justify-center ${isFadingOut ? "animate-fade-out" : ""}`}
           >
-            <LandingHero title="결혼" subtitle="🎉 축하드려요 🎉" useUserFont={false} />
+            <LandingHero
+              title="결혼"
+              subtitle="🎉 축하드려요 🎉"
+              useUserFont={false}
+            />
           </div>
         )}
         {showSecond && (
@@ -525,7 +529,7 @@ function SettingPageContent() {
             className={`flex flex-1 flex-col items-center justify-center ${isFifthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
           >
             <LandingHero
-              title={`${weddingData.name} 님 환영합니다~`}
+              title={`${weddingData.name} 님 환영합니다`}
               subtitle="출입증을 발급해 드렸어요!"
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"

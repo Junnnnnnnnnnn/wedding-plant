@@ -153,21 +153,41 @@ function BudgetDetailsPage() {
   );
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
-  // Guide State
+  // Guide State. 로그인 시: GET /plan/user 응답으로만 설정·참조( localStorage 미참조 )
+  const [hasSeenBudgetGuide, setHasSeenBudgetGuide] = useState<
+    boolean | null
+  >(null);
   const [showGuide, setShowGuide] = useState(false);
 
+  // 가이드 표시: 로그인 시 GET /plan/user 응답만 사용( localStorage 참조 금지 ), 비로그인 시에만 localStorage
   useEffect(() => {
-    const hasSeen = localStorage.getItem("hasSeenBudgetGuide");
-    if (!hasSeen) {
-      const timer = setTimeout(() => setShowGuide(true), 1000);
-      return () => clearTimeout(timer);
+    if (getToken()) {
+      // 로그인: API 응답(hasSeenBudgetGuide)으로만 판단
+      if (hasSeenBudgetGuide !== false) return;
+    } else {
+      if (typeof window === "undefined") return;
+      if (localStorage.getItem("hasSeenBudgetGuide") === "true") return;
     }
-  }, []);
+    const timer = setTimeout(() => setShowGuide(true), 1000);
+    return () => clearTimeout(timer);
+  }, [hasSeenBudgetGuide]);
 
-  const handleCloseGuide = () => {
+  const handleCloseGuide = useCallback(async () => {
     setShowGuide(false);
-    localStorage.setItem("hasSeenBudgetGuide", "true");
-  };
+    setHasSeenBudgetGuide(true);
+    if (getToken()) {
+      try {
+        await fetchWithAuth("/plan/user/has-seen-budget-guide", {
+          method: "POST",
+        });
+      } catch {
+        // 무시
+      }
+    } else {
+      if (typeof window !== "undefined")
+        localStorage.setItem("hasSeenBudgetGuide", "true");
+    }
+  }, [fetchWithAuth]);
 
   const guideSteps: GuideStep[] = [
     {
@@ -292,12 +312,44 @@ function BudgetDetailsPage() {
     try {
       const scheduleParams = buildScheduleParams(1, "예정", null);
 
+      // 비로그인에서 가이드 본 뒤 로그인: POST has-seen 두 개 먼저 호출 후 GET /plan/user
+      const seenMain =
+        typeof window !== "undefined" &&
+        localStorage.getItem("hasSeenMainGuide") === "true";
+      const seenBudget =
+        typeof window !== "undefined" &&
+        localStorage.getItem("hasSeenBudgetGuide") === "true";
+      if (seenMain || seenBudget) {
+        try {
+          await fetchWithAuth("/plan/user/has-seen-main-guide", {
+            method: "POST",
+          });
+          await fetchWithAuth("/plan/user/has-seen-budget-guide", {
+            method: "POST",
+          });
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("hasSeenMainGuide");
+            localStorage.removeItem("hasSeenBudgetGuide");
+            sessionStorage.removeItem("hasSeenMainGuide");
+            sessionStorage.removeItem("hasSeenBudgetGuide");
+          }
+        } catch {
+          // 무시
+        }
+      }
+
       // roomId: URL 쿼리 우선, 없으면 /plan/user 응답의 roomId 사용
       const userRes = await fetchWithAuth("/plan/user");
       const userJson = (await userRes.json().catch(() => null)) as {
         result?: boolean;
-        data?: { roomId?: number | null };
+        data?: { roomId?: number | null; hasSeenBudgetGuide?: boolean };
       } | null;
+
+      setHasSeenBudgetGuide(
+        userJson?.result && userJson.data
+          ? userJson.data.hasSeenBudgetGuide ?? true
+          : true,
+      );
 
       const currentRoomId =
         roomIdFromUrl ??
