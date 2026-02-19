@@ -9,7 +9,7 @@ import CelebrationEffects from "../components/CelebrationEffects";
 import DatePickerWheel from "../components/DatePickerWheel";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
-import { getToken } from "@/lib/api";
+import { getToken, HAS_COMPLETED_GUEST_SETTING_KEY } from "@/lib/api";
 import CountUp from "../../components/CountUp";
 
 // 3D(WebGL)는 클라이언트에서만 로드해 Context Lost·엑스박스 방지
@@ -49,7 +49,9 @@ function SettingPageContent() {
   const [showLanyard, setShowLanyard] = useState(false);
   const [isLanyardFadingOut, setIsLanyardFadingOut] = useState(false);
   const [userCheckDone, setUserCheckDone] = useState(false);
-  const [nextStep, setNextStep] = useState<"second" | "third" | "fourth">("second");
+  const [nextStep, setNextStep] = useState<"second" | "third" | "fourth">(
+    "second",
+  );
 
   function isPlanDataComplete(data: {
     weddingDate?: string | null;
@@ -66,6 +68,32 @@ function SettingPageContent() {
     const hasName = typeof data.name === "string" && data.name.trim() !== "";
     return Boolean(hasWeddingDate && hasBudget && hasName);
   }
+
+  // 비로그인 + 이미 setting 완료(플래그 있음) + weddingDate 등 데이터 다 찼으면 → main으로 리다이렉트
+  // (다시 setting 접근 시 차단. 플로우 중에는 플래그가 없으므로 리다이렉트 안 함)
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      const hasCompleted =
+        typeof window !== "undefined" &&
+        sessionStorage.getItem(HAS_COMPLETED_GUEST_SETTING_KEY) === "1";
+      if (!hasCompleted) return;
+
+      const d = weddingData.date;
+      const hasDate =
+        d &&
+        typeof d.year === "number" &&
+        typeof d.month === "number" &&
+        typeof d.day === "number";
+      const hasBudget =
+        weddingData.budget != null && String(weddingData.budget).trim() !== "";
+      const hasName =
+        typeof weddingData.name === "string" && weddingData.name.trim() !== "";
+      if (hasDate && hasBudget && hasName) {
+        router.replace("/main");
+      }
+    }
+  }, [weddingData.date, weddingData.budget, weddingData.name, router]);
 
   // 토큰 있으면 GET /plan/user 조회. weddingDate·budget 없으면 setting 플로우 진행
   useEffect(() => {
@@ -202,8 +230,6 @@ function SettingPageContent() {
     return undefined;
   }, [showFifth]);
 
-
-
   const handleDateChange = (date: {
     year: number;
     month: number;
@@ -258,6 +284,9 @@ function SettingPageContent() {
   // 로그인되어 있을 때만 API 사용. 비로그인(로그인 없이 둘러보기) 시 API 호출 없이 /main으로만 이동
   const handleGoToMain = async () => {
     if (!getToken()) {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(HAS_COMPLETED_GUEST_SETTING_KEY, "1");
+      }
       router.push("/main");
       return;
     }
@@ -372,7 +401,13 @@ function SettingPageContent() {
             <button
               type="button"
               onClick={() => {
-                handleDateChange(weddingData.date || { year: new Date().getFullYear(), month: new Date().getMonth() + 1, day: new Date().getDate() });
+                handleDateChange(
+                  weddingData.date || {
+                    year: new Date().getFullYear(),
+                    month: new Date().getMonth() + 1,
+                    day: new Date().getDate(),
+                  },
+                );
                 handleDateNext();
               }}
               className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"

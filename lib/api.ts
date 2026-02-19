@@ -5,6 +5,9 @@ export const AUTH_TOKEN_CHANGED_EVENT = "plan-auth-token-changed";
 /** OAuth 로그인 전 공유 링크 shareCode 저장용 (로그인 후 /main?share=xxx로 복원) */
 export const SHARE_AFTER_LOGIN_KEY = "plan_share_after_login";
 
+/** 비로그인 시 setting 완료 후 /main 진입 시 설정. 직접 /main 접속 시 리다이렉트 판단용 */
+export const HAS_COMPLETED_GUEST_SETTING_KEY = "plan_has_completed_guest_setting";
+
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   // sessionStorage는 탭(창) 단위라 공유 링크를 새 탭에서 열면 토큰이 없을 수 있음

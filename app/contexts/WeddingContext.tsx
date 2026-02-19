@@ -9,6 +9,7 @@ import {
   useCallback,
 } from "react";
 import { getKstToday } from "@/lib/utils";
+import { HAS_COMPLETED_GUEST_SETTING_KEY } from "@/lib/api";
 
 export interface User {
   id: string;
@@ -164,6 +165,7 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
     setWeddingData(initial);
     if (typeof window !== "undefined") {
       sessionStorage.removeItem(WEDDING_DATA_KEY);
+      sessionStorage.removeItem(HAS_COMPLETED_GUEST_SETTING_KEY);
     }
   }, []);
 

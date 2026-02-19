@@ -40,6 +40,7 @@ import {
   getPlanUserIdFromToken,
   getSubFromToken,
   clearAllStoredData,
+  HAS_COMPLETED_GUEST_SETTING_KEY,
 } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
 import { parseLocalDate, getKstDate } from "@/lib/utils";
@@ -553,6 +554,17 @@ function MainPageContent() {
     },
     [resetData, router],
   );
+
+  // 비로그인 + share 없을 때: setting 미완료(플래그 없음) → / 로 리다이렉트
+  useEffect(() => {
+    if (getToken() || shareCode?.trim()) return;
+    const hasCompleted =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem(HAS_COMPLETED_GUEST_SETTING_KEY) === "1";
+    if (!hasCompleted) {
+      router.replace("/");
+    }
+  }, [shareCode, router]);
 
   // 로그인되어 있을 때만 API 사용. 비로그인(setting→main 로그인 없이 둘러보기 등) 시 API 호출 없음
   useEffect(() => {
