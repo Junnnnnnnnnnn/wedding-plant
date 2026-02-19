@@ -523,7 +523,7 @@ function SettingPageContent() {
           >
             <LandingHero
               title={`${weddingData.name} 님 환영합니다~`}
-              subtitle="제가 작은 선물을 준비했어요"
+              subtitle="출입증을 발급해 드렸어요!"
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"
             />

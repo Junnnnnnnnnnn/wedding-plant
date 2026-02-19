@@ -31,17 +31,17 @@ export default function SharePage() {
           method: "POST",
         });
         if (res.status === 401) {
+          // 토큰 만료 등: 비로그인과 동일하게 모달 표시
           clearToken();
           setShareAfterLogin(shareCode);
           setShowLoginModal(true);
           return;
         }
+        if (res.ok) {
+          router.replace("/plan-list");
+        }
       } catch (err) {
         console.error("Failed to join room:", err);
-      } finally {
-        // 401이 아닐 때만 /plan-list로 이동 (이미 위에서 return함)
-        // 실제로는 res.status를 체크해서 200번대일 때만 이동하는게 더 정확함
-        router.replace("/plan-list");
       }
     };
 

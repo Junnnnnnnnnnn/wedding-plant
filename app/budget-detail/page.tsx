@@ -147,7 +147,7 @@ function BudgetDetailsPage() {
   const scheduleFetchingRef = useRef(false);
   const isFirstFilterRun = useRef(true);
 
-  const [activeTab, setActiveTab] = useState<"전체" | "예정" | "사용">("전체");
+  const [activeTab, setActiveTab] = useState<"예정" | "사용">("예정");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null,
   );
@@ -192,11 +192,11 @@ function BudgetDetailsPage() {
     },
   ];
 
-  /** 스케줄 목록 API 쿼리: 전체일 때는 status 생략, 그래프 클릭 시 categoryName 전달 */
+  /** 스케줄 목록 API 쿼리: 그래프 클릭 시 categoryName 전달 */
   const buildScheduleParams = useCallback(
     (
       page: number,
-      statusFilter: "전체" | "예정" | "사용",
+      statusFilter: "예정" | "사용",
       category: Category | null,
     ) => {
       const params = new URLSearchParams({
@@ -206,7 +206,7 @@ function BudgetDetailsPage() {
         sortColumn: SCHEDULE_SORT_COLUMN,
       });
       if (statusFilter === "예정") params.set("status", "NORMAL");
-      else if (statusFilter === "사용") params.set("status", "COMPLETED");
+      else params.set("status", "COMPLETED");
       if (category) params.set("categoryName", category);
       return params;
     },
@@ -290,7 +290,7 @@ function BudgetDetailsPage() {
     setLoading(true);
     setError(null);
     try {
-      const scheduleParams = buildScheduleParams(1, "전체", null);
+      const scheduleParams = buildScheduleParams(1, "예정", null);
 
       // roomId: URL 쿼리 우선, 없으면 /plan/user 응답의 roomId 사용
       const userRes = await fetchWithAuth("/plan/user");
@@ -539,7 +539,7 @@ function BudgetDetailsPage() {
                   {/* Tabs */}
                   <div id="budget-tab" className="px-4 mt-8">
                     <div className="flex border-b border-gray-100">
-                      {(["전체", "예정", "사용"] as const).map((tab) => (
+                      {(["예정", "사용"] as const).map((tab) => (
                         <button
                           key={tab}
                           onClick={() => setActiveTab(tab)}
@@ -556,13 +556,7 @@ function BudgetDetailsPage() {
 
                   {/* Expense List: count=10000으로 전체 한 번에 로드 */}
                   <div id="budget-list" className="mt-4">
-                    {scheduleLoading && scheduleList.length === 0 ? (
-                      <div className="px-4 py-4 text-center text-sm text-gray-500">
-                        불러오는 중...
-                      </div>
-                    ) : (
-                      <ExpenseList expenses={listExpenses} />
-                    )}
+                    <ExpenseList expenses={listExpenses} />
                   </div>
                 </div>
 

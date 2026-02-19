@@ -848,11 +848,11 @@ function AddPlanPageContent() {
                   router.push("/main");
                 }
               }}
-              className="flex items-center gap-2 text-[#ee2b8c] hover:bg-[#ee2b8c11] px-3 py-1.5 rounded-full transition-colors w-fit backdrop-blur-sm bg-white/30 shadow-sm"
+              className="flex items-center gap-2 text-stone-500 hover:bg-stone-100 px-3 py-1.5 rounded-full transition-colors w-fit bg-white/50 backdrop-blur-sm"
               aria-label="뒤로가기"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="font-bold">뒤로가기</span>
+              <span className="font-semibold">뒤로가기</span>
             </button>
           </div>
         </div>
@@ -879,16 +879,9 @@ function AddPlanPageContent() {
           {/* 폼 카드 영역 */}
           <div className="mt-6 w-full space-y-5">
             {/* 제목 */}
-            <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-[#ee2b8c22]">
-              <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-[#ee2b8c]" />
-                </div>
-                <span className="text-lg">제목</span>
-                <span className="text-[#ee2b8c] text-xl">*</span>
-                <span className="ml-auto text-xs bg-[#ee2b8c] text-white px-3 py-1 rounded-full font-bold">
-                  필수
-                </span>
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+              <label className="block text-sm font-semibold text-stone-600 mb-2">
+                제목 <span className="text-[#ee2b8c]">*</span>
               </label>
               <input
                 id="plan-name"
@@ -898,8 +891,8 @@ function AddPlanPageContent() {
                   setInputValue(e.target.value);
                   setCategorySelectedByUser(false);
                 }}
-                placeholder="✨ 추가할 플랜 제목을 입력해주세요"
-                className="w-full px-5 py-4 border-2 border-[#ee2b8c22] rounded-2xl focus:border-[#ee2b8c] focus:outline-none transition-all text-[#1b0d14] placeholder:text-stone-400 bg-pink-50/50"
+                placeholder="어떤 지출인가요?"
+                className="w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-medium text-lg"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     if (!inputValue.trim()) {
@@ -922,37 +915,30 @@ function AddPlanPageContent() {
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                 >
-                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-amber-200">
-                    <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
-                        <Tag className="w-4 h-4 text-amber-600" />
-                      </div>
-                      <span className="text-lg">카테고리</span>
-                      <span className="text-[#ee2b8c] text-xl">*</span>
-                      <span className="ml-auto text-xs bg-[#ee2b8c] text-white px-3 py-1 rounded-full font-bold">
-                        필수
-                      </span>
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+                    <label className="block text-sm font-semibold text-stone-600 mb-2">
+                      카테고리 <span className="text-[#ee2b8c]">*</span>
                     </label>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={handleOpenModal}
-                        className={`flex-1 px-5 py-4 rounded-2xl border-2 font-semibold transition-all text-left ${selectedCategory
-                          ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300 text-stone-800 shadow-sm"
-                          : "border-amber-200 text-stone-400 bg-amber-50/30 hover:border-amber-300"
+                        className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border ${selectedCategory
+                          ? "bg-[#ee2b8c]/5 text-[#ee2b8c] font-bold border-[#ee2b8c]/20"
+                          : "bg-stone-50 text-stone-400 font-medium border-stone-200 hover:bg-stone-100"
                           }`}
                       >
                         {selectedCategory
-                          ? `✨ ${selectedCategory.label}`
-                          : "카테고리 선택해주세요"}
+                          ? selectedCategory.label
+                          : "카테고리 선택"}
                       </button>
                       <button
                         type="button"
                         onClick={handleOpenModal}
-                        className="w-14 h-14 rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center hover:from-amber-100 hover:to-amber-200 transition-all shadow-sm hover:shadow-md flex-shrink-0"
+                        className="w-14 h-14 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-center hover:bg-stone-100 transition-colors flex-shrink-0"
                         aria-label="카테고리 추가"
                       >
-                        <Plus className="w-6 h-6 text-amber-600" />
+                        <Plus className="w-6 h-6 text-stone-400" />
                       </button>
                     </div>
                     {/* 검색 결과 - 제목 입력 시 추천 카테고리 (모달/칩으로 직접 선택했을 때는 숨김, 제목 수정 시 다시 표시) */}
@@ -961,7 +947,7 @@ function AddPlanPageContent() {
                       !categorySelectedByUser && (
                         <div
                           ref={scrollRef}
-                          className="mt-3 w-full overflow-x-auto overflow-y-hidden scrollbar-hide flex gap-3 flex-nowrap pr-2 select-none cursor-grab active:cursor-grabbing"
+                          className="mt-3 w-full overflow-x-auto overflow-y-hidden scrollbar-hide flex gap-2 flex-nowrap pr-2 select-none cursor-grab active:cursor-grabbing"
                           onMouseDown={handleMouseDown}
                           onMouseMove={handleMouseMove}
                           onMouseUp={handleMouseUpOrLeave}
@@ -979,10 +965,9 @@ function AddPlanPageContent() {
                                   handleCategoryClick(category);
                                 }
                               }}
-                              className="h-10 px-4 flex-shrink-0 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
-                              style={{ backgroundColor: category.color }}
+                              className="h-9 px-3 flex-shrink-0 rounded-lg flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity bg-stone-100 border border-stone-200"
                             >
-                              <span className="text-sm font-semibold text-stone-700 whitespace-nowrap">
+                              <span className="text-sm font-medium text-stone-600 whitespace-nowrap">
                                 {category.label}
                               </span>
                             </div>
@@ -1003,32 +988,22 @@ function AddPlanPageContent() {
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                 >
-                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border-2 border-blue-200">
-                    <label className="flex items-center gap-2 text-stone-700 font-bold mb-4 flex-wrap">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                        <CreditCard className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <span className="text-lg">결제 유형</span>
-                      <span className="text-[#ee2b8c] text-xl">*</span>
-                      <span className="ml-auto text-xs bg-[#ee2b8c] text-white px-3 py-1 rounded-full font-bold">
-                        필수
-                      </span>
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+                    <label className="block text-sm font-semibold text-stone-600 mb-2">
+                      결제 유형 <span className="text-[#ee2b8c]">*</span>
                     </label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-2">
                       {(["현금", "카드", "기타"] as const).map((type) => (
                         <button
                           key={type}
                           type="button"
                           onClick={() => setPaymentType(type)}
-                          className={`py-4 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 ${paymentType === type
-                            ? "bg-[#ee2b8c] text-white shadow-lg scale-105"
-                            : "bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-blue-200 text-stone-600 hover:border-blue-300"
+                          className={`py-3 rounded-xl font-medium transition-all text-sm border ${paymentType === type
+                            ? "bg-stone-800 text-white shadow-sm border-stone-800"
+                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
                             }`}
                         >
-                          {type === "현금" && <Wallet className="w-6 h-6" />}
-                          {type === "카드" && <CreditCard className="w-6 h-6" />}
-                          {type === "기타" && <DollarSign className="w-6 h-6" />}
-                          <span>{type}</span>
+                          {type}
                         </button>
                       ))}
                     </div>
@@ -1048,25 +1023,19 @@ function AddPlanPageContent() {
                   className="space-y-5"
                 >
                   {/* 금액 */}
-                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-                    <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
-                        <DollarSign className="w-4 h-4 text-emerald-600" />
-                      </div>
-                      <span className="text-lg">금액</span>
-                      <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                        선택
-                      </span>
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+                    <label className="block text-sm font-semibold text-stone-600 mb-2">
+                      금액
                     </label>
-                    <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 rounded-2xl p-1">
+                    <div className="relative">
                       <input
                         id="plan-amount"
                         type="text"
                         inputMode="numeric"
                         value={amount}
                         onChange={handleAmountChange}
-                        placeholder="금액을 입력해주세요"
-                        className="flex-1 min-w-0 px-5 py-4 bg-white rounded-xl focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 border-2 border-transparent focus:border-emerald-200"
+                        placeholder="0"
+                        className="w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-300 font-medium text-lg text-right pr-12"
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             if (!amount.trim()) {
@@ -1078,27 +1047,21 @@ function AddPlanPageContent() {
                           }
                         }}
                       />
-                      <span className="text-stone-700 font-bold text-lg pr-4">
-                        만 원
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-medium">
+                        만원
                       </span>
                     </div>
                   </div>
                   {/* 일자 */}
-                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-                    <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
-                        <Calendar className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <span className="text-lg">일자</span>
-                      <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                        선택
-                      </span>
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+                    <label className="block text-sm font-semibold text-stone-600 mb-2">
+                      일자
                     </label>
-                    <div className="flex flex-col gap-3">
+                    <div className="flex gap-2">
                       <div
-                        className={`w-full px-5 py-4 text-base font-semibold rounded-2xl border-2 transition-colors truncate cursor-pointer hover:border-purple-300 focus:border-purple-300 focus:outline-none ${isDateUndecided
-                          ? "bg-stone-100 border-stone-200 text-stone-400"
-                          : "text-stone-900 bg-purple-50/20 border-stone-200"
+                        className={`flex-1 px-4 py-4 rounded-2xl text-lg font-medium transition-all cursor-pointer flex items-center justify-center border ${isDateUndecided
+                          ? "bg-stone-50 text-stone-300 border-stone-200"
+                          : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
                           }`}
                         onClick={() => {
                           setIsDateUndecided(false);
@@ -1114,50 +1077,26 @@ function AddPlanPageContent() {
                           }
                         }}
                       >
-                        {isDateUndecided ? (
-                          <span className="text-stone-400">미정</span>
-                        ) : (
-                          formatDate(selectedDate)
-                        )}
+                        {isDateUndecided ? "미정" : formatDate(selectedDate)}
                       </div>
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setIsDateUndecided(true)}
-                          className={`flex-[1] min-w-0 px-5 py-4 rounded-2xl font-bold transition-all ${isDateUndecided
-                            ? "bg-stone-300 text-stone-600 border-2 border-stone-300"
-                            : "bg-gradient-to-br from-gray-100 to-gray-200 text-stone-600 border-2 border-stone-200 hover:from-gray-200 hover:to-gray-300"
-                            }`}
-                          aria-label="날짜 미정"
-                        >
-                          미정
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsDateUndecided(false);
-                            setIsDatePickerOpen(true);
-                          }}
-                          className="flex-[2] min-w-0 py-4 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm"
-                          aria-label="날짜 선택"
-                        >
-                          <Calendar className="w-6 h-6 text-purple-600" />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsDateUndecided(!isDateUndecided)}
+                        className={`px-6 rounded-2xl font-medium transition-all text-sm border ${isDateUndecided
+                          ? "bg-stone-800 text-white border-stone-800"
+                          : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                          }`}
+                      >
+                        미정
+                      </button>
                     </div>
                   </div>
                   {/* 위치 */}
-                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-                    <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
-                        <MapPin className="w-4 h-4 text-red-600" />
-                      </div>
-                      <span className="text-lg">위치</span>
-                      <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                        선택
-                      </span>
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+                    <label className="block text-sm font-semibold text-stone-600 mb-2">
+                      위치
                     </label>
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-2 mb-2">
                       <input
                         id="plan-location"
                         type="text"
@@ -1173,8 +1112,8 @@ function AddPlanPageContent() {
                             setShowAllLocationResults(false);
                           }
                         }}
-                        placeholder="🔍 위치를 검색해주세요"
-                        className="flex-1 min-w-0 px-5 py-4 border-2 border-stone-200 rounded-2xl focus:border-red-300 focus:outline-none transition-all text-stone-700 placeholder:text-stone-400 bg-red-50/20"
+                        placeholder="예식장, 스튜디오 등"
+                        className="flex-1 min-w-0 px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-medium"
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.stopPropagation();
@@ -1194,13 +1133,12 @@ function AddPlanPageContent() {
                         type="button"
                         onClick={handleSearchLocation}
                         disabled={!location.trim()}
-                        className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${location.trim()
-                          ? "bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700 shadow-md hover:shadow-lg cursor-pointer"
-                          : "bg-stone-300 text-stone-500 cursor-not-allowed"
+                        className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${location.trim()
+                          ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
+                          : "bg-stone-100 text-stone-400 border-stone-200"
                           }`}
                       >
                         <Search className="w-5 h-5" />
-                        검색
                       </button>
                     </div>
                     {/* 검색 결과 목록 */}
@@ -1225,7 +1163,7 @@ function AddPlanPageContent() {
                                   }}
                                   role="button"
                                   tabIndex={0}
-                                  className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#FFAAB8] cursor-pointer transition-colors"
+                                  className="px-4 py-3 bg-white rounded-xl border border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors"
                                 >
                                   <div className="font-bold text-stone-900 mb-1">
                                     {result.place_name}
@@ -1240,14 +1178,9 @@ function AddPlanPageContent() {
                                   <button
                                     type="button"
                                     onClick={() => setShowAllLocationResults(true)}
-                                    className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors flex items-center justify-center gap-2"
+                                    className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-600 font-medium text-sm hover:bg-stone-100 transition-colors"
                                   >
-                                    <span className="text-lg font-bold text-[#ee2b8c]">
-                                      +
-                                    </span>
-                                    <span className="text-sm font-semibold text-[#1b0d14]">
-                                      {locationSearchResults.length - 3}개 더보기
-                                    </span>
+                                    + {locationSearchResults.length - 3}개 더보기
                                   </button>
                                 )}
                             </>
@@ -1260,28 +1193,23 @@ function AddPlanPageContent() {
                                 setShowMap(false);
                                 setShowAllLocationResults(false);
                               }}
-                              className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors flex items-center justify-center gap-2"
+                              className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-600 font-medium text-sm hover:bg-stone-100 transition-colors"
                             >
-                              <span className="text-lg font-bold text-[#ee2b8c]">
-                                +
-                              </span>
-                              <span className="text-sm font-semibold text-[#1b0d14]">
-                                {locationSearchResults.length}개 더보기
-                              </span>
+                              다른 장소 선택하기 ({locationSearchResults.length}개)
                             </button>
                           )}
                           {/* 원하는 결과가 없을 때 */}
                           {!showMap && (
-                            <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
-                              <div className="text-base font-semibold text-stone-600 mb-2">
-                                원하는 결과가 없습니다
-                              </div>
+                            <div className="flex justify-between items-center px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl">
+                              <span className="text-sm text-stone-500">
+                                원하는 결과가 없나요?
+                              </span>
                               <button
                                 type="button"
                                 onClick={handleSaveWithoutLocation}
-                                className="px-6 py-2 bg-[#ee2b8c] text-white font-semibold rounded-xl hover:bg-[#d4237b] transition-colors text-sm"
+                                className="text-sm font-semibold text-stone-700 hover:text-stone-900 underline underline-offset-2"
                               >
-                                건너뛰기
+                                그냥 사용하기
                               </button>
                             </div>
                           )}
@@ -1290,27 +1218,23 @@ function AddPlanPageContent() {
                     )}
                     {/* 검색 결과 없음 */}
                     {hasSearched && locationSearchResults.length === 0 && (
-                      <div className="mt-3 w-full">
-                        <div className="px-4 py-3 bg-white rounded-xl border-2 border-stone-200 text-center">
-                          <div className="text-base font-semibold text-stone-600 mb-2">
-                            검색 결과가 없습니다.
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleSaveWithoutLocation}
-                            className="px-6 py-2 bg-[#ee2b8c] text-white font-semibold rounded-xl hover:bg-[#d4237b] transition-colors text-sm"
-                          >
-                            건너뛰기
-                          </button>
-                        </div>
+                      <div className="mt-2 text-center text-sm text-stone-500 bg-stone-50 border border-stone-200 rounded-xl py-4">
+                        검색 결과가 없습니다.{" "}
+                        <button
+                          type="button"
+                          onClick={handleSaveWithoutLocation}
+                          className="font-semibold text-stone-700 underline underline-offset-2"
+                        >
+                          그냥 사용하기
+                        </button>
                       </div>
                     )}
                     {/* 지도 - 위치 선택 시 카드 내에 표시 */}
                     {showMap && (
-                      <div ref={mapContainerRef} className="mt-4 w-full">
+                      <div ref={mapContainerRef} className="mt-3 w-full">
                         <div
                           id="map"
-                          className="w-full h-[200px] rounded-2xl overflow-hidden border-2 border-stone-200"
+                          className="w-full h-[180px] rounded-2xl overflow-hidden border border-stone-200"
                           style={{ pointerEvents: "auto" }}
                         />
                       </div>
@@ -1318,15 +1242,9 @@ function AddPlanPageContent() {
                   </div>
 
                   {/* 메모 */}
-                  <div className="bg-white rounded-3xl p-7 shadow-md hover:shadow-xl transition-shadow border border-stone-200">
-                    <label className="flex items-center gap-2 text-stone-600 font-bold mb-4 flex-wrap">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                        <FileText className="w-4 h-4 text-orange-600" />
-                      </div>
-                      <span className="text-lg">메모</span>
-                      <span className="ml-auto text-xs bg-stone-200 text-stone-600 px-3 py-1 rounded-full font-medium">
-                        선택
-                      </span>
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+                    <label className="block text-sm font-semibold text-stone-600 mb-2">
+                      메모
                     </label>
                     <div className="relative">
                       <textarea
@@ -1342,8 +1260,8 @@ function AddPlanPageContent() {
                             memoTextareaRef.current.style.height = `${memoTextareaRef.current.scrollHeight}px`;
                           }
                         }}
-                        placeholder="📝 메모를 입력해주세요"
-                        className="w-full min-h-[112px] px-5 py-4 pb-10 border-2 border-stone-200 rounded-2xl focus:border-orange-300 focus:outline-none transition-all resize-none overflow-hidden text-stone-700 placeholder:text-stone-400 bg-orange-50/20"
+                        placeholder="메모 남기기"
+                        className="w-full min-h-[100px] px-4 py-4 pb-8 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all resize-none text-stone-800 placeholder:text-stone-400 font-medium"
                         style={{ height: "auto" }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
@@ -1356,7 +1274,7 @@ function AddPlanPageContent() {
                           }
                         }}
                       />
-                      <div className="absolute bottom-3 right-3 text-sm text-stone-400 font-medium">
+                      <div className="absolute bottom-3 right-3 text-xs text-stone-400 font-medium">
                         {memo.length}/500
                       </div>
                     </div>

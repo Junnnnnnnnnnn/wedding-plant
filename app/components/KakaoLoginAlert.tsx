@@ -254,6 +254,12 @@ export default function KakaoLoginAlert({
           if (isFromMain) {
             // /main에서 로그인한 경우: 세션의 웨딩 데이터가 있으면 백엔드에 POST 후 /main 유지, 없으면 /setting으로
             if (weddingData.date) {
+              let nameToUse = weddingData.name?.trim() || "";
+              if (!nameToUse) {
+                nameToUse = await waitForName();
+                setName(nameToUse);
+                setLoading(true);
+              }
               const { year, month, day } = weddingData.date;
               const weddingDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               try {
@@ -262,7 +268,7 @@ export default function KakaoLoginAlert({
                   body: JSON.stringify({
                     weddingDate,
                     budget: Number(weddingData.budget) || 0,
-                    name: weddingData.name.trim() || "",
+                    name: nameToUse,
                   }),
                 });
               } catch {
@@ -273,7 +279,7 @@ export default function KakaoLoginAlert({
                 const startDate =
                   item.startDate?.trim() ||
                   new Date().toISOString().slice(0, 10);
-                const body: Record<string, any> = {
+                const body: Record<string, unknown> = {
                   categoryName: item.categoryName,
                   title: item.title,
                   payType: item.payType ?? "OTHER",
@@ -286,6 +292,12 @@ export default function KakaoLoginAlert({
                 };
                 if (fetchedRoomId) {
                   body.roomId = fetchedRoomId;
+                }
+                if (
+                  Array.isArray(item.addCategoryNameList) &&
+                  item.addCategoryNameList.length > 0
+                ) {
+                  body.addCategoryNameList = item.addCategoryNameList;
                 }
                 try {
                   await fetchWithAuth("/plan/schedule", {
