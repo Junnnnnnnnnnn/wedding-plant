@@ -274,6 +274,12 @@ function MainPageContent() {
   // Guide Overlay State
   const [showGuide, setShowGuide] = useState(false);
 
+  // Hydration: date-dependent UI only after mount so server and first client render match
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Check if it's the first visit (or guide not seen yet)
   useEffect(() => {
     // 임시: 로컬 스토리지 키를 확인하여 가이드 표시 여부 결정
@@ -324,6 +330,7 @@ function MainPageContent() {
       id: "main-bottom-nav",
       title: "네비게이션",
       description: "다른 메뉴로 빠르게 이동할 수 있는 하단 메뉴바입니다.",
+      tooltipAlign: "center",
     },
   ];
 
@@ -1190,7 +1197,7 @@ function MainPageContent() {
                       aria-hidden
                     />
                   ) : (
-                    <span className="text-3xl sm:text-[42px] font-semibold text-[#1b0d14] leading-tight shrink-0 min-w-0 break-keep line-clamp-2">
+                    <span className="font-user-content text-3xl sm:text-[42px] font-semibold text-[#1b0d14] leading-tight shrink-0 min-w-0 break-keep line-clamp-2">
                       {displayData.name || "이름"}
                     </span>
                   )}
@@ -1852,7 +1859,8 @@ function MainPageContent() {
                               className={`relative flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
                               aria-label={`플랜 상세 보기: ${plan.title}`}
                             >
-                              {activeTab === "planned" &&
+                              {mounted &&
+                                activeTab === "planned" &&
                                 isStartDatePast(plan.startDate) && (
                                   <PastDateIndicator />
                                 )}
@@ -1887,11 +1895,11 @@ function MainPageContent() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <h4
-                                  className={`text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
+                                  className={`font-user-content text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
                                 >
                                   {plan.title}
                                 </h4>
-                                <div className="text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
+                                <div className="font-user-content text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
                                   <p className="truncate">
                                     {plan.categoryName}
                                   </p>
@@ -1901,7 +1909,7 @@ function MainPageContent() {
                               <div className="text-right shrink-0">
                                 <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
                                   {amount > 0
-                                    ? `${amount.toLocaleString()}만 원`
+                                    ? `${amount.toLocaleString("ko-KR")}만 원`
                                     : "미정"}
                                 </div>
                                 <span

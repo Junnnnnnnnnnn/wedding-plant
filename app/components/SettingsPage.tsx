@@ -206,7 +206,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                   onChange={(e) =>
                     setFormData({ ...formData, budget: Number(e.target.value) })
                   }
-                  className="w-full h-16 pl-14 pr-6 bg-white border border-[#ee2b8c0a] rounded-3xl shadow-sm outline-none focus:ring-4 focus:ring-[#ee2b8c0a] focus:border-[#ee2b8c44] font-bold text-lg text-[#1b0d14] transition-all"
+                  className="input-font-theme input-no-spinner w-full h-16 pl-14 pr-6 bg-white border border-[#ee2b8c0a] rounded-3xl shadow-sm outline-none focus:ring-4 focus:ring-[#ee2b8c0a] focus:border-[#ee2b8c44] font-bold text-lg text-[#1b0d14] transition-all"
                 />
                 <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-gray-400">
                   만원

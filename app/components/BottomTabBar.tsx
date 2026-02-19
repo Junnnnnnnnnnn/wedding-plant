@@ -45,6 +45,7 @@ export default function BottomTabBar({
   const router = useRouter();
   const resolvedActiveTab = activeTab ?? pathnameToTab(pathname);
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!getToken());
+  const [showFeedPrepModal, setShowFeedPrepModal] = useState(false);
 
   // 로그인 후(같은 탭/다른 탭) 포커스·가시성·pathname 변경 시 토큰 다시 읽어서 참여플랜/Settings 클릭 가능하도록
   useEffect(() => {
@@ -72,6 +73,10 @@ export default function BottomTabBar({
     ];
 
   const handleClick = (tab: TabType) => {
+    if (tab === "feed") {
+      setShowFeedPrepModal(true);
+      return;
+    }
     if (onTabClick) {
       onTabClick(tab);
     } else {
@@ -80,6 +85,7 @@ export default function BottomTabBar({
   };
 
   return (
+    <>
     <div
       id="main-bottom-nav"
       className="fixed bottom-0 left-0 right-0 z-[100] flex flex-col items-center"
@@ -139,5 +145,42 @@ export default function BottomTabBar({
         </div>
       </nav>
     </div>
+
+    {/* 피드 서비스 준비중 모달 */}
+    {showFeedPrepModal && (
+      <div
+        className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4"
+        onClick={() => setShowFeedPrepModal(false)}
+        onKeyDown={(e) => e.key === "Escape" && setShowFeedPrepModal(false)}
+        role="presentation"
+      >
+        <div
+          className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+          role="dialog"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          tabIndex={-1}
+          aria-modal="true"
+          aria-label="서비스 준비중입니다."
+        >
+          <h2 className="text-center text-lg font-semibold text-stone-900">
+            서비스 준비중입니다.
+          </h2>
+          <p className="mt-3 text-center text-[15px] font-normal leading-relaxed text-stone-700">
+            조금만 기다려 주세요 🙇‍♂️
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => setShowFeedPrepModal(false)}
+              className="w-full rounded-full text-sm font-semibold h-11 flex items-center justify-center transition-transform hover:scale-[1.01] active:scale-[0.99] border-2 border-stone-300 bg-white text-stone-700"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

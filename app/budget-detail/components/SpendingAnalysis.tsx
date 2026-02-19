@@ -85,7 +85,7 @@ const SpendingAnalysis: React.FC<SpendingAnalysisProps> = ({
           >
             <span>
               {savings >= 0 ? "+" : "-"}
-              {Math.abs(savings).toLocaleString()}
+              {Math.abs(savings).toLocaleString("ko-KR")}
             </span>
             <button
               type="button"
@@ -132,14 +132,14 @@ const SpendingAnalysis: React.FC<SpendingAnalysisProps> = ({
               onClick={() => onCategorySelect(data.category)}
               className={`space-y-2 cursor-pointer transition-all duration-300 transform ${isDimmed ? "opacity-30 grayscale scale-[0.98]" : "scale-100"} ${isActive ? "translate-x-1" : ""}`}
             >
-              <div className="flex justify-between text-[11px] font-extrabold">
+              <div className="font-user-content flex justify-between text-[11px] font-extrabold">
                 <span
                   className={`uppercase tracking-tight transition-colors ${isActive ? "text-[#ee2b8c]" : "text-[#1b0d14] opacity-70"}`}
                 >
                   {data.category}
                 </span>
                 <span className="text-[#ee2b8c] font-bold">
-                  {data.used.toLocaleString()} / {data.planned.toLocaleString()}
+                  {data.used.toLocaleString("ko-KR")} / {data.planned.toLocaleString("ko-KR")}
                 </span>
               </div>
               <div className="h-3 w-full bg-[#ee2b8c0a] rounded-full overflow-hidden relative">

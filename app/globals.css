@@ -93,7 +93,57 @@ body {
 }
 
 body {
-  font-family: var(--font-dunggeunmiso), Arial, Helvetica, sans-serif;
+  font-family: var(--font-dunggeunmiso), "TmoneyRoundWindRegular", Arial, Helvetica, sans-serif;
+}
+
+/* input/textarea: 한글 글리프 누락 방지 - 시스템 폰트 사용 */
+input,
+textarea,
+[contenteditable="true"] {
+  font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Nanum Gothic", sans-serif;
+}
+
+/* 입력란에 테마(학교안심 덩근미소) 폰트 적용 */
+.input-font-theme {
+  font-family: var(--font-dunggeunmiso), sans-serif !important;
+}
+
+/* number input 위/아래 스피너 숨김 */
+.input-no-spinner::-webkit-outer-spin-button,
+.input-no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input-no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@font-face {
+  font-family: "TmoneyRoundWindRegular";
+  src: url("/font/TmoneyRoundWindRegular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 사용자 입력 텍스트 표시 - 한글 글리프 누락 방지 */
+.font-user-content {
+  font-family: "TmoneyRoundWindRegular", sans-serif;
+}
+
+@font-face {
+  font-family: "TmoneyRoundWindExtraBold";
+  src: url("/font/TmoneyRoundWindExtraBold.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 메모 등 사용자 입력 강조 텍스트 */
+.font-tmoney-extra-bold {
+  font-family: "TmoneyRoundWindExtraBold", sans-serif;
+  font-weight: 400;
 }
 
 main {

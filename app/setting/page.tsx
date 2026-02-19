@@ -379,7 +379,7 @@ function SettingPageContent() {
           <div
             className={`absolute inset-0 flex flex-col items-center justify-center ${isFadingOut ? "animate-fade-out" : ""}`}
           >
-            <LandingHero title="결혼" subtitle="🎉 축하드려요 🎉" />
+            <LandingHero title="결혼" subtitle="🎉 축하드려요 🎉" useUserFont={false} />
           </div>
         )}
         {showSecond && (
@@ -391,6 +391,7 @@ function SettingPageContent() {
               subtitle="예신, 예랑님. 가장 빛날 그날까지 함께해요."
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"
+              useUserFont={false}
             />
             <div className="flex flex-1 flex-col items-center justify-center">
               <DatePickerWheel
@@ -425,6 +426,7 @@ function SettingPageContent() {
               subtitle="마음 편하시게 제가 꼼꼼히 챙겨드릴게요."
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"
+              useUserFont={false}
             />
             <div className="flex flex-1" />
             <div className="flex flex-col items-center mb-6">
@@ -454,7 +456,7 @@ function SettingPageContent() {
                       value={weddingData.budget}
                       onChange={(e) => setBudget(e.target.value)}
                       placeholder="0"
-                      className="px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-32 text-center"
+                      className="font-user-content px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-32 text-center"
                     />
                   )}
                   <span className="text-lg font-semibold text-stone-700">
@@ -481,29 +483,30 @@ function SettingPageContent() {
               subtitle="닉네임도 괜찮아요!"
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"
+              useUserFont={false}
             />
             <div className="flex flex-1" />
             <div className="flex flex-col items-center mb-6">
-              <p className="text-sm text-stone-500 mb-2">최대 3 글자</p>
+              <p className="text-sm text-stone-500 mb-2">최대 6 글자</p>
               <div className="flex items-center justify-center gap-4">
                 <input
                   type="text"
                   value={weddingData.name}
                   onChange={(e) => {
                     const newValue = e.target.value;
-                    if (newValue.length > 3) {
-                      // 3글자 초과 시 흔들림 애니메이션
+                    if (newValue.length > 6) {
+                      // 6글자 초과 시 흔들림 애니메이션
                       setIsNameShaking(true);
                       setTimeout(() => setIsNameShaking(false), 400);
-                      // 3글자까지만 저장
-                      setName(newValue.slice(0, 3));
+                      // 6글자까지만 저장
+                      setName(newValue.slice(0, 6));
                     } else {
                       setName(newValue);
                     }
                   }}
                   placeholder="이름 또는 닉네임"
-                  maxLength={3}
-                  className={`px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-full max-w-[240px] text-center ${isNameShaking ? "animate-shake" : ""}`}
+                  maxLength={6}
+                  className={`font-user-content px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-full max-w-[240px] text-center ${isNameShaking ? "animate-shake" : ""}`}
                 />
               </div>
             </div>
@@ -551,6 +554,7 @@ function SettingPageContent() {
             <LandingHero
               title="자 이제 시작해볼까요?"
               subtitle="결혼식까지 든든한 플랜을 같이 짜보아요"
+              useUserFont={false}
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"
             />

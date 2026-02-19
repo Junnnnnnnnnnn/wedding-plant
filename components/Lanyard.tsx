@@ -361,7 +361,7 @@ function Band({
               color="#333333"
               anchorX="center"
               anchorY="middle"
-              font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
+              font="/font/TmoneyRoundWindExtraBold.ttf"
             >
               출입증
             </Text>
@@ -383,7 +383,7 @@ function Band({
               color="#333333"
               anchorX="left"
               anchorY="middle"
-              font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
+              font="/font/TmoneyRoundWindExtraBold.ttf"
             >
               {`이름: ${weddingData.name || "미정"}`}
             </Text>
@@ -395,7 +395,7 @@ function Band({
               color="#333333"
               anchorX="left"
               anchorY="middle"
-              font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
+              font="/font/TmoneyRoundWindExtraBold.ttf"
             >
               {`예산: ${weddingData.budget || "0"}만원`}
             </Text>
@@ -407,7 +407,7 @@ function Band({
               color="#333333"
               anchorX="left"
               anchorY="middle"
-              font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
+              font="/font/TmoneyRoundWindExtraBold.ttf"
             >
               {`날짜: ${weddingData.date ? `${weddingData.date.year}.${weddingData.date.month}.${weddingData.date.day}` : "미정"}`}
             </Text>
@@ -419,7 +419,7 @@ function Band({
               color="#AAAAAA"
               anchorX="right"
               anchorY="bottom"
-              font="/font/Hakgyoansim Dunggeunmiso TTF B.ttf"
+              font="/font/TmoneyRoundWindExtraBold.ttf"
             >
               웨딩 플랜트
             </Text>

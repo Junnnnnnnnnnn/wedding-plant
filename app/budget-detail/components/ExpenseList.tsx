@@ -24,17 +24,17 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses }) => {
             </div>
 
             <div className="flex-1 min-w-0">
-              <h4 className="text-[#1b0d14] font-bold text-lg truncate">
+              <h4 className="font-user-content text-[#1b0d14] font-bold text-lg truncate">
                 {expense.title}
               </h4>
-              <p className="text-gray-400 text-xs font-semibold truncate uppercase tracking-tight">
+              <p className="font-user-content text-gray-400 text-xs font-semibold truncate uppercase tracking-tight">
                 {expense.description}
               </p>
             </div>
 
             <div className="text-right shrink-0">
               <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
-                {expense.plannedAmount.toLocaleString()}만 원
+                {expense.plannedAmount.toLocaleString("ko-KR")}만 원
               </div>
               <StatusBadge status={expense.status} />
             </div>

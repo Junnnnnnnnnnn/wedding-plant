@@ -13,6 +13,8 @@ export interface GuideStep {
   spotlightOffset?: { left?: number; top?: number };
   /** 말풍선 위치: 'above' = 스팟라이트 위, 'below' = 아래 (기본값: 공간에 따라 자동) */
   tooltipPosition?: "above" | "below";
+  /** 말풍선 가로 정렬: 'center' = 화면 가운데 (기본값: 스팟라이트 기준) */
+  tooltipAlign?: "center";
 }
 
 interface GuideOverlayProps {
@@ -150,30 +152,38 @@ export default function GuideOverlay({
               const tooltipTop = isAbove
                 ? Math.max(10, targetRect.top - 120)
                 : targetRect.bottom + 12;
+              const centerAlign = activeStep?.tooltipAlign === "center";
               return (
                 <div
                   className="absolute pointer-events-none z-10"
                   style={{
                     top: tooltipTop,
-                    ...(isAbove
+                    ...(centerAlign
                       ? {
-                          left: spotlightLeft,
+                          left: "50%",
                           right: "auto",
-                          maxWidth: Math.min(384, targetRect.width),
+                          transform: "translateX(-50%)",
+                          maxWidth: "min(384px, calc(100vw - 2rem))",
                         }
-                      : {
-                          left: 0,
-                          right: 0,
-                          display: "flex",
-                          justifyContent: "center",
-                        }),
+                      : isAbove
+                        ? {
+                            left: spotlightLeft,
+                            right: "auto",
+                            maxWidth: Math.min(384, targetRect.width),
+                          }
+                        : {
+                            left: 0,
+                            right: 0,
+                            display: "flex",
+                            justifyContent: "center",
+                          }),
                   }}
                 >
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     key={activeStepId}
-                    className={`bg-white text-gray-900 px-5 py-4 rounded-xl shadow-2xl border border-white/20 relative ${isAbove ? "max-w-sm" : "max-w-sm w-full mx-4"}`}
+                    className={`bg-white text-gray-900 px-5 py-4 rounded-xl shadow-2xl border border-white/20 relative ${isAbove && !centerAlign ? "max-w-sm" : "max-w-sm w-full mx-4"}`}
                   >
                     {/* Arrow - naive implementation */}
                     <div className="font-bold text-lg mb-1 text-[#ee2b8c]">

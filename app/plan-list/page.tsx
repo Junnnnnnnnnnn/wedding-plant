@@ -238,11 +238,11 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                           Remaining Budget
                         </p>
                         <p className="text-xl font-black text-[#1b0d14]">
-                          {plan.remainingBudget.toLocaleString()}만 원
+                          {plan.remainingBudget.toLocaleString("ko-KR")}만 원
                         </p>
                       </div>
                       <p className="text-xs font-bold text-gray-400">
-                        / {plan.budget.toLocaleString()}만 원
+                        / {plan.budget.toLocaleString("ko-KR")}만 원
                       </p>
                     </div>
                     <div className="h-2 w-full bg-[#ee2b8c0a] rounded-full overflow-hidden">

@@ -32,11 +32,11 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, variant, size = 'norm
                 {label}
             </span>
             <span className={`${valueSize} font-extrabold tracking-tight`}>
-                {value.toLocaleString()}만원
+                {value.toLocaleString("ko-KR")}만원
             </span>
             {remainingAmount !== undefined && (
                 <p className={`mt-auto pt-2 text-right text-sm font-semibold ${labelStyles[variant]}`}>
-                    남은 금액 {remainingAmount.toLocaleString()}만원
+                    남은 금액 {remainingAmount.toLocaleString("ko-KR")}만원
                 </p>
             )}
         </div>

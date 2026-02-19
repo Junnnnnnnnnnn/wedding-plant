@@ -375,6 +375,14 @@ function ScheduleDetailPageContent() {
       detail.locationLng != null
         ? parseFloat(String(detail.locationLng)).toFixed(4)
         : "-";
+    const latNum = Number(detail.locationLat);
+    const lngNum = Number(detail.locationLng);
+    const hasNonZeroCoords =
+      !Number.isNaN(latNum) &&
+      !Number.isNaN(lngNum) &&
+      (latNum !== 0 || lngNum !== 0);
+    const showMapOrCoordBox =
+      Boolean(detail.location?.trim()) && (mapCoords || hasNonZeroCoords);
 
     content = (
       <>
@@ -395,7 +403,7 @@ function ScheduleDetailPageContent() {
                 {detail.categoryName}
               </span>
             </div>
-            <h2 className="text-2xl font-black text-white mb-1.5 max-w-full leading-tight">
+            <h2 className="font-user-content text-2xl font-black text-white mb-1.5 max-w-full leading-tight">
               {detail.title}
             </h2>
             <div className="flex items-center gap-2 mb-3 text-white/90">
@@ -478,7 +486,7 @@ function ScheduleDetailPageContent() {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <div
-            className={`bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow flex flex-col ${detail.location?.trim() ? "h-[300px]" : ""}`}
+            className={`bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow flex flex-col ${showMapOrCoordBox ? "h-[300px]" : ""}`}
           >
             <div className="flex items-start gap-2.5 flex-1 min-h-0">
               <div className="bg-gradient-to-br from-[#E5F3FF] to-[#D0E7FF] rounded-lg p-2 shrink-0">
@@ -488,28 +496,28 @@ function ScheduleDetailPageContent() {
                 <div className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-0.5">
                   장소
                 </div>
-                <div className="text-sm font-bold text-[#1b0d14] mb-1.5 shrink-0">
+                <div className="font-user-content text-sm font-bold text-[#1b0d14] mb-1.5 shrink-0">
                   {detail.location?.trim() || "장소 미정"}
                 </div>
-                {detail.location?.trim() &&
-                  (mapCoords ? (
-                    <div
-                      id="schedule-detail-map"
-                      className="w-full flex-1 min-h-[200px] rounded-lg overflow-hidden border border-gray-200 bg-gray-100"
-                    />
-                  ) : (
-                    <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg flex-1 min-h-[200px] flex items-center justify-center border border-gray-200">
-                      <div className="text-center">
-                        <MapPin className="w-5 h-5 text-gray-400 mx-auto mb-0.5" />
-                        <div className="text-xs text-gray-500">
-                          위도: {latStr}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          경도: {lngStr}
-                        </div>
+                {detail.location?.trim() && mapCoords && (
+                  <div
+                    id="schedule-detail-map"
+                    className="w-full flex-1 min-h-[200px] rounded-lg overflow-hidden border border-gray-200 bg-gray-100"
+                  />
+                )}
+                {detail.location?.trim() && !mapCoords && hasNonZeroCoords && (
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg flex-1 min-h-[200px] flex items-center justify-center border border-gray-200">
+                    <div className="text-center font-user-content">
+                      <MapPin className="w-5 h-5 text-gray-400 mx-auto mb-0.5" />
+                      <div className="text-xs text-gray-500">
+                        위도: {latStr}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        경도: {lngStr}
                       </div>
                     </div>
-                  ))}
+                  </div>
+                )}
                 {mapLink && (
                   <a
                     href={mapLink}
@@ -542,7 +550,7 @@ function ScheduleDetailPageContent() {
                   <div className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-0.5">
                     메모
                   </div>
-                  <div className="text-base font-medium text-[#1b0d14] leading-relaxed whitespace-pre-wrap">
+                  <div className="font-user-content text-base font-semibold text-[#1b0d14] leading-relaxed whitespace-pre-wrap">
                     {detail.memo}
                   </div>
                 </div>

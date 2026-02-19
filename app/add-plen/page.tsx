@@ -845,7 +845,7 @@ function AddPlanPageContent() {
                 if (fromParam === "calendar") {
                   router.push(roomId ? `/calendar?roomId=${roomId}` : "/calendar");
                 } else {
-                  router.push("/main");
+                  router.push(roomId ? `/main?roomId=${roomId}` : "/main");
                 }
               }}
               className="flex items-center gap-2 text-stone-500 hover:bg-stone-100 px-3 py-1.5 rounded-full transition-colors w-fit bg-white/50 backdrop-blur-sm"
@@ -892,7 +892,7 @@ function AddPlanPageContent() {
                   setCategorySelectedByUser(false);
                 }}
                 placeholder="어떤 지출인가요?"
-                className="w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-medium text-lg"
+                className="w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-user-content font-extrabold text-lg"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     if (!inputValue.trim()) {
@@ -923,9 +923,9 @@ function AddPlanPageContent() {
                       <button
                         type="button"
                         onClick={handleOpenModal}
-                        className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border ${selectedCategory
-                          ? "bg-[#ee2b8c]/5 text-[#ee2b8c] font-bold border-[#ee2b8c]/20"
-                          : "bg-stone-50 text-stone-400 font-medium border-stone-200 hover:bg-stone-100"
+                        className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${selectedCategory
+                          ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                          : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
                           }`}
                       >
                         {selectedCategory
@@ -1113,7 +1113,7 @@ function AddPlanPageContent() {
                           }
                         }}
                         placeholder="예식장, 스튜디오 등"
-                        className="flex-1 min-w-0 px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-medium"
+                        className="flex-1 min-w-0 px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-user-content font-semibold"
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.stopPropagation();
@@ -1261,7 +1261,7 @@ function AddPlanPageContent() {
                           }
                         }}
                         placeholder="메모 남기기"
-                        className="w-full min-h-[100px] px-4 py-4 pb-8 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all resize-none text-stone-800 placeholder:text-stone-400 font-medium"
+                        className="w-full min-h-[100px] px-4 py-4 pb-8 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all resize-none text-stone-800 placeholder:text-stone-400 font-user-content font-semibold"
                         style={{ height: "auto" }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
@@ -1473,7 +1473,7 @@ function AddPlanPageContent() {
                           : "text-[#1b0d14] hover:opacity-90"
                           } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
                       >
-                        <span className="font-bold text-lg flex items-center gap-2">
+                        <span className="font-tmoney-extra-bold font-bold text-lg flex items-center gap-2">
                           {selectedCategory?.label === category.label
                             ? "✨ "
                             : ""}
@@ -1506,7 +1506,7 @@ function AddPlanPageContent() {
                         onChange={(e) => setNewCategoryName(e.target.value)}
                         onKeyDown={handleNewCategoryKeyDown}
                         placeholder="새 카테고리 이름"
-                        className="w-full px-4 py-3 text-sm font-semibold text-[#1b0d14] bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-[#ee2b8c] placeholder:text-stone-400"
+                        className="w-full px-4 py-3 text-sm font-tmoney-extra-bold text-[#1b0d14] bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-[#ee2b8c] placeholder:text-stone-400"
                       />
                       <div className="flex gap-2">
                         <button
