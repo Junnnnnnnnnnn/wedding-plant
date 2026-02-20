@@ -7,23 +7,8 @@ import {
   getToken,
   setShareAfterLogin,
   setReturnPathAfterLogin,
+  isPlanDataComplete,
 } from "@/lib/api";
-
-function isPlanDataComplete(data: {
-  weddingDate?: string | null;
-  budget?: number | string | null;
-  name?: string | null;
-}): boolean {
-  const hasWeddingDate =
-    typeof data.weddingDate === "string" && data.weddingDate.trim() !== "";
-  const hasName = typeof data.name === "string" && data.name.trim() !== "";
-  const hasBudget =
-    data.budget != null &&
-    (typeof data.budget === "number" ||
-      (typeof data.budget === "string" &&
-        data.budget.toString().trim() !== ""));
-  return Boolean(hasWeddingDate && hasName && hasBudget);
-}
 
 /** 카카오 로그인/플랜 확인 후 /main 또는 /api/auth/kakao로 이동 */
 export function useKakaoAuth() {

@@ -9,7 +9,7 @@ import CelebrationEffects from "../components/CelebrationEffects";
 import DatePickerWheel from "../components/DatePickerWheel";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
-import { getToken, HAS_COMPLETED_GUEST_SETTING_KEY } from "@/lib/api";
+import { getToken, HAS_COMPLETED_GUEST_SETTING_KEY, isPlanDataComplete } from "@/lib/api";
 import CountUp from "../../components/CountUp";
 
 // 3D(WebGL)는 클라이언트에서만 로드해 Context Lost·엑스박스 방지
@@ -52,22 +52,6 @@ function SettingPageContent() {
   const [nextStep, setNextStep] = useState<"second" | "third" | "fourth">(
     "second",
   );
-
-  function isPlanDataComplete(data: {
-    weddingDate?: string | null;
-    budget?: number | string | null;
-    name?: string | null;
-  }): boolean {
-    const hasWeddingDate =
-      typeof data.weddingDate === "string" && data.weddingDate.trim() !== "";
-    const hasBudget =
-      data.budget != null &&
-      (typeof data.budget === "number" ||
-        (typeof data.budget === "string" &&
-          data.budget.toString().trim() !== ""));
-    const hasName = typeof data.name === "string" && data.name.trim() !== "";
-    return Boolean(hasWeddingDate && hasBudget && hasName);
-  }
 
   // 비로그인 + 이미 setting 완료(플래그 있음) + weddingDate 등 데이터 다 찼으면 → main으로 리다이렉트
   // (다시 setting 접근 시 차단. 플로우 중에는 플래그가 없으므로 리다이렉트 안 함)

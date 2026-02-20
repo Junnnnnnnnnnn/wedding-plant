@@ -3,23 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useApi } from "@/app/contexts/ApiContext";
-import { getToken } from "@/lib/api";
-
-function isPlanDataComplete(data: {
-  weddingDate?: string | null;
-  budget?: number | string | null;
-  name?: string | null;
-}): boolean {
-  const hasWeddingDate =
-    typeof data.weddingDate === "string" && data.weddingDate.trim() !== "";
-  const hasName = typeof data.name === "string" && data.name.trim() !== "";
-  const hasBudget =
-    data.budget != null &&
-    (typeof data.budget === "number" ||
-      (typeof data.budget === "string" &&
-        data.budget.toString().trim() !== ""));
-  return Boolean(hasWeddingDate && hasName && hasBudget);
-}
+import { getToken, isPlanDataComplete } from "@/lib/api";
 
 /** JWT + 플랜 정보가 있으면 /main으로 보낼 진입 경로 (상세·추가 등은 제외) */
 const ENTRY_PATHS = ["/", "/setting"];

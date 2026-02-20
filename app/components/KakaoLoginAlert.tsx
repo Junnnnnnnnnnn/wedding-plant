@@ -12,6 +12,7 @@ import {
   getReturnPathAfterLogin,
   clearReturnPathAfterLogin,
   HAS_COMPLETED_GUEST_SETTING_KEY,
+  isPlanDataComplete,
 } from "@/lib/api";
 import {
   getGuestScheduleList,
@@ -34,33 +35,15 @@ function getKakaoTokenFromHash(): string | null {
   return params.get("kakao_token");
 }
 
-function isPlanDataComplete(data: {
-  weddingDate?: string | null;
-  budget?: number | string | null;
-  name?: string | null;
-}): boolean {
-  const hasWeddingDate =
-    typeof data.weddingDate === "string" && data.weddingDate.trim() !== "";
-  const hasName = typeof data.name === "string" && data.name.trim() !== "";
-  const hasBudget =
-    data.budget != null &&
-    (typeof data.budget === "number" ||
-      (typeof data.budget === "string" &&
-        data.budget.toString().trim() !== ""));
-  return Boolean(hasWeddingDate && hasName && hasBudget);
-}
-
 export default function KakaoLoginAlert({
   show,
   onSuccessFromMain,
-  showLoadingOverlay = false,
 }: KakaoLoginAlertProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { fetchBackend, fetchWithAuth, setLoading } = useApi();
   const { weddingData, resetData, setName, setBudget, setDate } = useWedding();
   const shownRef = useRef(false);
-  const [processing, setProcessing] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const nameResolveRef = useRef<((name: string) => void) | null>(null);
 
@@ -91,7 +74,6 @@ export default function KakaoLoginAlert({
     }
 
     shownRef.current = true;
-    setProcessing(true);
     setLoading(true); // 글로벌 로딩 시작
 
     const run = async () => {
@@ -113,7 +95,6 @@ export default function KakaoLoginAlert({
 
         if (res.status === 401) {
           clearTimeout(timeoutId);
-          setProcessing(false);
           setLoading(false); // 글로벌 로딩 종료
           clearToken();
           router.replace("/");
@@ -121,7 +102,6 @@ export default function KakaoLoginAlert({
         }
         if (!res.ok) {
           clearTimeout(timeoutId);
-          setProcessing(false);
           setLoading(false); // 글로벌 로딩 종료
           clearToken();
           router.replace("/?login_error=1");
@@ -169,7 +149,6 @@ export default function KakaoLoginAlert({
             } finally {
               setLoading(false);
               clearShareAfterLogin();
-              setProcessing(false);
               resetData();
               router.replace("/plan-list");
               return;
@@ -180,7 +159,6 @@ export default function KakaoLoginAlert({
           const returnPath = getReturnPathAfterLogin();
           if (returnPath) {
             clearReturnPathAfterLogin();
-            setProcessing(false);
             setLoading(false);
             resetData();
             router.replace(returnPath);
@@ -218,7 +196,6 @@ export default function KakaoLoginAlert({
                 if (pathname === "/main") {
                   await onSuccessFromMain?.();
                 }
-                setProcessing(false);
                 setLoading(false); // 글로벌 로딩 종료
                 resetData();
                 router.replace("/main");
@@ -241,7 +218,6 @@ export default function KakaoLoginAlert({
               roomJson.data &&
               roomJson.data.total > 0
             ) {
-              setProcessing(false);
               setLoading(false);
               resetData();
               router.replace("/plan-list");
@@ -319,7 +295,6 @@ export default function KakaoLoginAlert({
                 clearGuestScheduleList();
               }
               await onSuccessFromMain?.();
-              setProcessing(false);
               setLoading(false); // 글로벌 로딩 종료
               resetData();
               router.replace("/main");
@@ -328,20 +303,17 @@ export default function KakaoLoginAlert({
           }
 
           // 개인 플랜도 없고 참여 중인 방도 없으면 /setting으로
-          setProcessing(false);
           setLoading(false); // 글로벌 로딩 종료
           window.location.href = "/setting";
           return;
         } else {
           clearTimeout(timeoutId);
-          setProcessing(false);
           setLoading(false); // 글로벌 로딩 종료
           clearToken();
           router.replace("/?login_error=1");
         }
       } catch {
         clearTimeout(timeoutId);
-        setProcessing(false);
         setLoading(false); // 글로벌 로딩 종료
         clearToken();
         router.replace("/?login_error=1");

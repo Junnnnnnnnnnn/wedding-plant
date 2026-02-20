@@ -1532,7 +1532,7 @@ function AddPlanPageContent() {
                         onChange={(e) => setNewCategoryName(e.target.value)}
                         onKeyDown={handleNewCategoryKeyDown}
                         placeholder="새 카테고리 이름"
-                        className="w-full px-4 py-3 text-sm font-user-content text-[#1b0d14] bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-[#ee2b8c] placeholder:text-stone-400"
+                        className="w-full px-4 py-3 text-sm font-extrabold font-user-content text-[#1b0d14] bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-[#ee2b8c] placeholder:text-stone-400"
                       />
                       <div className="flex gap-2">
                         <button

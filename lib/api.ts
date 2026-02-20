@@ -111,3 +111,24 @@ export function clearReturnPathAfterLogin(): void {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem(RETURN_PATH_AFTER_LOGIN_KEY);
 }
+
+/** 
+ * API 응답에서 유저 정보를 받아 
+ * name, budget, weddingDate 가 모두 누락 없이 채워져 있는지 확인합니다. 
+ */
+export function isPlanDataComplete(data: {
+  weddingDate?: string | null;
+  budget?: number | string | null;
+  name?: string | null;
+}): boolean {
+  if (!data) return false;
+  const hasWeddingDate =
+    typeof data.weddingDate === "string" && data.weddingDate.trim() !== "";
+  const hasName = typeof data.name === "string" && data.name.trim() !== "";
+  const hasBudget =
+    data.budget != null &&
+    (typeof data.budget === "number" ||
+      (typeof data.budget === "string" &&
+        data.budget.toString().trim() !== ""));
+  return Boolean(hasWeddingDate && hasName && hasBudget);
+}
