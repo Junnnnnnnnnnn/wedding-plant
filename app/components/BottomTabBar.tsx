@@ -112,7 +112,7 @@ export default function BottomTabBar({
         </div>
       )}
       <nav className="w-full flex justify-center bg-white">
-        <div className="flex w-full max-w-[500px] items-center justify-around px-6 py-4">
+        <div className="flex w-full max-w-[500px] items-center justify-around px-6 py-2.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = resolvedActiveTab === tab.id;
@@ -124,7 +124,7 @@ export default function BottomTabBar({
               <button
                 key={tab.id}
                 type="button"
-                className={`flex flex-col items-center gap-1 px-4 py-2 -m-2 transition-all ${isDisabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                className={`flex flex-col items-center gap-0.5 px-4 py-1.5 -m-2 transition-all ${isDisabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
                 onClick={() => handleClick(tab.id)}
                 aria-disabled={isDisabled}
               >
