@@ -51,6 +51,26 @@ const PAY_TYPE_FROM_API: Record<string, "현금" | "카드" | "기타"> = {
   OTHER: "기타",
 };
 
+const PASTEL_COLORS = [
+  "#FFE4E9", // 연분홍
+  "#FFE5D9", // 살구색
+  "#E8DDF5", // 연보라
+  "#D5F0E5", // 민트
+  "#FFF0D6", // 연노랑
+  "#D4EBF7", // 연하늘
+  "#E6F4EA", // 라이트 그린
+  "#FCE4EC", // 코튼 캔디
+];
+
+const getColorByLabel = (label: string) => {
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) {
+    hash = label.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % PASTEL_COLORS.length;
+  return PASTEL_COLORS[index];
+};
+
 function AddPlanPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -273,16 +293,22 @@ function AddPlanPageContent() {
     id?: number;
     color: string;
     label: string;
-    type?: "SYSTEM" | "USER";
+    type?: "SYSTEM" | "USER" | "ROOM";
   };
 
   const [allCategories, setAllCategories] = useState<CategoryItem[]>([]);
 
-  /** GET /plen/category/list 로 카테고리 목록 로드 */
+  /** GET /plan/category/list 또는 /plan/category/room/{roomId}/list 로 카테고리 목록 로드 */
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const res = await fetchWithAuth("/plen/category/list", {
+        const endpoint = roomId
+          ? `/plan/category/room/${roomId}/list`
+          : getToken()
+            ? "/plan/category/user/list"
+            : "/plan/category/list";
+
+        const res = await fetchWithAuth(endpoint, {
           method: "GET",
         });
         const json = (await res.json().catch(() => null)) as {
@@ -293,7 +319,7 @@ function AddPlanPageContent() {
               id: number;
               name: string;
               color: string;
-              type: "SYSTEM" | "USER";
+              type: "SYSTEM" | "USER" | "ROOM";
             }>;
           };
         };
@@ -301,7 +327,7 @@ function AddPlanPageContent() {
         const list = json.data.list
           .map((item) => ({
             id: item.id,
-            color: item.color,
+            color: getColorByLabel(item.name),
             label: item.name,
             type: item.type,
           }))
@@ -312,7 +338,7 @@ function AddPlanPageContent() {
       }
     };
     loadCategories();
-  }, [fetchWithAuth]);
+  }, [fetchWithAuth, roomId]);
 
   /** 모달 그리드용: API 카테고리 + 세션에서 추가한 카테고리 */
   const categoriesForModal = useMemo(
@@ -369,7 +395,7 @@ function AddPlanPageContent() {
         const catLabel = data.categoryName?.trim();
         if (catLabel) {
           const found = allCategories.find((c) => c.label === catLabel);
-          setSelectedCategory(found ?? { color: "#FFE4E9", label: catLabel });
+          setSelectedCategory(found ?? { color: getColorByLabel(catLabel), label: catLabel });
         }
 
         if (data.amount != null && !Number.isNaN(Number(data.amount))) {
@@ -419,7 +445,7 @@ function AddPlanPageContent() {
                 typeof name === "string" && name.trim() !== "",
             )
             .map((label) => ({
-              color: "#FFE4E9",
+              color: getColorByLabel(label.trim()),
               label: label.trim(),
             }));
           setUserAddedCategories(added);
@@ -613,18 +639,10 @@ function AddPlanPageContent() {
       return;
     }
 
-    const colors = [
-      "#FFE4E9",
-      "#FFE5D9",
-      "#E8DDF5",
-      "#D5F0E5",
-      "#FFF0D6",
-      "#D4EBF7",
-    ];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const categoryColor = getColorByLabel(trimmed);
 
     const newCategory = {
-      color: randomColor,
+      color: categoryColor,
       label: trimmed,
     };
     setUserAddedCategories((prev) => [...prev, newCategory]);
@@ -1473,7 +1491,7 @@ function AddPlanPageContent() {
                           : "text-[#1b0d14] hover:opacity-90"
                           } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
                       >
-                        <span className="font-tmoney-extra-bold font-bold text-lg flex items-center gap-2">
+                        <span className="font-user-content font-bold text-lg flex items-center gap-2">
                           {selectedCategory?.label === category.label
                             ? "✨ "
                             : ""}
@@ -1484,6 +1502,14 @@ function AddPlanPageContent() {
                               aria-label="내가 추가한 카테고리"
                             >
                               my
+                            </span>
+                          )}
+                          {"type" in category && category.type === "ROOM" && (
+                            <span
+                              className="rounded-full bg-stone-600 text-white text-xs font-bold px-2 py-0.5"
+                              aria-label="공유 카테고리"
+                            >
+                              room
                             </span>
                           )}
                         </span>
@@ -1506,7 +1532,7 @@ function AddPlanPageContent() {
                         onChange={(e) => setNewCategoryName(e.target.value)}
                         onKeyDown={handleNewCategoryKeyDown}
                         placeholder="새 카테고리 이름"
-                        className="w-full px-4 py-3 text-sm font-tmoney-extra-bold text-[#1b0d14] bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-[#ee2b8c] placeholder:text-stone-400"
+                        className="w-full px-4 py-3 text-sm font-user-content text-[#1b0d14] bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-[#ee2b8c] placeholder:text-stone-400"
                       />
                       <div className="flex gap-2">
                         <button
