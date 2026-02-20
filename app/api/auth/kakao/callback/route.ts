@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   const redirectWithLoginSuccess = (kakaoToken: string) => {
     // state=main이면 /main으로 (비로그인 setting→main→로그인 시 데이터 병합용)
-    // 그 외에는 / 로 이동. KakaoLoginAlert가 플랜 데이터 확인하여 리다이렉트
+    // state=home이면 /로 이동
     const state = searchParams.get("state");
     const path = state === "main" ? "/main" : "/";
     const url = new URL(path, request.url);

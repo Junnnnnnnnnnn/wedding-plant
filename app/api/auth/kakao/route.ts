@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   const from = request.nextUrl.searchParams.get("from");
-  const state = from === "main" ? "main" : "";
+  const state = from || "";
 
   // 개발 환경에서만 로그 출력 (디버깅용)
   if (process.env.NODE_ENV === "development") {

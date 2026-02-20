@@ -46,9 +46,12 @@ export function useKakaoAuth() {
         setReturnPathAfterLogin(pathname);
       }
 
-      // /main 또는 / 에서 로그인 시 콜백에서 /main으로 보냄 → 플랜 데이터 있으면 /main 유지, 없으면 /setting으로
-      const goToMainAfterLogin = pathname === "/main" || pathname === "/";
-      const url = goToMainAfterLogin ? "/api/auth/kakao?from=main" : "/api/auth/kakao";
+      // /main 에서 로그인 시 콜백에서 /main으로 보냄 → 플랜 데이터 있으면 /main 유지, 없으면 /setting으로
+      // / 에서 로그인 시 콜백에서 /로 보냄 → 플랜 데이터 확인 후 바로 /setting이나 /main으로 이동.
+      let url = "/api/auth/kakao";
+      if (pathname === "/main") url = "/api/auth/kakao?from=main";
+      else if (pathname === "/") url = "/api/auth/kakao?from=home";
+
       setLoading(false);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {

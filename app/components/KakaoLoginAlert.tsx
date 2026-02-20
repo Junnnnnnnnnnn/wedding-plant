@@ -11,6 +11,7 @@ import {
   clearShareAfterLogin,
   getReturnPathAfterLogin,
   clearReturnPathAfterLogin,
+  HAS_COMPLETED_GUEST_SETTING_KEY,
 } from "@/lib/api";
 import {
   getGuestScheduleList,
@@ -250,9 +251,15 @@ export default function KakaoLoginAlert({
             console.error("Failed to fetch room list during login redirect:", err);
           }
 
-          const isFromMain = pathname === "/main";
-          if (isFromMain) {
-            // /main에서 로그인한 경우: 세션의 웨딩 데이터가 있으면 백엔드에 POST 후 /main 유지, 없으면 /setting으로
+          // 비로그인 상태로 계획을 짜던 유저가 로그인했는지 여부 확인 (신규 유저 보호용)
+          // HAS_COMPLETED_GUEST_SETTING_KEY 플래그가 있어야만 '진짜' 게스트 체험 유저
+          const isRealGuestUser =
+            pathname === "/main" &&
+            typeof window !== "undefined" &&
+            sessionStorage.getItem(HAS_COMPLETED_GUEST_SETTING_KEY) === "1";
+
+          if (isRealGuestUser) {
+            // 진짜 게스트 유저의 경우 세션의 웨딩 데이터를 백엔드에 POST 후 /main 유지
             if (weddingData.date) {
               let nameToUse = weddingData.name?.trim() || "";
               if (!nameToUse) {
@@ -323,7 +330,8 @@ export default function KakaoLoginAlert({
           // 개인 플랜도 없고 참여 중인 방도 없으면 /setting으로
           setProcessing(false);
           setLoading(false); // 글로벌 로딩 종료
-          router.push("/setting");
+          window.location.href = "/setting";
+          return;
         } else {
           clearTimeout(timeoutId);
           setProcessing(false);
