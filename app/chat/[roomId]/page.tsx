@@ -98,21 +98,24 @@ export default function ChatPage() {
     const [members, setMembers] = useState<RoomMember[]>([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [viewportHeight, setViewportHeight] = useState("100dvh");
+    const [loading, setLoading] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (typeof window === "undefined" || !window.visualViewport) return;
 
         const handleResize = () => {
-            const height = window.visualViewport?.height;
-            if (height) {
-                setViewportHeight(`${height}px`);
+            const vv = window.visualViewport;
+            if (vv) {
+                setViewportHeight(`${vv.height}px`);
+                const wrapper = document.getElementById("chat-viewport-wrapper");
+                if (wrapper) {
+                    wrapper.style.transform = `translateY(${vv.offsetTop}px)`;
+                }
                 // Scroll to bottom when keyboard appears
-                setTimeout(() => {
-                    if (scrollRef.current) {
-                        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                    }
-                }, 100);
+                if (scrollRef.current) {
+                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                }
             }
         };
 
@@ -126,11 +129,13 @@ export default function ChatPage() {
 
     useEffect(() => {
         const fetchRoomInfo = async () => {
+            setLoading(true);
             try {
                 const res = await fetchWithAuth(`/plan/room/${roomId}`);
                 if (res.status === 401) {
                     setReturnPathAfterLogin(`/chat/${roomId}`);
                     setShowLoginModal(true);
+                    setLoading(false);
                     return;
                 }
                 const json: RoomResponse = await res.json();
@@ -140,6 +145,8 @@ export default function ChatPage() {
                 }
             } catch (err) {
                 console.error("Failed to fetch room info:", err);
+            } finally {
+                setLoading(false);
             }
         };
         if (roomId) fetchRoomInfo();
@@ -176,10 +183,41 @@ export default function ChatPage() {
         router.replace("/");
     };
 
+    if (loading) {
+        return (
+            <div className="fixed inset-0 bg-[#fcfbfc] overflow-hidden">
+                <div className="h-full max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col">
+                    <header className="flex items-center justify-between px-4 h-16 border-b border-gray-100 flex-shrink-0">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full skeleton-shimmer" />
+                            <div className="space-y-2">
+                                <div className="w-32 h-4 rounded skeleton-shimmer" />
+                                <div className="w-20 h-2 rounded skeleton-shimmer" />
+                            </div>
+                        </div>
+                        <div className="w-8 h-8 rounded-full skeleton-shimmer" />
+                    </header>
+                    <div className="flex-1 px-4 py-8 space-y-6">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+                                {i % 2 !== 0 && <div className="w-8 h-8 rounded-full skeleton-shimmer" />}
+                                <div className={`w-48 h-12 rounded-2xl skeleton-shimmer ${i % 2 === 0 ? 'rounded-tr-none' : 'rounded-tl-none'}`} />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="px-4 py-4 border-t border-gray-100 flex-shrink-0">
+                        <div className="h-11 rounded-2xl skeleton-shimmer" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             <div
-                className="bg-[#fcfbfc] overflow-hidden"
+                id="chat-viewport-wrapper"
+                className="fixed inset-0 bg-[#fcfbfc] overflow-hidden"
                 style={{ height: viewportHeight, fontFamily: "var(--font-tmoney), sans-serif" }}
             >
                 {/* Desktop Letterbox Background */}
@@ -249,8 +287,8 @@ export default function ChatPage() {
                                         )}
                                         <div
                                             className={`px-4 py-2.5 rounded-[20px] text-sm font-medium shadow-sm leading-relaxed ${isMe
-                                                    ? "bg-[#ee2b8c] text-white rounded-tr-none"
-                                                    : "bg-white text-stone-800 border border-gray-100 rounded-tl-none"
+                                                ? "bg-[#ee2b8c] text-white rounded-tr-none"
+                                                : "bg-white text-stone-800 border border-gray-100 rounded-tl-none"
                                                 }`}
                                         >
                                             {msg.text}
@@ -307,8 +345,8 @@ export default function ChatPage() {
                                 onClick={handleSend}
                                 disabled={!inputValue.trim()}
                                 className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-2xl transition-all shadow-lg active:scale-95 ${inputValue.trim()
-                                        ? "bg-[#ee2b8c] text-white shadow-[#ee2b8c44]"
-                                        : "bg-gray-200 text-gray-400 shadow-none"
+                                    ? "bg-[#ee2b8c] text-white shadow-[#ee2b8c44]"
+                                    : "bg-gray-200 text-gray-400 shadow-none"
                                     }`}
                             >
                                 <Send className="w-5 h-5" />
