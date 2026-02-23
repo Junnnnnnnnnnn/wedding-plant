@@ -8,7 +8,6 @@ import { WeddingProvider } from "./contexts/WeddingContext";
 import ApiErrorModal from "./components/ApiErrorModal";
 import ApiLoadingOverlay from "./components/ApiLoadingOverlay";
 import AuthRedirectToMain from "./components/AuthRedirectToMain";
-import ClickSpark from "@/components/ClickSpark";
 
 const hakgyoansim = localFont({
   src: [
@@ -24,6 +23,33 @@ const hakgyoansim = localFont({
     },
   ],
   variable: "--font-dunggeunmiso",
+  display: "swap",
+});
+
+const tmoney = localFont({
+  src: [
+    {
+      path: "../public/font/TmoneyRoundWindRegular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/font/TmoneyRoundWindRegular.ttf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../public/font/TmoneyRoundWindExtraBold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../public/font/TmoneyRoundWindExtraBold.ttf",
+      weight: "900",
+      style: "normal",
+    },
+  ],
+  variable: "--font-tmoney",
   display: "swap",
 });
 
@@ -45,25 +71,17 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body
-        className={`${hakgyoansim.className} ${hakgyoansim.variable} ${geistMono.variable} antialiased`}
+        className={`${hakgyoansim.className} ${hakgyoansim.variable} ${tmoney.variable} ${geistMono.variable} antialiased`}
       >
         <ApiProvider>
           <AuthRedirectToMain />
-          <ClickSpark
-            sparkColor="#FFAAB8"
-            sparkSize={10}
-            sparkRadius={15}
-            sparkCount={8}
-            duration={400}
-          >
-            <WeddingProvider>
-              {children}
-              <ApiLoadingOverlay />
-              <Suspense fallback={null}>
-                <ApiErrorModal />
-              </Suspense>
-            </WeddingProvider>
-          </ClickSpark>
+          <WeddingProvider>
+            {children}
+            <ApiLoadingOverlay />
+            <Suspense fallback={null}>
+              <ApiErrorModal />
+            </Suspense>
+          </WeddingProvider>
         </ApiProvider>
       </body>
     </html>

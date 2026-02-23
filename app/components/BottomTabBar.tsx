@@ -138,7 +138,7 @@ export default function BottomTabBar({
                       strokeWidth={2}
                     />
                     {tab.id === "rooms" && (unreadCount ?? 0) > 0 && (
-                      <div className="absolute -top-2.5 -right-3 flex items-center justify-center animate-in zoom-in duration-300 pointer-events-none">
+                      <div className="absolute -top-3.5 -right-4.5 flex items-center justify-center animate-in zoom-in duration-300 pointer-events-none">
                         <div className="relative w-5 h-5 flex items-center justify-center">
                           <MessageCircle
                             className="absolute inset-0 w-full h-full fill-[#ee2b8c] text-[#ee2b8c]"

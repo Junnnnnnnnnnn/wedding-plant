@@ -7,7 +7,6 @@ import {
   Calendar,
   ArrowRight,
   Heart,
-  User,
   Crown,
   Pencil,
 } from "lucide-react";
@@ -17,7 +16,6 @@ import { useApi } from "../contexts/ApiContext";
 import { getToken, clearToken } from "@/lib/api";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
-import NameInputModal from "../components/NameInputModal";
 
 interface PlanListPageProps {
   onSelectPlan?: (id: number) => void;
@@ -37,7 +35,6 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showNameModal, setShowNameModal] = useState(false);
   const [hoveredChatRoomId, setHoveredChatRoomId] = useState<number | null>(null);
 
   const fetchPlans = useCallback(async () => {
@@ -65,38 +62,6 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   }, [fetchWithAuth]);
 
   useEffect(() => {
-    // Check user name first
-    const checkUserName = async () => {
-      if (!getToken()) {
-        fetchPlans();
-        return;
-      }
-      try {
-        const res = await fetchWithAuth("/plan/user");
-        const json = (await res.json()) as {
-          result?: boolean;
-          data?: { name?: string | null };
-        };
-        if (
-          json.result === true &&
-          json.data &&
-          (!json.data.name || !json.data.name.trim())
-        ) {
-          setLoading(false);
-          setShowNameModal(true);
-          return; // don't fetch plans yet
-        }
-      } catch {
-        // ignore, proceed with plan fetch
-      }
-      fetchPlans();
-    };
-    checkUserName();
-  }, [fetchPlans, fetchWithAuth]);
-
-  const handleNameComplete = useCallback(() => {
-    setShowNameModal(false);
-    setLoading(true);
     fetchPlans();
   }, [fetchPlans]);
 
@@ -295,7 +260,6 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
           onClose={() => setShowLoginModal(false)}
           title="세션이 만료되었습니다. 다시 로그인해 주세요."
         />
-        <NameInputModal show={showNameModal} onComplete={handleNameComplete} />
       </div>
     </div>
   );
