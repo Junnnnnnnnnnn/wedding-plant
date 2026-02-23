@@ -100,6 +100,7 @@ export default function ChatPage() {
     const [viewportHeight, setViewportHeight] = useState("100dvh");
     const [loading, setLoading] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         if (typeof window === "undefined" || !window.visualViewport) return;
@@ -218,7 +219,11 @@ export default function ChatPage() {
             <div
                 id="chat-viewport-wrapper"
                 className="fixed inset-0 bg-[#fcfbfc] overflow-hidden"
-                style={{ height: viewportHeight, fontFamily: "var(--font-tmoney), sans-serif" }}
+                style={{
+                    height: viewportHeight,
+                    fontFamily: "var(--font-tmoney), sans-serif",
+                    transition: "transform 0.3s ease-out, height 0.3s ease-out"
+                }}
             >
                 {/* Desktop Letterbox Background */}
                 <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
@@ -228,7 +233,7 @@ export default function ChatPage() {
                     <header className="flex items-center justify-between px-4 h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-50">
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={() => router.back()}
+                                onClick={() => router.push("/plan-list")}
                                 className="p-1 -ml-1 text-stone-600"
                             >
                                 <ChevronLeft className="w-6 h-6" />
@@ -253,6 +258,11 @@ export default function ChatPage() {
                     <div
                         ref={scrollRef}
                         className="flex-1 overflow-y-auto px-4 py-6 scrollbar-hide space-y-6"
+                        onClick={() => {
+                            if (document.activeElement instanceof HTMLElement) {
+                                document.activeElement.blur();
+                            }
+                        }}
                     >
                         <div className="flex justify-center my-4">
                             <span className="text-[10px] font-bold text-gray-400 bg-gray-100/50 px-3 py-1 rounded-full uppercase tracking-wider">
@@ -316,6 +326,7 @@ export default function ChatPage() {
                             </button>
                             <div className="flex-1 min-w-0 relative flex items-center">
                                 <textarea
+                                    ref={textareaRef}
                                     rows={1}
                                     value={inputValue}
                                     onChange={(e) => {
@@ -329,7 +340,7 @@ export default function ChatPage() {
                                             if (scrollRef.current) {
                                                 scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
                                             }
-                                        }, 300);
+                                        }, 400); // Increased slightly for smoother transition
                                     }}
                                     placeholder="메시지를 입력하세요..."
                                     className="w-full bg-gray-50 text-stone-800 text-base font-medium rounded-2xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-[#ee2b8c33] transition-all resize-none overflow-y-auto no-scrollbar min-h-[44px]"
@@ -344,6 +355,11 @@ export default function ChatPage() {
                             </div>
                             <button
                                 onClick={handleSend}
+                                onMouseDown={(e) => {
+                                    if (inputValue.trim()) {
+                                        e.preventDefault();
+                                    }
+                                }}
                                 disabled={!inputValue.trim()}
                                 className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-2xl transition-all shadow-lg active:scale-95 ${inputValue.trim()
                                     ? "bg-[#ee2b8c] text-white shadow-[#ee2b8c44]"
