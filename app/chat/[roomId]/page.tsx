@@ -323,12 +323,13 @@ export default function ChatPage() {
                                         e.target.style.height = "auto";
                                         e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
                                     }}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter" && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSend();
-                                            e.currentTarget.style.height = "auto";
-                                        }
+                                    onFocus={() => {
+                                        // Mobile keyboard focus sync
+                                        setTimeout(() => {
+                                            if (scrollRef.current) {
+                                                scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                                            }
+                                        }, 300);
                                     }}
                                     placeholder="메시지를 입력하세요..."
                                     className="w-full bg-gray-50 text-stone-800 text-base font-medium rounded-2xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-[#ee2b8c33] transition-all resize-none overflow-y-auto no-scrollbar min-h-[44px]"
