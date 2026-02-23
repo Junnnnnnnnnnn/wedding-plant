@@ -13,7 +13,7 @@ import {
     Pencil,
 } from "lucide-react";
 import { useApi } from "../../contexts/ApiContext";
-import { setReturnPathAfterLogin } from "@/lib/api";
+import { setReturnPathAfterLogin, clearToken } from "@/lib/api";
 import LoginRequiredModal from "../../components/LoginRequiredModal";
 
 interface Message {
@@ -137,6 +137,7 @@ export default function ChatPage() {
 
                 const res = await fetchWithAuth(`/plan/room/${roomId}`);
                 if (res.status === 401) {
+                    clearToken();
                     setReturnPathAfterLogin(`/chat/${roomId}`);
                     setShowLoginModal(true);
                     setLoading(false);
@@ -390,7 +391,7 @@ export default function ChatPage() {
             <LoginRequiredModal
                 show={showLoginModal}
                 onClose={handleCloseLoginModal}
-                title="플랜 채팅을 이용하려면 로그인해 주세요"
+                title="세션이 만료되었습니다. 다시 로그인해 주세요."
             />
         </>
     );

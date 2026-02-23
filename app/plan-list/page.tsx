@@ -35,10 +35,14 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalTitle, setLoginModalTitle] = useState("세션이 만료되었습니다. 다시 로그인해 주세요.");
   const [hoveredChatRoomId, setHoveredChatRoomId] = useState<number | null>(null);
 
   const fetchPlans = useCallback(async () => {
-    if (!getToken()) {
+    const token = getToken();
+    if (!token) {
+      setLoginModalTitle("참여 플랜 리스트를 보려면 로그인이 필요합니다.");
+      setShowLoginModal(true);
       setLoading(false);
       return;
     }
@@ -47,9 +51,27 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
       // Small delay to let navigation finish
       await new Promise((r) => setTimeout(r, 100));
 
+      // 1. Onboarding check (weddingDate, budget)
+      const userRes = await fetchWithAuth("/plan/user");
+      if (userRes.status === 401) {
+        clearToken();
+        setLoginModalTitle("세션이 만료되었습니다. 다시 로그인해 주세요.");
+        setShowLoginModal(true);
+        setLoading(false);
+        return;
+      }
+      const userJson = await userRes.json();
+      // Access is allowed as long as the user has a name.
+      if (!userJson.result || !userJson.data || !userJson.data.name) {
+        router.replace("/setting");
+        return;
+      }
+
+      // 2. Fetch participated rooms
       const res = await fetchWithAuth("/plan/room/list");
       if (res.status === 401) {
         clearToken();
+        setLoginModalTitle("세션이 만료되었습니다. 다시 로그인해 주세요.");
         setShowLoginModal(true);
         setLoading(false);
         return;
@@ -261,8 +283,11 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
 
         <LoginRequiredModal
           show={showLoginModal}
-          onClose={() => setShowLoginModal(false)}
-          title="세션이 만료되었습니다. 다시 로그인해 주세요."
+          onClose={() => {
+            setShowLoginModal(false);
+            router.replace("/");
+          }}
+          title={loginModalTitle}
         />
       </div>
     </div>
