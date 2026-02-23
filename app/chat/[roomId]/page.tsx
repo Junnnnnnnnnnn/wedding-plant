@@ -331,7 +331,7 @@ export default function ChatPage() {
                                         }
                                     }}
                                     placeholder="메시지를 입력하세요..."
-                                    className="w-full bg-gray-50 text-stone-800 text-sm font-medium rounded-2xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-[#ee2b8c33] transition-all resize-none overflow-y-auto no-scrollbar min-h-[44px]"
+                                    className="w-full bg-gray-50 text-stone-800 text-base font-medium rounded-2xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-[#ee2b8c33] transition-all resize-none overflow-y-auto no-scrollbar min-h-[44px]"
                                     style={{
                                         maxHeight: "120px",
                                         fontFamily: "var(--font-tmoney), sans-serif",
