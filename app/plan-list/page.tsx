@@ -42,7 +42,11 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
       setLoading(false);
       return;
     }
+    setLoading(true);
     try {
+      // Small delay to let navigation finish
+      await new Promise((r) => setTimeout(r, 100));
+
       const res = await fetchWithAuth("/plan/room/list");
       if (res.status === 401) {
         clearToken();

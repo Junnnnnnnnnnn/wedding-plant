@@ -53,6 +53,38 @@ const tmoney = localFont({
   display: "swap",
 });
 
+const kakao = localFont({
+  src: [
+    {
+      path: "../public/font/KakaoSmallSans-Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../public/font/KakaoSmallSans-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/font/KakaoSmallSans-Regular.ttf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../public/font/KakaoSmallSans-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../public/font/KakaoSmallSans-Bold.ttf",
+      weight: "900",
+      style: "normal",
+    },
+  ],
+  variable: "--font-kakao",
+  display: "swap",
+});
+
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -71,7 +103,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body
-        className={`${hakgyoansim.className} ${hakgyoansim.variable} ${tmoney.variable} ${geistMono.variable} antialiased`}
+        className={`${hakgyoansim.className} ${hakgyoansim.variable} ${tmoney.variable} ${kakao.variable} ${geistMono.variable} antialiased`}
       >
         <ApiProvider>
           <AuthRedirectToMain />

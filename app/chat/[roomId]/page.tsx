@@ -132,6 +132,9 @@ export default function ChatPage() {
         const fetchRoomInfo = async () => {
             setLoading(true);
             try {
+                // Small delay to ensure navigation completes and skeleton is shown first
+                await new Promise(resolve => setTimeout(resolve, 100));
+
                 const res = await fetchWithAuth(`/plan/room/${roomId}`);
                 if (res.status === 401) {
                     setReturnPathAfterLogin(`/chat/${roomId}`);
@@ -221,7 +224,7 @@ export default function ChatPage() {
                 className="fixed inset-0 bg-[#fcfbfc] overflow-hidden"
                 style={{
                     height: viewportHeight,
-                    fontFamily: "var(--font-tmoney), sans-serif",
+                    fontFamily: "var(--font-kakao), sans-serif",
                     transition: "transform 0.3s ease-out, height 0.3s ease-out"
                 }}
             >
@@ -300,6 +303,7 @@ export default function ChatPage() {
                                                 ? "bg-[#ee2b8c] text-white rounded-tr-none"
                                                 : "bg-white text-stone-800 border border-gray-100 rounded-tl-none"
                                                 }`}
+                                            style={{ fontFamily: "var(--font-tmoney), sans-serif" }}
                                         >
                                             {msg.text}
                                         </div>
@@ -334,6 +338,16 @@ export default function ChatPage() {
                                         e.target.style.height = "auto";
                                         e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
                                     }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" && !e.shiftKey) {
+                                            // PC 브라우저에서만 엔터로 즉시 전송 (모바일은 줄바꿈 허용)
+                                            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                                            if (!isMobile) {
+                                                e.preventDefault();
+                                                handleSend();
+                                            }
+                                        }
+                                    }}
                                     onFocus={() => {
                                         // Mobile keyboard focus sync
                                         setTimeout(() => {
@@ -346,7 +360,7 @@ export default function ChatPage() {
                                     className="w-full bg-gray-50 text-stone-800 text-base font-medium rounded-2xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-[#ee2b8c33] transition-all resize-none overflow-y-auto no-scrollbar min-h-[44px]"
                                     style={{
                                         maxHeight: "120px",
-                                        fontFamily: "var(--font-tmoney), sans-serif",
+                                        fontFamily: "var(--font-kakao), sans-serif",
                                     }}
                                 />
                                 <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-stone-300 hover:text-stone-500">

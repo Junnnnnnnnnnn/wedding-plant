@@ -598,7 +598,6 @@ function MainPageContent() {
     }
     cancelledRef.current = false;
 
-    // 비로그인에서 가이드 본 뒤 로그인: POST has-seen 두 개 먼저 호출 후 GET /plan/user
     const syncGuestGuideThenProceed = async () => {
       const seenMain =
         typeof window !== "undefined" &&
@@ -627,8 +626,13 @@ function MainPageContent() {
     };
 
     const roomIdParam = roomId?.trim();
-    if (shareCode?.trim()) {
-      (async () => {
+
+    (async () => {
+      // Small delay for smooth navigation
+      await new Promise((r) => setTimeout(r, 100));
+      if (cancelledRef.current) return;
+
+      if (shareCode?.trim()) {
         await syncGuestGuideThenProceed();
         if (cancelledRef.current) return;
         await Promise.all([
@@ -639,16 +643,19 @@ function MainPageContent() {
           fetchSharedRoomWithAuth(shareCode.trim());
           fetchSharedRoomCounts(shareCode.trim());
         }
-      })();
-    } else if (roomIdParam) {
-      setApiPlanData(null);
-      setScheduleList([]);
-      setScheduleInitialFetched(false);
-      fetchPlanUser(handleApiError, roomIdParam);
-      fetchTotalAmount(handleApiError, roomIdParam);
-      fetchPersonalCounts(roomIdParam);
-      // main?roomId 일 때도 가이드 플래그를 위해 POST 동기화 후 GET /plan/user
-      (async () => {
+      } else if (roomIdParam) {
+        setApiPlanData(null);
+        setScheduleList([]);
+        setScheduleInitialFetched(false);
+        // Important: All concurrent fetches must be inside this block
+        await Promise.all([
+          fetchPlanUser(handleApiError, roomIdParam),
+          fetchTotalAmount(handleApiError, roomIdParam),
+          fetchPersonalCounts(roomIdParam),
+        ]);
+        if (cancelledRef.current) return;
+
+        // main?roomId 일 때도 가이드 플래그를 위해 POST 동기화 후 GET /plan/user
         await syncGuestGuideThenProceed();
         if (cancelledRef.current) return;
         try {
@@ -664,17 +671,16 @@ function MainPageContent() {
         } catch {
           if (!cancelledRef.current) setHasSeenMainGuide(true);
         }
-      })();
-    } else {
-      // /main 접속: POST 동기화 후 GET /plan/user, 응답에 roomId 있으면 /plan/room/total-amount/{id} 호출
-      setApiPlanData(null);
-      setScheduleList([]);
-      setScheduleInitialFetched(false);
-      (async () => {
+      } else {
+        setApiPlanData(null);
+        setScheduleList([]);
+        setScheduleInitialFetched(false);
+
         await syncGuestGuideThenProceed();
         if (cancelledRef.current) return;
         const planData = await fetchPlanUser(handleApiError);
         if (cancelledRef.current) return;
+
         setHasSeenMainGuide(
           planData && planData !== "none"
             ? (planData.hasSeenMainGuide ?? true)
@@ -684,10 +690,12 @@ function MainPageContent() {
           planData && planData !== "none" && planData.roomId != null
             ? String(planData.roomId)
             : undefined;
-        fetchTotalAmount(handleApiError, roomIdForAmount);
-        fetchPersonalCounts(roomIdForAmount);
-      })();
-    }
+        await Promise.all([
+          fetchTotalAmount(handleApiError, roomIdForAmount),
+          fetchPersonalCounts(roomIdForAmount),
+        ]);
+      }
+    })();
     // eslint-disable-next-line consistent-return -- useEffect cleanup is valid
     return () => {
       cancelledRef.current = true;
