@@ -291,14 +291,12 @@ function CalendarPageContent() {
                 <div
                   key={idx}
                   onClick={() => handleDayClick(dateObj)}
-                  className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors ${
-                    idx % 7 === 0 ? "border-l" : ""
-                  } ${idx < 7 ? "border-t" : ""} ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
+                  className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors ${idx % 7 === 0 ? "border-l" : ""
+                    } ${idx < 7 ? "border-t" : ""} ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
                 >
                   <div className="flex justify-between items-center">
                     <span
-                      className={`text-xs font-bold ${
-                        !dateObj.isCurrentMonth
+                      className={`text-xs font-bold ${!dateObj.isCurrentMonth
                           ? "text-gray-300"
                           : isToday
                             ? "bg-[#ee2b8c] text-white w-5 h-5 flex items-center justify-center rounded-full"
@@ -307,7 +305,7 @@ function CalendarPageContent() {
                               : idx % 7 === 6
                                 ? "text-blue-400"
                                 : "text-gray-700"
-                      }`}
+                        }`}
                     >
                       {dateObj.day}
                     </span>
@@ -316,11 +314,10 @@ function CalendarPageContent() {
                     {daySchedules.slice(0, 2).map((s) => (
                       <div
                         key={s.id}
-                        className={`font-user-content text-[8px] p-1 rounded-md truncate transition-colors ${
-                          s.status === "COMPLETED"
+                        className={`font-user-content text-[8px] p-1 rounded-md truncate transition-colors ${s.status === "COMPLETED"
                             ? "bg-gray-100 text-gray-400 line-through"
                             : "bg-[#ee2b8c10] text-[#ee2b8c]"
-                        }`}
+                          }`}
                       >
                         {s.title}
                       </div>
@@ -355,6 +352,7 @@ function CalendarPageContent() {
             } else if (tab === "rooms") router.push("/plan-list");
             else if (tab === "settings") router.push("/user");
           }}
+          unreadCount={5}
         />
       </div>
 

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import {
+  MessageCircle,
   ClipboardList,
   Calendar,
   ArrowRight,
@@ -37,6 +38,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const [loading, setLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
+  const [hoveredChatRoomId, setHoveredChatRoomId] = useState<number | null>(null);
 
   const fetchPlans = useCallback(async () => {
     if (!getToken()) {
@@ -130,10 +132,11 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
             plans.map((plan, index) => {
               const progress = (plan.remainingBudget / plan.budget) * 100;
               return (
-                <button
+                <div
                   key={plan.roomId}
                   onClick={() => handleSelectPlan(plan.roomId)}
-                  className="w-full text-left bg-white rounded-[32px] p-6 border border-[#ee2b8c0a] shadow-sm shadow-[#ee2b8c05] hover:shadow-xl hover:shadow-[#ee2b8c11] transition-all transform active:scale-[0.98] group relative overflow-hidden"
+                  className={`w-full text-left bg-white rounded-[32px] p-6 border border-[#ee2b8c0a] shadow-sm shadow-[#ee2b8c05] transition-all transform relative overflow-hidden cursor-pointer ${hoveredChatRoomId === plan.roomId ? "" : "group hover:shadow-xl hover:shadow-[#ee2b8c11] active:scale-[0.98]"
+                    }`}
                 >
                   {/* Subtle hover decoration */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#ee2b8c05] to-transparent rounded-bl-full group-hover:bg-[#ee2b8c0a] transition-colors" />
@@ -157,63 +160,90 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                     </div>
                   </div>
 
-                  {/* Members Section */}
-                  <div className="mb-6">
-                    <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-3">
-                      참여 멤버
-                    </p>
-                    <div className="flex items-center -space-x-2">
-                      {plan.members.map((member, idx) => (
-                        <div
-                          key={member.planUserId}
-                          className="relative flex-shrink-0"
-                          style={{ zIndex: plan.members.length - idx }}
-                        >
-                          {String(member.permission ?? "").toUpperCase() ===
-                            "OWNER" && (
-                              <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
-                                <Crown
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
-                          {String(member.permission ?? "").toUpperCase() ===
-                            "WRITE" && (
-                              <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm">
-                                <Pencil
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
-
+                  {/* Members Section & Chat Button */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-3">
+                        참여 멤버
+                      </p>
+                      <div className="flex items-center -space-x-2">
+                        {plan.members.map((member, idx) => (
                           <div
-                            className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
-                            style={{
-                              background: member.image
-                                ? undefined
-                                : AVATAR_GRADIENTS[
-                                idx % AVATAR_GRADIENTS.length
-                                ],
-                            }}
+                            key={member.planUserId}
+                            className="relative flex-shrink-0"
+                            style={{ zIndex: plan.members.length - idx }}
                           >
-                            {member.image ? (
-                              <img
-                                src={member.image}
-                                alt={member.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span>
-                                {member.name?.trim().charAt(0)?.toUpperCase()}
-                              </span>
-                            )}
+                            {String(member.permission ?? "").toUpperCase() ===
+                              "OWNER" && (
+                                <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
+                                  <Crown
+                                    className="w-2.5 h-2.5"
+                                    strokeWidth={2.5}
+                                  />
+                                </span>
+                              )}
+                            {String(member.permission ?? "").toUpperCase() ===
+                              "WRITE" && (
+                                <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm">
+                                  <Pencil
+                                    className="w-2.5 h-2.5"
+                                    strokeWidth={2.5}
+                                  />
+                                </span>
+                              )}
+
+                            <div
+                              className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
+                              style={{
+                                background: member.image
+                                  ? undefined
+                                  : AVATAR_GRADIENTS[
+                                  idx % AVATAR_GRADIENTS.length
+                                  ],
+                              }}
+                            >
+                              {member.image ? (
+                                <img
+                                  src={member.image}
+                                  alt={member.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span>
+                                  {member.name?.trim().charAt(0)?.toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            {/* Name Tooltip (Optional, matching main page style if needed, but main page just shows image) */}
                           </div>
-                          {/* Name Tooltip (Optional, matching main page style if needed, but main page just shows image) */}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
+
+                    {/* Chat Action Button */}
+                    <button
+                      type="button"
+                      onMouseEnter={() => setHoveredChatRoomId(plan.roomId)}
+                      onMouseLeave={() => setHoveredChatRoomId(null)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/chat/${plan.roomId}`);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-[#fcfbfc] hover:bg-[#ee2b8c] text-stone-600 hover:text-white rounded-2xl transition-all border border-stone-100 hover:border-[#ee2b8c] group/chat shadow-sm active:scale-95"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span className="text-xs font-black">채팅</span>
+                      {/* unread count badge as speech bubble */}
+                      <div className="relative w-5 h-5 transition-transform group-hover/chat:scale-110 flex items-center justify-center">
+                        <MessageCircle
+                          className="absolute inset-0 w-full h-full fill-[#ee2b8c] text-[#ee2b8c] group-hover/chat:fill-white group-hover/chat:text-white transition-colors"
+                          strokeWidth={1}
+                        />
+                        <span className="relative z-10 text-[9px] font-black text-white group-hover/chat:text-[#ee2b8c] transition-colors flex items-center justify-center leading-none -mt-[0.5px]">
+                          3
+                        </span>
+                      </div>
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-6">
@@ -252,13 +282,13 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                       />
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })
           )}
         </div>
 
-        <BottomTabBar />
+        <BottomTabBar unreadCount={5} />
 
         <LoginRequiredModal
           show={showLoginModal}

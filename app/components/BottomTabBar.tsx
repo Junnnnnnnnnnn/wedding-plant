@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Search, LayoutGrid, Settings } from "lucide-react";
+import { Home, Search, LayoutGrid, Settings, MessageCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { AUTH_TOKEN_CHANGED_EVENT, getToken } from "@/lib/api";
@@ -31,6 +31,8 @@ interface BottomTabBarProps {
   onLoginClick?: () => void;
   /** When "down", login button slides down (hide). When "up" or null, shows. */
   scrollDirection?: "up" | "down" | null;
+  /** 참여플랜 탭에 표시할 알림 수 */
+  unreadCount?: number;
 }
 /* eslint-enable react/require-default-props */
 
@@ -40,6 +42,7 @@ export default function BottomTabBar({
   showLoginButton = false,
   onLoginClick,
   scrollDirection = null,
+  unreadCount,
 }: BottomTabBarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -68,7 +71,7 @@ export default function BottomTabBar({
   }> = [
       { id: "home", label: "홈", icon: Home },
       { id: "feed", label: "피드", icon: Search },
-      { id: "rooms", label: "참여플랜", icon: LayoutGrid },
+      { id: "rooms", label: "참여 플랜", icon: LayoutGrid },
       { id: "settings", label: "Settings", icon: Settings },
     ];
 
@@ -124,15 +127,30 @@ export default function BottomTabBar({
                 <button
                   key={tab.id}
                   type="button"
-                  className={`flex flex-col items-center gap-0.5 px-4 py-1.5 -m-2 transition-all ${isDisabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                  className={`flex flex-col items-center gap-0.5 px-4 py-1.5 -m-2 transition-all relative ${isDisabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
                   onClick={() => handleClick(tab.id)}
                   aria-disabled={isDisabled}
                 >
-                  <Icon
-                    className="h-6 w-6"
-                    style={{ color: iconColor }}
-                    strokeWidth={2}
-                  />
+                  <div className="relative">
+                    <Icon
+                      className="h-6 w-6"
+                      style={{ color: iconColor }}
+                      strokeWidth={2}
+                    />
+                    {tab.id === "rooms" && (unreadCount ?? 0) > 0 && (
+                      <div className="absolute -top-2.5 -right-3 flex items-center justify-center animate-in zoom-in duration-300 pointer-events-none">
+                        <div className="relative w-5 h-5 flex items-center justify-center">
+                          <MessageCircle
+                            className="absolute inset-0 w-full h-full fill-[#ee2b8c] text-[#ee2b8c]"
+                            strokeWidth={1}
+                          />
+                          <span className="relative z-10 text-[9px] font-black text-white flex items-center justify-center -mt-[1.5px]">
+                            {unreadCount! > 9 ? "9+" : unreadCount}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <span
                     className="text-[10px] leading-[15px]"
                     style={{ color: textColor }}

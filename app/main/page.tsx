@@ -2074,6 +2074,7 @@ function MainPageContent() {
           activeTab={roomId || shareCode ? "rooms" : undefined}
           showLoginButton={false}
           scrollDirection={scrollDirection}
+          unreadCount={5}
           onTabClick={(tab) => {
             if (tab === "home") {
               // /main?roomId= 또는 /main?share= 일 때는 /main으로 이동(쿼리 제거), 그 외 /main이면 새로고침
