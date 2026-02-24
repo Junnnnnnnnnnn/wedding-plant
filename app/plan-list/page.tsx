@@ -212,166 +212,183 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
             plans.map((plan, index) => {
               const progress = (plan.remainingBudget / plan.budget) * 100;
               const isFirst = index === 0;
-              return (
-                <div
-                  key={plan.roomId}
-                  id={isFirst ? "plan-card-0" : undefined}
-                  onClick={() => handleSelectPlan(plan.roomId)}
-                  className="w-full text-left bg-white rounded-[32px] p-6 border border-[#ee2b8c0a] shadow-sm shadow-[#ee2b8c05] transition-all transform relative overflow-hidden cursor-pointer group hover:shadow-xl hover:shadow-[#ee2b8c11] active:scale-[0.98]"
-                >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#ee2b8c05] to-transparent rounded-bl-full group-hover:bg-[#ee2b8c0a] transition-colors" />
 
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-[#1b0d14] text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
-                          Room #{index + 1}
-                        </span>
-                        <span className="text-[#ee2b8c]">
-                          <Heart className="w-3 h-3 fill-current" />
-                        </span>
-                      </div>
-                      <h3 className="text-2xl font-black text-[#1b0d14]">
-                        {plan.onwerName}의 웨딩 플랜
-                      </h3>
+              // 공통 Header 부분
+              const CardHeader = () => (
+                <div className="flex justify-between items-start mb-6">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-[#1b0d14] text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
+                        Room #{index + 1}
+                      </span>
+                      <span className="text-[#ee2b8c]">
+                        <Heart className="w-3 h-3 fill-current" />
+                      </span>
                     </div>
-                    <div className="w-10 h-10 bg-[#ee2b8c11] rounded-2xl flex items-center justify-center text-[#ee2b8c] group-hover:bg-[#ee2b8c] group-hover:text-white transition-all">
-                      <ArrowRight className="w-5 h-5" />
-                    </div>
+                    <h3 className="text-2xl font-black text-[#1b0d14]">
+                      {plan.onwerName}의 웨딩 플랜
+                    </h3>
                   </div>
-
-                  {/* Members Section */}
-                  <div className="mb-6" id={isFirst ? "plan-members-0" : undefined}>
-                    <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-3">
-                      참여 멤버
-                    </p>
-                    <div className="flex items-center -space-x-2">
-                      {plan.members.map((member, idx) => (
-                        <div
-                          key={member.planUserId}
-                          className="relative flex-shrink-0"
-                          style={{ zIndex: plan.members.length - idx }}
-                        >
-                          {String(member.permission ?? "").toUpperCase() === "OWNER" && (
-                            <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
-                              <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
-                            </span>
-                          )}
-                          <div
-                            className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
-                            style={{
-                              background: member.image
-                                ? undefined
-                                : AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
-                            }}
-                          >
-                            {member.image ? (
-                              <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <span>{member.name?.trim().charAt(0)?.toUpperCase()}</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="w-10 h-10 bg-[#ee2b8c11] rounded-2xl flex items-center justify-center text-[#ee2b8c] group-hover/card:bg-[#ee2b8c] group-hover/card:text-white transition-all">
+                    <ArrowRight className="w-5 h-5" />
                   </div>
+                </div>
+              );
 
-                  {/* Chat Rooms Section */}
-                  <div className="mt-2 mb-6 space-y-2" id={isFirst ? "plan-channels-0" : undefined}>
-                    <div className="grid grid-cols-1 gap-2">
-                      {plan.chatRooms?.map((chatRoom) => (
-                        <div
-                          key={chatRoom.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/chat/${plan.roomId}?chatRoomId=${chatRoom.id}`);
-                          }}
-                          className="flex items-center justify-between p-3 bg-[#fcfbfc] hover:bg-white rounded-2xl transition-all border border-transparent hover:border-[#ee2b8c11] hover:shadow-md hover:shadow-[#ee2b8c0a] group/chat-item"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[#ee2b8c0a] rounded-xl flex items-center justify-center text-[#ee2b8c] group-hover/chat-item:bg-[#ee2b8c] group-hover/chat-item:text-white transition-all">
-                              <MessageCircle className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-black text-[#1b0d14]">
-                                {chatRoom.name}
-                              </h4>
-                              <div className="flex items-center -space-x-1.5 mt-1">
-                                {chatRoom.memberList.slice(0, 4).map((m, i) => (
-                                  <div
-                                    key={m.planUserId}
-                                    className="w-5 h-5 rounded-full border border-white flex items-center justify-center text-[7px] font-black text-white overflow-hidden shadow-sm"
-                                    style={{
-                                      background: m.image
-                                        ? undefined
-                                        : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
-                                    }}
-                                  >
-                                    {m.image ? (
-                                      <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                      <span>{m.name.charAt(0)}</span>
-                                    )}
-                                  </div>
-                                ))}
-                                {chatRoom.memberList.length > 4 && (
-                                  <div className="w-5 h-5 rounded-full border border-white bg-stone-100 flex items-center justify-center text-[7px] font-black text-stone-400">
-                                    +{chatRoom.memberList.length - 4}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-stone-300 group-hover/chat-item:text-[#ee2b8c] group-hover/chat-item:bg-[#ee2b8c0a] transition-all">
-                            <ArrowRight className="w-4 h-4" />
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Add Chat Room Button */}
-                      <button
-                        id={isFirst ? "add-chat-button-0" : undefined}
-                        onClick={(e) => openChatCreateModal(e, plan.roomId)}
-                        className="flex items-center gap-3 p-3 bg-white border-2 border-dashed border-stone-100 rounded-2xl text-stone-300 hover:text-[#ee2b8c] hover:border-[#ee2b8c33] hover:bg-[#ee2b8c05] transition-all group/add-chat"
+              // 공통 Members 부분
+              const CardMembers = () => (
+                <div className="mb-6">
+                  <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-3">
+                    참여 멤버
+                  </p>
+                  <div className="flex items-center -space-x-2">
+                    {plan.members.map((member, idx) => (
+                      <div
+                        key={member.planUserId}
+                        className="relative flex-shrink-0"
+                        style={{ zIndex: plan.members.length - idx }}
                       >
-                        <div className="w-10 h-10 bg-stone-50 rounded-xl flex items-center justify-center group-hover/add-chat:bg-[#ee2b8c11] transition-all">
-                          <Plus className="w-5 h-5" />
+                        {String(member.permission ?? "").toUpperCase() === "OWNER" && (
+                          <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
+                            <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
+                          </span>
+                        )}
+                        <div
+                          className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
+                          style={{
+                            background: member.image
+                              ? undefined
+                              : AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
+                          }}
+                        >
+                          {member.image ? (
+                            <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{member.name?.trim().charAt(0)?.toUpperCase()}</span>
+                          )}
                         </div>
-                        <span className="text-sm font-bold">새 채팅방 추가</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-xs font-bold">{plan.weddingDate}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <ClipboardList className="w-4 h-4" />
-                      <span className="text-xs font-bold">{plan.planCount}개의 계획</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-1">
-                          Remaining Budget
-                        </p>
-                        <p className="text-xl font-black text-[#1b0d14]">
-                          {plan.remainingBudget.toLocaleString("ko-KR")}만 원
-                        </p>
                       </div>
-                      <p className="text-xs font-bold text-gray-400">
-                        / {plan.budget.toLocaleString("ko-KR")}만 원
+                    ))}
+                  </div>
+                </div>
+              );
+
+              // 공통 ChatRooms 부분
+              const CardChatRooms = ({ interactive = true }: { interactive?: boolean }) => (
+                <div className={`mt-2 mb-6 space-y-2 ${interactive ? "pointer-events-auto" : ""}`}>
+                  <div className="grid grid-cols-1 gap-2">
+                    {plan.chatRooms?.map((chatRoom) => (
+                      <div
+                        key={chatRoom.id}
+                        onClick={interactive ? (e) => {
+                          e.stopPropagation();
+                          router.push(`/chat/${chatRoom.id}`);
+                        } : undefined}
+                        className={`flex items-center justify-between p-3 bg-[#fcfbfc] rounded-2xl transition-all border border-transparent ${interactive ? "hover:bg-white hover:border-[#ee2b8c11] hover:shadow-md hover:shadow-[#ee2b8c0a] group/chat-item cursor-pointer active:scale-[0.98]" : ""}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 bg-[#ee2b8c0a] rounded-xl flex items-center justify-center text-[#ee2b8c] ${interactive ? "group-hover/chat-item:bg-[#ee2b8c] group-hover/chat-item:text-white transition-all" : ""}`}>
+                            <MessageCircle className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black text-[#1b0d14]">
+                              {chatRoom.name}
+                            </h4>
+                            <div className="flex items-center -space-x-1.5 mt-1">
+                              {chatRoom.memberList.slice(0, 4).map((m, i) => (
+                                <div
+                                  key={m.planUserId}
+                                  className="w-5 h-5 rounded-full border border-white flex items-center justify-center text-[7px] font-black text-white overflow-hidden shadow-sm"
+                                  style={{
+                                    background: m.image
+                                      ? undefined
+                                      : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
+                                  }}
+                                >
+                                  {m.image ? (
+                                    <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <span>{m.name.charAt(0)}</span>
+                                  )}
+                                </div>
+                              ))}
+                              {chatRoom.memberList.length > 4 && (
+                                <div className="w-5 h-5 rounded-full border border-white bg-stone-100 flex items-center justify-center text-[7px] font-black text-stone-400">
+                                  +{chatRoom.memberList.length - 4}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-stone-300 ${interactive ? "group-hover/chat-item:text-[#ee2b8c] group-hover/chat-item:bg-[#ee2b8c0a] transition-all" : ""}`}>
+                          <ArrowRight className="w-4 h-4" />
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={interactive ? (e) => openChatCreateModal(e, plan.roomId) : undefined}
+                      className={`flex items-center gap-3 p-3 bg-white border-2 border-dashed border-stone-100 rounded-2xl text-stone-300 transition-all ${interactive ? "hover:text-[#ee2b8c] hover:border-[#ee2b8c33] hover:bg-[#ee2b8c05] group/add-chat active:scale-[0.98]" : ""}`}
+                    >
+                      <div className={`w-10 h-10 bg-stone-50 rounded-xl flex items-center justify-center ${interactive ? "group-hover/add-chat:bg-[#ee2b8c11] transition-all" : ""}`}>
+                        <Plus className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold">새 채팅방 추가</span>
+                    </button>
+                  </div>
+                </div>
+              );
+
+              // 공통 Budget 부분
+              const CardBudget = () => (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-1">
+                        Remaining Budget
+                      </p>
+                      <p className="text-xl font-black text-[#1b0d14]">
+                        {plan.remainingBudget.toLocaleString("ko-KR")}만 원
                       </p>
                     </div>
-                    <div className="h-2 w-full bg-[#ee2b8c0a] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-[#ee2b8c] to-[#ff94a1] rounded-full transition-all duration-1000"
-                        style={{ width: `${progress}%` }}
-                      />
+                    <p className="text-xs font-bold text-gray-400">
+                      / {plan.budget.toLocaleString("ko-KR")}만 원
+                    </p>
+                  </div>
+                  <div className="h-2 w-full bg-[#ee2b8c0a] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#ee2b8c] to-[#ff94a1] rounded-full transition-all duration-1000"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              );
+
+              return (
+                <div key={plan.roomId} className="w-full relative">
+                  {/* Scaling Card Layer - Handles card-wide hover, scale, and navigation */}
+                  <div
+                    id={isFirst ? "plan-card-0" : undefined}
+                    onClick={() => handleSelectPlan(plan.roomId)}
+                    className="w-full bg-white rounded-[32px] p-6 border border-[#ee2b8c0a] shadow-sm transition-all transform hover:shadow-xl hover:shadow-[#ee2b8c11] active:scale-[0.98] cursor-pointer group/card relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#ee2b8c05] to-transparent rounded-bl-full group-hover/card:bg-[#ee2b8c0a] transition-colors" />
+
+                    <CardHeader />
+                    <CardMembers />
+                    {/* Placeholder space for chat rooms to preserve layout height */}
+                    <div className="invisible opacity-0 pointer-events-none">
+                      <CardChatRooms interactive={false} />
+                    </div>
+                    <CardBudget />
+                  </div>
+
+                  {/* Interactive Button Layer - Positioned over the card but doesn't trigger card scale */}
+                  <div className="absolute inset-0 p-6 pointer-events-none z-10">
+                    <div className="invisible"><CardHeader /><CardMembers /></div>
+                    <div id={isFirst ? "plan-channels-0" : undefined}>
+                      <CardChatRooms />
                     </div>
                   </div>
                 </div>

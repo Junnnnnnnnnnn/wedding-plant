@@ -50,14 +50,14 @@ interface RoomMember {
   permission: string;
 }
 
-interface RoomResponse {
-  data?: {
-    name: string;
-    members: RoomMember[];
-    weddingDate?: string;
-    budget?: number;
-    id?: string;
-  };
+interface ChatInfo {
+  id: number;
+  name: string;
+  memberList: RoomMember[];
+}
+
+interface ChatInfoResponse {
+  data?: ChatInfo;
   result: boolean;
 }
 
@@ -203,9 +203,7 @@ const PAGE_SIZE = 50;
 
 export default function ChatPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
-  const roomId = params.roomId as string;
-  const chatRoomId = searchParams.get("chatRoomId");
+  const chatRoomId = params.chatRoomId as string;
   const router = useRouter();
   const { fetchWithAuth } = useApi();
 
@@ -290,7 +288,7 @@ export default function ChatPage() {
       );
       if (res.status === 401) {
         clearToken();
-        setReturnPathAfterLogin(`/chat/${roomId}`);
+        setReturnPathAfterLogin(`/chat/${chatRoomId}`);
         setShowLoginModal(true);
         return;
       }
@@ -319,7 +317,7 @@ export default function ChatPage() {
       isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
-  }, [chatRoomId, roomId, fetchWithAuth, convertHistoryToMessage]);
+  }, [chatRoomId, fetchWithAuth, convertHistoryToMessage]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
@@ -351,7 +349,7 @@ export default function ChatPage() {
 
     const token = getToken();
     if (!token) {
-      setReturnPathAfterLogin(`/chat/${roomId}`);
+      setReturnPathAfterLogin(`/chat/${chatRoomId}`);
       setShowLoginModal(true);
       setLoading(false);
       return;
@@ -360,23 +358,23 @@ export default function ChatPage() {
     myUserIdRef.current = getPlanUserIdFromToken();
     initialLoadDoneRef.current = true;
 
-    const fetchRoomInfo = async () => {
+    const fetchChatInfo = async () => {
       setLoading(true);
       try {
         await new Promise((resolve) => setTimeout(resolve, 100));
 
-        const res = await fetchWithAuth(`/plan/room/${roomId}`);
+        const res = await fetchWithAuth(`/plan/chat/info/${chatRoomId}`);
         if (res.status === 401) {
           clearToken();
-          setReturnPathAfterLogin(`/chat/${roomId}`);
+          setReturnPathAfterLogin(`/chat/${chatRoomId}`);
           setShowLoginModal(true);
           setLoading(false);
           return;
         }
-        const json: RoomResponse = await res.json();
+        const json: ChatInfoResponse = await res.json();
         if (json.result && json.data) {
-          setRoomName(`${json.data.name}님의 웨딩 플랜`);
-          setMembers(json.data.members ?? []);
+          setRoomName(json.data.name);
+          setMembers(json.data.memberList ?? []);
         }
 
         // Load initial chat history
@@ -388,7 +386,7 @@ export default function ChatPage() {
           );
           if (chatRes.status === 401) {
             clearToken();
-            setReturnPathAfterLogin(`/chat/${roomId}`);
+            setReturnPathAfterLogin(`/chat/${chatRoomId}`);
             setShowLoginModal(true);
             return;
           }
@@ -429,15 +427,13 @@ export default function ChatPage() {
           isLoadingMoreRef.current = false;
           setIsLoadingMore(false);
         }
-      } catch (err) {
-        console.error("Failed to fetch room info:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRoomInfo();
-  }, [roomId, chatRoomId, fetchWithAuth]);
+    fetchChatInfo();
+  }, [chatRoomId, fetchWithAuth]);
 
   useEffect(() => {
     const token = getToken();
