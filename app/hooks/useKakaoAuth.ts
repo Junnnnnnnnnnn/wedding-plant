@@ -37,7 +37,7 @@ export function useKakaoAuth() {
       if (pathname === "/main") url = "/api/auth/kakao?from=main";
       else if (pathname === "/") url = "/api/auth/kakao?from=home";
 
-      setLoading(false);
+      // 리다이렉트 직전에 로딩을 끄지 않음 (브라우저 전환 시점까지 유도)
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           window.location.href = url;

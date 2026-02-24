@@ -95,14 +95,12 @@ export default function KakaoLoginAlert({
 
         if (res.status === 401) {
           clearTimeout(timeoutId);
-          setLoading(false); // 글로벌 로딩 종료
           clearToken();
           router.replace("/");
           return;
         }
         if (!res.ok) {
           clearTimeout(timeoutId);
-          setLoading(false); // 글로벌 로딩 종료
           clearToken();
           router.replace("/?login_error=1");
           return;
@@ -147,7 +145,6 @@ export default function KakaoLoginAlert({
             } catch (err) {
               console.error("Failed to join room after login:", err);
             } finally {
-              setLoading(false);
               clearShareAfterLogin();
               resetData();
               router.replace("/plan-list");
@@ -159,7 +156,6 @@ export default function KakaoLoginAlert({
           const returnPath = getReturnPathAfterLogin();
           if (returnPath) {
             clearReturnPathAfterLogin();
-            setLoading(false);
             resetData();
             router.replace(returnPath);
             return;
@@ -196,7 +192,6 @@ export default function KakaoLoginAlert({
                 if (pathname === "/main") {
                   await onSuccessFromMain?.();
                 }
-                setLoading(false); // 글로벌 로딩 종료
                 resetData();
                 router.replace("/main");
                 return;
@@ -218,7 +213,6 @@ export default function KakaoLoginAlert({
               roomJson.data &&
               roomJson.data.total > 0
             ) {
-              setLoading(false);
               resetData();
               router.replace("/plan-list");
               return;
@@ -295,7 +289,6 @@ export default function KakaoLoginAlert({
                 clearGuestScheduleList();
               }
               await onSuccessFromMain?.();
-              setLoading(false); // 글로벌 로딩 종료
               resetData();
               router.replace("/main");
               return;
@@ -303,20 +296,21 @@ export default function KakaoLoginAlert({
           }
 
           // 개인 플랜도 없고 참여 중인 방도 없으면 /setting으로
-          setLoading(false); // 글로벌 로딩 종료
           window.location.href = "/setting";
           return;
         } else {
           clearTimeout(timeoutId);
-          setLoading(false); // 글로벌 로딩 종료
           clearToken();
           router.replace("/?login_error=1");
         }
       } catch {
         clearTimeout(timeoutId);
-        setLoading(false); // 글로벌 로딩 종료
         clearToken();
         router.replace("/?login_error=1");
+      } finally {
+        // 모든 로직이 끝났을 때만 (리다이렉트되지 않았을 경우를 대비해 끄지만, 보통 위에서 리다이렉트됨)
+        // 실제로는 비동기 리다이렉트 중에도 로딩이 보이도록 하나, 에러 케이스 등에서 멈추는 것 방지
+        setLoading(false);
       }
     };
 

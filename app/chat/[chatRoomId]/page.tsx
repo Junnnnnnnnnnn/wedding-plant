@@ -41,6 +41,7 @@ interface Message {
   timestamp: string; // "오전 10:30"
   fullDate: string; // "2026-02-24"
   isMe: boolean;
+  unreadCount: number;
 }
 
 interface RoomMember {
@@ -70,23 +71,35 @@ interface ChatHistoryItem {
   text?: string;
   schedule?: ScheduleData | null;
   createDate: string;
+  unreadCount?: number;
 }
 
 interface SocketMessagePayload {
-  senderId: string;
-  senderName: string;
+  // Nested structure (some versions)
+  senderId?: string;
+  senderName?: string;
   senderProfileImageUrl?: string | null;
-  message: {
+  message?: {
     messageType: "text" | "schedule";
     text?: string;
     schedule?: ScheduleData | null;
   };
+  // Flat structure (latest version/API matching)
+  id?: string | number;
+  planUserId?: string;
+  planUserName?: string;
+  planUserProfileImageUrl?: string | null;
+  messageType?: "text" | "schedule";
+  text?: string;
+  schedule?: ScheduleData | null;
+  unreadCount?: number;
+  createDate?: string;
 }
 
 const AVATAR_PASTEL_BG = "#E2E8F0"; // Slate-200 (Pastel grey/blue style)
 const URL_REGEX = /(https?:\/\/[^\s]+)/;
 
-const LinkPreview = ({
+function LinkPreview({
   url,
   isMe,
   onHeightChange,
@@ -94,7 +107,7 @@ const LinkPreview = ({
   url: string;
   isMe: boolean;
   onHeightChange?: () => void;
-}) => {
+}) {
   const [preview, setPreview] = useState<{
     title?: string;
     description?: string;
@@ -164,8 +177,9 @@ const LinkPreview = ({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`mt-2 block w-full max-w-[260px] bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:border-[#ee2b8c] transition-all active:scale-[0.98] ${isMe ? "ml-auto" : "mr-auto"
-        }`}
+      className={`mt-2 block w-full max-w-[260px] bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:border-[#ee2b8c] transition-all active:scale-[0.98] ${
+        isMe ? "ml-auto" : "mr-auto"
+      }`}
     >
       {preview.image && (
         <div className="aspect-[1.91/1] w-full overflow-hidden border-b border-gray-50">
@@ -197,9 +211,188 @@ const LinkPreview = ({
       </div>
     </a>
   );
-};
+}
 
 const PAGE_SIZE = 50;
+
+const ChatMessage = React.memo(
+  ({
+    msg,
+    isMe,
+    showDateHeader,
+    showAvatar,
+    formatDateHeader,
+    scrollToBottom,
+  }: {
+    msg: Message;
+    isMe: boolean;
+    showDateHeader: boolean;
+    showAvatar: boolean;
+    formatDateHeader: (d: string) => string;
+    scrollToBottom: (behavior?: ScrollBehavior) => void;
+  }) => {
+    return (
+      <div className="space-y-6">
+        {showDateHeader && (
+          <div className="flex justify-center my-8 first:mt-4">
+            <span className="text-[10px] font-bold text-gray-400 bg-stone-100/80 px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
+              {formatDateHeader(msg.fullDate)}
+            </span>
+          </div>
+        )}
+
+        <div
+          className={`flex ${isMe ? "justify-end" : "justify-start"} items-end gap-2`}
+        >
+          {!isMe && (
+            <div className="w-10 h-10 rounded-full flex-shrink-0 mb-1 flex items-center justify-center bg-[#E2E8F0] shadow-sm relative overflow-hidden">
+              {msg.senderImage ? (
+                <img
+                  src={msg.senderImage}
+                  alt={msg.senderName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-6 h-6 text-white" fill="currentColor" />
+              )}
+            </div>
+          )}
+
+          <div
+            className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[70%]`}
+          >
+            {!isMe && showAvatar && (
+              <span className="text-[10px] font-bold text-gray-400 mb-1 ml-1">
+                {msg.senderName}
+              </span>
+            )}
+
+            {msg.messageType === "text" ? (
+              <>
+                <div
+                  className={`px-4 py-2.5 rounded-[20px] text-sm font-medium shadow-sm leading-relaxed break-all whitespace-pre-wrap ${
+                    isMe
+                      ? "bg-[#ee2b8c] text-white rounded-tr-none"
+                      : "bg-white text-stone-800 border border-gray-100 rounded-tl-none"
+                  }`}
+                  style={{
+                    fontFamily: "var(--font-tmoney), sans-serif",
+                  }}
+                >
+                  {msg.text}
+                </div>
+                {msg.text && URL_REGEX.test(msg.text) && (
+                  <LinkPreview
+                    url={msg.text.match(URL_REGEX)![0]}
+                    isMe={isMe}
+                    onHeightChange={() => scrollToBottom("smooth")}
+                  />
+                )}
+              </>
+            ) : msg.messageType === "schedule" && msg.schedule ? (
+              <div className="bg-white border border-orange-300 rounded-xl p-4 min-w-[200px] shadow-sm">
+                <div className="text-[10px] bg-orange-50 text-orange-600 px-2 py-0.5 rounded font-bold inline-block mb-2">
+                  📅 {msg.schedule.categoryName} | {msg.schedule.status}
+                </div>
+                <div className="text-base font-bold text-stone-900">
+                  {msg.schedule.title}
+                </div>
+                <div className="text-sm font-extrabold text-red-600 border-t border-dashed border-gray-200 mt-2 pt-2">
+                  {Number(msg.schedule.amount).toLocaleString()}원
+                </div>
+              </div>
+            ) : (
+              <div className="px-4 py-2.5 rounded-[20px] text-sm bg-gray-100 text-gray-400">
+                삭제된 일정입니다.
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col items-center gap-0.5 mb-1 flex-shrink-0">
+            {isMe && msg.unreadCount === 0 && (
+              <CheckCheck className="w-3.5 h-3.5 text-[#ee2b8c]" />
+            )}
+            <span className="text-[9px] font-bold text-gray-300">
+              {msg.timestamp}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  },
+);
+
+ChatMessage.displayName = "ChatMessage";
+
+// Utility functions moved outside component to prevent recreation on every render
+const formatTimestamp = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleTimeString("ko-KR", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const getFullDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const formatDateHeader = (fullDate: string) => {
+  const [y, m, d] = fullDate.split("-");
+  return `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
+};
+
+// Memoized List Component to prevent re-rendering when typing
+const ChatMessagesList = React.memo(
+  ({
+    messages,
+    isLoadingMore,
+    formatDateHeader,
+    scrollToBottom,
+  }: {
+    messages: Message[];
+    isLoadingMore: boolean;
+    formatDateHeader: (d: string) => string;
+    scrollToBottom: (behavior?: ScrollBehavior) => void;
+  }) => {
+    return (
+      <>
+        {isLoadingMore && (
+          <div className="flex justify-center py-2 h-10 flex-shrink-0">
+            <div className="w-6 h-6 border-2 border-[#ee2b8c] border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
+        {messages.map((msg, idx) => {
+          const { isMe } = msg;
+          const showDateHeader =
+            idx === 0 || messages[idx - 1].fullDate !== msg.fullDate;
+          const showAvatar =
+            !isMe &&
+            (idx === 0 ||
+              messages[idx - 1].senderId !== msg.senderId ||
+              showDateHeader);
+
+          return (
+            <ChatMessage
+              key={msg.id}
+              msg={msg}
+              isMe={isMe}
+              showDateHeader={showDateHeader}
+              showAvatar={showAvatar}
+              formatDateHeader={formatDateHeader}
+              scrollToBottom={scrollToBottom}
+            />
+          );
+        })}
+      </>
+    );
+  },
+);
+
+ChatMessagesList.displayName = "ChatMessagesList";
 
 export default function ChatPage() {
   const params = useParams();
@@ -226,25 +419,6 @@ export default function ChatPage() {
   const initialLoadDoneRef = useRef(false);
   const currentPageRef = useRef(1);
 
-  const formatTimestamp = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString("ko-KR", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
-
-  const getFullDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  };
-
-  const formatDateHeader = (fullDate: string) => {
-    const [y, m, d] = fullDate.split("-");
-    return `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
-  };
-
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     // requestAnimationFrame or setTimeout ensures we scroll AFTER the DOM update
     setTimeout(() => {
@@ -268,6 +442,7 @@ export default function ChatPage() {
         timestamp: formatTimestamp(item.createDate),
         fullDate: getFullDate(item.createDate),
         isMe: item.planUserId === myUserId,
+        unreadCount: item.unreadCount ?? 0,
       };
     },
     [],
@@ -295,7 +470,7 @@ export default function ChatPage() {
 
       const json = await res.json();
       if (json.result && json.data?.list) {
-        const list: ChatHistoryItem[] = json.data.list;
+        const { list } = json.data;
 
         if (list.length < PAGE_SIZE) {
           isFullRef.current = true;
@@ -392,7 +567,7 @@ export default function ChatPage() {
           }
           const chatJson = await chatRes.json();
           if (chatJson.result && chatJson.data?.list) {
-            const list: ChatHistoryItem[] = chatJson.data.list;
+            const { list } = chatJson.data;
             if (list.length < PAGE_SIZE) {
               isFullRef.current = true;
             }
@@ -408,6 +583,7 @@ export default function ChatPage() {
                 timestamp: formatTimestamp(item.createDate),
                 fullDate: getFullDate(item.createDate),
                 isMe: item.planUserId === myUserIdRef.current,
+                unreadCount: item.unreadCount ?? 0,
               }),
             );
             setMessages(newMessages.reverse());
@@ -468,25 +644,52 @@ export default function ChatPage() {
     });
 
     socket.on("message", (payload: SocketMessagePayload) => {
-      // 1. 고유 ID 생성 (서버 ID가 없을 경우 대비)
-      const tempId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      console.log("Socket message received:", payload);
+
+      // 데이터 구조에 따른 필드 추출 (Flat vs Nested 대응)
+      const senderId = payload.planUserId || payload.senderId || "";
+      const senderName =
+        payload.planUserName || payload.senderName || "알 수 없음";
+      const senderImage =
+        payload.planUserProfileImageUrl || payload.senderProfileImageUrl;
+      const messageType =
+        payload.messageType || payload.message?.messageType || "text";
+      const text = payload.text || payload.message?.text;
+      const schedule = payload.schedule || payload.message?.schedule;
+      const unreadCount = payload.unreadCount ?? 0;
+      const timestamp = payload.createDate
+        ? formatTimestamp(payload.createDate)
+        : formatTimestamp(new Date().toISOString());
+      const fullDate = payload.createDate
+        ? getFullDate(payload.createDate)
+        : getFullDate(new Date().toISOString());
+
+      // 1. 고유 ID 생성 (서버 ID가 있으면 우선 사용)
+      const msgId = payload.id
+        ? String(payload.id)
+        : `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
       const newMsg: Message = {
-        id: tempId,
-        senderId: payload.senderId,
-        senderName: payload.senderName,
-        senderImage: payload.senderProfileImageUrl,
-        messageType: payload.message.messageType,
-        text: payload.message.text,
-        schedule: payload.message.schedule,
-        timestamp: formatTimestamp(new Date().toISOString()),
-        fullDate: getFullDate(new Date().toISOString()),
-        isMe: payload.senderId === myUserIdRef.current,
+        id: msgId,
+        senderId,
+        senderName,
+        senderImage,
+        messageType,
+        text,
+        schedule,
+        timestamp,
+        fullDate,
+        isMe: senderId === myUserIdRef.current,
+        unreadCount,
       };
 
       setMessages((prev) => {
-        // 이미 동일한 내용과 작성자의 메시지가 아주 최근(2초 이내)에 추가되었는지 확인 (중복 방지)
+        // 이미 동일한 ID가 있거나, 최근(5초 이내)에 추가된 동일한 임시 메시지가 있는지 확인 (중복 방지)
         const isDuplicate = prev.some((m) => {
+          // 1. ID가 동일하면 확실한 중복
+          if (String(m.id) === String(newMsg.id)) return true;
+
+          // 2. 내용과 작성자가 같은 경우 체크
           const isSameContent =
             m.senderId === newMsg.senderId &&
             m.text === newMsg.text &&
@@ -494,16 +697,15 @@ export default function ChatPage() {
 
           if (!isSameContent) return false;
 
-          // ID가 'msg-'로 시작하는 경우(최근 소켓 메시지)에만 시간차 체크
+          // 3. 임시 ID('msg-')인 경우에만 5초 이내 중복 체크 (네트워크 지연 등으로 인한 중복 수신 방지)
           const idStr = String(m.id);
           if (idStr.startsWith("msg-")) {
             const timestampPart = idStr.split("-")[1];
             const ts = parseInt(timestampPart || "0");
-            return Math.abs(Date.now() - ts) < 2000;
+            return Math.abs(Date.now() - ts) < 5000;
           }
 
-          // 일반 ID(과거 기록)인 경우 내용이 같으면 중복으로 간주 (방금 보낸 메시지가 서버에서 기록으로 먼저 조회된 경우 등)
-          return true;
+          return false;
         });
 
         if (isDuplicate && !newMsg.schedule) {
@@ -659,121 +861,13 @@ export default function ChatPage() {
               }
             }}
           >
-            {isLoadingMore && (
-              <div className="flex justify-center py-2">
-                <div className="w-6 h-6 border-2 border-[#ee2b8c] border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-
             {/* History loading or initial messages would start here */}
-
-            {messages.map((msg, idx) => {
-              const { isMe } = msg;
-
-              // Check if date has changed from previous message
-              const showDateHeader =
-                idx === 0 || messages[idx - 1].fullDate !== msg.fullDate;
-
-              const showAvatar =
-                !isMe &&
-                (idx === 0 ||
-                  messages[idx - 1].senderId !== msg.senderId ||
-                  showDateHeader);
-
-              return (
-                <div key={msg.id} className="space-y-6">
-                  {showDateHeader && (
-                    <div className="flex justify-center my-8 first:mt-4">
-                      <span className="text-[10px] font-bold text-gray-400 bg-stone-100/80 px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
-                        {formatDateHeader(msg.fullDate)}
-                      </span>
-                    </div>
-                  )}
-
-                  <div
-                    className={`flex ${isMe ? "justify-end" : "justify-start"
-                      } items-end gap-2`}
-                  >
-                    {!isMe && (
-                      <div className="w-10 h-10 rounded-full flex-shrink-0 mb-1 flex items-center justify-center bg-[#E2E8F0] shadow-sm relative overflow-hidden">
-                        {msg.senderImage ? (
-                          <img
-                            src={msg.senderImage}
-                            alt={msg.senderName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <User
-                            className="w-6 h-6 text-white"
-                            fill="currentColor"
-                          />
-                        )}
-                      </div>
-                    )}
-
-                    <div
-                      className={`flex flex-col ${isMe ? "items-end" : "items-start"
-                        } max-w-[70%]`}
-                    >
-                      {!isMe && showAvatar && (
-                        <span className="text-[10px] font-bold text-gray-400 mb-1 ml-1">
-                          {msg.senderName}
-                        </span>
-                      )}
-
-                      {msg.messageType === "text" ? (
-                        <>
-                          <div
-                            className={`px-4 py-2.5 rounded-[20px] text-sm font-medium shadow-sm leading-relaxed break-all whitespace-pre-wrap ${isMe
-                              ? "bg-[#ee2b8c] text-white rounded-tr-none"
-                              : "bg-white text-stone-800 border border-gray-100 rounded-tl-none"
-                              }`}
-                            style={{
-                              fontFamily: "var(--font-tmoney), sans-serif",
-                            }}
-                          >
-                            {msg.text}
-                          </div>
-                          {msg.text && URL_REGEX.test(msg.text) && (
-                            <LinkPreview
-                              url={msg.text.match(URL_REGEX)![0]}
-                              isMe={isMe}
-                              onHeightChange={() => scrollToBottom("smooth")}
-                            />
-                          )}
-                        </>
-                      ) : msg.messageType === "schedule" && msg.schedule ? (
-                        <div className="bg-white border border-orange-300 rounded-xl p-4 min-w-[200px] shadow-sm">
-                          <div className="text-[10px] bg-orange-50 text-orange-600 px-2 py-0.5 rounded font-bold inline-block mb-2">
-                            📅 {msg.schedule.categoryName} |{" "}
-                            {msg.schedule.status}
-                          </div>
-                          <div className="text-base font-bold text-stone-900">
-                            {msg.schedule.title}
-                          </div>
-                          <div className="text-sm font-extrabold text-red-600 border-t border-dashed border-gray-200 mt-2 pt-2">
-                            {Number(msg.schedule.amount).toLocaleString()}원
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="px-4 py-2.5 rounded-[20px] text-sm bg-gray-100 text-gray-400">
-                          삭제된 일정입니다.
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col items-center gap-0.5 mb-1 flex-shrink-0">
-                      {isMe && (
-                        <CheckCheck className="w-3.5 h-3.5 text-[#ee2b8c]" />
-                      )}
-                      <span className="text-[9px] font-bold text-gray-300">
-                        {msg.timestamp}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            <ChatMessagesList
+              messages={messages}
+              isLoadingMore={isLoadingMore}
+              formatDateHeader={formatDateHeader}
+              scrollToBottom={scrollToBottom}
+            />
           </div>
 
           <div className="px-4 py-4 bg-white/80 backdrop-blur-md border-t border-gray-100 flex-shrink-0">
@@ -835,10 +929,11 @@ export default function ChatPage() {
                   }
                 }}
                 disabled={!inputValue.trim()}
-                className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-2xl transition-all shadow-lg active:scale-95 ${inputValue.trim()
-                  ? "bg-[#ee2b8c] text-white shadow-[#ee2b8c44]"
-                  : "bg-gray-200 text-gray-400 shadow-none"
-                  }`}
+                className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-2xl transition-all shadow-lg active:scale-95 ${
+                  inputValue.trim()
+                    ? "bg-[#ee2b8c] text-white shadow-[#ee2b8c44]"
+                    : "bg-gray-200 text-gray-400 shadow-none"
+                }`}
               >
                 <Send className="w-5 h-5" />
               </button>
