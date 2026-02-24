@@ -77,7 +77,7 @@ export default function NameInputModal({
               setError("");
             }}
             placeholder="예: 진주"
-            className="w-full rounded-xl border-2 border-stone-200 px-4 py-3 text-center text-lg font-semibold text-stone-900 placeholder:text-stone-300 focus:border-[#ee2b8c] focus:outline-none transition-colors"
+            className="w-full rounded-xl border-2 border-stone-200 px-4 py-3 text-center text-lg font-tmoney-extra-bold text-stone-900 placeholder:text-stone-300 focus:border-[#ee2b8c] focus:outline-none transition-colors"
             autoFocus
           />
           {error && (
