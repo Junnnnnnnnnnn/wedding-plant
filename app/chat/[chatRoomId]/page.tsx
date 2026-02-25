@@ -372,7 +372,7 @@ const ChatMessagesList = React.memo(
 
           return (
             <ChatMessage
-              key={msg.id}
+              key={`${msg.id}-${msg.unreadCount}`}
               msg={msg}
               isMe={isMe}
               showDateHeader={showDateHeader}
@@ -412,6 +412,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [, forceUpdate] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -421,6 +422,7 @@ export default function ChatPage() {
   const isFullRef = useRef(false);
   const initialLoadDoneRef = useRef(false);
   const currentPageRef = useRef(1);
+  const membersRef = useRef<RoomMember[]>([]);
 
   const scrollToBottom = useCallback(() => {
     // requestAnimationFrame or setTimeout ensures we scroll AFTER the DOM update
@@ -552,7 +554,9 @@ export default function ChatPage() {
         const json: ChatInfoResponse = await res.json();
         if (json.result && json.data) {
           setRoomName(json.data.name);
-          setMembers(json.data.memberList ?? []);
+          const memberList = json.data.memberList ?? [];
+          setMembers(memberList);
+          membersRef.current = memberList;
         }
 
         // Load initial chat history
@@ -646,6 +650,31 @@ export default function ChatPage() {
       });
     });
 
+    socket.on("roomList", (data: unknown) => {
+      console.log("[roomList] 원본 데이터:", data);
+
+      const roomArray = Array.isArray(data) ? data : [];
+      const currentRoom = roomArray.find(
+        (room: { name?: string; count?: number }) =>
+          String(room.name) === String(chatRoomId),
+      );
+
+      if (currentRoom) {
+        const totalMembers = membersRef.current.length;
+        const userCount = currentRoom.count ?? 0;
+        console.log(
+          `[roomList] Room ${currentRoom.name}: ${userCount}/${totalMembers}명 접속`,
+        );
+        if (totalMembers > 0 && userCount >= totalMembers) {
+          console.log("[roomList] 모든 멤버 접속 → 전체 읽음 처리");
+          setMessages((prev) =>
+            prev.map((msg) => ({ ...msg, unreadCount: 0 })),
+          );
+          forceUpdate((n) => n + 1);
+        }
+      }
+    });
+
     socket.on("message", (payload: SocketMessagePayload) => {
       console.log("Socket message received:", payload);
 
@@ -687,31 +716,10 @@ export default function ChatPage() {
       };
 
       setMessages((prev) => {
-        // 이미 동일한 ID가 있거나, 최근(5초 이내)에 추가된 동일한 임시 메시지가 있는지 확인 (중복 방지)
-        const isDuplicate = prev.some((m) => {
-          // 1. ID가 동일하면 확실한 중복
-          if (String(m.id) === String(newMsg.id)) return true;
-
-          // 2. 내용과 작성자가 같은 경우 체크
-          const isSameContent =
-            m.senderId === newMsg.senderId &&
-            m.text === newMsg.text &&
-            m.messageType === newMsg.messageType;
-
-          if (!isSameContent) return false;
-
-          // 3. 임시 ID('msg-')인 경우에만 5초 이내 중복 체크 (네트워크 지연 등으로 인한 중복 수신 방지)
-          const idStr = String(m.id);
-          if (idStr.startsWith("msg-")) {
-            const timestampPart = idStr.split("-")[1];
-            const ts = parseInt(timestampPart || "0", 10);
-            return Math.abs(Date.now() - ts) < 5000;
-          }
-
-          return false;
-        });
-
-        if (isDuplicate && !newMsg.schedule) {
+        const isDuplicate = prev.some(
+          (m) => String(m.id) === String(newMsg.id),
+        );
+        if (isDuplicate) {
           return prev;
         }
         return [...prev, newMsg];

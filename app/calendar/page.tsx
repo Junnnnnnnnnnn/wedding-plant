@@ -242,7 +242,7 @@ function CalendarPageContent() {
             <h1 className="text-2xl font-black text-[#1b0d14]">
               {year}년 {month + 1}월
             </h1>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={handlePrevMonth}
@@ -257,23 +257,39 @@ function CalendarPageContent() {
               >
                 <ChevronRight className="w-6 h-6 text-gray-600" />
               </button>
+              <div className="w-px h-4 bg-gray-200 mx-1" />
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(roomId ? `/main?roomId=${roomId}` : "/main")
+                }
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                aria-label="닫기"
+              >
+                <X className="w-6 h-6 text-gray-400" />
+              </button>
             </div>
           </header>
 
-          {/* Weekdays */}
-          <div className="grid grid-cols-7 px-4 border-b border-gray-100 mb-2">
+          {/* Calendar Grid Container */}
+          <div className="grid grid-cols-7 px-4 content-start border-l border-t border-gray-50">
+            {/* Weekdays */}
             {weekdays.map((d, i) => (
               <div
                 key={d}
-                className={`text-center py-2 text-xs font-bold ${i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-gray-400"}`}
+                className={`text-center py-4 text-xs font-bold border-b border-r border-gray-50 ${
+                  i === 0
+                    ? "text-red-400"
+                    : i === 6
+                      ? "text-blue-400"
+                      : "text-gray-400"
+                }`}
               >
                 {d}
               </div>
             ))}
-          </div>
 
-          {/* Calendar Grid */}
-          <div className="flex-1 grid grid-cols-7 px-4 content-start">
+            {/* Days */}
             {daysInMonth.map((dateObj, idx) => {
               const daySchedules = getSchedulesForDay(
                 dateObj.day,
@@ -289,11 +305,9 @@ function CalendarPageContent() {
                 <div
                   key={idx}
                   onClick={() => handleDayClick(dateObj)}
-                  className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors ${
-                    idx % 7 === 0 ? "border-l" : ""
-                  } ${idx < 7 ? "border-t" : ""} ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
+                  className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
                 >
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-center items-center mb-1">
                     <span
                       className={`text-xs font-bold ${
                         !dateObj.isCurrentMonth
