@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useKakaoAuth } from "../hooks/useKakaoAuth";
 
 const TITLE = "로그인이 필요해요!";
@@ -18,7 +17,6 @@ export default function LoginRequiredModal({
   onClose,
   title,
 }: LoginRequiredModalProps) {
-  const router = useRouter();
   const { handleKakaoAuth, loading } = useKakaoAuth();
 
   const handleClose = () => {
@@ -53,7 +51,9 @@ export default function LoginRequiredModal({
         <p className="mt-3 text-center text-[14px] sm:text-[15px] font-normal leading-relaxed text-stone-700 break-keep">
           {BODY}
         </p>
-        <p className="mt-2 text-center text-[12px] sm:text-[13px] text-gray-500 break-keep">{TIP}</p>
+        <p className="mt-2 text-center text-[12px] sm:text-[13px] text-gray-500 break-keep">
+          {TIP}
+        </p>
         <div className="mt-6 flex flex-col gap-2.5 sm:gap-3">
           <button
             type="button"

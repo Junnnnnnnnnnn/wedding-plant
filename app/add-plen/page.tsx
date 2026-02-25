@@ -2,20 +2,7 @@
 
 import React, { Suspense, useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Tag,
-  X,
-  Check,
-  FileText,
-  CreditCard,
-  Wallet,
-  DollarSign,
-  Calendar,
-  MapPin,
-  Search,
-  Plus,
-  ArrowLeft,
-} from "lucide-react";
+import { Tag, X, Check, Search, Plus, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import BottomTabBar from "../components/BottomTabBar";
 import FeedbackModal from "../components/FeedbackModal";
@@ -28,6 +15,7 @@ import {
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import DatePickerModal from "../components/DatePickerModal";
 import { useApi } from "../contexts/ApiContext";
+import CustomAlertModal from "../components/CustomAlertModal";
 
 // Kakao Maps API 타입 선언
 declare global {
@@ -64,8 +52,8 @@ const PASTEL_COLORS = [
 
 const getColorByLabel = (label: string) => {
   let hash = 0;
-  for (let i = 0; i < label.length; i++) {
-    hash = label.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < label.length; i += 1) {
+    hash = label.charCodeAt(i) + ((hash << 5) - hash); // eslint-disable-line no-bitwise
   }
   const index = Math.abs(hash) % PASTEL_COLORS.length;
   return PASTEL_COLORS[index];
@@ -106,9 +94,9 @@ function AddPlanPageContent() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isDateUndecided, setIsDateUndecided] = useState(false);
-  const [paymentType, setPaymentType] = useState<"현금" | "카드" | "기타" | null>(
-    null,
-  );
+  const [paymentType, setPaymentType] = useState<
+    "현금" | "카드" | "기타" | null
+  >(null);
   const [location, setLocation] = useState("");
   const [memo, setMemo] = useState("");
   const memoTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -134,7 +122,6 @@ function AddPlanPageContent() {
   const [hasSearched, setHasSearched] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const newCategoryInputRef = useRef<HTMLInputElement>(null);
-  const [tokenChecked, setTokenChecked] = useState(false);
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -142,6 +129,15 @@ function AddPlanPageContent() {
     useState(false);
   const [showPlanSavedModal, setShowPlanSavedModal] = useState(false);
   const [showSystemErrorModal, setShowSystemErrorModal] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: "warning" | "error" | "info" | "success";
+  }>({
+    isOpen: false,
+    message: "",
+    type: "warning",
+  });
   const [duplicateCategoryLabel, setDuplicateCategoryLabel] = useState<
     string | null
   >(null);
@@ -163,11 +159,6 @@ function AddPlanPageContent() {
   const showCategory = isEditMode || inputValue.trim().length > 0;
   const showPaymentType = isEditMode || !!selectedCategory;
   const showRestFields = isEditMode || !!paymentType;
-
-  /** 클라이언트 마운트 후에만 토큰 기준 표시 (로그인 버튼 플래시 방지) */
-  useEffect(() => {
-    setTokenChecked(true);
-  }, []);
 
   /** 캘린더에서 날짜 선택 후 플랜 추가 시 URL date 파라미터로 일자 초기화 */
   useEffect(() => {
@@ -395,7 +386,9 @@ function AddPlanPageContent() {
         const catLabel = data.categoryName?.trim();
         if (catLabel) {
           const found = allCategories.find((c) => c.label === catLabel);
-          setSelectedCategory(found ?? { color: getColorByLabel(catLabel), label: catLabel });
+          setSelectedCategory(
+            found ?? { color: getColorByLabel(catLabel), label: catLabel },
+          );
         }
 
         if (data.amount != null && !Number.isNaN(Number(data.amount))) {
@@ -463,61 +456,15 @@ function AddPlanPageContent() {
   /** API 카테고리 로드 후 selectedCategory가 있으면 API 항목으로 동기화 (색상/type 반영) */
   useEffect(() => {
     if (!selectedCategory || allCategories.length === 0) return;
+
     const found = allCategories.find((c) => c.label === selectedCategory.label);
+
+    // label이 같은데 id가 다르다면, 최신 API 데이터(found)로 업데이트
     if (found && (selectedCategory as CategoryItem).id !== found.id) {
       setSelectedCategory(found);
     }
-  }, [allCategories, selectedCategory?.label]);
+  }, [allCategories, selectedCategory]); // label 대신 selectedCategory 전체를 넣음
 
-  /**
-   * ============================================================================
-   * 로컬 검색 함수 (임시 - OpenSearch 연동 전까지만 사용)
-   * ============================================================================
-   *
-   * 현재 구현:
-   * - allCategories 배열에서 자연어 입력을 기반으로 카테고리 추출
-   * - 예: "나는 상견례를 하고 싶어" → "상견례" 카테고리 추출
-   *
-   * TODO: OpenSearch 백엔드 연동 시 아래 내용으로 교체
-   *
-   * 1. API 엔드포인트: POST /api/search/categories
-   *
-   * 2. 요청 형식:
-   *    {
-   *      "query": "사용자 입력 텍스트 (예: 나는 상견례를 하고 싶어)",
-   *      "size": 10  // 최대 결과 개수
-   *    }
-   *
-   * 3. 응답 형식:
-   *    {
-   *      "results": [
-   *        { "color": "#FFE4E9", "label": "상견례", "score": 0.95 },
-   *        { "color": "#FFE5D9", "label": "드레스 촬영", "score": 0.85 }
-   *      ]
-   *    }
-   *
-   * 4. 구현 예시:
-   *    const response = await fetch('/api/search/categories', {
-   *      method: 'POST',
-   *      headers: { 'Content-Type': 'application/json' },
-   *      body: JSON.stringify({ query: inputValue.trim(), size: 10 })
-   *    });
-   *    const data = await response.json();
-   *    setSearchResults(data.results);
-   *
-   * 5. OpenSearch 쿼리 설정:
-   *    - Natural Language Processing (NLP) 활용
-   *    - Fuzzy matching으로 오타 허용
-   *    - Synonyms (동의어) 설정: "예약" = "신청" = "등록"
-   *    - Korean analyzer 사용 (nori)
-   *
-   * 6. 기타 고려사항:
-   *    - Debounce 추가 (너무 빈번한 API 호출 방지)
-   *    - Loading state 추가
-   *    - Error handling 추가
-   *    - Cache 고려
-   * ============================================================================
-   */
   useEffect(() => {
     if (inputValue.trim()) {
       const inputText = inputValue.trim().toLowerCase();
@@ -570,11 +517,6 @@ function AddPlanPageContent() {
     if (isDragging || hasMoved) return;
     setSelectedCategory(category);
     setCategorySelectedByUser(true);
-  };
-
-  const handleRemoveCategory = () => {
-    setSelectedCategory(null);
-    setCategorySelectedByUser(false);
   };
 
   const handleOpenModal = () => {
@@ -819,18 +761,27 @@ function AddPlanPageContent() {
   // 필수값 유효성 검사
   const validateForm = () => {
     if (!inputValue.trim()) {
-      // eslint-disable-next-line no-alert
-      alert("제목을 입력해주세요.");
+      setAlertConfig({
+        isOpen: true,
+        message: "제목을 입력해주세요.",
+        type: "warning",
+      });
       return false;
     }
     if (!selectedCategory) {
-      // eslint-disable-next-line no-alert
-      alert("카테고리를 선택해주세요.");
+      setAlertConfig({
+        isOpen: true,
+        message: "카테고리를 선택해주세요.",
+        type: "warning",
+      });
       return false;
     }
     if (!paymentType) {
-      // eslint-disable-next-line no-alert
-      alert("결제 유형을 선택해주세요.");
+      setAlertConfig({
+        isOpen: true,
+        message: "결제 유형을 선택해주세요.",
+        type: "warning",
+      });
       return false;
     }
     return true;
@@ -861,7 +812,9 @@ function AddPlanPageContent() {
               type="button"
               onClick={() => {
                 if (fromParam === "calendar") {
-                  router.push(roomId ? `/calendar?roomId=${roomId}` : "/calendar");
+                  router.push(
+                    roomId ? `/calendar?roomId=${roomId}` : "/calendar",
+                  );
                 } else {
                   router.push(roomId ? `/main?roomId=${roomId}` : "/main");
                 }
@@ -941,10 +894,11 @@ function AddPlanPageContent() {
                       <button
                         type="button"
                         onClick={handleOpenModal}
-                        className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${selectedCategory
-                          ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
-                          : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                          }`}
+                        className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${
+                          selectedCategory
+                            ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                        }`}
                       >
                         {selectedCategory
                           ? selectedCategory.label
@@ -1016,10 +970,11 @@ function AddPlanPageContent() {
                           key={type}
                           type="button"
                           onClick={() => setPaymentType(type)}
-                          className={`py-3 rounded-xl font-medium transition-all text-sm border ${paymentType === type
-                            ? "bg-stone-800 text-white shadow-sm border-stone-800"
-                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                            }`}
+                          className={`py-3 rounded-xl font-medium transition-all text-sm border ${
+                            paymentType === type
+                              ? "bg-stone-800 text-white shadow-sm border-stone-800"
+                              : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                          }`}
                         >
                           {type}
                         </button>
@@ -1077,10 +1032,11 @@ function AddPlanPageContent() {
                     </label>
                     <div className="flex gap-2">
                       <div
-                        className={`flex-1 px-4 py-4 rounded-2xl text-lg font-medium transition-all cursor-pointer flex items-center justify-center border ${isDateUndecided
-                          ? "bg-stone-50 text-stone-300 border-stone-200"
-                          : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
-                          }`}
+                        className={`flex-1 px-4 py-4 rounded-2xl text-lg font-medium transition-all cursor-pointer flex items-center justify-center border ${
+                          isDateUndecided
+                            ? "bg-stone-50 text-stone-300 border-stone-200"
+                            : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                        }`}
                         onClick={() => {
                           setIsDateUndecided(false);
                           setIsDatePickerOpen(true);
@@ -1100,10 +1056,11 @@ function AddPlanPageContent() {
                       <button
                         type="button"
                         onClick={() => setIsDateUndecided(!isDateUndecided)}
-                        className={`px-6 rounded-2xl font-medium transition-all text-sm border ${isDateUndecided
-                          ? "bg-stone-800 text-white border-stone-800"
-                          : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                          }`}
+                        className={`px-6 rounded-2xl font-medium transition-all text-sm border ${
+                          isDateUndecided
+                            ? "bg-stone-800 text-white border-stone-800"
+                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                        }`}
                       >
                         미정
                       </button>
@@ -1151,10 +1108,11 @@ function AddPlanPageContent() {
                         type="button"
                         onClick={handleSearchLocation}
                         disabled={!location.trim()}
-                        className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${location.trim()
-                          ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
-                          : "bg-stone-100 text-stone-400 border-stone-200"
-                          }`}
+                        className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${
+                          location.trim()
+                            ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
+                            : "bg-stone-100 text-stone-400 border-stone-200"
+                        }`}
                       >
                         <Search className="w-5 h-5" />
                       </button>
@@ -1187,7 +1145,8 @@ function AddPlanPageContent() {
                                     {result.place_name}
                                   </div>
                                   <div className="text-sm text-stone-600">
-                                    {result.road_address_name || result.address_name}
+                                    {result.road_address_name ||
+                                      result.address_name}
                                   </div>
                                 </div>
                               ))}
@@ -1195,10 +1154,13 @@ function AddPlanPageContent() {
                                 !showAllLocationResults && (
                                   <button
                                     type="button"
-                                    onClick={() => setShowAllLocationResults(true)}
+                                    onClick={() =>
+                                      setShowAllLocationResults(true)
+                                    }
                                     className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-600 font-medium text-sm hover:bg-stone-100 transition-colors"
                                   >
-                                    + {locationSearchResults.length - 3}개 더보기
+                                    + {locationSearchResults.length - 3}개
+                                    더보기
                                   </button>
                                 )}
                             </>
@@ -1213,7 +1175,8 @@ function AddPlanPageContent() {
                               }}
                               className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-600 font-medium text-sm hover:bg-stone-100 transition-colors"
                             >
-                              다른 장소 선택하기 ({locationSearchResults.length}개)
+                              다른 장소 선택하기 ({locationSearchResults.length}
+                              개)
                             </button>
                           )}
                           {/* 원하는 결과가 없을 때 */}
@@ -1303,98 +1266,105 @@ function AddPlanPageContent() {
           </div>
 
           {/* 저장 버튼 - 제목과 카테고리가 모두 있을 때만 표시 */}
-          {inputValue.trim() && selectedCategory && paymentType && !isLoadingDetail && (
-            <div className="mt-8 w-full">
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={async () => {
-                  if (!validateForm()) return;
-                  if (!getToken()) {
-                    const existing = getGuestScheduleList();
-                    if (existing.length >= 3) {
-                      setShowLoginRequiredModal(true);
+          {inputValue.trim() &&
+            selectedCategory &&
+            paymentType &&
+            !isLoadingDetail && (
+              <div className="mt-8 w-full">
+                <button
+                  type="button"
+                  disabled={isSaving}
+                  onClick={async () => {
+                    if (!validateForm()) return;
+                    if (!getToken()) {
+                      const existing = getGuestScheduleList();
+                      if (existing.length >= 3) {
+                        setShowLoginRequiredModal(true);
+                        return;
+                      }
+
+                      const amountValue = amount.replace(/,/g, "");
+                      const guestItem = {
+                        categoryName: selectedCategory.label,
+                        title: inputValue.trim(),
+                        amount: amountValue ? parseInt(amountValue, 10) : 0,
+                        startDate: isDateUndecided
+                          ? null
+                          : formatDate(selectedDate),
+                        status: "NORMAL",
+                        location: location.trim() || "",
+                        locationLat: mapCoords?.lat ?? 0,
+                        locationLng: mapCoords?.lng ?? 0,
+                        memo: memo.trim() || "",
+                        payType: paymentType
+                          ? PAY_TYPE_MAP[paymentType]
+                          : "OTHER",
+                        addCategoryNameList: userAddedCategories.map(
+                          (c) => c.label,
+                        ),
+                      };
+                      addGuestScheduleItem(guestItem);
+                      setShowPlanSavedModal(true);
                       return;
                     }
 
                     const amountValue = amount.replace(/,/g, "");
-                    const guestItem = {
+                    const body: Record<string, unknown> = {
                       categoryName: selectedCategory.label,
                       title: inputValue.trim(),
+                      payType: paymentType
+                        ? PAY_TYPE_MAP[paymentType]
+                        : "OTHER",
                       amount: amountValue ? parseInt(amountValue, 10) : 0,
-                      startDate: isDateUndecided
-                        ? null
-                        : formatDate(selectedDate),
-                      status: "NORMAL",
                       location: location.trim() || "",
                       locationLat: mapCoords?.lat ?? 0,
                       locationLng: mapCoords?.lng ?? 0,
                       memo: memo.trim() || "",
-                      payType: paymentType ? PAY_TYPE_MAP[paymentType] : "OTHER",
                       addCategoryNameList: userAddedCategories.map(
                         (c) => c.label,
                       ),
                     };
-                    addGuestScheduleItem(guestItem);
-                    setShowPlanSavedModal(true);
-                    return;
-                  }
-
-                  const amountValue = amount.replace(/,/g, "");
-                  const body: Record<string, unknown> = {
-                    categoryName: selectedCategory.label,
-                    title: inputValue.trim(),
-                    payType: paymentType ? PAY_TYPE_MAP[paymentType] : "OTHER",
-                    amount: amountValue ? parseInt(amountValue, 10) : 0,
-                    location: location.trim() || "",
-                    locationLat: mapCoords?.lat ?? 0,
-                    locationLng: mapCoords?.lng ?? 0,
-                    memo: memo.trim() || "",
-                    addCategoryNameList: userAddedCategories.map(
-                      (c) => c.label,
-                    ),
-                  };
-                  if (!isDateUndecided) {
-                    body.startDate = formatDate(selectedDate);
-                  }
-                  if (!editId && roomId != null) {
-                    body.roomId = roomId;
-                  }
-
-                  setIsSaving(true);
-                  try {
-                    const url = editId
-                      ? `/plan/schedule/${editId}`
-                      : "/plan/schedule";
-                    const res = await fetchWithAuth(url, {
-                      method: editId ? "PATCH" : "POST",
-                      body: JSON.stringify(body),
-                    });
-                    const json = await res.json().catch(() => ({}));
-
-                    if (res.ok && json.result === true) {
-                      setShowPlanSavedModal(true);
-                      return;
+                    if (!isDateUndecided) {
+                      body.startDate = formatDate(selectedDate);
                     }
-                    setShowSystemErrorModal(true);
-                  } catch {
-                    setShowSystemErrorModal(true);
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }}
-                className="w-full px-6 py-4 bg-[#ee2b8c] text-white font-bold text-lg rounded-xl hover:bg-[#d4237b] transition-colors shadow-lg shadow-[#ee2b8c44] active:scale-[0.98] transform disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {isSaving
-                  ? editId
-                    ? "수정 중..."
-                    : "저장 중..."
-                  : editId
-                    ? "수정하기"
-                    : "플랜 저장하기"}
-              </button>
-            </div>
-          )}
+                    if (!editId && roomId != null) {
+                      body.roomId = roomId;
+                    }
+
+                    setIsSaving(true);
+                    try {
+                      const url = editId
+                        ? `/plan/schedule/${editId}`
+                        : "/plan/schedule";
+                      const res = await fetchWithAuth(url, {
+                        method: editId ? "PATCH" : "POST",
+                        body: JSON.stringify(body),
+                      });
+                      const json = await res.json().catch(() => ({}));
+
+                      if (res.ok && json.result === true) {
+                        setShowPlanSavedModal(true);
+                        return;
+                      }
+                      setShowSystemErrorModal(true);
+                    } catch {
+                      setShowSystemErrorModal(true);
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  className="w-full px-6 py-4 bg-[#ee2b8c] text-white font-bold text-lg rounded-xl hover:bg-[#d4237b] transition-colors shadow-lg shadow-[#ee2b8c44] active:scale-[0.98] transform disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isSaving
+                    ? editId
+                      ? "수정 중..."
+                      : "저장 중..."
+                    : editId
+                      ? "수정하기"
+                      : "플랜 저장하기"}
+                </button>
+              </div>
+            )}
         </main>
         {/* 하단 탭바 - Sticky로 최상단에 고정 */}
         <BottomTabBar
@@ -1482,14 +1452,15 @@ function AddPlanPageContent() {
                           selectedCategory?.label === category.label
                             ? { backgroundColor: category.color }
                             : {
-                              backgroundColor: `${category.color}20`,
-                              borderColor: category.color,
-                            }
+                                backgroundColor: `${category.color}20`,
+                                borderColor: category.color,
+                              }
                         }
-                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${selectedCategory?.label === category.label
-                          ? "text-[#1b0d14] shadow-lg scale-[1.02]"
-                          : "text-[#1b0d14] hover:opacity-90"
-                          } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
+                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${
+                          selectedCategory?.label === category.label
+                            ? "text-[#1b0d14] shadow-lg scale-[1.02]"
+                            : "text-[#1b0d14] hover:opacity-90"
+                        } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
                       >
                         <span className="font-user-content font-bold text-lg flex items-center gap-2">
                           {selectedCategory?.label === category.label
@@ -1592,9 +1563,7 @@ function AddPlanPageContent() {
           type={editId ? "updated" : "registered"}
           title={editId ? "수정되었습니다" : "등록되었습니다"}
           subtitle={
-            editId
-              ? "Successfully updated"
-              : "Successfully added to your plan"
+            editId ? "Successfully updated" : "Successfully added to your plan"
           }
         />
 
@@ -1675,6 +1644,14 @@ function AddPlanPageContent() {
           selectedDate={selectedDate}
           onDateChange={handleDateChange}
           onClose={() => setIsDatePickerOpen(false)}
+        />
+
+        {/* 커스텀 알림 모달 */}
+        <CustomAlertModal
+          isOpen={alertConfig.isOpen}
+          message={alertConfig.message}
+          type={alertConfig.type}
+          onClose={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
         />
       </div>
     </div>

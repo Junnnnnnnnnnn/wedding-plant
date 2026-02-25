@@ -140,7 +140,6 @@ function BudgetDetailsPage() {
   const [detailData, setDetailData] = useState<AmountDetailData | null>(null);
   const [categoryList, setCategoryList] = useState<CategoryChartItem[]>([]);
   const [scheduleList, setScheduleList] = useState<ScheduleListItem[]>([]);
-  const [scheduleLoading, setScheduleLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -154,9 +153,9 @@ function BudgetDetailsPage() {
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
   // Guide State. 로그인 시: GET /plan/user 응답으로만 설정·참조( localStorage 미참조 )
-  const [hasSeenBudgetGuide, setHasSeenBudgetGuide] = useState<
-    boolean | null
-  >(null);
+  const [hasSeenBudgetGuide, setHasSeenBudgetGuide] = useState<boolean | null>(
+    null,
+  );
   const [showGuide, setShowGuide] = useState(false);
 
   // 가이드 표시: 로그인 시 GET /plan/user 응답만 사용( localStorage 참조 금지 ), 비로그인 시에만 localStorage
@@ -183,10 +182,8 @@ function BudgetDetailsPage() {
       } catch {
         // 무시
       }
-    } else {
-      if (typeof window !== "undefined")
-        localStorage.setItem("hasSeenBudgetGuide", "true");
-    }
+    } else if (typeof window !== "undefined")
+      localStorage.setItem("hasSeenBudgetGuide", "true");
   }, [fetchWithAuth]);
 
   const guideSteps: GuideStep[] = [
@@ -237,7 +234,6 @@ function BudgetDetailsPage() {
   const fetchScheduleAll = useCallback(async () => {
     if (!getToken() || scheduleFetchingRef.current) return;
     scheduleFetchingRef.current = true;
-    setScheduleLoading(true);
     try {
       const params = buildScheduleParams(1, activeTab, selectedCategory);
       const url = roomId
@@ -255,7 +251,6 @@ function BudgetDetailsPage() {
         setScheduleList([]);
       }
     } finally {
-      setScheduleLoading(false);
       scheduleFetchingRef.current = false;
     }
   }, [fetchWithAuth, buildScheduleParams, activeTab, selectedCategory, roomId]);
@@ -280,14 +275,16 @@ function BudgetDetailsPage() {
         .reduce((sum, x) => sum + (x.amount ?? 0), 0);
 
       const byCategory = new Map<string, { total: number; used: number }>();
-      for (const item of guestList) {
+
+      guestList.forEach((item) => {
         const key = item.categoryName || "Others";
         const prev = byCategory.get(key) ?? { total: 0, used: 0 };
         const amt = item.amount ?? 0;
         prev.total += amt;
+
         if (item.status === "COMPLETED") prev.used += amt;
         byCategory.set(key, prev);
-      }
+      });
 
       setDetailData({
         initialCapital,
@@ -347,7 +344,7 @@ function BudgetDetailsPage() {
 
       setHasSeenBudgetGuide(
         userJson?.result && userJson.data
-          ? userJson.data.hasSeenBudgetGuide ?? true
+          ? (userJson.data.hasSeenBudgetGuide ?? true)
           : true,
       );
 
@@ -411,7 +408,7 @@ function BudgetDetailsPage() {
     } finally {
       setLoading(false);
     }
-  }, [fetchWithAuth, buildScheduleParams, roomIdFromUrl]);
+  }, [fetchWithAuth, buildScheduleParams, roomIdFromUrl, weddingData.budget]);
 
   useEffect(() => {
     loadData();
@@ -499,137 +496,133 @@ function BudgetDetailsPage() {
             </button>
           </div>
           <div className="pt-0 pb-32">
-          {loading ? (
-            <div className="px-4 py-6 flex flex-col items-center justify-center min-h-[200px]">
-              <div
-                className="w-10 h-10 border-2 border-[#ee2b8c] border-t-transparent rounded-full animate-spin"
-                aria-hidden
-              />
-              <p className="mt-4 text-gray-500 font-medium">불러오는 중...</p>
-            </div>
-          ) : error ? (
-            <div className="px-4 py-8 text-center">
-              <p className="text-[#ee2b8c] font-semibold">{error}</p>
-              <button
-                type="button"
-                onClick={() => loadData()}
-                className="mt-4 px-4 py-2 bg-[#ee2b8c] text-white rounded-xl font-bold text-sm"
-              >
-                다시 시도
-              </button>
-            </div>
-          ) : stats ? (
-            <>
-              {/* Prominent Stats Grid */}
-              <div id="budget-stat-grid" className="px-4 py-4 space-y-3">
-                <div className="w-full">
-                  <StatCard
-                    label="초기 자본"
-                    value={stats.initialCapital}
-                    variant="white"
-                    size="large"
-                    remainingAmount={remainingAmount}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <StatCard
-                    label="예정"
-                    value={stats.plannedTotal}
-                    variant="pink-light"
-                  />
-                  <StatCard
-                    label="사용"
-                    value={stats.usedTotal}
-                    variant="pink-solid"
-                  />
-                </div>
-              </div>
-
-              {/* AI Insight Trigger */}
-              <div id="budget-ai-insight" className="px-4 mt-2">
+            {loading ? null : error ? (
+              <div className="px-4 py-8 text-center">
+                <p className="text-[#ee2b8c] font-semibold">{error}</p>
                 <button
-                  onClick={() => setIsAIModalOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-purple-500 to-[#ee2b8c] text-white rounded-2xl font-bold shadow-lg shadow-[#ee2b8c22] hover:opacity-95 transition-all transform active:scale-[0.98]"
+                  type="button"
+                  onClick={() => loadData()}
+                  className="mt-4 px-4 py-2 bg-[#ee2b8c] text-white rounded-xl font-bold text-sm"
                 >
-                  <Sparkles className="w-5 h-5" />
-                  AI에게 예산 조언 받기
+                  다시 시도
                 </button>
               </div>
-
-              {/* Spending Analysis Section */}
-              <div className="relative">
-                <div
-                  className={
-                    isGuest
-                      ? `pointer-events-none select-none ${guestBlurClass}`
-                      : ""
-                  }
-                >
-                  {/* Spending Analysis Section */}
-                  <div id="budget-analysis" className="px-4 mt-8">
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-xl font-bold text-[#1b0d14]">
-                        지출 분석
-                      </h2>
-                      {selectedCategory && (
-                        <button
-                          onClick={() => setSelectedCategory(null)}
-                          className="text-[10px] font-extrabold text-[#ee2b8c] uppercase tracking-widest bg-[#ee2b8c11] px-3 py-1 rounded-full"
-                        >
-                          필터 해제
-                        </button>
-                      )}
-                    </div>
-                    <SpendingAnalysis
-                      stats={stats}
-                      expenses={expensesForAnalysis}
-                      selectedCategory={selectedCategory}
-                      onCategorySelect={handleCategoryToggle}
+            ) : stats ? (
+              <>
+                {/* Prominent Stats Grid */}
+                <div id="budget-stat-grid" className="px-4 py-4 space-y-3">
+                  <div className="w-full">
+                    <StatCard
+                      label="초기 자본"
+                      value={stats.initialCapital}
+                      variant="white"
+                      size="large"
+                      remainingAmount={remainingAmount}
                     />
                   </div>
-
-                  {/* Tabs */}
-                  <div id="budget-tab" className="px-4 mt-8">
-                    <div className="flex border-b border-gray-100">
-                      {(["예정", "사용"] as const).map((tab) => (
-                        <button
-                          key={tab}
-                          onClick={() => setActiveTab(tab)}
-                          className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${activeTab === tab
-                            ? "text-[#ee2b8c] border-[#ee2b8c]"
-                            : "text-gray-400 border-transparent hover:text-gray-600"
-                            }`}
-                        >
-                          {tab}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Expense List: count=10000으로 전체 한 번에 로드 */}
-                  <div id="budget-list" className="mt-4">
-                    <ExpenseList expenses={listExpenses} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <StatCard
+                      label="예정"
+                      value={stats.plannedTotal}
+                      variant="pink-light"
+                    />
+                    <StatCard
+                      label="사용"
+                      value={stats.usedTotal}
+                      variant="pink-solid"
+                    />
                   </div>
                 </div>
 
-                {isGuest && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={() => setShowLoginRequiredModal(true)}
-                      className="rounded-2xl bg-white/70 px-6 py-3 text-sm font-bold text-stone-700 shadow-sm backdrop-blur transition-transform hover:scale-[1.01] active:scale-[0.99]"
-                    >
-                      로그인이 필요한 서비스 입니다
-                    </button>
+                {/* AI Insight Trigger */}
+                <div id="budget-ai-insight" className="px-4 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAIModalOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-purple-500 to-[#ee2b8c] text-white rounded-2xl font-bold shadow-lg shadow-[#ee2b8c22] hover:opacity-95 transition-all transform active:scale-[0.98]"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    AI에게 예산 조언 받기
+                  </button>
+                </div>
+
+                {/* Spending Analysis Section */}
+                <div className="relative">
+                  <div
+                    className={
+                      isGuest
+                        ? `pointer-events-none select-none ${guestBlurClass}`
+                        : ""
+                    }
+                  >
+                    {/* Spending Analysis Section */}
+                    <div id="budget-analysis" className="px-4 mt-8">
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold text-[#1b0d14]">
+                          지출 분석
+                        </h2>
+                        {selectedCategory && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCategory(null)}
+                            className="text-[10px] font-extrabold text-[#ee2b8c] uppercase tracking-widest bg-[#ee2b8c11] px-3 py-1 rounded-full"
+                          >
+                            필터 해제
+                          </button>
+                        )}
+                      </div>
+                      <SpendingAnalysis
+                        stats={stats}
+                        expenses={expensesForAnalysis}
+                        selectedCategory={selectedCategory}
+                        onCategorySelect={handleCategoryToggle}
+                      />
+                    </div>
+
+                    {/* Tabs */}
+                    <div id="budget-tab" className="px-4 mt-8">
+                      <div className="flex border-b border-gray-100">
+                        {(["예정", "사용"] as const).map((tab) => (
+                          <button
+                            type="button"
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${
+                              activeTab === tab
+                                ? "text-[#ee2b8c] border-[#ee2b8c]"
+                                : "text-gray-400 border-transparent hover:text-gray-600"
+                            }`}
+                          >
+                            {tab}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Expense List: count=10000으로 전체 한 번에 로드 */}
+                    <div id="budget-list" className="mt-4">
+                      <ExpenseList expenses={listExpenses} />
+                    </div>
                   </div>
-                )}
+
+                  {isGuest && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginRequiredModal(true)}
+                        className="rounded-2xl bg-white/70 px-6 py-3 text-sm font-bold text-stone-700 shadow-sm backdrop-blur transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                      >
+                        로그인이 필요한 서비스 입니다
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="px-4 py-8 text-center">
+                <p className="text-gray-500 font-medium">데이터가 없습니다.</p>
               </div>
-            </>
-          ) : (
-            <div className="px-4 py-8 text-center">
-              <p className="text-gray-500 font-medium">데이터가 없습니다.</p>
-            </div>
-          )}
+            )}
           </div>
         </main>
 

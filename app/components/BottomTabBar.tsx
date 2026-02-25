@@ -1,9 +1,14 @@
 "use client";
 
-import { Home, Search, LayoutGrid, Settings, MessageCircle } from "lucide-react";
+import {
+  Home,
+  Search,
+  LayoutGrid,
+  Settings,
+  MessageCircle,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { AUTH_TOKEN_CHANGED_EVENT, getToken } from "@/lib/api";
+import { useState } from "react";
 
 export type TabType = "home" | "feed" | "rooms" | "settings";
 
@@ -21,7 +26,6 @@ function pathnameToTab(pathname: string): TabType {
   return "home";
 }
 
-/* eslint-disable react/require-default-props */
 interface BottomTabBarProps {
   /** 활성 탭. 없으면 pathname으로 자동 결정 */
   activeTab?: TabType;
@@ -34,7 +38,6 @@ interface BottomTabBarProps {
   /** 참여플랜 탭에 표시할 알림 수 */
   unreadCount?: number;
 }
-/* eslint-enable react/require-default-props */
 
 export default function BottomTabBar({
   activeTab,
@@ -47,33 +50,18 @@ export default function BottomTabBar({
   const pathname = usePathname();
   const router = useRouter();
   const resolvedActiveTab = activeTab ?? pathnameToTab(pathname);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!getToken());
   const [showFeedPrepModal, setShowFeedPrepModal] = useState(false);
-
-  // 로그인 후(같은 탭/다른 탭) 포커스·가시성·pathname 변경 시 토큰 다시 읽어서 참여플랜/Settings 클릭 가능하도록
-  useEffect(() => {
-    const sync = () => setIsLoggedIn(!!getToken());
-    window.addEventListener("focus", sync);
-    document.addEventListener("visibilitychange", sync);
-    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, sync);
-    sync();
-    return () => {
-      window.removeEventListener("focus", sync);
-      document.removeEventListener("visibilitychange", sync);
-      window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, sync);
-    };
-  }, [pathname]);
 
   const tabs: Array<{
     id: TabType;
     label: string;
     icon: typeof Home;
   }> = [
-      { id: "home", label: "홈", icon: Home },
-      { id: "feed", label: "피드", icon: Search },
-      { id: "rooms", label: "참여 플랜", icon: LayoutGrid },
-      { id: "settings", label: "Settings", icon: Settings },
-    ];
+    { id: "home", label: "홈", icon: Home },
+    { id: "feed", label: "피드", icon: Search },
+    { id: "rooms", label: "참여 플랜", icon: LayoutGrid },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
 
   const handleClick = (tab: TabType) => {
     if (tab === "feed") {

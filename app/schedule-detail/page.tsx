@@ -25,6 +25,7 @@ import LoginRequiredModal from "../components/LoginRequiredModal";
 import FeedbackModal from "../components/FeedbackModal";
 import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
+import CustomAlertModal from "../components/CustomAlertModal";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { getToken } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
@@ -115,6 +116,15 @@ function ScheduleDetailPageContent() {
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteFeedbackModal, setShowDeleteFeedbackModal] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: "warning" | "error" | "info" | "success";
+  }>({
+    isOpen: false,
+    message: "",
+    type: "warning",
+  });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -235,7 +245,7 @@ function ScheduleDetailPageContent() {
     if (Number.isNaN(lat) || Number.isNaN(lng) || (lat === 0 && lng === 0))
       return null;
     return { lat, lng };
-  }, [detail?.locationLat, detail?.locationLng]);
+  }, [detail]);
 
   const handleDelete = useCallback(async () => {
     if (!detail?.id || deleting) return;
@@ -248,14 +258,22 @@ function ScheduleDetailPageContent() {
         setShowDeleteFeedbackModal(true);
       } else {
         const text = await res.text();
-        window.alert(text || "삭제에 실패했습니다.");
+        setAlertConfig({
+          isOpen: true,
+          message: text || "삭제에 실패했습니다.",
+          type: "error",
+        });
       }
     } catch (err) {
-      window.alert("삭제 중 오류가 발생했습니다.");
+      setAlertConfig({
+        isOpen: true,
+        message: "삭제 중 오류가 발생했습니다.",
+        type: "error",
+      });
     } finally {
       setDeleting(false);
     }
-  }, [detail?.id, deleting, fetchWithAuth, router]);
+  }, [detail?.id, deleting, fetchWithAuth]);
 
   useEffect(() => {
     if (window.kakao?.maps) return;
@@ -664,6 +682,12 @@ function ScheduleDetailPageContent() {
             }
           }}
           type="deleted"
+        />
+        <CustomAlertModal
+          isOpen={alertConfig.isOpen}
+          message={alertConfig.message}
+          type={alertConfig.type}
+          onClose={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
         />
       </div>
     </div>

@@ -21,7 +21,7 @@ export function getKstToday(): { year: number; month: number; day: number } {
 
   // 한국 시간(KST)은 UTC+9
   // UTC 기준 밀리초 + 9시간 밀리초
-  const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
+  const kstTime = now.getTime() + 9 * 60 * 60 * 1000;
   const kstDate = new Date(kstTime);
 
   // UTC 메서드를 사용하여 타임존 간섭 없이 날짜 추출

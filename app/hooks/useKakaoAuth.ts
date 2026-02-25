@@ -21,9 +21,10 @@ export function useKakaoAuth() {
     const token = getToken();
     if (!token) {
       // 공유 링크(share)가 있으면 로그인 후 복원을 위해 저장
-      const share = typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("share")
-        : null;
+      const share =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("share")
+          : null;
       if (share?.trim()) setShareAfterLogin(share.trim());
 
       // 현재 경로 저장 (메인/랜딩 제외하고 목록 등 특정 페이지에서 온 경우)

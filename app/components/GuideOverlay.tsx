@@ -205,9 +205,7 @@ export default function GuideOverlay({
               className="text-white text-center p-6 pointer-events-none"
             >
               <div className="mb-4 text-4xl animate-bounce">👆</div>
-              <h3 className="text-xl font-bold mb-2">
-                화면 사용법
-              </h3>
+              <h3 className="text-xl font-bold mb-2">화면 사용법</h3>
               <p className="text-white/80 leading-relaxed">
                 아무 곳이나 터치하면
                 <br />
@@ -219,6 +217,7 @@ export default function GuideOverlay({
 
         {/* Close Button */}
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onClose();

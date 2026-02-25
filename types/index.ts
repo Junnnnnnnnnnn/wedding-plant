@@ -9,6 +9,13 @@ export interface ChatRoom {
   }[];
 }
 
+export interface Member {
+  planUserId: string;
+  name: string;
+  image: string | null;
+  permission: "OWNER" | "WRITE" | "READ" | string;
+}
+
 export interface Plan {
   roomId: number;
   onwerName: string; // API typo maintained
@@ -17,11 +24,5 @@ export interface Plan {
   remainingBudget: number;
   planCount: number;
   chatRooms: ChatRoom[];
-  members: {
-    planUserId: string;
-    name: string;
-    image: string | null;
-    permission: "OWNER" | "WRITE" | "READ" | string;
-  }[];
+  members: Member[];
 }
-

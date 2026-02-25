@@ -6,7 +6,8 @@ export const AUTH_TOKEN_CHANGED_EVENT = "plan-auth-token-changed";
 export const SHARE_AFTER_LOGIN_KEY = "plan_share_after_login";
 
 /** 비로그인 시 setting 완료 후 /main 진입 시 설정. 직접 /main 접속 시 리다이렉트 판단용 */
-export const HAS_COMPLETED_GUEST_SETTING_KEY = "plan_has_completed_guest_setting";
+export const HAS_COMPLETED_GUEST_SETTING_KEY =
+  "plan_has_completed_guest_setting";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -112,9 +113,9 @@ export function clearReturnPathAfterLogin(): void {
   sessionStorage.removeItem(RETURN_PATH_AFTER_LOGIN_KEY);
 }
 
-/** 
- * API 응답에서 유저 정보를 받아 
- * name, budget, weddingDate 가 모두 누락 없이 채워져 있는지 확인합니다. 
+/**
+ * API 응답에서 유저 정보를 받아
+ * name, budget, weddingDate 가 모두 누락 없이 채워져 있는지 확인합니다.
  */
 export function isPlanDataComplete(data: {
   weddingDate?: string | null;

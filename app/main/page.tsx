@@ -129,29 +129,13 @@ function getCategoryColor(categoryName: string): string {
     "#FFE5D9",
   ];
   let hash = 0;
-  for (let i = 0; i < categoryName.length; i++) {
+
+  for (let i = 0; i < categoryName.length; i += 1) {
     hash = (hash << 5) - hash + categoryName.charCodeAt(i);
     hash |= 0;
   }
+
   return colors[Math.abs(hash) % colors.length];
-}
-
-/** startDate와 오늘의 거리에 따라 점 색상: 가까울수록 진한 분홍, 멀수록 회색. null이면 미정(회색) */
-function getDotColorByDate(startDate: string | null): string {
-  if (!startDate?.trim()) return "#9ca3af"; // 미정: 회색
-  const start = new Date(startDate);
-  if (Number.isNaN(start.getTime())) return "#9ca3af";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  start.setHours(0, 0, 0, 0);
-  const diffMs = start.getTime() - today.getTime();
-  const daysUntil = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (daysUntil < 0) return "#bbf7d0"; // 지난 일정: 연한 녹색
-  if (daysUntil <= 7) return "#ff8fa3"; // 1주 이내: 찐한 분홍
-  if (daysUntil <= 30) return "#ffaab8"; // 1개월 이내: 분홍
-  if (daysUntil <= 90) return "#ffd0d9"; // 3개월 이내: 연한 분홍
-  return "#bbf7d0"; // 그 이상: 연한 녹색
 }
 
 /** startDate가 오늘보다 이전(지난 날짜)이면 true */
@@ -272,6 +256,33 @@ function MainPageContent() {
   const [isNoPlanBlur, setIsNoPlanBlur] = useState(false);
   const sharedFetchingRef = useRef(false);
   const cancelledRef = useRef(false);
+
+  // 스케줄 목록 상태 (상단으로 이동 - useCallback에서 사용하기 전에 정의)
+  const [scheduleList, setScheduleList] = useState<ScheduleListItem[]>([]);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleInitialFetched, setScheduleInitialFetched] = useState(false);
+  const scheduleFetchingRef = useRef(false);
+  const fetchingStatusRef = useRef<"NORMAL" | "COMPLETED" | null>(null);
+
+  // 탭 및 카운트 상태
+  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  const [removedItems, setRemovedItems] = useState<Set<number>>(new Set());
+  const [activeTab, setActiveTab] = useState<"planned" | "completed">(
+    "planned",
+  );
+  const plannedListRef = useRef<ScheduleListItem[]>([]);
+  const lastPlannedCountRef = useRef(0);
+  const lastCompletedCountRef = useRef(0);
+  const [plannedTotal, setPlannedTotal] = useState(0);
+  const [completedTotal, setCompletedTotal] = useState(0);
+
+  // 로그인 및 공유 모달 상태
+  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  const [loginRequiredTitle, setLoginRequiredTitle] = useState<
+    string | undefined
+  >(undefined);
+  const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Guide Overlay State. 로그인 시: GET /plan/user 응답으로만 설정·참조( localStorage 미참조 )
   const [hasSeenMainGuide, setHasSeenMainGuide] = useState<boolean | null>(
@@ -705,6 +716,8 @@ function MainPageContent() {
     fetchTotalAmount,
     fetchWithAuth,
     fetchSharedRoomWithAuth,
+    fetchSharedRoomCounts,
+    fetchPersonalCounts,
     handleApiError,
     shareCode,
     roomId,
@@ -818,20 +831,10 @@ function MainPageContent() {
   })();
   const weddingDateText = formatWeddingDate(displayData.date);
 
-  // 스케줄 목록 API: count=10000으로 한 번에 전체 로드
-  const [scheduleList, setScheduleList] = useState<ScheduleListItem[]>([]);
-  const [scheduleTotal, setScheduleTotal] = useState(0);
-  const [scheduleLoading, setScheduleLoading] = useState(false);
-  const [scheduleInitialFetched, setScheduleInitialFetched] = useState(false);
-  const scheduleFetchingRef = useRef(false);
-  const fetchingStatusRef = useRef<"NORMAL" | "COMPLETED" | null>(null);
-
   const effectiveScheduleList = isSharedView
     ? sharedRoomScheduleList
     : scheduleList;
-  const effectiveScheduleTotal = isSharedView
-    ? sharedRoomScheduleList.length
-    : scheduleTotal;
+
   const isListLoaded = getToken()
     ? scheduleInitialFetched
     : shareCode
@@ -880,21 +883,11 @@ function MainPageContent() {
   );
 
   // 예산 사용률에 따른 그라데이션 색상 계산
-  const getGradientColors = (percentage: number) => {
-    // 0% = 현재 색상(기본), 100% = 진한 색상
-    const t = percentage / 100; // 0 ~ 1
-
-    // 기본 색상 (0%일 때 - Pink Solid variant from budget detail)
-    // #ee2b8c is HSL(328, 86%, 55%)
-
-    // Let's just use a solid logic for now or a simpler gradient based on the new pink
-    // Start: #ee2b8c (Primary Pink)
-    // End: #ff659c (Slightly lighter/different hue for gradient)
-
+  const getGradientColors = () => {
     return `linear-gradient(135deg, #ee2b8c 0%, #ff5c95 100%)`;
   };
 
-  const budgetGradient = getGradientColors(budgetUsagePercentage);
+  const budgetGradient = getGradientColors();
 
   // 날짜 포맷팅 함수 (YYYY년 MM월 DD일 + 요일, 로컬 파싱으로 타임존 오차 방지)
   const formatDate = (dateString: string) => {
@@ -926,7 +919,6 @@ function MainPageContent() {
         // 비로그인(게스트)은 로컬 스토리지 데이터 사용
         const guestList = getGuestScheduleList();
         setScheduleList(guestList);
-        setScheduleTotal(guestList.length);
         setScheduleInitialFetched(true);
         setRemovedItems(new Set()); // 탭 전환 시 애니메이션 상태 초기화
         return;
@@ -954,7 +946,6 @@ function MainPageContent() {
         if (json.result === true && json.data) {
           const { total, list } = json.data;
           if (fetchingStatusRef.current === requestedStatus) {
-            setScheduleTotal(total);
             if (requestedStatus === "NORMAL") setPlannedTotal(total);
             else setCompletedTotal(total);
             setScheduleList(list);
@@ -1004,20 +995,6 @@ function MainPageContent() {
     }
   }, [fetchScheduleList, shareCode, roomId, apiPlanData]);
 
-  // 각 계획의 체크 상태 관리 (UI 즉시 반영용)
-  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
-  // 목록에서 실제로 사라지는 상태 (애니메이션 시작 지점용)
-  const [removedItems, setRemovedItems] = useState<Set<number>>(new Set());
-  // 탭: 계획 중(NORMAL) / 완료(COMPLETED)
-  const [activeTab, setActiveTab] = useState<"planned" | "completed">(
-    "planned",
-  );
-  const plannedListRef = useRef<ScheduleListItem[]>([]);
-  const lastPlannedCountRef = useRef(0);
-  const lastCompletedCountRef = useRef(0);
-  const [plannedTotal, setPlannedTotal] = useState(0);
-  const [completedTotal, setCompletedTotal] = useState(0);
-
   // 탭별 리스트 카운킹 (게스트 모드는 로컬 리스트 기준, 로그인 모드는 명시적 상태 활용)
   const plannedCount = useMemo(() => {
     if (!getToken()) {
@@ -1026,6 +1003,7 @@ function MainPageContent() {
       ).length;
     }
     return plannedTotal;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveScheduleList.length, plannedTotal, removedItems.size]);
 
   const completedCount = useMemo(() => {
@@ -1035,6 +1013,7 @@ function MainPageContent() {
       ).length;
     }
     return completedTotal;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveScheduleList.length, completedTotal, removedItems.size]);
 
   // 탭별 리스트: API가 status(NORMAL/COMPLETED)로 이미 필터링해서 오지만,
@@ -1076,12 +1055,6 @@ function MainPageContent() {
         : lastCompletedCountRef.current
       : baseVisibleList.length;
 
-  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
-  const [loginRequiredTitle, setLoginRequiredTitle] = useState<
-    string | undefined
-  >(undefined);
-  const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
   const mainScrollRef = useRef<HTMLElement>(null);
   const firstSectionRef = useRef<HTMLDivElement>(null);
   const secondSectionRef = useRef<HTMLDivElement>(null);
@@ -1115,7 +1088,8 @@ function MainPageContent() {
   // 뒤로가기 시 플랜 리스트 섹션으로 복구
   useEffect(() => {
     if (mounted && mainScrollRef.current) {
-      const returnToPlanList = sessionStorage.getItem("returnToPlanList") === "true";
+      const returnToPlanList =
+        sessionStorage.getItem("returnToPlanList") === "true";
       if (returnToPlanList) {
         sessionStorage.removeItem("returnToPlanList");
         setTimeout(() => {
@@ -1243,16 +1217,6 @@ function MainPageContent() {
       ? String(apiPlanData.roomId)
       : null);
 
-  const handleOpenScheduleDetail = (id: number) => {
-    if (!getToken()) {
-      setShowLoginRequiredModal(true);
-      return;
-    }
-    sessionStorage.setItem("returnToPlanList", "true");
-    const path = `/schedule-detail?id=${id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
-    router.push(path);
-  };
-
   return (
     <div className="h-[100dvh] bg-[#fcfbfc] overflow-hidden">
       <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
@@ -1352,23 +1316,23 @@ function MainPageContent() {
                             String(member.planUserId ?? "")
                               .trim()
                               .toLowerCase() ===
-                            String(sharedRoomUser.id)
-                              .trim()
-                              .toLowerCase()) && (
-                              <span
-                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                                aria-hidden
-                              >
-                                <Crown
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
+                              String(sharedRoomUser.id)
+                                .trim()
+                                .toLowerCase()) && (
+                            <span
+                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                              aria-hidden
+                            >
+                              <Crown
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
+                            </span>
+                          )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                            "OWNER" && (
+                              "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1442,20 +1406,20 @@ function MainPageContent() {
                         >
                           {String(member.permission ?? "").toUpperCase() ===
                             "OWNER" && (
-                              <span
-                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                                aria-hidden
-                              >
-                                <Crown
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
+                            <span
+                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                              aria-hidden
+                            >
+                              <Crown
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
+                            </span>
+                          )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                            "OWNER" && (
+                              "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1700,8 +1664,8 @@ function MainPageContent() {
                       const roomIdValue =
                         roomId ??
                         (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       router.push(
@@ -1731,10 +1695,11 @@ function MainPageContent() {
                           key={catName}
                           type="button"
                           onClick={() => setSelectedCategory(catName)}
-                          className={`shrink-0 px-3 py-1 rounded-md text-[12px] font-bold transition-all flex items-center gap-1 ${isSelected
-                            ? "bg-[#ee2b8c] text-white shadow-sm"
-                            : "bg-gray-100/80 text-gray-600 hover:bg-gray-200 active:scale-95"
-                            }`}
+                          className={`shrink-0 px-3 py-1 rounded-md text-[12px] font-bold transition-all flex items-center gap-1 ${
+                            isSelected
+                              ? "bg-[#ee2b8c] text-white shadow-sm"
+                              : "bg-gray-100/80 text-gray-600 hover:bg-gray-200 active:scale-95"
+                          }`}
                         >
                           {catName}
                         </button>
@@ -1751,65 +1716,65 @@ function MainPageContent() {
                 isRoomView &&
                 String(myRoomPermission ?? "").toUpperCase() === "READ"
               ) && (
-                  <div className="flex shrink-0 pb-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const roomIdValue =
-                          roomId ??
-                          (apiPlanData &&
-                            apiPlanData !== "none" &&
-                            apiPlanData.roomId
-                            ? String(apiPlanData.roomId)
-                            : null);
+                <div className="flex shrink-0 pb-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const roomIdValue =
+                        roomId ??
+                        (apiPlanData &&
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
+                          ? String(apiPlanData.roomId)
+                          : null);
 
-                        const addPlanPath = roomIdValue
-                          ? `/add-plen?roomId=${roomIdValue}`
-                          : "/add-plen";
-                        if (getToken()) {
-                          router.push(addPlanPath);
-                          return;
-                        }
-                        if (isSharedView) {
-                          setLoginRequiredTitle(
-                            "플랜을 추가하려면 로그인해 주세요",
-                          );
-                          setShowLoginRequiredModal(true);
-                          return;
-                        }
-
-                        // Guest: allow up to 3 plans saved in sessionStorage
-                        const guestCount = effectiveScheduleList.length;
-                        if (guestCount === 0) {
-                          // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
-                          setShowGuestPlanLimitModal(true);
-                          return;
-                        }
-                        if (guestCount >= 3) {
-                          setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
-                          setShowLoginRequiredModal(true);
-                          return;
-                        }
+                      const addPlanPath = roomIdValue
+                        ? `/add-plen?roomId=${roomIdValue}`
+                        : "/add-plen";
+                      if (getToken()) {
                         router.push(addPlanPath);
-                      }}
-                      className="flex h-[36px] justify-center items-center gap-1.5 px-3.5 py-0 text-white rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
-                      style={{
-                        backgroundColor:
-                          !getToken() &&
-                            !isSharedView &&
-                            effectiveScheduleList.length >= 3
-                            ? "#cbd5e1"
-                            : "#ee2b8c",
-                      }}
-                    >
-                      추가
-                      <CirclePlus
-                        className="h-4 w-4 shrink-0 text-white"
-                        strokeWidth={2.5}
-                      />
-                    </button>
-                  </div>
-                )}
+                        return;
+                      }
+                      if (isSharedView) {
+                        setLoginRequiredTitle(
+                          "플랜을 추가하려면 로그인해 주세요",
+                        );
+                        setShowLoginRequiredModal(true);
+                        return;
+                      }
+
+                      // Guest: allow up to 3 plans saved in sessionStorage
+                      const guestCount = effectiveScheduleList.length;
+                      if (guestCount === 0) {
+                        // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
+                        setShowGuestPlanLimitModal(true);
+                        return;
+                      }
+                      if (guestCount >= 3) {
+                        setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
+                        setShowLoginRequiredModal(true);
+                        return;
+                      }
+                      router.push(addPlanPath);
+                    }}
+                    className="flex h-[36px] justify-center items-center gap-1.5 px-3.5 py-0 text-white rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
+                    style={{
+                      backgroundColor:
+                        !getToken() &&
+                        !isSharedView &&
+                        effectiveScheduleList.length >= 3
+                          ? "#cbd5e1"
+                          : "#ee2b8c",
+                    }}
+                  >
+                    추가
+                    <CirclePlus
+                      className="h-4 w-4 shrink-0 text-white"
+                      strokeWidth={2.5}
+                    />
+                  </button>
+                </div>
+              )}
             </div>
             {/* 탭 영역 - Sticky 고정 */}
             <div
@@ -1828,17 +1793,18 @@ function MainPageContent() {
                       const roomIdParam =
                         roomId?.trim() ||
                         (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       fetchScheduleList(roomIdParam ?? undefined, "NORMAL");
                     }
                   }}
-                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === "planned"
-                    ? "bg-white text-[#ee2b8c] shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                    }`}
+                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
+                    activeTab === "planned"
+                      ? "bg-white text-[#ee2b8c] shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
                 >
                   <span>계획 중</span>
                   <span
@@ -1858,17 +1824,18 @@ function MainPageContent() {
                       const roomIdParam =
                         roomId?.trim() ||
                         (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       fetchScheduleList(roomIdParam ?? undefined, "COMPLETED");
                     }
                   }}
-                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === "completed"
-                    ? "bg-white text-[#ee2b8c] shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                    }`}
+                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
+                    activeTab === "completed"
+                      ? "bg-white text-[#ee2b8c] shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
                 >
                   <span>완료</span>
                   <span
@@ -1950,11 +1917,11 @@ function MainPageContent() {
                         const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
                         const dateLabel = plan.startDate?.trim()
                           ? (() => {
-                            const { dateText, weekday } = formatDate(
-                              plan.startDate as string,
-                            );
-                            return `${dateText} (${weekday})`;
-                          })()
+                              const { dateText, weekday } = formatDate(
+                                plan.startDate as string,
+                              );
+                              return `${dateText} (${weekday})`;
+                            })()
                           : "미정";
 
                         return (
@@ -1967,23 +1934,30 @@ function MainPageContent() {
                             exit={
                               removedItems.has(plan.id)
                                 ? {
-                                  opacity: [1, 1, 0],
-                                  y: [0, -20, -20],
-                                  x: [0, 0, activeTab === "planned" ? 500 : -500],
-                                  scale: [1, 1.05, 1.05],
-                                  transition: {
-                                    duration: 0.6,
-                                    times: [0, 0.4, 1],
-                                    ease: "easeInOut",
-                                  },
-                                }
+                                    opacity: [1, 1, 0],
+                                    y: [0, -20, -20],
+                                    x: [
+                                      0,
+                                      0,
+                                      activeTab === "planned" ? 500 : -500,
+                                    ],
+                                    scale: [1, 1.05, 1.05],
+                                    transition: {
+                                      duration: 0.6,
+                                      times: [0, 0.4, 1],
+                                      ease: "easeInOut",
+                                    },
+                                  }
                                 : { opacity: 0, transition: { duration: 0 } }
                             }
                           >
                             <Link
                               href={detailHref}
                               onClick={() => {
-                                sessionStorage.setItem("returnToPlanList", "true");
+                                sessionStorage.setItem(
+                                  "returnToPlanList",
+                                  "true",
+                                );
                               }}
                               className={`relative flex w-full items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
                               aria-label={`플랜 상세 보기: ${plan.title}`}
@@ -2008,10 +1982,11 @@ function MainPageContent() {
                                     e.stopPropagation();
                                     handleToggleCheck(plan.id);
                                   }}
-                                  className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
-                                    ? "bg-[#ee2b8c] border-[#ee2b8c]"
-                                    : "bg-white/80 border-[#ee2b8c]"
-                                    }`}
+                                  className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
+                                    isChecked
+                                      ? "bg-[#ee2b8c] border-[#ee2b8c]"
+                                      : "bg-white/80 border-[#ee2b8c]"
+                                  }`}
                                 >
                                   {isChecked && (
                                     <Check
@@ -2041,10 +2016,11 @@ function MainPageContent() {
                                     : "미정"}
                                 </div>
                                 <span
-                                  className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
-                                    ? "bg-[#ee2b8c] text-white"
-                                    : "bg-gray-100 text-gray-500"
-                                    }`}
+                                  className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
+                                    isChecked
+                                      ? "bg-[#ee2b8c] text-white"
+                                      : "bg-gray-100 text-gray-500"
+                                  }`}
                                 >
                                   {isChecked ? "완료" : "예정"}
                                 </span>

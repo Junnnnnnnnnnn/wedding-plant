@@ -139,8 +139,11 @@ const SpendingAnalysis: React.FC<SpendingAnalysisProps> = ({
                   {data.category}
                 </span>
                 <span className="text-[#ee2b8c] font-bold">
-                  {data.used.toLocaleString("ko-KR")} / {data.planned.toLocaleString("ko-KR")}
-                  <span className="text-[10px] font-semibold text-gray-500 ml-0.5">만원</span>
+                  {data.used.toLocaleString("ko-KR")} /{" "}
+                  {data.planned.toLocaleString("ko-KR")}
+                  <span className="text-[10px] font-semibold text-gray-500 ml-0.5">
+                    만원
+                  </span>
                 </span>
               </div>
               <div className="h-3 w-full bg-[#ee2b8c0a] rounded-full overflow-hidden relative">

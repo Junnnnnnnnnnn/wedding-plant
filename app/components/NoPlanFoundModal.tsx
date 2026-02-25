@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import { Sparkles, ArrowRight, X } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 
 interface NoPlanFoundModalProps {
   show: boolean;
@@ -41,6 +40,7 @@ export default function NoPlanFoundModal({
 
           <div className="w-full space-y-3">
             <button
+              type="button"
               onClick={onConfirm}
               className="w-full h-14 sm:h-16 bg-[#ee2b8c] text-white rounded-2xl sm:rounded-3xl font-black text-base sm:text-lg shadow-xl shadow-[#ee2b8c33] transition-all hover:bg-[#d4237b] active:scale-95 flex items-center justify-center gap-2 group"
             >
@@ -49,6 +49,7 @@ export default function NoPlanFoundModal({
             </button>
 
             <button
+              type="button"
               onClick={onCancel}
               className="w-full h-12 sm:h-14 bg-gray-50 text-gray-400 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm transition-all hover:bg-gray-100 active:scale-95"
             >

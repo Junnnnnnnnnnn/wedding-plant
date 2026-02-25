@@ -103,6 +103,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           </div>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm hover:bg-gray-50 transition-all border border-[#ee2b8c11] active:scale-90"
         >
@@ -219,6 +220,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         {/* Action Buttons */}
         <div className="space-y-4 pt-4">
           <button
+            type="button"
             onClick={handleSave}
             disabled={isSaved}
             className={`w-full h-16 rounded-[24px] font-black text-lg transition-all transform active:scale-95 shadow-xl flex items-center justify-center gap-3 ${

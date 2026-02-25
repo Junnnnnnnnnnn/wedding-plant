@@ -1,7 +1,7 @@
 "use client";
 
-import { useApi } from "@/app/contexts/ApiContext";
 import { motion, AnimatePresence } from "motion/react";
+import { useApi } from "@/app/contexts/ApiContext";
 
 export default function ApiLoadingOverlay() {
   const { loading } = useApi();
@@ -73,7 +73,7 @@ export default function ApiLoadingOverlay() {
             >
               <span
                 className="text-lg font-black text-[#1b0d14] tracking-tight"
-                style={{ fontFamily: 'var(--font-tmoney), sans-serif' }}
+                style={{ fontFamily: "var(--font-tmoney), sans-serif" }}
               >
                 잠시만 기다려주세요
               </span>

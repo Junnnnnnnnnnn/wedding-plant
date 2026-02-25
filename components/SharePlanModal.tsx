@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  X,
-  Link2,
-  MessageCircle,
-  Check,
-} from "lucide-react";
+import { X, Link2, MessageCircle, Check } from "lucide-react";
 import { useApi } from "@/app/contexts/ApiContext";
 
 interface SharePlanModalProps {
@@ -98,7 +93,9 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
   const handleCopyLink = () => {
     setCopyError(null);
     if (!shareUrl) {
-      setCopyError(shareUrlLoading ? "준비 중입니다." : "링크를 불러오지 못했습니다.");
+      setCopyError(
+        shareUrlLoading ? "준비 중입니다." : "링크를 불러오지 못했습니다.",
+      );
       return;
     }
     if (copyTextToClipboard(shareUrl)) {
@@ -133,6 +130,7 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="w-9 h-9 sm:w-10 sm:h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors flex-shrink-0"
           >
@@ -176,11 +174,18 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
                   <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#ee2b8c] flex-shrink-0" />
                 )}
                 <span className="truncate">
-                  {shareUrlLoading ? "준비 중" : copied ? "복사됨" : "링크 복사"}
+                  {shareUrlLoading
+                    ? "준비 중"
+                    : copied
+                      ? "복사됨"
+                      : "링크 복사"}
                 </span>
               </button>
 
-              <button className="w-14 h-14 sm:w-16 sm:h-16 bg-[#FEE500] rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-lg shadow-[#FEE50033] hover:opacity-90 active:scale-95 transition-all flex-shrink-0">
+              <button
+                type="button"
+                className="w-14 h-14 sm:w-16 sm:h-16 bg-[#FEE500] rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-lg shadow-[#FEE50033] hover:opacity-90 active:scale-95 transition-all flex-shrink-0"
+              >
                 <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-[#1b0d14] fill-[#1b0d14]" />
               </button>
             </div>
@@ -188,6 +193,7 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
 
           {/* Confirm Button */}
           <button
+            type="button"
             onClick={onClose}
             className="w-full h-14 sm:h-16 bg-[#ee2b8c] text-white rounded-2xl sm:rounded-3xl font-black text-base sm:text-lg shadow-xl shadow-[#ee2b8c33] transition-all hover:bg-[#d4237b] active:scale-95 mt-2 sm:mt-4 flex-shrink-0"
           >

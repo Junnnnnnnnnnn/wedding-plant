@@ -24,8 +24,6 @@ type KakaoLoginAlertProps = {
   show: boolean;
   /** /main에서 로그인 성공 후 GET /plan/user로 데이터를 불러올 때 호출 */
   onSuccessFromMain?: () => void | Promise<void>;
-  /** true이면 로그인·데이터 로드 중 로딩 모달 표시 (예: / 경로) */
-  showLoadingOverlay?: boolean;
 };
 
 function getKakaoTokenFromHash(): string | null {
@@ -117,7 +115,6 @@ export default function KakaoLoginAlert({
 
           // 공유 링크(shareCode) 복원 여부 확인
           const shareCode = getShareAfterLogin();
-          // @ts-ignore
           if (shareCode) {
             // 이름 없으면 먼저 입력받기
             try {
@@ -148,7 +145,6 @@ export default function KakaoLoginAlert({
               clearShareAfterLogin();
               resetData();
               router.replace("/plan-list");
-              return;
             }
           }
 
@@ -218,7 +214,10 @@ export default function KakaoLoginAlert({
               return;
             }
           } catch (err) {
-            console.error("Failed to fetch room list during login redirect:", err);
+            console.error(
+              "Failed to fetch room list during login redirect:",
+              err,
+            );
           }
 
           // 비로그인 상태로 계획을 짜던 유저가 로그인했는지 여부 확인 (신규 유저 보호용)
@@ -252,7 +251,7 @@ export default function KakaoLoginAlert({
                 // POST 실패해도 /main으로 이동
               }
               const guestPlans = getGuestScheduleList();
-              for (const item of guestPlans) {
+              guestPlans.forEach(async (item) => {
                 const startDate =
                   item.startDate?.trim() ||
                   new Date().toISOString().slice(0, 10);
@@ -284,10 +283,12 @@ export default function KakaoLoginAlert({
                 } catch {
                   // 개별 플랜 POST 실패 시 건너뜀
                 }
-              }
+              });
+
               if (guestPlans.length > 0) {
                 clearGuestScheduleList();
               }
+
               await onSuccessFromMain?.();
               resetData();
               router.replace("/main");
@@ -297,7 +298,6 @@ export default function KakaoLoginAlert({
 
           // 개인 플랜도 없고 참여 중인 방도 없으면 /setting으로
           window.location.href = "/setting";
-          return;
         } else {
           clearTimeout(timeoutId);
           clearToken();
@@ -319,12 +319,19 @@ export default function KakaoLoginAlert({
     show,
     fetchBackend,
     fetchWithAuth,
-    setLoading, // 추가
+    setLoading,
     router,
     pathname,
     weddingData,
     onSuccessFromMain,
+    resetData,
+    setBudget,
+    setDate,
+    setName,
+    waitForName,
   ]);
 
-  return <NameInputModal show={showNameModal} onComplete={handleNameComplete} />;
+  return (
+    <NameInputModal show={showNameModal} onComplete={handleNameComplete} />
+  );
 }

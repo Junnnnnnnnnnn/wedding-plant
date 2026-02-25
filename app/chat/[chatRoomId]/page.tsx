@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import {
   ChevronLeft,
@@ -11,9 +11,9 @@ import {
   MoreVertical,
   CheckCheck,
   User,
-  ExternalLink,
 } from "lucide-react";
 import { useApi } from "../../contexts/ApiContext";
+import CustomAlertModal from "../../components/CustomAlertModal";
 import {
   getToken,
   setReturnPathAfterLogin,
@@ -96,7 +96,6 @@ interface SocketMessagePayload {
   createDate?: string;
 }
 
-const AVATAR_PASTEL_BG = "#E2E8F0"; // Slate-200 (Pastel grey/blue style)
 const URL_REGEX = /(https?:\/\/[^\s]+)/;
 
 function LinkPreview({
@@ -160,7 +159,7 @@ function LinkPreview({
     return () => {
       isMounted = false;
     };
-  }, [url]);
+  }, [url, onHeightChange]);
 
   if (loading) {
     return (
@@ -215,20 +214,28 @@ function LinkPreview({
 
 const PAGE_SIZE = 50;
 
+const getFullDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const formatDateHeader = (fullDate: string) => {
+  const [y, m, d] = fullDate.split("-");
+  return `${y}년 ${parseInt(m, 10)}월 ${parseInt(d, 10)}일`;
+};
+
 const ChatMessage = React.memo(
   ({
     msg,
     isMe,
     showDateHeader,
     showAvatar,
-    formatDateHeader,
     scrollToBottom,
   }: {
     msg: Message;
     isMe: boolean;
     showDateHeader: boolean;
     showAvatar: boolean;
-    formatDateHeader: (d: string) => string;
     scrollToBottom: (behavior?: ScrollBehavior) => void;
   }) => {
     return (
@@ -334,27 +341,15 @@ const formatTimestamp = (dateStr: string) => {
   });
 };
 
-const getFullDate = (dateStr: string) => {
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-
-const formatDateHeader = (fullDate: string) => {
-  const [y, m, d] = fullDate.split("-");
-  return `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
-};
-
 // Memoized List Component to prevent re-rendering when typing
 const ChatMessagesList = React.memo(
   ({
     messages,
     isLoadingMore,
-    formatDateHeader,
     scrollToBottom,
   }: {
     messages: Message[];
     isLoadingMore: boolean;
-    formatDateHeader: (d: string) => string;
     scrollToBottom: (behavior?: ScrollBehavior) => void;
   }) => {
     return (
@@ -382,7 +377,6 @@ const ChatMessagesList = React.memo(
               isMe={isMe}
               showDateHeader={showDateHeader}
               showAvatar={showAvatar}
-              formatDateHeader={formatDateHeader}
               scrollToBottom={scrollToBottom}
             />
           );
@@ -405,6 +399,15 @@ export default function ChatPage() {
   const [roomName, setRoomName] = useState("플랜톡");
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: "warning" | "error" | "info" | "success";
+  }>({
+    isOpen: false,
+    message: "",
+    type: "warning",
+  });
   const [viewportHeight, setViewportHeight] = useState("100dvh");
   const [loading, setLoading] = useState(true);
 
@@ -419,7 +422,7 @@ export default function ChatPage() {
   const initialLoadDoneRef = useRef(false);
   const currentPageRef = useRef(1);
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+  const scrollToBottom = useCallback(() => {
     // requestAnimationFrame or setTimeout ensures we scroll AFTER the DOM update
     setTimeout(() => {
       if (scrollRef.current) {
@@ -597,7 +600,7 @@ export default function ChatPage() {
             });
 
             // 2. 메시지 렌더링(이미지 등) 시간을 고려하여 약간의 지연 후 다시 한 번 시도
-            scrollToBottom("instant");
+            scrollToBottom();
           }
         } finally {
           isLoadingMoreRef.current = false;
@@ -609,7 +612,7 @@ export default function ChatPage() {
     };
 
     fetchChatInfo();
-  }, [chatRoomId, fetchWithAuth]);
+  }, [chatRoomId, fetchWithAuth, scrollToBottom]);
 
   useEffect(() => {
     const token = getToken();
@@ -701,7 +704,7 @@ export default function ChatPage() {
           const idStr = String(m.id);
           if (idStr.startsWith("msg-")) {
             const timestampPart = idStr.split("-")[1];
-            const ts = parseInt(timestampPart || "0");
+            const ts = parseInt(timestampPart || "0", 10);
             return Math.abs(Date.now() - ts) < 5000;
           }
 
@@ -722,7 +725,11 @@ export default function ChatPage() {
 
     socket.on("error", (errorMessage: string) => {
       console.error("Socket error:", errorMessage);
-      alert(errorMessage);
+      setAlertConfig({
+        isOpen: true,
+        message: errorMessage,
+        type: "error",
+      });
     });
 
     socket.on("disconnect", (reason) => {
@@ -747,7 +754,7 @@ export default function ChatPage() {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [chatRoomId]);
+  }, [chatRoomId, scrollToBottom]);
 
   const handleSend = useCallback(() => {
     if (!inputValue.trim() || !socketRef.current || !chatRoomId) return;
@@ -823,6 +830,7 @@ export default function ChatPage() {
           <header className="flex items-center justify-between px-4 h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-50">
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 onClick={() => router.push("/plan-list")}
                 className="p-1 -ml-1 text-stone-600"
               >
@@ -839,7 +847,7 @@ export default function ChatPage() {
                 </p>
               </div>
             </div>
-            <button className="p-2 text-stone-400">
+            <button type="button" className="p-2 text-stone-400">
               <MoreVertical className="w-5 h-5" />
             </button>
           </header>
@@ -865,14 +873,16 @@ export default function ChatPage() {
             <ChatMessagesList
               messages={messages}
               isLoadingMore={isLoadingMore}
-              formatDateHeader={formatDateHeader}
               scrollToBottom={scrollToBottom}
             />
           </div>
 
           <div className="px-4 py-4 bg-white/80 backdrop-blur-md border-t border-gray-100 flex-shrink-0">
             <div className="flex items-center gap-2 max-w-md mx-auto">
-              <button className="flex items-center justify-center shrink-0 w-11 h-11 bg-gray-50 text-stone-400 rounded-2xl hover:bg-gray-100 transition-colors">
+              <button
+                type="button"
+                className="flex items-center justify-center shrink-0 w-11 h-11 bg-gray-50 text-stone-400 rounded-2xl hover:bg-gray-100 transition-colors"
+              >
                 <ImageIcon className="w-5 h-5" />
               </button>
               <div className="flex-1 min-w-0 relative flex items-center">
@@ -917,11 +927,15 @@ export default function ChatPage() {
                     fontFamily: "var(--font-kakao), sans-serif",
                   }}
                 />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-stone-300 hover:text-stone-500">
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-stone-300 hover:text-stone-500"
+                >
                   <Smile className="w-5 h-5" />
                 </button>
               </div>
               <button
+                type="button"
                 onClick={handleSend}
                 onMouseDown={(e) => {
                   if (inputValue.trim()) {
@@ -946,6 +960,12 @@ export default function ChatPage() {
         show={showLoginModal}
         onClose={handleCloseLoginModal}
         title="세션이 만료되었습니다. 다시 로그인해 주세요."
+      />
+      <CustomAlertModal
+        isOpen={alertConfig.isOpen}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
       />
     </>
   );

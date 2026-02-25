@@ -9,7 +9,11 @@ import CelebrationEffects from "../components/CelebrationEffects";
 import DatePickerWheel from "../components/DatePickerWheel";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
-import { getToken, HAS_COMPLETED_GUEST_SETTING_KEY, isPlanDataComplete } from "@/lib/api";
+import {
+  getToken,
+  HAS_COMPLETED_GUEST_SETTING_KEY,
+  isPlanDataComplete,
+} from "@/lib/api";
 import CountUp from "../../components/CountUp";
 
 // 3D(WebGL)는 클라이언트에서만 로드해 Context Lost·엑스박스 방지

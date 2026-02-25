@@ -2,6 +2,30 @@ import React from "react";
 import { Expense, ExpenseStatus } from "../types";
 import { CATEGORY_ICONS } from "../constants";
 
+const STATUS_LABELS: Record<ExpenseStatus, string> = {
+  [ExpenseStatus.PAID]: "결제완료",
+  [ExpenseStatus.PENDING]: "대기",
+  [ExpenseStatus.DEPOSIT_PAID]: "계약금 결제",
+  [ExpenseStatus.PLANNED]: "예정",
+};
+
+const StatusBadge: React.FC<{ status: ExpenseStatus }> = ({ status }) => {
+  const styles: Record<ExpenseStatus, string> = {
+    [ExpenseStatus.PAID]: "bg-[#ee2b8c] text-white",
+    [ExpenseStatus.PENDING]: "bg-[#ee2b8c1a] text-[#ee2b8c]",
+    [ExpenseStatus.DEPOSIT_PAID]: "bg-green-100 text-green-600",
+    [ExpenseStatus.PLANNED]: "bg-gray-100 text-gray-500",
+  };
+
+  return (
+    <span
+      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${styles[status]}`}
+    >
+      {STATUS_LABELS[status]}
+    </span>
+  );
+};
+
 interface ExpenseListProps {
   expenses: Expense[];
 }
@@ -42,30 +66,6 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ expenses }) => {
         ))
       )}
     </div>
-  );
-};
-
-const STATUS_LABELS: Record<ExpenseStatus, string> = {
-  [ExpenseStatus.PAID]: "결제완료",
-  [ExpenseStatus.PENDING]: "대기",
-  [ExpenseStatus.DEPOSIT_PAID]: "계약금 결제",
-  [ExpenseStatus.PLANNED]: "예정",
-};
-
-const StatusBadge: React.FC<{ status: ExpenseStatus }> = ({ status }) => {
-  const styles: Record<ExpenseStatus, string> = {
-    [ExpenseStatus.PAID]: "bg-[#ee2b8c] text-white",
-    [ExpenseStatus.PENDING]: "bg-[#ee2b8c1a] text-[#ee2b8c]",
-    [ExpenseStatus.DEPOSIT_PAID]: "bg-green-100 text-green-600",
-    [ExpenseStatus.PLANNED]: "bg-gray-100 text-gray-500",
-  };
-
-  return (
-    <span
-      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${styles[status]}`}
-    >
-      {STATUS_LABELS[status]}
-    </span>
   );
 };
 

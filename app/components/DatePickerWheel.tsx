@@ -1,13 +1,12 @@
 "use client";
 
-import { getKstToday } from "@/lib/utils";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getKstToday } from "@/lib/utils";
 
 type DatePickerWheelProps = {
   initialDate?: { year: number; month: number; day: number };
   onDateChange?: (date: { year: number; month: number; day: number }) => void;
-  onNext?: () => void;
 };
 
 function getDefaultDate() {
@@ -17,7 +16,6 @@ function getDefaultDate() {
 export default function DatePickerWheel({
   initialDate,
   onDateChange,
-  onNext,
 }: DatePickerWheelProps) {
   const currentYear = getKstToday().year;
   const defaultDate = initialDate ?? getDefaultDate();
@@ -85,8 +83,11 @@ export default function DatePickerWheel({
     (_, i) => i + 1,
   );
   // 순환 휠용: 월 3번 반복 [1..12, 1..12, 1..12], 일도 3번 반복
-  const monthsTriple = [...months, ...months, ...months];
-  const daysTriple = [...days, ...days, ...days];
+  const monthsTriple = useMemo(
+    () => [...months, ...months, ...months],
+    [months],
+  );
+  const daysTriple = useMemo(() => [...days, ...days, ...days], [days]);
   const MONTH_BLOCK = 12;
 
   // 월/년 변경 시 선택일이 해당 월 일수 초과면 마지막 날로 보정
@@ -459,6 +460,7 @@ export default function DatePickerWheel({
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setYearAndRef, setMonthAndRef, setDayAndRef]);
 
   // 상태 변화 시 스크롤 위치 동기화 (프로그램 스크롤 가드 확인)
@@ -483,6 +485,7 @@ export default function DatePickerWheel({
         scrollToValue(dayRef, days.length + dayIndex, true);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedMonth, selectedDay, years, months, days]);
 
   const handleYearClick = (direction: "up" | "down") => {

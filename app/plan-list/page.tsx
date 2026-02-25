@@ -3,17 +3,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   MessageCircle,
-  ClipboardList,
-  Calendar,
   ArrowRight,
   Heart,
   Crown,
-  Pencil,
   Plus,
   CircleHelp,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Plan, ChatRoom } from "@/types";
+import { Plan, ChatRoom, Member } from "@/types";
 import { useApi } from "../contexts/ApiContext";
 import { getToken, clearToken } from "@/lib/api";
 import BottomTabBar from "../components/BottomTabBar";
@@ -33,19 +30,224 @@ const AVATAR_GRADIENTS = [
   "linear-gradient(135deg, #0ea5e9 0%, #7dd3fc 100%)",
 ];
 
+interface CardHeaderProps {
+  index: number;
+  ownerName: string;
+}
+
+const CardHeader: React.FC<CardHeaderProps> = ({ index, ownerName }) => (
+  <div className="flex justify-between items-start mb-6">
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <span className="bg-[#1b0d14] text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
+          Room #{index + 1}
+        </span>
+        <span className="text-[#ee2b8c]">
+          <Heart className="w-3 h-3 fill-current" />
+        </span>
+      </div>
+      <h3 className="text-2xl font-black text-[#1b0d14]">
+        {ownerName}의 웨딩 플랜
+      </h3>
+    </div>
+    <div className="w-10 h-10 bg-[#ee2b8c11] rounded-2xl flex items-center justify-center text-[#ee2b8c] group-hover/card:bg-[#ee2b8c] group-hover/card:text-white transition-all">
+      <ArrowRight className="w-5 h-5" />
+    </div>
+  </div>
+);
+
+interface CardMembersProps {
+  members: Member[];
+}
+
+const CardMembers: React.FC<CardMembersProps> = ({ members }) => (
+  <div className="mb-6">
+    <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-3">
+      참여 멤버
+    </p>
+    <div className="flex items-center -space-x-2">
+      {members.map((member, idx) => (
+        <div
+          key={member.planUserId}
+          className="relative flex-shrink-0"
+          style={{ zIndex: members.length - idx }}
+        >
+          {String(member.permission ?? "").toUpperCase() === "OWNER" && (
+            <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
+              <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
+            </span>
+          )}
+          <div
+            className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
+            style={{
+              background: member.image
+                ? undefined
+                : AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
+            }}
+          >
+            {member.image ? (
+              <img
+                src={member.image}
+                alt={member.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{member.name?.trim().charAt(0)?.toUpperCase()}</span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+interface CardChatRoomsProps {
+  chatRooms: ChatRoom[];
+  roomId: number;
+  interactive?: boolean;
+  onChatRoomClick: (chatRoomId: number) => void;
+  onAddChatClick: (e: React.MouseEvent, roomId: number) => void;
+}
+
+const CardChatRooms: React.FC<CardChatRoomsProps> = ({
+  chatRooms,
+  roomId,
+  interactive = true,
+  onChatRoomClick,
+  onAddChatClick,
+}) => (
+  <div
+    className={`mt-2 mb-6 space-y-2 ${interactive ? "pointer-events-auto" : ""}`}
+  >
+    <div className="grid grid-cols-1 gap-2">
+      {chatRooms?.map((chatRoom) => (
+        <div
+          key={chatRoom.id}
+          onClick={
+            interactive
+              ? (e) => {
+                  e.stopPropagation();
+                  onChatRoomClick(chatRoom.id);
+                }
+              : undefined
+          }
+          className={`flex items-center justify-between p-3 bg-[#fcfbfc] rounded-2xl transition-all border border-transparent ${interactive ? "hover:bg-white hover:border-[#ee2b8c11] hover:shadow-md hover:shadow-[#ee2b8c0a] group/chat-item cursor-pointer active:scale-[0.98]" : ""}`}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-10 h-10 bg-[#ee2b8c0a] rounded-xl flex items-center justify-center text-[#ee2b8c] ${interactive ? "group-hover/chat-item:bg-[#ee2b8c] group-hover/chat-item:text-white transition-all" : ""}`}
+            >
+              <MessageCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-[#1b0d14]">
+                {chatRoom.name}
+              </h4>
+              <div className="flex items-center -space-x-1.5 mt-1">
+                {chatRoom.memberList.slice(0, 4).map((m, i) => (
+                  <div
+                    key={m.planUserId}
+                    className="w-5 h-5 rounded-full border border-white flex items-center justify-center text-[7px] font-black text-white overflow-hidden shadow-sm"
+                    style={{
+                      background: m.image
+                        ? undefined
+                        : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
+                    }}
+                  >
+                    {m.image ? (
+                      <img
+                        src={m.image}
+                        alt={m.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{m.name.charAt(0)}</span>
+                    )}
+                  </div>
+                ))}
+                {chatRoom.memberList.length > 4 && (
+                  <div className="w-5 h-5 rounded-full border border-white bg-stone-100 flex items-center justify-center text-[7px] font-black text-stone-400">
+                    +{chatRoom.memberList.length - 4}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-stone-300 ${interactive ? "group-hover/chat-item:text-[#ee2b8c] group-hover/chat-item:bg-[#ee2b8c0a] transition-all" : ""}`}
+          >
+            <ArrowRight className="w-4 h-4" />
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={interactive ? (e) => onAddChatClick(e, roomId) : undefined}
+        className={`flex items-center gap-3 p-3 bg-white border-2 border-dashed border-stone-100 rounded-2xl text-stone-300 transition-all ${interactive ? "hover:text-[#ee2b8c] hover:border-[#ee2b8c33] hover:bg-[#ee2b8c05] group/add-chat active:scale-[0.98]" : ""}`}
+      >
+        <div
+          className={`w-10 h-10 bg-stone-50 rounded-xl flex items-center justify-center ${interactive ? "group-hover/add-chat:bg-[#ee2b8c11] transition-all" : ""}`}
+        >
+          <Plus className="w-5 h-5" />
+        </div>
+        <span className="text-sm font-bold">새 채팅방 추가</span>
+      </button>
+    </div>
+  </div>
+);
+
+interface CardBudgetProps {
+  remainingBudget: number;
+  budget: number;
+  progress: number;
+}
+
+const CardBudget: React.FC<CardBudgetProps> = ({
+  remainingBudget,
+  budget,
+  progress,
+}) => (
+  <div className="space-y-3">
+    <div className="flex justify-between items-end">
+      <div>
+        <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-1">
+          Remaining Budget
+        </p>
+        <p className="text-xl font-black text-[#1b0d14]">
+          {remainingBudget.toLocaleString("ko-KR")}만 원
+        </p>
+      </div>
+      <p className="text-xs font-bold text-gray-400">
+        / {budget.toLocaleString("ko-KR")}만 원
+      </p>
+    </div>
+    <div className="h-2 w-full bg-[#ee2b8c0a] rounded-full overflow-hidden">
+      <div
+        className="h-full bg-gradient-to-r from-[#ee2b8c] to-[#ff94a1] rounded-full transition-all duration-1000"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
+  </div>
+);
+
 const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const router = useRouter();
   const { fetchWithAuth } = useApi();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginModalTitle, setLoginModalTitle] = useState("세션이 만료되었습니다. 다시 로그인해 주세요.");
+  const [loginModalTitle, setLoginModalTitle] = useState(
+    "세션이 만료되었습니다. 다시 로그인해 주세요.",
+  );
   const [showChatCreateModal, setShowChatCreateModal] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
 
   // Guide State
   const [showGuide, setShowGuide] = useState(false);
-  const [hasSeenChatGuide, setHasSeenChatGuide] = useState<boolean | null>(null);
+  const [hasSeenChatGuide, setHasSeenChatGuide] = useState<boolean | null>(
+    null,
+  );
 
   const fetchPlans = useCallback(async () => {
     const token = getToken();
@@ -94,7 +296,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     } finally {
       setLoading(false);
     }
-  }, [fetchWithAuth]);
+  }, [fetchWithAuth, router]);
 
   useEffect(() => {
     fetchPlans();
@@ -146,7 +348,8 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     {
       id: "plan-card-0",
       title: "웨딩 플랜 카드",
-      description: "결혼식 날짜, 남은 예산, 그리고 참여 중인 멤버를 한눈에 볼 수 있습니다.",
+      description:
+        "결혼식 날짜, 남은 예산, 그리고 참여 중인 멤버를 한눈에 볼 수 있습니다.",
     },
     {
       id: "plan-members-0",
@@ -156,12 +359,14 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     {
       id: "plan-channels-0",
       title: "채팅 채널",
-      description: "플랜별 전용 채팅방입니다. 클릭하여 바로 대화를 시작할 수 있어요.",
+      description:
+        "플랜별 전용 채팅방입니다. 클릭하여 바로 대화를 시작할 수 있어요.",
     },
     {
       id: "add-chat-button-0",
       title: "새 채팅방 추가",
-      description: "용도에 맞는 새로운 채팅방이 필요하다면 여기서 바로 추가해 보세요!",
+      description:
+        "용도에 맞는 새로운 채팅방이 필요하다면 여기서 바로 추가해 보세요!",
     },
   ];
 
@@ -213,157 +418,9 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
               const progress = (plan.remainingBudget / plan.budget) * 100;
               const isFirst = index === 0;
 
-              // 공통 Header 부분
-              const CardHeader = () => (
-                <div className="flex justify-between items-start mb-6">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-[#1b0d14] text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
-                        Room #{index + 1}
-                      </span>
-                      <span className="text-[#ee2b8c]">
-                        <Heart className="w-3 h-3 fill-current" />
-                      </span>
-                    </div>
-                    <h3 className="text-2xl font-black text-[#1b0d14]">
-                      {plan.onwerName}의 웨딩 플랜
-                    </h3>
-                  </div>
-                  <div className="w-10 h-10 bg-[#ee2b8c11] rounded-2xl flex items-center justify-center text-[#ee2b8c] group-hover/card:bg-[#ee2b8c] group-hover/card:text-white transition-all">
-                    <ArrowRight className="w-5 h-5" />
-                  </div>
-                </div>
-              );
-
-              // 공통 Members 부분
-              const CardMembers = () => (
-                <div className="mb-6">
-                  <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-3">
-                    참여 멤버
-                  </p>
-                  <div className="flex items-center -space-x-2">
-                    {plan.members.map((member, idx) => (
-                      <div
-                        key={member.planUserId}
-                        className="relative flex-shrink-0"
-                        style={{ zIndex: plan.members.length - idx }}
-                      >
-                        {String(member.permission ?? "").toUpperCase() === "OWNER" && (
-                          <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
-                            <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
-                          </span>
-                        )}
-                        <div
-                          className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
-                          style={{
-                            background: member.image
-                              ? undefined
-                              : AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
-                          }}
-                        >
-                          {member.image ? (
-                            <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <span>{member.name?.trim().charAt(0)?.toUpperCase()}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-
-              // 공통 ChatRooms 부분
-              const CardChatRooms = ({ interactive = true }: { interactive?: boolean }) => (
-                <div className={`mt-2 mb-6 space-y-2 ${interactive ? "pointer-events-auto" : ""}`}>
-                  <div className="grid grid-cols-1 gap-2">
-                    {plan.chatRooms?.map((chatRoom) => (
-                      <div
-                        key={chatRoom.id}
-                        onClick={interactive ? (e) => {
-                          e.stopPropagation();
-                          router.push(`/chat/${chatRoom.id}`);
-                        } : undefined}
-                        className={`flex items-center justify-between p-3 bg-[#fcfbfc] rounded-2xl transition-all border border-transparent ${interactive ? "hover:bg-white hover:border-[#ee2b8c11] hover:shadow-md hover:shadow-[#ee2b8c0a] group/chat-item cursor-pointer active:scale-[0.98]" : ""}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 bg-[#ee2b8c0a] rounded-xl flex items-center justify-center text-[#ee2b8c] ${interactive ? "group-hover/chat-item:bg-[#ee2b8c] group-hover/chat-item:text-white transition-all" : ""}`}>
-                            <MessageCircle className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-black text-[#1b0d14]">
-                              {chatRoom.name}
-                            </h4>
-                            <div className="flex items-center -space-x-1.5 mt-1">
-                              {chatRoom.memberList.slice(0, 4).map((m, i) => (
-                                <div
-                                  key={m.planUserId}
-                                  className="w-5 h-5 rounded-full border border-white flex items-center justify-center text-[7px] font-black text-white overflow-hidden shadow-sm"
-                                  style={{
-                                    background: m.image
-                                      ? undefined
-                                      : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
-                                  }}
-                                >
-                                  {m.image ? (
-                                    <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <span>{m.name.charAt(0)}</span>
-                                  )}
-                                </div>
-                              ))}
-                              {chatRoom.memberList.length > 4 && (
-                                <div className="w-5 h-5 rounded-full border border-white bg-stone-100 flex items-center justify-center text-[7px] font-black text-stone-400">
-                                  +{chatRoom.memberList.length - 4}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-stone-300 ${interactive ? "group-hover/chat-item:text-[#ee2b8c] group-hover/chat-item:bg-[#ee2b8c0a] transition-all" : ""}`}>
-                          <ArrowRight className="w-4 h-4" />
-                        </div>
-                      </div>
-                    ))}
-
-                    <button
-                      type="button"
-                      onClick={interactive ? (e) => openChatCreateModal(e, plan.roomId) : undefined}
-                      className={`flex items-center gap-3 p-3 bg-white border-2 border-dashed border-stone-100 rounded-2xl text-stone-300 transition-all ${interactive ? "hover:text-[#ee2b8c] hover:border-[#ee2b8c33] hover:bg-[#ee2b8c05] group/add-chat active:scale-[0.98]" : ""}`}
-                    >
-                      <div className={`w-10 h-10 bg-stone-50 rounded-xl flex items-center justify-center ${interactive ? "group-hover/add-chat:bg-[#ee2b8c11] transition-all" : ""}`}>
-                        <Plus className="w-5 h-5" />
-                      </div>
-                      <span className="text-sm font-bold">새 채팅방 추가</span>
-                    </button>
-                  </div>
-                </div>
-              );
-
-              // 공통 Budget 부분
-              const CardBudget = () => (
-                <div className="space-y-3">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-1">
-                        Remaining Budget
-                      </p>
-                      <p className="text-xl font-black text-[#1b0d14]">
-                        {plan.remainingBudget.toLocaleString("ko-KR")}만 원
-                      </p>
-                    </div>
-                    <p className="text-xs font-bold text-gray-400">
-                      / {plan.budget.toLocaleString("ko-KR")}만 원
-                    </p>
-                  </div>
-                  <div className="h-2 w-full bg-[#ee2b8c0a] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#ee2b8c] to-[#ff94a1] rounded-full transition-all duration-1000"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-              );
+              const handleChatRoomClick = (chatRoomId: number) => {
+                router.push(`/chat/${chatRoomId}`);
+              };
 
               return (
                 <div key={plan.roomId} className="w-full relative">
@@ -375,20 +432,38 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                   >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#ee2b8c05] to-transparent rounded-bl-full group-hover/card:bg-[#ee2b8c0a] transition-colors" />
 
-                    <CardHeader />
-                    <CardMembers />
+                    <CardHeader index={index} ownerName={plan.onwerName} />
+                    <CardMembers members={plan.members} />
                     {/* Placeholder space for chat rooms to preserve layout height */}
                     <div className="invisible opacity-0 pointer-events-none">
-                      <CardChatRooms interactive={false} />
+                      <CardChatRooms
+                        chatRooms={plan.chatRooms || []}
+                        roomId={plan.roomId}
+                        interactive={false}
+                        onChatRoomClick={handleChatRoomClick}
+                        onAddChatClick={openChatCreateModal}
+                      />
                     </div>
-                    <CardBudget />
+                    <CardBudget
+                      remainingBudget={plan.remainingBudget}
+                      budget={plan.budget}
+                      progress={progress}
+                    />
                   </div>
 
                   {/* Interactive Button Layer - Positioned over the card but doesn't trigger card scale */}
                   <div className="absolute inset-0 p-6 pointer-events-none z-10">
-                    <div className="invisible"><CardHeader /><CardMembers /></div>
+                    <div className="invisible">
+                      <CardHeader index={index} ownerName={plan.onwerName} />
+                      <CardMembers members={plan.members} />
+                    </div>
                     <div id={isFirst ? "plan-channels-0" : undefined}>
-                      <CardChatRooms />
+                      <CardChatRooms
+                        chatRooms={plan.chatRooms || []}
+                        roomId={plan.roomId}
+                        onChatRoomClick={handleChatRoomClick}
+                        onAddChatClick={openChatCreateModal}
+                      />
                     </div>
                   </div>
                 </div>

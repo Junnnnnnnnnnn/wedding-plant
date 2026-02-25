@@ -35,8 +35,6 @@ function CalendarPageContent() {
   const [calendarData, setCalendarData] = useState<
     Record<string, CalendarPlanItem[]>
   >({});
-  const [loading, setLoading] = useState(true);
-
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDateLabel, setSelectedDateLabel] = useState("");
@@ -57,16 +55,15 @@ function CalendarPageContent() {
     if (!token) {
       const guestList = getGuestScheduleList();
       const byDay: Record<string, CalendarPlanItem[]> = {};
-      for (const s of guestList) {
-        if (!s.startDate) continue;
+      guestList.forEach((s) => {
+        if (!s.startDate) return;
         const d = parseLocalDate(s.startDate);
-        if (!d) continue;
+        if (!d) return;
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         if (!byDay[key]) byDay[key] = [];
         byDay[key].push({ id: s.id, title: s.title });
-      }
+      });
       setCalendarData(byDay);
-      setLoading(false);
       return;
     }
 
@@ -82,14 +79,16 @@ function CalendarPageContent() {
       const json = await res.json();
       if (json.result === true && json.data?.list) {
         const byDay: Record<string, CalendarPlanItem[]> = {};
-        for (const item of json.data.list as {
-          day: string;
-          list: CalendarPlanItem[];
-        }[]) {
+        (
+          json.data.list as {
+            day: string;
+            list: CalendarPlanItem[];
+          }[]
+        ).forEach((item) => {
           if (item?.day && Array.isArray(item.list)) {
             byDay[item.day] = item.list;
           }
-        }
+        });
         setCalendarData(byDay);
       } else {
         setCalendarData({});
@@ -97,13 +96,10 @@ function CalendarPageContent() {
     } catch (error) {
       console.error("Failed to fetch schedules:", error);
       setCalendarData({});
-    } finally {
-      setLoading(false);
     }
   }, [fetchWithAuth, roomId, year, month]);
 
   useEffect(() => {
-    setLoading(true);
     fetchSchedules();
   }, [fetchSchedules]);
 
@@ -114,7 +110,7 @@ function CalendarPageContent() {
     const days = [];
     // Previous month padding
     const prevMonthLastDay = new Date(year, month, 0).getDate();
-    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+    for (let i = firstDayOfWeek - 1; i >= 0; i -= 1) {
       days.push({
         day: prevMonthLastDay - i,
         month: month - 1,
@@ -124,7 +120,7 @@ function CalendarPageContent() {
     }
 
     // Current month
-    for (let i = 1; i <= lastDay; i++) {
+    for (let i = 1; i <= lastDay; i += 1) {
       days.push({
         day: i,
         month,
@@ -135,7 +131,7 @@ function CalendarPageContent() {
 
     // Next month padding
     const remainingDays = 42 - days.length;
-    for (let i = 1; i <= remainingDays; i++) {
+    for (let i = 1; i <= remainingDays; i += 1) {
       days.push({
         day: i,
         month: month + 1,
@@ -248,12 +244,14 @@ function CalendarPageContent() {
             </h1>
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={handlePrevMonth}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <ChevronLeft className="w-6 h-6 text-gray-600" />
               </button>
               <button
+                type="button"
                 onClick={handleNextMonth}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
@@ -291,12 +289,14 @@ function CalendarPageContent() {
                 <div
                   key={idx}
                   onClick={() => handleDayClick(dateObj)}
-                  className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors ${idx % 7 === 0 ? "border-l" : ""
-                    } ${idx < 7 ? "border-t" : ""} ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
+                  className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors ${
+                    idx % 7 === 0 ? "border-l" : ""
+                  } ${idx < 7 ? "border-t" : ""} ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
                 >
                   <div className="flex justify-between items-center">
                     <span
-                      className={`text-xs font-bold ${!dateObj.isCurrentMonth
+                      className={`text-xs font-bold ${
+                        !dateObj.isCurrentMonth
                           ? "text-gray-300"
                           : isToday
                             ? "bg-[#ee2b8c] text-white w-5 h-5 flex items-center justify-center rounded-full"
@@ -305,7 +305,7 @@ function CalendarPageContent() {
                               : idx % 7 === 6
                                 ? "text-blue-400"
                                 : "text-gray-700"
-                        }`}
+                      }`}
                     >
                       {dateObj.day}
                     </span>
@@ -314,10 +314,11 @@ function CalendarPageContent() {
                     {daySchedules.slice(0, 2).map((s) => (
                       <div
                         key={s.id}
-                        className={`font-user-content text-[8px] p-1 rounded-md truncate transition-colors ${s.status === "COMPLETED"
+                        className={`font-user-content text-[8px] p-1 rounded-md truncate transition-colors ${
+                          s.status === "COMPLETED"
                             ? "bg-gray-100 text-gray-400 line-through"
                             : "bg-[#ee2b8c10] text-[#ee2b8c]"
-                          }`}
+                        }`}
                       >
                         {s.title}
                       </div>
@@ -337,6 +338,7 @@ function CalendarPageContent() {
         </div>
 
         <button
+          type="button"
           onClick={() => router.push(getAddPlanPath())}
           className="absolute bottom-28 right-6 w-14 h-14 bg-[#ee2b8c] text-white rounded-full flex items-center justify-center shadow-xl shadow-[#ee2b8c44] active:scale-95 transition-transform z-50"
         >
@@ -379,6 +381,7 @@ function CalendarPageContent() {
                   {selectedDateLabel}
                 </h2>
                 <button
+                  type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="p-2 hover:bg-gray-100 rounded-full"
                 >
@@ -394,6 +397,7 @@ function CalendarPageContent() {
                 ) : (
                   selectedDayPlans.map((plan) => (
                     <button
+                      type="button"
                       key={plan.id}
                       onClick={() =>
                         router.push(
@@ -430,6 +434,7 @@ function CalendarPageContent() {
                 )}
 
                 <button
+                  type="button"
                   onClick={() =>
                     router.push(getAddPlanPath(selectedDateParams))
                   }
@@ -441,6 +446,7 @@ function CalendarPageContent() {
               </div>
 
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
                 className="w-full py-4 bg-[#1b0d14] text-white rounded-2xl font-black text-lg shadow-xl active:scale-[0.98] transition-all"
               >
