@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import localFont from "next/font/local";
 import { Geist_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { ApiProvider } from "./contexts/ApiContext";
 import { WeddingProvider } from "./contexts/WeddingContext";
@@ -111,6 +112,7 @@ export default function RootLayout({
           <NotificationProvider>
             <WeddingProvider>
               {children}
+              <SpeedInsights />
               <ApiLoadingOverlay />
               <Suspense fallback={null}>
                 <ApiErrorModal />
