@@ -906,10 +906,11 @@ function AddPlanPageContent() {
                       <button
                         type="button"
                         onClick={handleOpenModal}
-                        className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${selectedCategory
-                          ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
-                          : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                          }`}
+                        className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${
+                          selectedCategory
+                            ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                        }`}
                       >
                         {selectedCategory
                           ? selectedCategory.label
@@ -981,10 +982,11 @@ function AddPlanPageContent() {
                           key={type}
                           type="button"
                           onClick={() => setPaymentType(type)}
-                          className={`py-3 rounded-xl font-medium transition-all text-sm border ${paymentType === type
-                            ? "bg-stone-800 text-white shadow-sm border-stone-800"
-                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                            }`}
+                          className={`py-3 rounded-xl font-medium transition-all text-sm border ${
+                            paymentType === type
+                              ? "bg-stone-800 text-white shadow-sm border-stone-800"
+                              : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                          }`}
                         >
                           {type}
                         </button>
@@ -1042,10 +1044,11 @@ function AddPlanPageContent() {
                     </label>
                     <div className="flex gap-2">
                       <div
-                        className={`flex-1 px-4 py-4 rounded-2xl text-lg font-medium transition-all cursor-pointer flex items-center justify-center border ${isDateUndecided
-                          ? "bg-stone-50 text-stone-300 border-stone-200"
-                          : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
-                          }`}
+                        className={`flex-1 px-4 py-4 rounded-2xl text-lg font-medium transition-all cursor-pointer flex items-center justify-center border ${
+                          isDateUndecided
+                            ? "bg-stone-50 text-stone-300 border-stone-200"
+                            : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                        }`}
                         onClick={() => {
                           setIsDateUndecided(false);
                           setIsDatePickerOpen(true);
@@ -1065,10 +1068,11 @@ function AddPlanPageContent() {
                       <button
                         type="button"
                         onClick={() => setIsDateUndecided(!isDateUndecided)}
-                        className={`px-6 rounded-2xl font-medium transition-all text-sm border ${isDateUndecided
-                          ? "bg-stone-800 text-white border-stone-800"
-                          : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                          }`}
+                        className={`px-6 rounded-2xl font-medium transition-all text-sm border ${
+                          isDateUndecided
+                            ? "bg-stone-800 text-white border-stone-800"
+                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                        }`}
                       >
                         미정
                       </button>
@@ -1116,10 +1120,11 @@ function AddPlanPageContent() {
                         type="button"
                         onClick={handleSearchLocation}
                         disabled={!location.trim()}
-                        className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${location.trim()
-                          ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
-                          : "bg-stone-100 text-stone-400 border-stone-200"
-                          }`}
+                        className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${
+                          location.trim()
+                            ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
+                            : "bg-stone-100 text-stone-400 border-stone-200"
+                        }`}
                       >
                         <Search className="w-5 h-5" />
                       </button>
@@ -1460,14 +1465,15 @@ function AddPlanPageContent() {
                           selectedCategory?.label === category.label
                             ? { backgroundColor: category.color }
                             : {
-                              backgroundColor: `${category.color}20`,
-                              borderColor: category.color,
-                            }
+                                backgroundColor: `${category.color}20`,
+                                borderColor: category.color,
+                              }
                         }
-                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${selectedCategory?.label === category.label
-                          ? "text-[#1b0d14] shadow-lg scale-[1.02]"
-                          : "text-[#1b0d14] hover:opacity-90"
-                          } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
+                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${
+                          selectedCategory?.label === category.label
+                            ? "text-[#1b0d14] shadow-lg scale-[1.02]"
+                            : "text-[#1b0d14] hover:opacity-90"
+                        } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
                       >
                         <span className="font-user-content font-bold text-lg flex items-center gap-2">
                           {selectedCategory?.label === category.label

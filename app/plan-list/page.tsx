@@ -108,6 +108,7 @@ interface CardChatRoomsProps {
   interactive?: boolean;
   onChatRoomClick: (chatRoomId: number) => void;
   onAddChatClick: (e: React.MouseEvent, roomId: number) => void;
+  getRoomUnreadCount: (roomId: number) => number;
 }
 
 const CardChatRooms: React.FC<CardChatRoomsProps> = ({
@@ -116,6 +117,7 @@ const CardChatRooms: React.FC<CardChatRoomsProps> = ({
   interactive = true,
   onChatRoomClick,
   onAddChatClick,
+  getRoomUnreadCount,
 }) => (
   <div
     className={`mt-2 mb-6 space-y-2 ${interactive ? "pointer-events-auto" : ""}`}
@@ -127,14 +129,23 @@ const CardChatRooms: React.FC<CardChatRoomsProps> = ({
           onClick={
             interactive
               ? (e) => {
-                e.stopPropagation();
-                onChatRoomClick(chatRoom.id);
-              }
+                  e.stopPropagation();
+                  onChatRoomClick(chatRoom.id);
+                }
               : undefined
           }
           className={`flex items-center justify-between p-3 bg-[#fcfbfc] rounded-2xl transition-all border border-transparent ${interactive ? "hover:bg-white hover:border-[#ee2b8c11] hover:shadow-md hover:shadow-[#ee2b8c0a] group/chat-item cursor-pointer active:scale-[0.98]" : ""}`}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative">
+            {getRoomUnreadCount(chatRoom.id) > 0 && (
+              <div className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-[#ee2b8c] rounded-full flex items-center justify-center border-2 border-white z-20">
+                <span className="text-[7px] font-black text-white">
+                  {getRoomUnreadCount(chatRoom.id) > 9
+                    ? "9+"
+                    : getRoomUnreadCount(chatRoom.id)}
+                </span>
+              </div>
+            )}
             <div
               className={`w-10 h-10 bg-[#ee2b8c0a] rounded-xl flex items-center justify-center text-[#ee2b8c] ${interactive ? "group-hover/chat-item:bg-[#ee2b8c] group-hover/chat-item:text-white transition-all" : ""}`}
             >
@@ -235,7 +246,13 @@ const CardBudget: React.FC<CardBudgetProps> = ({
 const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const router = useRouter();
   const { fetchWithAuth, setLoading: setGlobalLoading } = useApi();
-  const { subscribeToChatRooms } = useNotification();
+  const {
+    subscribeToChatRooms,
+    unreadCount,
+    updateUnreadCount,
+    updateRoomUnreadCount,
+    getRoomUnreadCount,
+  } = useNotification();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -295,10 +312,34 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
 
         // SSE Subscription
         const roomIds: number[] = json.data.list.flatMap((plan: Plan) =>
-          (plan.chatRooms || []).map(room => room.id)
+          (plan.chatRooms || []).map((room) => room.id),
         );
         if (roomIds.length > 0) {
           subscribeToChatRooms(roomIds);
+
+          // 총 및 개별 읽지 않은 메시지 수 조회
+          let totalUnread = 0;
+          await Promise.all(
+            roomIds.map(async (rid) => {
+              try {
+                const countRes = await fetchWithAuth(
+                  `/plan/chat/message/count/${rid}`,
+                  { skipLoading: true },
+                );
+                if (countRes.ok) {
+                  const countJson = await countRes.json();
+                  if (countJson.result) {
+                    const c = countJson.data.count || 0;
+                    updateRoomUnreadCount(rid, c);
+                    totalUnread += c;
+                  }
+                }
+              } catch (err) {
+                console.error(`Failed to fetch count for room ${rid}:`, err);
+              }
+            }),
+          );
+          updateUnreadCount(totalUnread);
         }
       }
     } catch (error) {
@@ -306,7 +347,13 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     } finally {
       setListLoading(false);
     }
-  }, [fetchWithAuth, router]);
+  }, [
+    fetchWithAuth,
+    router,
+    subscribeToChatRooms,
+    updateRoomUnreadCount,
+    updateUnreadCount,
+  ]);
 
   useEffect(() => {
     // Disable global loading modal for plan-list to show skeleton instead
@@ -486,6 +533,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                         interactive={false}
                         onChatRoomClick={handleChatRoomClick}
                         onAddChatClick={openChatCreateModal}
+                        getRoomUnreadCount={getRoomUnreadCount}
                       />
                     </div>
                     <CardBudget
@@ -507,6 +555,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                         roomId={plan.roomId}
                         onChatRoomClick={handleChatRoomClick}
                         onAddChatClick={openChatCreateModal}
+                        getRoomUnreadCount={getRoomUnreadCount}
                       />
                     </div>
                   </div>
@@ -516,7 +565,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
           )}
         </div>
 
-        <BottomTabBar unreadCount={5} />
+        <BottomTabBar unreadCount={unreadCount} />
 
         <LoginRequiredModal
           show={showLoginModal}

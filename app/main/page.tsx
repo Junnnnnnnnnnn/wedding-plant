@@ -236,7 +236,8 @@ function MainPageContent() {
   const roomId = searchParams.get("roomId");
   const { weddingData, resetData } = useWedding();
   const { fetchWithAuth, setLoading } = useApi();
-  const { subscribeToChatRooms } = useNotification();
+  const { subscribeToChatRooms, unreadCount, updateUnreadCount } =
+    useNotification();
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
     null,
   );
@@ -534,8 +535,21 @@ function MainPageContent() {
 
           // SSE Subscription
           if (json.data.chatRooms && json.data.chatRooms.length > 0) {
-            const roomIds = json.data.chatRooms.map(r => r.id);
+            const roomIds = json.data.chatRooms.map((r) => r.id);
             subscribeToChatRooms(roomIds);
+
+            // 읽지 않은 카운트 초기 동기화
+            const firstRoomId = roomIds[0];
+            const countRes = await fetchWithAuth(
+              `/plan/chat/message/count/${firstRoomId}`,
+              { skipLoading: true },
+            );
+            if (countRes.ok) {
+              const countJson = await countRes.json();
+              if (countJson.result) {
+                updateUnreadCount(countJson.data.count);
+              }
+            }
           }
 
           return json.data;
@@ -548,7 +562,7 @@ function MainPageContent() {
         return null;
       }
     },
-    [fetchWithAuth],
+    [fetchWithAuth, subscribeToChatRooms, updateUnreadCount],
   );
 
   const fetchTotalAmount = useCallback(
@@ -751,6 +765,7 @@ function MainPageContent() {
     handleApiError,
     shareCode,
     roomId,
+    setLoading,
   ]);
 
   // 자신의 플랜이 없는 경우 안내 모달 표시 및 블러 처리
@@ -1348,23 +1363,23 @@ function MainPageContent() {
                             String(member.planUserId ?? "")
                               .trim()
                               .toLowerCase() ===
-                            String(sharedRoomUser.id)
-                              .trim()
-                              .toLowerCase()) && (
-                              <span
-                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                                aria-hidden
-                              >
-                                <Crown
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
+                              String(sharedRoomUser.id)
+                                .trim()
+                                .toLowerCase()) && (
+                            <span
+                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                              aria-hidden
+                            >
+                              <Crown
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
+                            </span>
+                          )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                            "OWNER" && (
+                              "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1438,20 +1453,20 @@ function MainPageContent() {
                         >
                           {String(member.permission ?? "").toUpperCase() ===
                             "OWNER" && (
-                              <span
-                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                                aria-hidden
-                              >
-                                <Crown
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
+                            <span
+                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                              aria-hidden
+                            >
+                              <Crown
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
+                            </span>
+                          )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                            "OWNER" && (
+                              "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1696,8 +1711,8 @@ function MainPageContent() {
                       const roomIdValue =
                         roomId ??
                         (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       router.push(
@@ -1727,10 +1742,11 @@ function MainPageContent() {
                           key={catName}
                           type="button"
                           onClick={() => setSelectedCategory(catName)}
-                          className={`shrink-0 px-3 py-1 rounded-md text-[12px] font-bold transition-all flex items-center gap-1 ${isSelected
-                            ? "bg-[#ee2b8c] text-white shadow-sm"
-                            : "bg-gray-100/80 text-gray-600 hover:bg-gray-200 active:scale-95"
-                            }`}
+                          className={`shrink-0 px-3 py-1 rounded-md text-[12px] font-bold transition-all flex items-center gap-1 ${
+                            isSelected
+                              ? "bg-[#ee2b8c] text-white shadow-sm"
+                              : "bg-gray-100/80 text-gray-600 hover:bg-gray-200 active:scale-95"
+                          }`}
                         >
                           {catName}
                         </button>
@@ -1747,65 +1763,65 @@ function MainPageContent() {
                 isRoomView &&
                 String(myRoomPermission ?? "").toUpperCase() === "READ"
               ) && (
-                  <div className="flex shrink-0 pb-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const roomIdValue =
-                          roomId ??
-                          (apiPlanData &&
-                            apiPlanData !== "none" &&
-                            apiPlanData.roomId
-                            ? String(apiPlanData.roomId)
-                            : null);
+                <div className="flex shrink-0 pb-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const roomIdValue =
+                        roomId ??
+                        (apiPlanData &&
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
+                          ? String(apiPlanData.roomId)
+                          : null);
 
-                        const addPlanPath = roomIdValue
-                          ? `/add-plen?roomId=${roomIdValue}`
-                          : "/add-plen";
-                        if (getToken()) {
-                          router.push(addPlanPath);
-                          return;
-                        }
-                        if (isSharedView) {
-                          setLoginRequiredTitle(
-                            "플랜을 추가하려면 로그인해 주세요",
-                          );
-                          setShowLoginRequiredModal(true);
-                          return;
-                        }
-
-                        // Guest: allow up to 3 plans saved in sessionStorage
-                        const guestCount = effectiveScheduleList.length;
-                        if (guestCount === 0) {
-                          // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
-                          setShowGuestPlanLimitModal(true);
-                          return;
-                        }
-                        if (guestCount >= 3) {
-                          setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
-                          setShowLoginRequiredModal(true);
-                          return;
-                        }
+                      const addPlanPath = roomIdValue
+                        ? `/add-plen?roomId=${roomIdValue}`
+                        : "/add-plen";
+                      if (getToken()) {
                         router.push(addPlanPath);
-                      }}
-                      className="flex h-[36px] justify-center items-center gap-1.5 px-3.5 py-0 text-white rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
-                      style={{
-                        backgroundColor:
-                          !getToken() &&
-                            !isSharedView &&
-                            effectiveScheduleList.length >= 3
-                            ? "#cbd5e1"
-                            : "#ee2b8c",
-                      }}
-                    >
-                      추가
-                      <CirclePlus
-                        className="h-4 w-4 shrink-0 text-white"
-                        strokeWidth={2.5}
-                      />
-                    </button>
-                  </div>
-                )}
+                        return;
+                      }
+                      if (isSharedView) {
+                        setLoginRequiredTitle(
+                          "플랜을 추가하려면 로그인해 주세요",
+                        );
+                        setShowLoginRequiredModal(true);
+                        return;
+                      }
+
+                      // Guest: allow up to 3 plans saved in sessionStorage
+                      const guestCount = effectiveScheduleList.length;
+                      if (guestCount === 0) {
+                        // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
+                        setShowGuestPlanLimitModal(true);
+                        return;
+                      }
+                      if (guestCount >= 3) {
+                        setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
+                        setShowLoginRequiredModal(true);
+                        return;
+                      }
+                      router.push(addPlanPath);
+                    }}
+                    className="flex h-[36px] justify-center items-center gap-1.5 px-3.5 py-0 text-white rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
+                    style={{
+                      backgroundColor:
+                        !getToken() &&
+                        !isSharedView &&
+                        effectiveScheduleList.length >= 3
+                          ? "#cbd5e1"
+                          : "#ee2b8c",
+                    }}
+                  >
+                    추가
+                    <CirclePlus
+                      className="h-4 w-4 shrink-0 text-white"
+                      strokeWidth={2.5}
+                    />
+                  </button>
+                </div>
+              )}
             </div>
             {/* 탭 영역 - Sticky 고정 */}
             <div
@@ -1824,17 +1840,18 @@ function MainPageContent() {
                       const roomIdParam =
                         roomId?.trim() ||
                         (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       fetchScheduleList(roomIdParam ?? undefined, "NORMAL");
                     }
                   }}
-                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === "planned"
-                    ? "bg-white text-[#ee2b8c] shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                    }`}
+                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
+                    activeTab === "planned"
+                      ? "bg-white text-[#ee2b8c] shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
                 >
                   <span>계획 중</span>
                   <span
@@ -1854,17 +1871,18 @@ function MainPageContent() {
                       const roomIdParam =
                         roomId?.trim() ||
                         (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       fetchScheduleList(roomIdParam ?? undefined, "COMPLETED");
                     }
                   }}
-                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === "completed"
-                    ? "bg-white text-[#ee2b8c] shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                    }`}
+                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
+                    activeTab === "completed"
+                      ? "bg-white text-[#ee2b8c] shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
                 >
                   <span>완료</span>
                   <span
@@ -1894,7 +1912,10 @@ function MainPageContent() {
                   2. !scheduleInitialFetched: 초기 로드 전
                   3. isPlanLoading: 유저/방 정보 로딩 중 (상단 섹션과 보조를 맞춤)
                 */}
-                {scheduleLoading || !scheduleInitialFetched || isPlanLoading || isSharedLoading ? (
+                {scheduleLoading ||
+                !scheduleInitialFetched ||
+                isPlanLoading ||
+                isSharedLoading ? (
                   Array.from({ length: 5 }).map((_, idx) => (
                     <li
                       key={`skeleton-plan-${idx}`}
@@ -1925,17 +1946,15 @@ function MainPageContent() {
                         checkedItems.has(plan.id) ||
                         plan.status === "COMPLETED";
                       const amount = plan.amount ?? 0;
-                      const categoryColor = getCategoryColor(
-                        plan.categoryName,
-                      );
+                      const categoryColor = getCategoryColor(plan.categoryName);
                       const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
                       const dateLabel = plan.startDate?.trim()
                         ? (() => {
-                          const { dateText, weekday } = formatDate(
-                            plan.startDate as string,
-                          );
-                          return `${dateText} (${weekday})`;
-                        })()
+                            const { dateText, weekday } = formatDate(
+                              plan.startDate as string,
+                            );
+                            return `${dateText} (${weekday})`;
+                          })()
                         : "미정";
 
                       return (
@@ -1948,11 +1967,7 @@ function MainPageContent() {
                           exit={{
                             opacity: [1, 1, 0],
                             y: [0, -10, -10],
-                            x: [
-                              0,
-                              0,
-                              activeTab === "planned" ? 500 : -500,
-                            ],
+                            x: [0, 0, activeTab === "planned" ? 500 : -500],
                             scale: [1, 1.05, 1.05],
                             transition: {
                               duration: 0.6,
@@ -1992,10 +2007,11 @@ function MainPageContent() {
                                   e.stopPropagation();
                                   handleToggleCheck(plan.id);
                                 }}
-                                className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
-                                  ? "bg-[#ee2b8c] border-[#ee2b8c]"
-                                  : "bg-white/80 border-[#ee2b8c]"
-                                  }`}
+                                className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
+                                  isChecked
+                                    ? "bg-[#ee2b8c] border-[#ee2b8c]"
+                                    : "bg-white/80 border-[#ee2b8c]"
+                                }`}
                               >
                                 {isChecked && (
                                   <Check
@@ -2012,9 +2028,7 @@ function MainPageContent() {
                                 {plan.title}
                               </h4>
                               <div className="font-user-content text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
-                                <p className="truncate">
-                                  {plan.categoryName}
-                                </p>
+                                <p className="truncate">{plan.categoryName}</p>
                                 <p className="truncate">{dateLabel}</p>
                               </div>
                             </div>
@@ -2025,10 +2039,11 @@ function MainPageContent() {
                                   : "미정"}
                               </div>
                               <span
-                                className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
-                                  ? "bg-[#ee2b8c] text-white"
-                                  : "bg-gray-100 text-gray-500"
-                                  }`}
+                                className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
+                                  isChecked
+                                    ? "bg-[#ee2b8c] text-white"
+                                    : "bg-gray-100 text-gray-500"
+                                }`}
                               >
                                 {isChecked ? "완료" : "예정"}
                               </span>
@@ -2081,7 +2096,6 @@ function MainPageContent() {
           activeTab={roomId || shareCode ? "rooms" : undefined}
           showLoginButton={false}
           scrollDirection={scrollDirection}
-          unreadCount={5}
           onTabClick={(tab) => {
             if (tab === "home") {
               // /main?roomId= 또는 /main?share= 일 때는 /main으로 이동(쿼리 제거), 그 외 /main이면 새로고침
@@ -2103,6 +2117,7 @@ function MainPageContent() {
               );
             }
           }}
+          unreadCount={unreadCount}
         />
         <LoginRequiredModal
           show={showLoginRequiredModal}

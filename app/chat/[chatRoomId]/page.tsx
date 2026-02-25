@@ -178,8 +178,9 @@ function LinkPreview({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`mt-2 block w-full max-w-[260px] bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:border-[#ee2b8c] transition-all active:scale-[0.98] ${isMe ? "ml-auto" : "mr-auto"
-        }`}
+      className={`mt-2 block w-full max-w-[260px] bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:border-[#ee2b8c] transition-all active:scale-[0.98] ${
+        isMe ? "ml-auto" : "mr-auto"
+      }`}
     >
       {preview.image && (
         <div className="aspect-[1.91/1] w-full overflow-hidden border-b border-gray-50">
@@ -278,10 +279,11 @@ const ChatMessage = React.memo(
             {msg.messageType === "text" ? (
               <>
                 <div
-                  className={`px-4 py-2.5 rounded-[20px] text-sm font-medium shadow-sm leading-relaxed break-all whitespace-pre-wrap ${isMe
-                    ? "bg-[#ee2b8c] text-white rounded-tr-none"
-                    : "bg-white text-stone-800 border border-gray-100 rounded-tl-none"
-                    }`}
+                  className={`px-4 py-2.5 rounded-[20px] text-sm font-medium shadow-sm leading-relaxed break-all whitespace-pre-wrap ${
+                    isMe
+                      ? "bg-[#ee2b8c] text-white rounded-tr-none"
+                      : "bg-white text-stone-800 border border-gray-100 rounded-tl-none"
+                  }`}
                   style={{
                     fontFamily: "var(--font-tmoney), sans-serif",
                   }}
@@ -393,7 +395,7 @@ export default function ChatPage() {
   const chatRoomId = params.chatRoomId as string;
   const router = useRouter();
   const { fetchWithAuth } = useApi();
-  const { subscribeToChatRooms } = useNotification();
+  const { subscribeToChatRooms, resetUnreadCount } = useNotification();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -658,7 +660,8 @@ export default function ChatPage() {
   useEffect(() => {
     if (!chatRoomId) return;
     subscribeToChatRooms([Number(chatRoomId)]);
-  }, [chatRoomId, subscribeToChatRooms]);
+    resetUnreadCount();
+  }, [chatRoomId, subscribeToChatRooms, resetUnreadCount]);
 
   useEffect(() => {
     const token = getToken();
@@ -975,10 +978,11 @@ export default function ChatPage() {
                     }, 400);
                   }}
                   placeholder="메시지를 입력하세요..."
-                  className="w-full bg-gray-50 text-stone-800 text-base font-medium rounded-2xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-[#ee2b8c33] transition-all resize-none overflow-y-auto no-scrollbar min-h-[44px]"
+                  className="w-full bg-gray-50 text-stone-800 text-base font-normal leading-relaxed rounded-2xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-[#ee2b8c33] transition-all resize-none overflow-y-auto no-scrollbar min-h-[44px]"
                   style={{
                     maxHeight: "120px",
                     fontFamily: "var(--font-kakao), sans-serif",
+                    lineHeight: "1.6",
                   }}
                 />
                 <button
@@ -997,10 +1001,11 @@ export default function ChatPage() {
                   }
                 }}
                 disabled={!inputValue.trim()}
-                className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-2xl transition-all shadow-lg active:scale-95 ${inputValue.trim()
-                  ? "bg-[#ee2b8c] text-white shadow-[#ee2b8c44]"
-                  : "bg-gray-200 text-gray-400 shadow-none"
-                  }`}
+                className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-2xl transition-all shadow-lg active:scale-95 ${
+                  inputValue.trim()
+                    ? "bg-[#ee2b8c] text-white shadow-[#ee2b8c44]"
+                    : "bg-gray-200 text-gray-400 shadow-none"
+                }`}
               >
                 <Send className="w-5 h-5" />
               </button>

@@ -630,10 +630,11 @@ function BudgetDetailsPage() {
                             type="button"
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${activeTab === tab
-                              ? "text-[#ee2b8c] border-[#ee2b8c]"
-                              : "text-gray-400 border-transparent hover:text-gray-600"
-                              }`}
+                            className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${
+                              activeTab === tab
+                                ? "text-[#ee2b8c] border-[#ee2b8c]"
+                                : "text-gray-400 border-transparent hover:text-gray-600"
+                            }`}
                           >
                             {tab}
                           </button>

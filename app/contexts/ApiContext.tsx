@@ -21,9 +21,15 @@ interface ApiContextType {
   /** Same-origin 요청 (로딩 표시). 예: /api/... */
   request: (url: string, options?: ApiRequestOptions) => Promise<Response>;
   /** 백엔드 API 요청 (Bearer 없음, 로딩 표시). 예: 로그인 POST /plan/auth/kakao/login */
-  fetchBackend: (path: string, options?: ApiRequestOptions) => Promise<Response>;
+  fetchBackend: (
+    path: string,
+    options?: ApiRequestOptions,
+  ) => Promise<Response>;
   /** 백엔드 API 요청. Authorization: Bearer 토큰 + 로딩 표시 */
-  fetchWithAuth: (path: string, options?: ApiRequestOptions) => Promise<Response>;
+  fetchWithAuth: (
+    path: string,
+    options?: ApiRequestOptions,
+  ) => Promise<Response>;
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
