@@ -13,6 +13,7 @@ import {
   User,
 } from "lucide-react";
 import { useApi } from "../../contexts/ApiContext";
+import { useNotification } from "../../contexts/NotificationContext";
 import CustomAlertModal from "../../components/CustomAlertModal";
 import {
   getToken,
@@ -22,6 +23,7 @@ import {
   getApiBaseUrl,
 } from "@/lib/api";
 import LoginRequiredModal from "../../components/LoginRequiredModal";
+import ChatRoomNameEditModal from "../../components/ChatRoomNameEditModal";
 
 interface ScheduleData {
   categoryName: string;
@@ -176,9 +178,8 @@ function LinkPreview({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`mt-2 block w-full max-w-[260px] bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:border-[#ee2b8c] transition-all active:scale-[0.98] ${
-        isMe ? "ml-auto" : "mr-auto"
-      }`}
+      className={`mt-2 block w-full max-w-[260px] bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:border-[#ee2b8c] transition-all active:scale-[0.98] ${isMe ? "ml-auto" : "mr-auto"
+        }`}
     >
       {preview.image && (
         <div className="aspect-[1.91/1] w-full overflow-hidden border-b border-gray-50">
@@ -277,11 +278,10 @@ const ChatMessage = React.memo(
             {msg.messageType === "text" ? (
               <>
                 <div
-                  className={`px-4 py-2.5 rounded-[20px] text-sm font-medium shadow-sm leading-relaxed break-all whitespace-pre-wrap ${
-                    isMe
-                      ? "bg-[#ee2b8c] text-white rounded-tr-none"
-                      : "bg-white text-stone-800 border border-gray-100 rounded-tl-none"
-                  }`}
+                  className={`px-4 py-2.5 rounded-[20px] text-sm font-medium shadow-sm leading-relaxed break-all whitespace-pre-wrap ${isMe
+                    ? "bg-[#ee2b8c] text-white rounded-tr-none"
+                    : "bg-white text-stone-800 border border-gray-100 rounded-tl-none"
+                    }`}
                   style={{
                     fontFamily: "var(--font-tmoney), sans-serif",
                   }}
@@ -393,6 +393,7 @@ export default function ChatPage() {
   const chatRoomId = params.chatRoomId as string;
   const router = useRouter();
   const { fetchWithAuth } = useApi();
+  const { subscribeToChatRooms } = useNotification();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -410,6 +411,7 @@ export default function ChatPage() {
   });
   const [viewportHeight, setViewportHeight] = useState("100dvh");
   const [loading, setLoading] = useState(true);
+  const [showNameEditModal, setShowNameEditModal] = useState(false);
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [, forceUpdate] = useState(0);
@@ -498,6 +500,40 @@ export default function ChatPage() {
       setIsLoadingMore(false);
     }
   }, [chatRoomId, fetchWithAuth, convertHistoryToMessage]);
+
+  const handleUpdateRoomName = async (newName: string) => {
+    try {
+      const res = await fetchWithAuth(`/plan/chat/name/${chatRoomId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: newName }),
+      });
+
+      if (res.status === 401) {
+        clearToken();
+        setShowLoginModal(true);
+        return;
+      }
+
+      if (res.ok) {
+        setRoomName(newName);
+        setAlertConfig({
+          isOpen: true,
+          message: "채팅방 이름이 성공적으로 변경되었습니다.",
+          type: "success",
+        });
+      } else {
+        throw new Error("Failed to update name");
+      }
+    } catch (err) {
+      console.error("Failed to update chat room name:", err);
+      setAlertConfig({
+        isOpen: true,
+        message: "채팅방 이름 변경에 실패했습니다. 다시 시도해 주세요.",
+        type: "error",
+      });
+      throw err;
+    }
+  };
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
@@ -621,31 +657,8 @@ export default function ChatPage() {
   // SSE 푸시 알림 연결
   useEffect(() => {
     if (!chatRoomId) return;
-
-    let eventSource: EventSource;
-    const baseUrl = getApiBaseUrl().replace(/\/+$/, "");
-
-    const createConnection = () => {
-      eventSource = new EventSource(
-        `${baseUrl}/plan/notification/chat/${chatRoomId}`,
-      );
-
-      eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === "keep-alive") return;
-        console.log("[SSE] 알림 수신:", data);
-      };
-
-      eventSource.onerror = () => {
-        console.error("[SSE] 연결 끊김. 3초 후 재연결...");
-        eventSource.close();
-        setTimeout(createConnection, 3000);
-      };
-    };
-
-    createConnection();
-    return () => eventSource?.close();
-  }, [chatRoomId]);
+    subscribeToChatRooms([Number(chatRoomId)]);
+  }, [chatRoomId, subscribeToChatRooms]);
 
   useEffect(() => {
     const token = getToken();
@@ -884,7 +897,11 @@ export default function ChatPage() {
                 </p>
               </div>
             </div>
-            <button type="button" className="p-2 text-stone-400">
+            <button
+              type="button"
+              onClick={() => setShowNameEditModal(true)}
+              className="p-2 text-stone-400 hover:text-[#ee2b8c] transition-colors"
+            >
               <MoreVertical className="w-5 h-5" />
             </button>
           </header>
@@ -980,11 +997,10 @@ export default function ChatPage() {
                   }
                 }}
                 disabled={!inputValue.trim()}
-                className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-2xl transition-all shadow-lg active:scale-95 ${
-                  inputValue.trim()
-                    ? "bg-[#ee2b8c] text-white shadow-[#ee2b8c44]"
-                    : "bg-gray-200 text-gray-400 shadow-none"
-                }`}
+                className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-2xl transition-all shadow-lg active:scale-95 ${inputValue.trim()
+                  ? "bg-[#ee2b8c] text-white shadow-[#ee2b8c44]"
+                  : "bg-gray-200 text-gray-400 shadow-none"
+                  }`}
               >
                 <Send className="w-5 h-5" />
               </button>
@@ -1003,6 +1019,12 @@ export default function ChatPage() {
         message={alertConfig.message}
         type={alertConfig.type}
         onClose={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
+      <ChatRoomNameEditModal
+        show={showNameEditModal}
+        currentName={roomName}
+        onClose={() => setShowNameEditModal(false)}
+        onUpdate={handleUpdateRoomName}
       />
     </>
   );

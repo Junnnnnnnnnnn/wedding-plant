@@ -129,6 +129,7 @@ function ScheduleDetailPageContent() {
   const mapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerRef = useRef<any>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   const scheduleId = useMemo(() => {
     const idParam = searchParams.get("id");
@@ -299,8 +300,10 @@ function ScheduleDetailPageContent() {
         }
         mapRef.current = null;
       }
+      setMapLoaded(false);
       return undefined;
     }
+    setMapLoaded(false);
     const timer = setTimeout(() => {
       const container = document.getElementById("schedule-detail-map");
       if (!container) return;
@@ -330,6 +333,9 @@ function ScheduleDetailPageContent() {
           position: coords,
         });
         markerRef.current = marker;
+        setTimeout(() => {
+          setMapLoaded(true);
+        }, 300);
       } catch {
         // ignore map init errors
       }
@@ -518,10 +524,22 @@ function ScheduleDetailPageContent() {
                   {detail.location?.trim() || "장소 미정"}
                 </div>
                 {detail.location?.trim() && mapCoords && (
-                  <div
-                    id="schedule-detail-map"
-                    className="w-full flex-1 min-h-[200px] rounded-lg overflow-hidden border border-gray-200 bg-gray-100"
-                  />
+                  <div className="relative w-full h-[200px]">
+                    <div
+                      id="schedule-detail-map"
+                      className={`absolute inset-0 rounded-lg overflow-hidden border border-gray-200 transition-opacity duration-300 ${mapLoaded ? "opacity-100" : "opacity-0"}`}
+                    />
+                    {!mapLoaded && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span className="text-sm font-medium">
+                            지도 로딩 중...
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
                 {detail.location?.trim() && !mapCoords && hasNonZeroCoords && (
                   <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg flex-1 min-h-[200px] flex items-center justify-center border border-gray-200">

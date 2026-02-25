@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Plan, ChatRoom, Member } from "@/types";
 import { useApi } from "../contexts/ApiContext";
+import { useNotification } from "../contexts/NotificationContext";
 import { getToken, clearToken } from "@/lib/api";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
@@ -234,6 +235,7 @@ const CardBudget: React.FC<CardBudgetProps> = ({
 const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const router = useRouter();
   const { fetchWithAuth, setLoading: setGlobalLoading } = useApi();
+  const { subscribeToChatRooms } = useNotification();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -290,6 +292,14 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
       const json = await res.json();
       if (json.result && json.data?.list) {
         setPlans(json.data.list);
+
+        // SSE Subscription
+        const roomIds: number[] = json.data.list.flatMap((plan: Plan) =>
+          (plan.chatRooms || []).map(room => room.id)
+        );
+        if (roomIds.length > 0) {
+          subscribeToChatRooms(roomIds);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch plans:", error);

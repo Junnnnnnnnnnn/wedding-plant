@@ -5,6 +5,7 @@ import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ApiProvider } from "./contexts/ApiContext";
 import { WeddingProvider } from "./contexts/WeddingContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import ApiErrorModal from "./components/ApiErrorModal";
 import ApiLoadingOverlay from "./components/ApiLoadingOverlay";
 import AuthRedirectToMain from "./components/AuthRedirectToMain";
@@ -107,13 +108,15 @@ export default function RootLayout({
       >
         <ApiProvider>
           <AuthRedirectToMain />
-          <WeddingProvider>
-            {children}
-            <ApiLoadingOverlay />
-            <Suspense fallback={null}>
-              <ApiErrorModal />
-            </Suspense>
-          </WeddingProvider>
+          <NotificationProvider>
+            <WeddingProvider>
+              {children}
+              <ApiLoadingOverlay />
+              <Suspense fallback={null}>
+                <ApiErrorModal />
+              </Suspense>
+            </WeddingProvider>
+          </NotificationProvider>
         </ApiProvider>
       </body>
     </html>

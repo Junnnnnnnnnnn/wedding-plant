@@ -35,6 +35,7 @@ import ScrollDownAnimation from "../components/ScrollDownAnimation";
 import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
+import { useNotification } from "../contexts/NotificationContext";
 import {
   getToken,
   getPlanUserIdFromToken,
@@ -99,6 +100,7 @@ interface PlanUserData {
   name: string;
   roomId?: number | null;
   members?: PlanUserMember[];
+  chatRooms?: { id: number; name: string }[];
   hasSeenMainGuide?: boolean;
   hasSeenBudgetGuide?: boolean;
 }
@@ -234,6 +236,7 @@ function MainPageContent() {
   const roomId = searchParams.get("roomId");
   const { weddingData, resetData } = useWedding();
   const { fetchWithAuth, setLoading } = useApi();
+  const { subscribeToChatRooms } = useNotification();
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
     null,
   );
@@ -262,6 +265,8 @@ function MainPageContent() {
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleInitialFetched, setScheduleInitialFetched] = useState(false);
   const scheduleFetchingRef = useRef(false);
+  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
+  const togglingIdsRef = useRef<Set<number>>(new Set());
   const fetchingStatusRef = useRef<"NORMAL" | "COMPLETED" | null>(null);
 
   // 탭 및 카운트 상태
@@ -526,6 +531,13 @@ function MainPageContent() {
         if (cancelledRef.current) return null;
         if (json.result === true && json.data) {
           setApiPlanData(json.data);
+
+          // SSE Subscription
+          if (json.data.chatRooms && json.data.chatRooms.length > 0) {
+            const roomIds = json.data.chatRooms.map(r => r.id);
+            subscribeToChatRooms(roomIds);
+          }
+
           return json.data;
         }
         setApiPlanData("none");
@@ -1034,15 +1046,15 @@ function MainPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveScheduleList.length, completedTotal, removedItems.size]);
 
-  // 탭별 리스트: API가 status(NORMAL/COMPLETED)로 이미 필터링해서 오지만,
-  // 1. 게스트 모드 대응 (로컬 데이터를 쓰므로 명시적 필터링 필요)
-  // 2. API 전환 중/애니메이션 중 정합성 보장을 위해 로컬에서도 필터링
   const baseVisibleList = useMemo(() => {
     const targetStatus = activeTab === "planned" ? "NORMAL" : "COMPLETED";
-    return effectiveScheduleList.filter(
-      (plan) => plan.status === targetStatus && !removedItems.has(plan.id),
-    );
-  }, [effectiveScheduleList, removedItems, activeTab]);
+    return effectiveScheduleList.filter((plan) => {
+      const isMatch = plan.status === targetStatus;
+      const isBeingToggled = togglingIds.has(plan.id);
+      // 토글 중인 동안은 필터링에서 제외되지 않도록 유지하여 애니메이션 유도
+      return isMatch || isBeingToggled;
+    });
+  }, [effectiveScheduleList, activeTab, togglingIds]);
 
   const currentTabCategories = useMemo(() => {
     const cats = baseVisibleList
@@ -1119,8 +1131,6 @@ function MainPageContent() {
   const headerOpacity = useTransform(scrollY, [50, 200], [1, 0.2]);
   const headerScale = useTransform(scrollY, [0, 200], [1, 0.9]);
 
-  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
-  const togglingIdsRef = useRef<Set<number>>(new Set());
   const checkedItemsRef = useRef<Set<number>>(checkedItems);
   const scheduleListRef = useRef(scheduleList);
   checkedItemsRef.current = checkedItems;
@@ -1159,10 +1169,18 @@ function MainPageContent() {
         setPlannedTotal((prev) => prev + 1);
       }
 
-      // 체크 또는 해제 시: 잠깐 대기 후 removedItems에 추가하여 날아가기 시작
+      // 1. '비행 준비' 상태(removedItems)를 먼저 반영 (AnimatePresence의 exit prop 결정용)
+      setRemovedItems((prev) => new Set(prev).add(id));
+
+      // 2. 약간의 시간차(100ms)를 두어 리스트에서 실제로 제거 (이때 AnimatePresence가 날아가는 exit 애니메이션 실행)
       setTimeout(() => {
-        setRemovedItems((prev) => new Set(prev).add(id));
-      }, 300);
+        togglingIdsRef.current.delete(id);
+        setTogglingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }, 350); // 충분한 렌더링 결합 방지 시간
 
       try {
         const res = await fetchWithAuth(`/plan/schedule/status/${id}`, {
@@ -1219,12 +1237,7 @@ function MainPageContent() {
           return next;
         });
       } finally {
-        togglingIdsRef.current.delete(id);
-        setTogglingIds((prev) => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
+        // togglingId 제거는 위에서 선언한 setTimeout(300ms)에서 담당함
       }
     },
     [fetchWithAuth],
@@ -1906,142 +1919,139 @@ function MainPageContent() {
                     <p className="text-4xl font-semibold text-stone-400">텅~</p>
                   </li>
                 ) : (
-                  <AnimatePresence mode="popLayout" key={activeTab}>
-                    {visibleScheduleList.length === 0 ? (
+                  <AnimatePresence initial={false}>
+                    {visibleScheduleList.map((plan) => {
+                      const isChecked =
+                        checkedItems.has(plan.id) ||
+                        plan.status === "COMPLETED";
+                      const amount = plan.amount ?? 0;
+                      const categoryColor = getCategoryColor(
+                        plan.categoryName,
+                      );
+                      const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
+                      const dateLabel = plan.startDate?.trim()
+                        ? (() => {
+                          const { dateText, weekday } = formatDate(
+                            plan.startDate as string,
+                          );
+                          return `${dateText} (${weekday})`;
+                        })()
+                        : "미정";
+
+                      return (
+                        <motion.li
+                          key={plan.id}
+                          layout
+                          className="w-full"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{
+                            opacity: [1, 1, 0],
+                            y: [0, -10, -10],
+                            x: [
+                              0,
+                              0,
+                              activeTab === "planned" ? 500 : -500,
+                            ],
+                            scale: [1, 1.05, 1.05],
+                            transition: {
+                              duration: 0.6,
+                              times: [0, 0.4, 1],
+                              ease: "easeInOut",
+                            },
+                          }}
+                        >
+                          <Link
+                            href={detailHref}
+                            onClick={() => {
+                              sessionStorage.setItem(
+                                "returnToPlanList",
+                                "true",
+                              );
+                            }}
+                            className={`relative flex w-full items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
+                            aria-label={`플랜 상세 보기: ${plan.title}`}
+                          >
+                            {mounted &&
+                              activeTab === "planned" &&
+                              isStartDatePast(plan.startDate) && (
+                                <PastDateIndicator />
+                              )}
+                            <div
+                              className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+                              style={{
+                                backgroundColor: `${categoryColor}`,
+                              }}
+                            >
+                              <button
+                                type="button"
+                                id={String(plan.id)}
+                                disabled={togglingIds.has(plan.id)}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleToggleCheck(plan.id);
+                                }}
+                                className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
+                                  ? "bg-[#ee2b8c] border-[#ee2b8c]"
+                                  : "bg-white/80 border-[#ee2b8c]"
+                                  }`}
+                              >
+                                {isChecked && (
+                                  <Check
+                                    className="h-3 w-3 text-white"
+                                    strokeWidth={3}
+                                  />
+                                )}
+                              </button>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4
+                                className={`font-user-content text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
+                              >
+                                {plan.title}
+                              </h4>
+                              <div className="font-user-content text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
+                                <p className="truncate">
+                                  {plan.categoryName}
+                                </p>
+                                <p className="truncate">{dateLabel}</p>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
+                                {amount > 0
+                                  ? `${amount.toLocaleString("ko-KR")}만 원`
+                                  : "미정"}
+                              </div>
+                              <span
+                                className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
+                                  ? "bg-[#ee2b8c] text-white"
+                                  : "bg-gray-100 text-gray-500"
+                                  }`}
+                              >
+                                {isChecked ? "완료" : "예정"}
+                              </span>
+                            </div>
+                          </Link>
+                        </motion.li>
+                      );
+                    })}
+                    {visibleScheduleList.length === 0 && (
                       <motion.li
                         key={`empty-${activeTab}`}
+                        layout
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         className="flex flex-1 flex-col items-center justify-center py-16"
                       >
-                        <p className="text-xl font-semibold text-stone-400">
+                        <p className="text-xl font-semibold text-stone-400 text-center w-full">
                           {activeTab === "completed"
                             ? "완료한 플랜이 없어요"
                             : "모든 플랜을 완료했어요! 🎉"}
                         </p>
                       </motion.li>
-                    ) : (
-                      visibleScheduleList.map((plan) => {
-                        const isChecked =
-                          checkedItems.has(plan.id) ||
-                          plan.status === "COMPLETED";
-                        const amount = plan.amount ?? 0;
-                        const categoryColor = getCategoryColor(
-                          plan.categoryName,
-                        );
-                        const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
-                        const dateLabel = plan.startDate?.trim()
-                          ? (() => {
-                            const { dateText, weekday } = formatDate(
-                              plan.startDate as string,
-                            );
-                            return `${dateText} (${weekday})`;
-                          })()
-                          : "미정";
-
-                        return (
-                          <motion.li
-                            key={plan.id}
-                            layout
-                            className="w-full"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={
-                              removedItems.has(plan.id)
-                                ? {
-                                  opacity: [1, 1, 0],
-                                  y: [0, -20, -20],
-                                  x: [
-                                    0,
-                                    0,
-                                    activeTab === "planned" ? 500 : -500,
-                                  ],
-                                  scale: [1, 1.05, 1.05],
-                                  transition: {
-                                    duration: 0.6,
-                                    times: [0, 0.4, 1],
-                                    ease: "easeInOut",
-                                  },
-                                }
-                                : { opacity: 0, transition: { duration: 0 } }
-                            }
-                          >
-                            <Link
-                              href={detailHref}
-                              onClick={() => {
-                                sessionStorage.setItem(
-                                  "returnToPlanList",
-                                  "true",
-                                );
-                              }}
-                              className={`relative flex w-full items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
-                              aria-label={`플랜 상세 보기: ${plan.title}`}
-                            >
-                              {mounted &&
-                                activeTab === "planned" &&
-                                isStartDatePast(plan.startDate) && (
-                                  <PastDateIndicator />
-                                )}
-                              <div
-                                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                                style={{
-                                  backgroundColor: `${categoryColor}`,
-                                }}
-                              >
-                                <button
-                                  type="button"
-                                  id={String(plan.id)}
-                                  disabled={togglingIds.has(plan.id)}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleToggleCheck(plan.id);
-                                  }}
-                                  className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
-                                    ? "bg-[#ee2b8c] border-[#ee2b8c]"
-                                    : "bg-white/80 border-[#ee2b8c]"
-                                    }`}
-                                >
-                                  {isChecked && (
-                                    <Check
-                                      className="h-3 w-3 text-white"
-                                      strokeWidth={3}
-                                    />
-                                  )}
-                                </button>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4
-                                  className={`font-user-content text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
-                                >
-                                  {plan.title}
-                                </h4>
-                                <div className="font-user-content text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
-                                  <p className="truncate">
-                                    {plan.categoryName}
-                                  </p>
-                                  <p className="truncate">{dateLabel}</p>
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
-                                  {amount > 0
-                                    ? `${amount.toLocaleString("ko-KR")}만 원`
-                                    : "미정"}
-                                </div>
-                                <span
-                                  className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
-                                    ? "bg-[#ee2b8c] text-white"
-                                    : "bg-gray-100 text-gray-500"
-                                    }`}
-                                >
-                                  {isChecked ? "완료" : "예정"}
-                                </span>
-                              </div>
-                            </Link>
-                          </motion.li>
-                        );
-                      })
                     )}
                   </AnimatePresence>
                 )}
