@@ -126,9 +126,9 @@ const CardChatRooms: React.FC<CardChatRoomsProps> = ({
           onClick={
             interactive
               ? (e) => {
-                  e.stopPropagation();
-                  onChatRoomClick(chatRoom.id);
-                }
+                e.stopPropagation();
+                onChatRoomClick(chatRoom.id);
+              }
               : undefined
           }
           className={`flex items-center justify-between p-3 bg-[#fcfbfc] rounded-2xl transition-all border border-transparent ${interactive ? "hover:bg-white hover:border-[#ee2b8c11] hover:shadow-md hover:shadow-[#ee2b8c0a] group/chat-item cursor-pointer active:scale-[0.98]" : ""}`}
@@ -233,9 +233,9 @@ const CardBudget: React.FC<CardBudgetProps> = ({
 
 const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const router = useRouter();
-  const { fetchWithAuth } = useApi();
+  const { fetchWithAuth, setLoading: setGlobalLoading } = useApi();
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [listLoading, setListLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginModalTitle, setLoginModalTitle] = useState(
     "세션이 만료되었습니다. 다시 로그인해 주세요.",
@@ -254,19 +254,19 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     if (!token) {
       setLoginModalTitle("참여 플랜 리스트를 보려면 로그인이 필요합니다.");
       setShowLoginModal(true);
-      setLoading(false);
+      setListLoading(false);
       return;
     }
-    setLoading(true);
+    setListLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 400));
 
-      const userRes = await fetchWithAuth("/plan/user");
+      const userRes = await fetchWithAuth("/plan/user", { skipLoading: true });
       if (userRes.status === 401) {
         clearToken();
         setLoginModalTitle("세션이 만료되었습니다. 다시 로그인해 주세요.");
         setShowLoginModal(true);
-        setLoading(false);
+        setListLoading(false);
         return;
       }
       const userJson = await userRes.json();
@@ -279,12 +279,12 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
         setHasSeenChatGuide(userJson.data.hasSeenChatGuide ?? null);
       }
 
-      const res = await fetchWithAuth("/plan/room/list");
+      const res = await fetchWithAuth("/plan/room/list", { skipLoading: true });
       if (res.status === 401) {
         clearToken();
         setLoginModalTitle("세션이 만료되었습니다. 다시 로그인해 주세요.");
         setShowLoginModal(true);
-        setLoading(false);
+        setListLoading(false);
         return;
       }
       const json = await res.json();
@@ -294,13 +294,15 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     } catch (error) {
       console.error("Failed to fetch plans:", error);
     } finally {
-      setLoading(false);
+      setListLoading(false);
     }
   }, [fetchWithAuth, router]);
 
   useEffect(() => {
+    // Disable global loading modal for plan-list to show skeleton instead
+    setGlobalLoading(false);
     fetchPlans();
-  }, [fetchPlans]);
+  }, [fetchPlans, setGlobalLoading]);
 
   // Guide Auto-show
   useEffect(() => {
@@ -330,6 +332,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
       try {
         await fetchWithAuth("/plan/user/has-seen-chat-guide", {
           method: "POST",
+          skipLoading: true,
         });
       } catch {
         // Silently fail if endpoint doesn't exist
@@ -409,7 +412,38 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
         </header>
 
         <div className="flex-1 px-6 space-y-6 relative z-10 overflow-y-auto no-scrollbar">
-          {loading ? null : plans.length === 0 ? (
+          {listLoading ? (
+            <div className="space-y-6">
+              {/* Skeleton Cards */}
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="w-full bg-white rounded-[32px] p-6 border border-[#ee2b8c05] shadow-sm relative overflow-hidden animate-pulse"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="space-y-2">
+                      <div className="w-20 h-4 bg-stone-50 rounded-full" />
+                      <div className="w-40 h-8 bg-stone-50 rounded-xl" />
+                    </div>
+                    <div className="w-10 h-10 bg-stone-50 rounded-2xl" />
+                  </div>
+                  <div className="space-y-3 mb-6">
+                    <div className="w-12 h-3 bg-stone-50 rounded-full" />
+                    <div className="flex gap-2">
+                      <div className="w-10 h-10 rounded-full bg-stone-50" />
+                      <div className="w-10 h-10 rounded-full bg-stone-50" />
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between mb-1">
+                      <div className="w-24 h-3 bg-stone-50 rounded-full" />
+                    </div>
+                    <div className="w-full h-2 bg-stone-50 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : plans.length === 0 ? (
             <div className="text-center py-20 text-gray-400">
               <p>참여 중인 플랜이 없습니다.</p>
             </div>

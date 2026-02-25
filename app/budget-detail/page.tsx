@@ -131,7 +131,7 @@ function BudgetDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roomIdFromUrl = searchParams.get("roomId")?.trim() || null;
-  const { fetchWithAuth } = useApi();
+  const { fetchWithAuth, setLoading } = useApi();
   const { weddingData } = useWedding();
   const isGuest = !getToken();
   const guestBlurClass = isGuest ? "blur-sm opacity-60" : "";
@@ -140,7 +140,7 @@ function BudgetDetailsPage() {
   const [detailData, setDetailData] = useState<AmountDetailData | null>(null);
   const [categoryList, setCategoryList] = useState<CategoryChartItem[]>([]);
   const [scheduleList, setScheduleList] = useState<ScheduleListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const scheduleFetchingRef = useRef(false);
@@ -178,6 +178,7 @@ function BudgetDetailsPage() {
       try {
         await fetchWithAuth("/plan/user/has-seen-budget-guide", {
           method: "POST",
+          skipLoading: true,
         });
       } catch {
         // 무시
@@ -239,7 +240,7 @@ function BudgetDetailsPage() {
       const url = roomId
         ? `/plan/schedule/room/${encodeURIComponent(roomId)}/list?${params.toString()}`
         : `/plan/schedule/list?${params.toString()}`;
-      const res = await fetchWithAuth(url);
+      const res = await fetchWithAuth(url, { skipLoading: true });
       const json = (await res.json()) as {
         result?: boolean;
         data?: { list?: ScheduleListItem[] } & Record<string, unknown>;
@@ -300,11 +301,11 @@ function BudgetDetailsPage() {
         })),
       );
       setScheduleList(guestList);
-      setLoading(false);
+      setDetailLoading(false);
       setError(null);
       return;
     }
-    setLoading(true);
+    setDetailLoading(true);
     setError(null);
     try {
       const scheduleParams = buildScheduleParams(1, "예정", null);
@@ -320,9 +321,11 @@ function BudgetDetailsPage() {
         try {
           await fetchWithAuth("/plan/user/has-seen-main-guide", {
             method: "POST",
+            skipLoading: true,
           });
           await fetchWithAuth("/plan/user/has-seen-budget-guide", {
             method: "POST",
+            skipLoading: true,
           });
           if (typeof window !== "undefined") {
             localStorage.removeItem("hasSeenMainGuide");
@@ -336,7 +339,7 @@ function BudgetDetailsPage() {
       }
 
       // roomId: URL 쿼리 우선, 없으면 /plan/user 응답의 roomId 사용
-      const userRes = await fetchWithAuth("/plan/user");
+      const userRes = await fetchWithAuth("/plan/user", { skipLoading: true });
       const userJson = (await userRes.json().catch(() => null)) as {
         result?: boolean;
         data?: { roomId?: number | null; hasSeenBudgetGuide?: boolean };
@@ -367,9 +370,9 @@ function BudgetDetailsPage() {
         : "/plan/user/amount/category-chart";
 
       const [detailRes, chartRes, scheduleRes] = await Promise.all([
-        fetchWithAuth(amountDetailUrl),
-        fetchWithAuth(categoryChartUrl),
-        fetchWithAuth(scheduleUrl),
+        fetchWithAuth(amountDetailUrl, { skipLoading: true }),
+        fetchWithAuth(categoryChartUrl, { skipLoading: true }),
+        fetchWithAuth(scheduleUrl, { skipLoading: true }),
       ]);
       const detailJson = (await detailRes.json().catch(() => null)) as {
         result?: boolean;
@@ -406,13 +409,15 @@ function BudgetDetailsPage() {
       setCategoryList([]);
       setScheduleList([]);
     } finally {
-      setLoading(false);
+      setDetailLoading(false);
     }
   }, [fetchWithAuth, buildScheduleParams, roomIdFromUrl, weddingData.budget]);
 
   useEffect(() => {
+    // Disable global loading modal for budget-detail to show skeleton instead
+    setLoading(false);
     loadData();
-  }, [loadData]);
+  }, [loadData, setLoading]);
 
   /** 탭 또는 카테고리 변경 시 count=10000으로 전체 다시 로드 */
   useEffect(() => {
@@ -496,7 +501,45 @@ function BudgetDetailsPage() {
             </button>
           </div>
           <div className="pt-0 pb-32">
-            {loading ? null : error ? (
+            {detailLoading ? (
+              <div className="px-4 py-4 space-y-6 animate-pulse">
+                {/* Stats Skeleton */}
+                <div className="space-y-3">
+                  <div className="w-full h-32 bg-stone-50 rounded-[24px]" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="h-24 bg-stone-50 rounded-[20px]" />
+                    <div className="h-24 bg-stone-50 rounded-[20px]" />
+                  </div>
+                </div>
+
+                {/* AI Button Skeleton */}
+                <div className="h-14 bg-stone-50 rounded-2xl" />
+
+                {/* Analysis Skeleton */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="w-24 h-6 bg-stone-50 rounded" />
+                  </div>
+                  <div className="h-48 bg-stone-50 rounded-3xl" />
+                </div>
+
+                {/* Tabs Skeleton */}
+                <div className="flex border-b border-gray-100">
+                  <div className="flex-1 h-12 bg-stone-50/50" />
+                  <div className="flex-1 h-12 bg-stone-50/50" />
+                </div>
+
+                {/* List Skeleton */}
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-20 bg-stone-50 rounded-2xl mx-2"
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : error ? (
               <div className="px-4 py-8 text-center">
                 <p className="text-[#ee2b8c] font-semibold">{error}</p>
                 <button
@@ -587,11 +630,10 @@ function BudgetDetailsPage() {
                             type="button"
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${
-                              activeTab === tab
-                                ? "text-[#ee2b8c] border-[#ee2b8c]"
-                                : "text-gray-400 border-transparent hover:text-gray-600"
-                            }`}
+                            className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${activeTab === tab
+                              ? "text-[#ee2b8c] border-[#ee2b8c]"
+                              : "text-gray-400 border-transparent hover:text-gray-600"
+                              }`}
                           >
                             {tab}
                           </button>

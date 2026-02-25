@@ -618,6 +618,35 @@ export default function ChatPage() {
     fetchChatInfo();
   }, [chatRoomId, fetchWithAuth, scrollToBottom]);
 
+  // SSE 푸시 알림 연결
+  useEffect(() => {
+    if (!chatRoomId) return;
+
+    let eventSource: EventSource;
+    const baseUrl = getApiBaseUrl().replace(/\/+$/, "");
+
+    const createConnection = () => {
+      eventSource = new EventSource(
+        `${baseUrl}/plan/notification/chat/${chatRoomId}`,
+      );
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === "keep-alive") return;
+        console.log("[SSE] 알림 수신:", data);
+      };
+
+      eventSource.onerror = () => {
+        console.error("[SSE] 연결 끊김. 3초 후 재연결...");
+        eventSource.close();
+        setTimeout(createConnection, 3000);
+      };
+    };
+
+    createConnection();
+    return () => eventSource?.close();
+  }, [chatRoomId]);
+
   useEffect(() => {
     const token = getToken();
     if (!token || !chatRoomId) return;

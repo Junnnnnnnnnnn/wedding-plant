@@ -62,7 +62,7 @@ const getColorByLabel = (label: string) => {
 function AddPlanPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { fetchWithAuth } = useApi();
+  const { fetchWithAuth, setLoading: setGlobalLoading } = useApi();
   const editId = useMemo(() => {
     const idParam = searchParams.get("id");
     if (!idParam) return null;
@@ -212,6 +212,11 @@ function AddPlanPageContent() {
     };
   }, []);
 
+  useEffect(() => {
+    // Disable global loading modal for add-plen to show skeleton instead
+    setGlobalLoading(false);
+  }, [setGlobalLoading]);
+
   // 지도 컨테이너가 렌더링된 후 지도 생성
   useEffect(() => {
     if (!showMap || !mapCoords || !window.kakao || !window.kakao.maps) {
@@ -301,6 +306,7 @@ function AddPlanPageContent() {
 
         const res = await fetchWithAuth(endpoint, {
           method: "GET",
+          skipLoading: true,
         });
         const json = (await res.json().catch(() => null)) as {
           result?: boolean;
@@ -358,6 +364,7 @@ function AddPlanPageContent() {
       try {
         const res = await fetchWithAuth(`/plan/schedule/${editId}`, {
           method: "GET",
+          skipLoading: true,
         });
         const json = (await res.json().catch(() => null)) as {
           result?: boolean;
@@ -840,13 +847,18 @@ function AddPlanPageContent() {
               <span className="text-[42px] font-semibold text-[#1b0d14] leading-none mt-2">
                 {editId ? "수정하기" : "플랜 추가"}
               </span>
-              {editId && isLoadingDetail && (
-                <span className="text-sm text-stone-500 mt-2">
-                  불러오는 중...
-                </span>
-              )}
             </div>
           </div>
+          {editId && isLoadingDetail && (
+            <div className="mt-6 w-full space-y-5 animate-pulse">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-24 bg-stone-50 rounded-2xl border border-stone-100"
+                />
+              ))}
+            </div>
+          )}
           {/* 폼 카드 영역 */}
           <div className="mt-6 w-full space-y-5">
             {/* 제목 */}
@@ -894,11 +906,10 @@ function AddPlanPageContent() {
                       <button
                         type="button"
                         onClick={handleOpenModal}
-                        className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${
-                          selectedCategory
-                            ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
-                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                        }`}
+                        className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${selectedCategory
+                          ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                          : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                          }`}
                       >
                         {selectedCategory
                           ? selectedCategory.label
@@ -970,11 +981,10 @@ function AddPlanPageContent() {
                           key={type}
                           type="button"
                           onClick={() => setPaymentType(type)}
-                          className={`py-3 rounded-xl font-medium transition-all text-sm border ${
-                            paymentType === type
-                              ? "bg-stone-800 text-white shadow-sm border-stone-800"
-                              : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                          }`}
+                          className={`py-3 rounded-xl font-medium transition-all text-sm border ${paymentType === type
+                            ? "bg-stone-800 text-white shadow-sm border-stone-800"
+                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                            }`}
                         >
                           {type}
                         </button>
@@ -1032,11 +1042,10 @@ function AddPlanPageContent() {
                     </label>
                     <div className="flex gap-2">
                       <div
-                        className={`flex-1 px-4 py-4 rounded-2xl text-lg font-medium transition-all cursor-pointer flex items-center justify-center border ${
-                          isDateUndecided
-                            ? "bg-stone-50 text-stone-300 border-stone-200"
-                            : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
-                        }`}
+                        className={`flex-1 px-4 py-4 rounded-2xl text-lg font-medium transition-all cursor-pointer flex items-center justify-center border ${isDateUndecided
+                          ? "bg-stone-50 text-stone-300 border-stone-200"
+                          : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                          }`}
                         onClick={() => {
                           setIsDateUndecided(false);
                           setIsDatePickerOpen(true);
@@ -1056,11 +1065,10 @@ function AddPlanPageContent() {
                       <button
                         type="button"
                         onClick={() => setIsDateUndecided(!isDateUndecided)}
-                        className={`px-6 rounded-2xl font-medium transition-all text-sm border ${
-                          isDateUndecided
-                            ? "bg-stone-800 text-white border-stone-800"
-                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                        }`}
+                        className={`px-6 rounded-2xl font-medium transition-all text-sm border ${isDateUndecided
+                          ? "bg-stone-800 text-white border-stone-800"
+                          : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                          }`}
                       >
                         미정
                       </button>
@@ -1108,11 +1116,10 @@ function AddPlanPageContent() {
                         type="button"
                         onClick={handleSearchLocation}
                         disabled={!location.trim()}
-                        className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${
-                          location.trim()
-                            ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
-                            : "bg-stone-100 text-stone-400 border-stone-200"
-                        }`}
+                        className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${location.trim()
+                          ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
+                          : "bg-stone-100 text-stone-400 border-stone-200"
+                          }`}
                       >
                         <Search className="w-5 h-5" />
                       </button>
@@ -1339,6 +1346,7 @@ function AddPlanPageContent() {
                       const res = await fetchWithAuth(url, {
                         method: editId ? "PATCH" : "POST",
                         body: JSON.stringify(body),
+                        skipLoading: true,
                       });
                       const json = await res.json().catch(() => ({}));
 
@@ -1452,15 +1460,14 @@ function AddPlanPageContent() {
                           selectedCategory?.label === category.label
                             ? { backgroundColor: category.color }
                             : {
-                                backgroundColor: `${category.color}20`,
-                                borderColor: category.color,
-                              }
+                              backgroundColor: `${category.color}20`,
+                              borderColor: category.color,
+                            }
                         }
-                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${
-                          selectedCategory?.label === category.label
-                            ? "text-[#1b0d14] shadow-lg scale-[1.02]"
-                            : "text-[#1b0d14] hover:opacity-90"
-                        } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
+                        className={`w-full text-left px-6 py-4 rounded-2xl transition-all flex items-center justify-between border-2 ${selectedCategory?.label === category.label
+                          ? "text-[#1b0d14] shadow-lg scale-[1.02]"
+                          : "text-[#1b0d14] hover:opacity-90"
+                          } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
                       >
                         <span className="font-user-content font-bold text-lg flex items-center gap-2">
                           {selectedCategory?.label === category.label

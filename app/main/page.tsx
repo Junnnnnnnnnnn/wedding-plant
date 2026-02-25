@@ -233,7 +233,7 @@ function MainPageContent() {
   const shareCode = searchParams.get("share");
   const roomId = searchParams.get("roomId");
   const { weddingData, resetData } = useWedding();
-  const { fetchWithAuth } = useApi();
+  const { fetchWithAuth, setLoading } = useApi();
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
     null,
   );
@@ -317,6 +317,7 @@ function MainPageContent() {
       try {
         await fetchWithAuth("/plan/user/has-seen-main-guide", {
           method: "POST",
+          skipLoading: true,
         });
       } catch {
         // 무시
@@ -369,11 +370,16 @@ function MainPageContent() {
       setRoomMembers([]);
       try {
         const [userRes, scheduleRes, memberRes] = await Promise.all([
-          fetchWithAuth(`/plan/user/${encodeURIComponent(code)}`),
+          fetchWithAuth(`/plan/user/${encodeURIComponent(code)}`, {
+            skipLoading: true,
+          }),
           fetchWithAuth(
             `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=DESC&sortColumn=startDate&status=NORMAL`,
+            { skipLoading: true },
           ),
-          fetchWithAuth(`/plan/user/room/member/${encodeURIComponent(code)}`),
+          fetchWithAuth(`/plan/user/room/member/${encodeURIComponent(code)}`, {
+            skipLoading: true,
+          }),
         ]);
         const userJson = (await userRes.json()) as {
           result?: boolean;
@@ -422,6 +428,7 @@ function MainPageContent() {
       try {
         const res = await fetchWithAuth(
           `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=DESC&sortColumn=startDate&status=${status}`,
+          { skipLoading: true },
         );
         const json = (await res.json()) as {
           result?: boolean;
@@ -451,9 +458,11 @@ function MainPageContent() {
         const [normRes, compRes] = await Promise.all([
           fetchWithAuth(
             `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=1&status=NORMAL`,
+            { skipLoading: true },
           ),
           fetchWithAuth(
             `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=1&status=COMPLETED`,
+            { skipLoading: true },
           ),
         ]);
         const normJson = await normRes.json();
@@ -476,8 +485,12 @@ function MainPageContent() {
           ? `/plan/schedule/room/${encodeURIComponent(roomIdParam.trim())}/list`
           : "/plan/schedule/list";
         const [normRes, compRes] = await Promise.all([
-          fetchWithAuth(`${baseUrl}?page=1&count=1&status=NORMAL`),
-          fetchWithAuth(`${baseUrl}?page=1&count=1&status=COMPLETED`),
+          fetchWithAuth(`${baseUrl}?page=1&count=1&status=NORMAL`, {
+            skipLoading: true,
+          }),
+          fetchWithAuth(`${baseUrl}?page=1&count=1&status=COMPLETED`, {
+            skipLoading: true,
+          }),
         ]);
         const normJson = await normRes.json();
         const compJson = await compRes.json();
@@ -504,7 +517,7 @@ function MainPageContent() {
         const url = roomIdParam?.trim()
           ? `/plan/room/${encodeURIComponent(roomIdParam.trim())}`
           : "/plan/user";
-        const res = await fetchWithAuth(url);
+        const res = await fetchWithAuth(url, { skipLoading: true });
         if (cancelledRef.current) return null;
         const json = (await res.json()) as {
           result?: boolean;
@@ -538,7 +551,7 @@ function MainPageContent() {
         ? `/plan/room/total-amount/${encodeURIComponent(roomIdParam.trim())}`
         : "/plan/user/total-amount";
       try {
-        const res = await fetchWithAuth(url);
+        const res = await fetchWithAuth(url, { skipLoading: true });
         if (cancelledRef.current) return;
         const json = (await res.json()) as {
           result?: boolean;
@@ -620,9 +633,11 @@ function MainPageContent() {
         try {
           await fetchWithAuth("/plan/user/has-seen-main-guide", {
             method: "POST",
+            skipLoading: true,
           });
           await fetchWithAuth("/plan/user/has-seen-budget-guide", {
             method: "POST",
+            skipLoading: true,
           });
           if (typeof window !== "undefined") {
             localStorage.removeItem("hasSeenMainGuide");
@@ -639,6 +654,9 @@ function MainPageContent() {
     const roomIdParam = roomId?.trim();
 
     (async () => {
+      // Disable global loading modal for /main to show skeleton instead
+      setLoading(false);
+
       // Small delay for smooth navigation
       await new Promise((r) => setTimeout(r, 100));
       if (cancelledRef.current) return;
@@ -670,7 +688,7 @@ function MainPageContent() {
         await syncGuestGuideThenProceed();
         if (cancelledRef.current) return;
         try {
-          const res = await fetchWithAuth("/plan/user");
+          const res = await fetchWithAuth("/plan/user", { skipLoading: true });
           if (cancelledRef.current) return;
           const json = (await res.json()) as {
             result?: boolean;
@@ -938,7 +956,7 @@ function MainPageContent() {
         const url = roomIdParam?.trim()
           ? `/plan/schedule/room/${encodeURIComponent(roomIdParam.trim())}/list?${params.toString()}`
           : `/plan/schedule/list?${params.toString()}`;
-        const res = await fetchWithAuth(url);
+        const res = await fetchWithAuth(url, { skipLoading: true });
         const json = (await res.json()) as {
           result?: boolean;
           data?: { total: number; list: ScheduleListItem[] };
@@ -1150,6 +1168,7 @@ function MainPageContent() {
         const res = await fetchWithAuth(`/plan/schedule/status/${id}`, {
           method: "PATCH",
           body: JSON.stringify({ status: newStatus }),
+          skipLoading: true,
         });
         const json = (await res.json()) as { result?: boolean };
         if (res.ok && json.result) {
@@ -1316,23 +1335,23 @@ function MainPageContent() {
                             String(member.planUserId ?? "")
                               .trim()
                               .toLowerCase() ===
-                              String(sharedRoomUser.id)
-                                .trim()
-                                .toLowerCase()) && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                              aria-hidden
-                            >
-                              <Crown
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
+                            String(sharedRoomUser.id)
+                              .trim()
+                              .toLowerCase()) && (
+                              <span
+                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                                aria-hidden
+                              >
+                                <Crown
+                                  className="w-2.5 h-2.5"
+                                  strokeWidth={2.5}
+                                />
+                              </span>
+                            )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                              "OWNER" && (
+                            "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1406,20 +1425,20 @@ function MainPageContent() {
                         >
                           {String(member.permission ?? "").toUpperCase() ===
                             "OWNER" && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                              aria-hidden
-                            >
-                              <Crown
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
+                              <span
+                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                                aria-hidden
+                              >
+                                <Crown
+                                  className="w-2.5 h-2.5"
+                                  strokeWidth={2.5}
+                                />
+                              </span>
+                            )}
                           {String(member.permission ?? "").toUpperCase() ===
                             "WRITE" &&
                             String(member.permission ?? "").toUpperCase() !==
-                              "OWNER" && (
+                            "OWNER" && (
                               <span
                                 className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
                                 aria-hidden
@@ -1664,8 +1683,8 @@ function MainPageContent() {
                       const roomIdValue =
                         roomId ??
                         (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
+                          apiPlanData !== "none" &&
+                          apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       router.push(
@@ -1695,11 +1714,10 @@ function MainPageContent() {
                           key={catName}
                           type="button"
                           onClick={() => setSelectedCategory(catName)}
-                          className={`shrink-0 px-3 py-1 rounded-md text-[12px] font-bold transition-all flex items-center gap-1 ${
-                            isSelected
-                              ? "bg-[#ee2b8c] text-white shadow-sm"
-                              : "bg-gray-100/80 text-gray-600 hover:bg-gray-200 active:scale-95"
-                          }`}
+                          className={`shrink-0 px-3 py-1 rounded-md text-[12px] font-bold transition-all flex items-center gap-1 ${isSelected
+                            ? "bg-[#ee2b8c] text-white shadow-sm"
+                            : "bg-gray-100/80 text-gray-600 hover:bg-gray-200 active:scale-95"
+                            }`}
                         >
                           {catName}
                         </button>
@@ -1716,65 +1734,65 @@ function MainPageContent() {
                 isRoomView &&
                 String(myRoomPermission ?? "").toUpperCase() === "READ"
               ) && (
-                <div className="flex shrink-0 pb-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const roomIdValue =
-                        roomId ??
-                        (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
-                          ? String(apiPlanData.roomId)
-                          : null);
+                  <div className="flex shrink-0 pb-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const roomIdValue =
+                          roomId ??
+                          (apiPlanData &&
+                            apiPlanData !== "none" &&
+                            apiPlanData.roomId
+                            ? String(apiPlanData.roomId)
+                            : null);
 
-                      const addPlanPath = roomIdValue
-                        ? `/add-plen?roomId=${roomIdValue}`
-                        : "/add-plen";
-                      if (getToken()) {
+                        const addPlanPath = roomIdValue
+                          ? `/add-plen?roomId=${roomIdValue}`
+                          : "/add-plen";
+                        if (getToken()) {
+                          router.push(addPlanPath);
+                          return;
+                        }
+                        if (isSharedView) {
+                          setLoginRequiredTitle(
+                            "플랜을 추가하려면 로그인해 주세요",
+                          );
+                          setShowLoginRequiredModal(true);
+                          return;
+                        }
+
+                        // Guest: allow up to 3 plans saved in sessionStorage
+                        const guestCount = effectiveScheduleList.length;
+                        if (guestCount === 0) {
+                          // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
+                          setShowGuestPlanLimitModal(true);
+                          return;
+                        }
+                        if (guestCount >= 3) {
+                          setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
+                          setShowLoginRequiredModal(true);
+                          return;
+                        }
                         router.push(addPlanPath);
-                        return;
-                      }
-                      if (isSharedView) {
-                        setLoginRequiredTitle(
-                          "플랜을 추가하려면 로그인해 주세요",
-                        );
-                        setShowLoginRequiredModal(true);
-                        return;
-                      }
-
-                      // Guest: allow up to 3 plans saved in sessionStorage
-                      const guestCount = effectiveScheduleList.length;
-                      if (guestCount === 0) {
-                        // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
-                        setShowGuestPlanLimitModal(true);
-                        return;
-                      }
-                      if (guestCount >= 3) {
-                        setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
-                        setShowLoginRequiredModal(true);
-                        return;
-                      }
-                      router.push(addPlanPath);
-                    }}
-                    className="flex h-[36px] justify-center items-center gap-1.5 px-3.5 py-0 text-white rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
-                    style={{
-                      backgroundColor:
-                        !getToken() &&
-                        !isSharedView &&
-                        effectiveScheduleList.length >= 3
-                          ? "#cbd5e1"
-                          : "#ee2b8c",
-                    }}
-                  >
-                    추가
-                    <CirclePlus
-                      className="h-4 w-4 shrink-0 text-white"
-                      strokeWidth={2.5}
-                    />
-                  </button>
-                </div>
-              )}
+                      }}
+                      className="flex h-[36px] justify-center items-center gap-1.5 px-3.5 py-0 text-white rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
+                      style={{
+                        backgroundColor:
+                          !getToken() &&
+                            !isSharedView &&
+                            effectiveScheduleList.length >= 3
+                            ? "#cbd5e1"
+                            : "#ee2b8c",
+                      }}
+                    >
+                      추가
+                      <CirclePlus
+                        className="h-4 w-4 shrink-0 text-white"
+                        strokeWidth={2.5}
+                      />
+                    </button>
+                  </div>
+                )}
             </div>
             {/* 탭 영역 - Sticky 고정 */}
             <div
@@ -1793,18 +1811,17 @@ function MainPageContent() {
                       const roomIdParam =
                         roomId?.trim() ||
                         (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
+                          apiPlanData !== "none" &&
+                          apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       fetchScheduleList(roomIdParam ?? undefined, "NORMAL");
                     }
                   }}
-                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
-                    activeTab === "planned"
-                      ? "bg-white text-[#ee2b8c] shadow-sm"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
+                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === "planned"
+                    ? "bg-white text-[#ee2b8c] shadow-sm"
+                    : "text-gray-400 hover:text-gray-600"
+                    }`}
                 >
                   <span>계획 중</span>
                   <span
@@ -1824,18 +1841,17 @@ function MainPageContent() {
                       const roomIdParam =
                         roomId?.trim() ||
                         (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
+                          apiPlanData !== "none" &&
+                          apiPlanData.roomId
                           ? String(apiPlanData.roomId)
                           : null);
                       fetchScheduleList(roomIdParam ?? undefined, "COMPLETED");
                     }
                   }}
-                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
-                    activeTab === "completed"
-                      ? "bg-white text-[#ee2b8c] shadow-sm"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
+                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === "completed"
+                    ? "bg-white text-[#ee2b8c] shadow-sm"
+                    : "text-gray-400 hover:text-gray-600"
+                    }`}
                 >
                   <span>완료</span>
                   <span
@@ -1859,31 +1875,30 @@ function MainPageContent() {
                 id="main-plan-list"
                 className="mt-2 w-full flex flex-col gap-3 min-h-[200px] relative bg-transparent"
               >
-                {scheduleLoading || isSharedLoading ? (
-                  ["a", "b", "c", "d", "e"].map((id) => (
+                {/* 
+                  플랜 리스트 로딩 상태: 
+                  1. scheduleLoading: API 호출 중
+                  2. !scheduleInitialFetched: 초기 로드 전
+                  3. isPlanLoading: 유저/방 정보 로딩 중 (상단 섹션과 보조를 맞춤)
+                */}
+                {scheduleLoading || !scheduleInitialFetched || isPlanLoading || isSharedLoading ? (
+                  Array.from({ length: 5 }).map((_, idx) => (
                     <li
-                      key={`skeleton-plan-${id}`}
-                      className="flex items-center gap-4 rounded-3xl border border-[#ee2b8c0a] bg-white p-4 shadow-sm"
+                      key={`skeleton-plan-${idx}`}
+                      className="flex items-center gap-4 rounded-3xl border border-[#ee2b8c0a] bg-white p-4 shadow-sm animate-pulse"
                     >
-                      <span
-                        className="skeleton-shimmer h-6 w-6 shrink-0 rounded-full"
-                        aria-hidden
-                      />
+                      <div className="w-14 h-14 rounded-2xl bg-stone-50 shrink-0" />
                       <div className="min-w-0 flex-1 space-y-2">
-                        <span
-                          className="skeleton-shimmer block h-[22px] max-w-[200px] rounded"
-                          style={{ width: "75%" }}
-                          aria-hidden
-                        />
-                        <span
-                          className="skeleton-shimmer block h-4 w-32 rounded"
-                          aria-hidden
-                        />
+                        <div className="h-5 w-3/4 bg-stone-50 rounded" />
+                        <div className="space-y-1">
+                          <div className="h-3 w-1/2 bg-stone-50 rounded" />
+                          <div className="h-3 w-1/3 bg-stone-50 rounded" />
+                        </div>
                       </div>
-                      <span
-                        className="skeleton-shimmer h-5 w-16 shrink-0 rounded"
-                        aria-hidden
-                      />
+                      <div className="text-right space-y-2">
+                        <div className="h-5 w-16 bg-stone-50 rounded ml-auto" />
+                        <div className="h-4 w-10 bg-stone-50 rounded-lg ml-auto" />
+                      </div>
                     </li>
                   ))
                 ) : isListLoaded && effectiveScheduleList.length === 0 ? (
@@ -1917,11 +1932,11 @@ function MainPageContent() {
                         const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
                         const dateLabel = plan.startDate?.trim()
                           ? (() => {
-                              const { dateText, weekday } = formatDate(
-                                plan.startDate as string,
-                              );
-                              return `${dateText} (${weekday})`;
-                            })()
+                            const { dateText, weekday } = formatDate(
+                              plan.startDate as string,
+                            );
+                            return `${dateText} (${weekday})`;
+                          })()
                           : "미정";
 
                         return (
@@ -1934,20 +1949,20 @@ function MainPageContent() {
                             exit={
                               removedItems.has(plan.id)
                                 ? {
-                                    opacity: [1, 1, 0],
-                                    y: [0, -20, -20],
-                                    x: [
-                                      0,
-                                      0,
-                                      activeTab === "planned" ? 500 : -500,
-                                    ],
-                                    scale: [1, 1.05, 1.05],
-                                    transition: {
-                                      duration: 0.6,
-                                      times: [0, 0.4, 1],
-                                      ease: "easeInOut",
-                                    },
-                                  }
+                                  opacity: [1, 1, 0],
+                                  y: [0, -20, -20],
+                                  x: [
+                                    0,
+                                    0,
+                                    activeTab === "planned" ? 500 : -500,
+                                  ],
+                                  scale: [1, 1.05, 1.05],
+                                  transition: {
+                                    duration: 0.6,
+                                    times: [0, 0.4, 1],
+                                    ease: "easeInOut",
+                                  },
+                                }
                                 : { opacity: 0, transition: { duration: 0 } }
                             }
                           >
@@ -1982,11 +1997,10 @@ function MainPageContent() {
                                     e.stopPropagation();
                                     handleToggleCheck(plan.id);
                                   }}
-                                  className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
-                                    isChecked
-                                      ? "bg-[#ee2b8c] border-[#ee2b8c]"
-                                      : "bg-white/80 border-[#ee2b8c]"
-                                  }`}
+                                  className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${isChecked
+                                    ? "bg-[#ee2b8c] border-[#ee2b8c]"
+                                    : "bg-white/80 border-[#ee2b8c]"
+                                    }`}
                                 >
                                   {isChecked && (
                                     <Check
@@ -2016,11 +2030,10 @@ function MainPageContent() {
                                     : "미정"}
                                 </div>
                                 <span
-                                  className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
-                                    isChecked
-                                      ? "bg-[#ee2b8c] text-white"
-                                      : "bg-gray-100 text-gray-500"
-                                  }`}
+                                  className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${isChecked
+                                    ? "bg-[#ee2b8c] text-white"
+                                    : "bg-gray-100 text-gray-500"
+                                    }`}
                                 >
                                   {isChecked ? "완료" : "예정"}
                                 </span>

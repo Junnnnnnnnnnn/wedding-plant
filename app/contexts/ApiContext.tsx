@@ -10,16 +10,20 @@ import {
 } from "react";
 import { getApiBaseUrl, getToken } from "@/lib/api";
 
+interface ApiRequestOptions extends RequestInit {
+  skipLoading?: boolean;
+}
+
 interface ApiContextType {
   loading: boolean;
   /** 수동 로딩 제어 (예: OAuth 리다이렉트 전 즉시 로딩 표시) */
   setLoading: (value: boolean) => void;
   /** Same-origin 요청 (로딩 표시). 예: /api/... */
-  request: (url: string, options?: RequestInit) => Promise<Response>;
+  request: (url: string, options?: ApiRequestOptions) => Promise<Response>;
   /** 백엔드 API 요청 (Bearer 없음, 로딩 표시). 예: 로그인 POST /plan/auth/kakao/login */
-  fetchBackend: (path: string, options?: RequestInit) => Promise<Response>;
+  fetchBackend: (path: string, options?: ApiRequestOptions) => Promise<Response>;
   /** 백엔드 API 요청. Authorization: Bearer 토큰 + 로딩 표시 */
-  fetchWithAuth: (path: string, options?: RequestInit) => Promise<Response>;
+  fetchWithAuth: (path: string, options?: ApiRequestOptions) => Promise<Response>;
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
@@ -34,8 +38,9 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const loading = loadingCount > 0;
 
   const request = useCallback(
-    async (url: string, options?: RequestInit) => {
-      setLoading(true);
+    async (url: string, options?: ApiRequestOptions) => {
+      const skipLoading = options?.skipLoading === true;
+      if (!skipLoading) setLoading(true);
       try {
         const res = await fetch(url, {
           ...options,
@@ -47,7 +52,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         });
         return res;
       } finally {
-        setLoading(false);
+        if (!skipLoading) setLoading(false);
       }
     },
     [setLoading],
@@ -61,9 +66,10 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchBackend = useCallback(
-    async (path: string, options?: RequestInit) => {
+    async (path: string, options?: ApiRequestOptions) => {
       const url = buildBackendUrl(path);
-      setLoading(true);
+      const skipLoading = options?.skipLoading === true;
+      if (!skipLoading) setLoading(true);
       try {
         const headers: HeadersInit = {
           Accept: "application/json",
@@ -73,17 +79,18 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         const res = await fetch(url, { ...options, headers });
         return res;
       } finally {
-        setLoading(false);
+        if (!skipLoading) setLoading(false);
       }
     },
     [buildBackendUrl, setLoading],
   );
 
   const fetchWithAuth = useCallback(
-    async (path: string, options?: RequestInit) => {
+    async (path: string, options?: ApiRequestOptions) => {
       const token = getToken();
       const url = buildBackendUrl(path);
-      setLoading(true);
+      const skipLoading = options?.skipLoading === true;
+      if (!skipLoading) setLoading(true);
       try {
         const headers: HeadersInit = {
           Accept: "application/json",
@@ -96,7 +103,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         const res = await fetch(url, { ...options, headers });
         return res;
       } finally {
-        setLoading(false);
+        if (!skipLoading) setLoading(false);
       }
     },
     [buildBackendUrl, setLoading],
