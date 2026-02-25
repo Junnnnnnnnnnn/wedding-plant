@@ -49,9 +49,8 @@ export default function GuideOverlay({
   // 처음 열릴 때 첫 번째 스텝 스팟라이트 자동 표시
   useEffect(() => {
     if (isOpen && steps.length > 0) {
+      // Always start with the first step
       setActiveStepId(steps[0].id);
-    } else {
-      setActiveStepId(null);
     }
   }, [isOpen, steps]);
 
@@ -80,7 +79,9 @@ export default function GuideOverlay({
   }, [updateRect]);
 
   const handleOverlayClick = () => {
-    // 아무 곳이나 터치하면 다음 스텝으로 진행
+    // 활성 스텝이 없으면 클릭 무시
+    if (!activeStepId) return;
+
     const currentIndex = steps.findIndex((s) => s.id === activeStepId);
     if (currentIndex < steps.length - 1) {
       setActiveStepId(steps[currentIndex + 1].id);
@@ -111,7 +112,7 @@ export default function GuideOverlay({
                  The div itself is transparent (the hole).
         */}
 
-        {activeStepId && targetRect ? (
+        {activeStepId && targetRect && (
           <>
             {/* The "Hole" with Spotlight execution */}
             {(() => {
@@ -197,22 +198,11 @@ export default function GuideOverlay({
               );
             })()}
           </>
-        ) : (
-          <div className="absolute inset-0 bg-black/60 transition-colors duration-300 flex items-center justify-center pointer-events-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-white text-center p-6 pointer-events-none"
-            >
-              <div className="mb-4 text-4xl animate-bounce">👆</div>
-              <h3 className="text-xl font-bold mb-2">화면 사용법</h3>
-              <p className="text-white/80 leading-relaxed">
-                아무 곳이나 터치하면
-                <br />
-                다음 설명으로 이동해요!
-              </p>
-            </motion.div>
-          </div>
+        )}
+
+        {/* Fallback dark background when target is not yet ready */}
+        {activeStepId && !targetRect && (
+          <div className="absolute inset-0 bg-black/60 transition-colors duration-300" />
         )}
 
         {/* Close Button */}

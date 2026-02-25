@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getToken, setShareAfterLogin, clearToken } from "@/lib/api";
 import { useApi } from "@/app/contexts/ApiContext";
 import LoginRequiredModal from "@/app/components/LoginRequiredModal";
+
+const joinedCodes = new Set<string>();
 
 export default function SharePage() {
   const router = useRouter();
@@ -12,40 +14,52 @@ export default function SharePage() {
   const shareCode = params.shareCode as string;
   const { fetchWithAuth } = useApi();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!shareCode) return;
 
     const token = getToken();
     if (!token) {
-      // 로그인 안됨 -> shareCode 저장하고 모달 표시
       setShareAfterLogin(shareCode);
       setShowLoginModal(true);
       return;
     }
 
-    // 로그인 됨 -> 방 참여 API 호출 후 /plan-list 이동
+    if (joinedCodes.has(shareCode)) return;
+    joinedCodes.add(shareCode);
+
+    abortControllerRef.current = new AbortController();
+
     const joinRoom = async () => {
       try {
         const res = await fetchWithAuth(`/plan/room/${shareCode}`, {
           method: "POST",
+          signal: abortControllerRef.current?.signal,
         });
         if (res.status === 401) {
-          // 토큰 만료 등: 비로그인과 동일하게 모달 표시
           clearToken();
           setShareAfterLogin(shareCode);
           setShowLoginModal(true);
+          joinedCodes.delete(shareCode);
           return;
         }
         if (res.ok) {
           router.replace("/plan-list");
         }
       } catch (err) {
-        console.error("Failed to join room:", err);
+        if ((err as Error).name !== "AbortError") {
+          console.error("Failed to join room:", err);
+          joinedCodes.delete(shareCode);
+        }
       }
     };
 
     joinRoom();
+
+    return () => {
+      abortControllerRef.current?.abort();
+    };
   }, [shareCode, fetchWithAuth, router]);
 
   const handleCloseModal = () => {

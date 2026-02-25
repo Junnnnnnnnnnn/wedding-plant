@@ -412,21 +412,10 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
         "결혼식 날짜, 남은 예산, 그리고 참여 중인 멤버를 한눈에 볼 수 있습니다.",
     },
     {
-      id: "plan-members-0",
-      title: "참여 멤버",
-      description: "플랜에 함께하고 있는 소중한 사람들을 확인해 보세요.",
-    },
-    {
       id: "plan-channels-0",
-      title: "채팅 채널",
+      title: "채팅 리스트",
       description:
-        "플랜별 전용 채팅방입니다. 클릭하여 바로 대화를 시작할 수 있어요.",
-    },
-    {
-      id: "add-chat-button-0",
-      title: "새 채팅방 추가",
-      description:
-        "용도에 맞는 새로운 채팅방이 필요하다면 여기서 바로 추가해 보세요!",
+        "플랜별로 생성된 채팅방 리스트입니다. 클릭하여 바로 대화를 시작할 수 있어요.",
     },
   ];
 
