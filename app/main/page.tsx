@@ -613,6 +613,17 @@ function MainPageContent() {
   /** 401이면 모달 없이 / 로만 이동, 그 외에는 api_error=1 로 ApiErrorModal 표시 */
   const handleApiError = useCallback(
     (status?: number) => {
+      // 비로그인 게스트 사용자(setting 완료 후 /main 진입)는 401이어도 데이터 유지
+      const isGuestUser =
+        typeof window !== "undefined" &&
+        !getToken() &&
+        sessionStorage.getItem(HAS_COMPLETED_GUEST_SETTING_KEY) === "1";
+
+      if (status === 401 && isGuestUser) {
+        // 게스트 사용자는 401이 정상 (토큰 없으므로), 데이터 삭제하지 않고 그대로 유지
+        return;
+      }
+
       clearAllStoredData();
       resetData();
       if (status === 401) {
