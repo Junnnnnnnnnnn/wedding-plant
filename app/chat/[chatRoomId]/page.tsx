@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import {
   ChevronLeft,
+  ChevronRight,
   Send,
   Image as ImageIcon,
   Smile,
@@ -26,10 +27,13 @@ import LoginRequiredModal from "../../components/LoginRequiredModal";
 import ChatRoomNameEditModal from "../../components/ChatRoomNameEditModal";
 
 interface ScheduleData {
+  id: number;
   categoryName: string;
   title: string;
   amount: number;
+  startDate: string | null;
   status: string;
+  location: string | null;
 }
 
 interface Message {
@@ -233,12 +237,14 @@ const ChatMessage = React.memo(
     showDateHeader,
     showAvatar,
     scrollToBottom,
+    onScheduleClick,
   }: {
     msg: Message;
     isMe: boolean;
     showDateHeader: boolean;
     showAvatar: boolean;
     scrollToBottom: (behavior?: ScrollBehavior) => void;
+    onScheduleClick?: (scheduleId: number) => void;
   }) => {
     return (
       <div className="space-y-6">
@@ -299,15 +305,66 @@ const ChatMessage = React.memo(
                 )}
               </>
             ) : msg.messageType === "schedule" && msg.schedule ? (
-              <div className="bg-white border border-orange-300 rounded-xl p-4 min-w-[200px] shadow-sm">
-                <div className="text-[10px] bg-orange-50 text-orange-600 px-2 py-0.5 rounded font-bold inline-block mb-2">
-                  📅 {msg.schedule.categoryName} | {msg.schedule.status}
+              <div
+                className="relative min-w-[220px] max-w-[280px] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100"
+                style={{
+                  boxShadow: "inset 0 0 1px rgba(255, 255, 255, 1), 0 4px 12px rgba(0, 0, 0, 0.08)",
+                }}
+              >
+                {/* 제목 헤더 */}
+                <div className="px-4 pt-3 pb-2 bg-gradient-to-r from-[#ee2b8c] to-[#ff6b9d]">
+                  <span className="text-[13px] font-bold text-white">
+                    {msg.schedule.title}
+                  </span>
                 </div>
-                <div className="text-base font-bold text-stone-900">
-                  {msg.schedule.title}
-                </div>
-                <div className="text-sm font-extrabold text-red-600 border-t border-dashed border-gray-200 mt-2 pt-2">
-                  {Number(msg.schedule.amount).toLocaleString()}원
+
+                {/* 콘텐츠 */}
+                <div className="relative p-4 pt-3">
+                  {/* 카테고리 */}
+                  <div className="text-[11px] font-medium text-gray-500 mb-2">
+                    {msg.schedule.categoryName}
+                  </div>
+                  
+                  {/* 날짜 */}
+                  {msg.schedule.startDate && (
+                    <div className="text-xs text-gray-500 mb-1">
+                      {new Date(msg.schedule.startDate).toLocaleDateString("ko-KR", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* 장소 */}
+                  {msg.schedule.location && (
+                    <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                      <span>📍</span>
+                      <span className="truncate">{msg.schedule.location}</span>
+                    </div>
+                  )}
+                  
+                  {/* 금액 */}
+                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-200/60">
+                    <span className="text-[11px] text-gray-400 font-medium">비용</span>
+                    <span className="text-base font-extrabold text-[#ee2b8c]">
+                      {Number(msg.schedule.amount) > 0
+                        ? `${Number(msg.schedule.amount).toLocaleString()}만원`
+                        : "미정"}
+                    </span>
+                  </div>
+
+                  {/* 바로가기 버튼 */}
+                  {msg.schedule.id && (
+                    <button
+                      type="button"
+                      onClick={() => onScheduleClick?.(msg.schedule!.id)}
+                      className="w-full mt-3 py-2 flex items-center justify-center gap-1 rounded-lg bg-white/80 border border-gray-200 text-xs font-bold text-gray-600 hover:bg-white active:scale-[0.98] transition-all"
+                    >
+                      <span>상세보기</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -349,10 +406,12 @@ const ChatMessagesList = React.memo(
     messages,
     isLoadingMore,
     scrollToBottom,
+    onScheduleClick,
   }: {
     messages: Message[];
     isLoadingMore: boolean;
     scrollToBottom: (behavior?: ScrollBehavior) => void;
+    onScheduleClick?: (scheduleId: number) => void;
   }) => {
     return (
       <>
@@ -380,6 +439,7 @@ const ChatMessagesList = React.memo(
               showDateHeader={showDateHeader}
               showAvatar={showAvatar}
               scrollToBottom={scrollToBottom}
+              onScheduleClick={onScheduleClick}
             />
           );
         })}
@@ -931,6 +991,9 @@ export default function ChatPage() {
               messages={messages}
               isLoadingMore={isLoadingMore}
               scrollToBottom={scrollToBottom}
+              onScheduleClick={(scheduleId) => {
+                router.push(`/schedule-detail?id=${scheduleId}&roomId=${chatRoomId}`);
+              }}
             />
           </div>
 

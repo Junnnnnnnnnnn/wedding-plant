@@ -229,7 +229,7 @@ function AddPlanPageContent() {
 
       setAlertConfig({
         isOpen: true,
-        message: "채팅방에 플랜이 공유되었습니다.",
+        message: editId ? "수정된 플랜이 채팅방에 공유되었습니다." : "채팅방에 플랜이 공유되었습니다.",
         type: "success",
       });
       setShowChatShareSelection(false);
@@ -1508,9 +1508,11 @@ function AddPlanPageContent() {
                       const json = await res.json().catch(() => ({}));
 
                       if (res.ok && json.result === true) {
-                        if (json.data?.id) {
-                          setSavedScheduleId(Number(json.data.id));
-                          console.log("Saved schedule ID:", json.data.id);
+                        // 수정 모드일 때는 기존 editId 사용, 새로 생성할 때는 응답에서 받은 ID 사용
+                        const scheduleId = editId || (json.data?.id ? Number(json.data.id) : null);
+                        if (scheduleId) {
+                          setSavedScheduleId(scheduleId);
+                          console.log("Schedule ID for sharing:", scheduleId, editId ? "(edit mode)" : "(new)");
                         }
                         setShowPlanSavedModal(true);
                         return;
@@ -1743,7 +1745,7 @@ function AddPlanPageContent() {
                   플랜이 {editId ? "수정" : "생성"}되었습니다
                 </h3>
                 <p className="text-stone-500 text-sm font-medium mb-8 leading-relaxed">
-                  채팅방에 공유할까요?
+                  {editId ? "수정된 플랜을 채팅방에 공유할까요?" : "채팅방에 공유할까요?"}
                 </p>
                 <div className="flex w-full gap-3">
                   <button
@@ -1786,7 +1788,7 @@ function AddPlanPageContent() {
               >
                 <div className="p-6 border-b border-stone-50 flex justify-between items-center">
                   <h3 className="text-xl font-black text-[#1b0d14]">
-                    공유할 채팅방 선택
+                    {editId ? "수정된 플랜 공유" : "공유할 채팅방 선택"}
                   </h3>
                   <button
                     type="button"
