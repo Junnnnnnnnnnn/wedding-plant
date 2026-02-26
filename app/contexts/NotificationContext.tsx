@@ -13,6 +13,18 @@ import { useParams, usePathname } from "next/navigation";
 import { getApiBaseUrl, getToken, getPlanUserIdFromToken } from "@/lib/api";
 import NotificationToast from "../components/NotificationToast";
 
+/** NotificationContext 전용 fetch 함수 (ApiContext 의존성 없이 독립 동작) */
+async function fetchApi(url: string): Promise<Response> {
+  const baseUrl = getApiBaseUrl().replace(/\/+$/, "");
+  const token = getToken();
+  return fetch(`${baseUrl}${url}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+}
+
 interface NotificationContextType {
   unreadCount: number;
   roomUnreadCounts: Record<number, number>;
@@ -178,9 +190,27 @@ export function NotificationProvider({
 
                 // 토스트 알림 표시
                 if (res.data) {
+                  let notificationMessage =
+                    res.data.text || "메시지가 도착했습니다.";
+
+                  // 스케줄 데이터가 있는 경우 메시지 구성
+                  if (
+                    res.data.messageType === "schedule" &&
+                    res.data.schedule
+                  ) {
+                    const s = res.data.schedule;
+                    const amountStr = s.amount
+                      ? `${s.amount.toLocaleString()}만원`
+                      : "";
+                    const dateStr = s.startDate
+                      ? ` (${new Date(s.startDate).toLocaleDateString()})`
+                      : "";
+                    notificationMessage = `플랜을 공유했어요! [${s.categoryName}] ${s.title}${amountStr ? ` - ${amountStr}` : ""}${dateStr}`;
+                  }
+
                   showToast(
                     res.data.planUserName || "새 메시지",
-                    res.data.text || "메시지가 도착했습니다.",
+                    notificationMessage,
                     roomId,
                     res.data.planUserProfileImageUrl,
                   );
@@ -219,6 +249,61 @@ export function NotificationProvider({
     },
     [showToast],
   );
+
+  // 컴포넌트 마운트 시 유저 정보를 가져와서 채팅방 구독 및 카운트 초기화
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const token = getToken();
+    if (!token) return;
+
+    const initNotifications = async () => {
+      try {
+        const userRes = await fetchApi("/plan/user");
+        if (!userRes.ok) return;
+
+        const userJson = await userRes.json();
+        if (userJson.result && userJson.data?.chatRooms) {
+          const roomIds = userJson.data.chatRooms.map(
+            (r: { id: number }) => r.id,
+          );
+          console.log(
+            `[NotificationContext] Initializing subscriptions for rooms: ${roomIds.join(", ")}`,
+          );
+          subscribeToChatRooms(roomIds);
+
+          // 모든 채팅방에 대해 읽지 않은 카운트 합산
+          let totalUnread = 0;
+          await Promise.all(
+            roomIds.map(async (rid: number) => {
+              try {
+                const countRes = await fetchApi(
+                  `/plan/chat/message/count/${rid}`,
+                );
+                if (countRes.ok) {
+                  const countJson = await countRes.json();
+                  if (countJson.result) {
+                    const c = countJson.data.count || 0;
+                    updateRoomUnreadCount(rid, c);
+                    totalUnread += c;
+                  }
+                }
+              } catch (err) {
+                console.error(`Failed to fetch count for room ${rid}:`, err);
+              }
+            }),
+          );
+          updateUnreadCount(totalUnread);
+        }
+      } catch (error) {
+        console.error(
+          "[NotificationContext] Failed to initialize notifications:",
+          error,
+        );
+      }
+    };
+
+    initNotifications();
+  }, [subscribeToChatRooms, updateRoomUnreadCount, updateUnreadCount]);
 
   // 컴포넌트 언마운트 시 모든 연결 종료
   useEffect(() => {

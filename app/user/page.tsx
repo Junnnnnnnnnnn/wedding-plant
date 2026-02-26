@@ -6,6 +6,7 @@ import SettingsPage from "../components/SettingsPage";
 import BottomTabBar from "../components/BottomTabBar";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
+import { useNotification } from "../contexts/NotificationContext";
 import { getToken, clearAllStoredData } from "@/lib/api";
 
 interface PlanUserData {
@@ -25,6 +26,7 @@ export default function UserPage() {
   const router = useRouter();
   const { weddingData, setBudget, setName, setDate, resetData } = useWedding();
   const { fetchWithAuth } = useApi();
+  const { unreadCount } = useNotification();
   const [userData, setUserData] = useState<{
     name: string;
     weddingDate: string;
@@ -139,7 +141,7 @@ export default function UserPage() {
           onClose={handleClose}
           onSignOut={handleSignOut}
         />
-        <BottomTabBar />
+        <BottomTabBar unreadCount={unreadCount} />
       </div>
     </div>
   );

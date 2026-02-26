@@ -2,10 +2,18 @@
 
 import React, { Suspense, useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Tag, X, Check, Search, Plus, ArrowLeft } from "lucide-react";
+import {
+  Tag,
+  X,
+  Check,
+  Search,
+  Plus,
+  ArrowLeft,
+  MessageCircle,
+  ChevronRight,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import BottomTabBar from "../components/BottomTabBar";
-import FeedbackModal from "../components/FeedbackModal";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import { getToken } from "@/lib/api";
 import {
@@ -15,7 +23,9 @@ import {
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import DatePickerModal from "../components/DatePickerModal";
 import { useApi } from "../contexts/ApiContext";
+import { useNotification } from "../contexts/NotificationContext";
 import CustomAlertModal from "../components/CustomAlertModal";
+import { Plan, ChatRoom } from "@/types";
 
 // Kakao Maps API 타입 선언
 declare global {
@@ -63,6 +73,7 @@ function AddPlanPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { fetchWithAuth, setLoading: setGlobalLoading } = useApi();
+  const { unreadCount } = useNotification();
   const editId = useMemo(() => {
     const idParam = searchParams.get("id");
     if (!idParam) return null;
@@ -128,7 +139,9 @@ function AddPlanPageContent() {
   const [showDuplicateCategoryModal, setShowDuplicateCategoryModal] =
     useState(false);
   const [showPlanSavedModal, setShowPlanSavedModal] = useState(false);
-  const [showSystemErrorModal, setShowSystemErrorModal] = useState(false);
+  const [showChatShareSelection, setShowChatShareSelection] = useState(false);
+  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [savedScheduleId, setSavedScheduleId] = useState<number | null>(null);
   const [alertConfig, setAlertConfig] = useState<{
     isOpen: boolean;
     message: string;
@@ -138,6 +151,81 @@ function AddPlanPageContent() {
     message: "",
     type: "warning",
   });
+
+  const handleShareToChat = async (chatRoomId: number) => {
+    try {
+      // Trigger the share notification API via backend
+      await fetchWithAuth("/plan/schedule/notification", {
+        method: "POST",
+        body: JSON.stringify({
+          chatRoomId,
+          scheduleId: savedScheduleId,
+        }),
+      });
+
+      setAlertConfig({
+        isOpen: true,
+        message: "채팅방에 플랜이 공유되었습니다.",
+        type: "success",
+      });
+      setShowChatShareSelection(false);
+
+      // Redirect after sharing
+      setTimeout(() => {
+        if (fromParam === "calendar") {
+          router.push(roomId ? `/calendar?roomId=${roomId}` : "/calendar");
+        } else {
+          router.push(roomId ? `/main?roomId=${roomId}` : "/main");
+        }
+      }, 1500);
+    } catch (error) {
+      console.error("Failed to share to chat:", error);
+      setAlertConfig({
+        isOpen: true,
+        message: "공유에 실패했습니다.",
+        type: "error",
+      });
+    }
+  };
+
+  const fetchChatRooms = async () => {
+    try {
+      const res = await fetchWithAuth("/plan/room/list", { skipLoading: true });
+      const json = await res.json();
+      if (json.result && json.data?.list) {
+        const currentRoom = json.data.list.find(
+          (p: Plan) => p.roomId === roomId,
+        );
+        if (currentRoom) {
+          setChatRooms(currentRoom.chatRooms || []);
+        } else if (json.data.list.length > 0) {
+          // If roomId not found, show all chat rooms from all plans
+          const allRooms = json.data.list.flatMap(
+            (p: Plan) => p.chatRooms || [],
+          );
+          setChatRooms(allRooms);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch chat rooms:", error);
+    }
+  };
+
+  const handlePlanSavedConfirm = () => {
+    setShowPlanSavedModal(false);
+    setShowChatShareSelection(true);
+    fetchChatRooms();
+  };
+
+  const handlePlanSavedCancel = () => {
+    setShowPlanSavedModal(false);
+    if (fromParam === "calendar") {
+      router.push(roomId ? `/calendar?roomId=${roomId}` : "/calendar");
+    } else {
+      router.push(roomId ? `/main?roomId=${roomId}` : "/main");
+    }
+  };
+  const [showSystemErrorModal, setShowSystemErrorModal] = useState(false);
   const [duplicateCategoryLabel, setDuplicateCategoryLabel] = useState<
     string | null
   >(null);
@@ -1356,6 +1444,9 @@ function AddPlanPageContent() {
                       const json = await res.json().catch(() => ({}));
 
                       if (res.ok && json.result === true) {
+                        if (json.data?.id) {
+                          setSavedScheduleId(json.data.id);
+                        }
                         setShowPlanSavedModal(true);
                         return;
                       }
@@ -1383,6 +1474,7 @@ function AddPlanPageContent() {
         <BottomTabBar
           showLoginButton={false}
           scrollDirection={scrollDirection}
+          unreadCount={unreadCount}
         />
         <LoginRequiredModal
           show={showLoginRequiredModal}
@@ -1563,22 +1655,112 @@ function AddPlanPageContent() {
         </AnimatePresence>
 
         {/* 플랜 등록/수정 완료 피드백 모달 */}
-        <FeedbackModal
-          isOpen={showPlanSavedModal}
-          onClose={() => {
-            setShowPlanSavedModal(false);
-            if (fromParam === "calendar") {
-              router.push(roomId ? `/calendar?roomId=${roomId}` : "/calendar");
-            } else {
-              router.push(roomId ? `/main?roomId=${roomId}` : "/main");
-            }
-          }}
-          type={editId ? "updated" : "registered"}
-          title={editId ? "수정되었습니다" : "등록되었습니다"}
-          subtitle={
-            editId ? "Successfully updated" : "Successfully added to your plan"
-          }
-        />
+        <AnimatePresence>
+          {showPlanSavedModal && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-[#1b0d14]/60 backdrop-blur-md"
+                onClick={handlePlanSavedCancel}
+              />
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="bg-white w-full max-w-[320px] rounded-[40px] shadow-2xl relative z-10 overflow-hidden p-8 flex flex-col items-center text-center"
+              >
+                <div className="w-20 h-20 bg-[#ee2b8c11] rounded-3xl flex items-center justify-center mb-6">
+                  <Check className="w-10 h-10 text-[#ee2b8c]" strokeWidth={3} />
+                </div>
+                <h3 className="text-xl font-black text-[#1b0d14] mb-2">
+                  플랜이 {editId ? "수정" : "생성"}되었습니다
+                </h3>
+                <p className="text-stone-500 text-sm font-medium mb-8 leading-relaxed">
+                  채팅방에 공유할까요?
+                </p>
+                <div className="flex w-full gap-3">
+                  <button
+                    type="button"
+                    onClick={handlePlanSavedCancel}
+                    className="flex-1 h-14 rounded-2xl bg-stone-100 text-stone-500 font-bold hover:bg-stone-200 transition-colors"
+                  >
+                    아니요
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePlanSavedConfirm}
+                    className="flex-1 h-14 rounded-2xl bg-[#ee2b8c] text-white font-bold shadow-lg shadow-[#ee2b8c33] hover:bg-[#d4237b] transition-colors"
+                  >
+                    예
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* 채팅방 선택 모달 */}
+        <AnimatePresence>
+          {showChatShareSelection && (
+            <div className="fixed inset-0 z-[200] flex items-end justify-center">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-[#1b0d14]/60 backdrop-blur-md"
+                onClick={() => setShowChatShareSelection(false)}
+              />
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="bg-white w-full max-w-md rounded-t-[40px] shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[70vh]"
+              >
+                <div className="p-6 border-b border-stone-50 flex justify-between items-center">
+                  <h3 className="text-xl font-black text-[#1b0d14]">
+                    공유할 채팅방 선택
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowChatShareSelection(false)}
+                    className="w-10 h-10 bg-stone-50 rounded-full flex items-center justify-center text-stone-400"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 space-y-3">
+                  {chatRooms.length === 0 ? (
+                    <div className="text-center py-10 text-stone-400 font-medium">
+                      참여 중인 채팅방이 없습니다.
+                    </div>
+                  ) : (
+                    chatRooms.map((room) => (
+                      <button
+                        key={room.id}
+                        type="button"
+                        onClick={() => handleShareToChat(room.id)}
+                        className="w-full flex items-center justify-between p-4 bg-stone-50 rounded-2xl hover:bg-[#ee2b8c05] hover:border-[#ee2b8c22] border border-transparent transition-all group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#ee2b8c] shadow-sm">
+                            <MessageCircle className="w-6 h-6" />
+                          </div>
+                          <span className="font-bold text-[#1b0d14]">
+                            {room.name}
+                          </span>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-stone-300 group-hover:text-[#ee2b8c] transition-colors" />
+                      </button>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* 시스템 오류 모달 */}
         {showSystemErrorModal && (

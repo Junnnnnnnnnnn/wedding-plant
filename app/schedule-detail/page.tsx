@@ -25,6 +25,7 @@ import LoginRequiredModal from "../components/LoginRequiredModal";
 import FeedbackModal from "../components/FeedbackModal";
 import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
+import { useNotification } from "../contexts/NotificationContext";
 import CustomAlertModal from "../components/CustomAlertModal";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { getToken } from "@/lib/api";
@@ -107,6 +108,7 @@ function ScheduleDetailPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { fetchWithAuth } = useApi();
+  const { unreadCount } = useNotification();
   const mainScrollRef = useRef<HTMLElement>(null);
   const scrollDirection = useScrollDirection(mainScrollRef);
 
@@ -679,6 +681,7 @@ function ScheduleDetailPageContent() {
         <BottomTabBar
           scrollDirection={scrollDirection}
           showLoginButton={false}
+          unreadCount={unreadCount}
         />
         <LoginRequiredModal
           show={showLoginRequiredModal}

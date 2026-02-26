@@ -236,8 +236,7 @@ function MainPageContent() {
   const roomId = searchParams.get("roomId");
   const { weddingData, resetData } = useWedding();
   const { fetchWithAuth, setLoading } = useApi();
-  const { subscribeToChatRooms, unreadCount, updateUnreadCount } =
-    useNotification();
+  const { subscribeToChatRooms, unreadCount } = useNotification();
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
     null,
   );
@@ -537,19 +536,6 @@ function MainPageContent() {
           if (json.data.chatRooms && json.data.chatRooms.length > 0) {
             const roomIds = json.data.chatRooms.map((r) => r.id);
             subscribeToChatRooms(roomIds);
-
-            // 읽지 않은 카운트 초기 동기화
-            const firstRoomId = roomIds[0];
-            const countRes = await fetchWithAuth(
-              `/plan/chat/message/count/${firstRoomId}`,
-              { skipLoading: true },
-            );
-            if (countRes.ok) {
-              const countJson = await countRes.json();
-              if (countJson.result) {
-                updateUnreadCount(countJson.data.count);
-              }
-            }
           }
 
           return json.data;
@@ -562,7 +548,7 @@ function MainPageContent() {
         return null;
       }
     },
-    [fetchWithAuth, subscribeToChatRooms, updateUnreadCount],
+    [fetchWithAuth, subscribeToChatRooms],
   );
 
   const fetchTotalAmount = useCallback(
@@ -731,9 +717,17 @@ function MainPageContent() {
             result?: boolean;
             data?: PlanUserData;
           };
-          if (json?.result && json?.data)
+          if (json?.result && json?.data) {
             setHasSeenMainGuide(json.data.hasSeenMainGuide ?? true);
-          else setHasSeenMainGuide(true);
+
+            // SSE Subscription for the user's chat rooms
+            if (json.data.chatRooms && json.data.chatRooms.length > 0) {
+              const roomIds = json.data.chatRooms.map((r) => r.id);
+              subscribeToChatRooms(roomIds);
+            }
+          } else {
+            setHasSeenMainGuide(true);
+          }
         } catch {
           if (!cancelledRef.current) setHasSeenMainGuide(true);
         }
@@ -777,6 +771,7 @@ function MainPageContent() {
     shareCode,
     roomId,
     setLoading,
+    subscribeToChatRooms,
   ]);
 
   // 자신의 플랜이 없는 경우 안내 모달 표시 및 블러 처리

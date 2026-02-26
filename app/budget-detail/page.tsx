@@ -23,6 +23,7 @@ import StatCard from "./components/StatCard";
 import SpendingAnalysis from "./components/SpendingAnalysis";
 import ExpenseList from "./components/ExpenseList";
 import BottomTabBar from "../components/BottomTabBar";
+import { useNotification } from "../contexts/NotificationContext";
 
 const SCHEDULE_FETCH_COUNT = 10000;
 const SCHEDULE_SORT = "DESC";
@@ -132,6 +133,7 @@ function BudgetDetailsPage() {
   const searchParams = useSearchParams();
   const roomIdFromUrl = searchParams.get("roomId")?.trim() || null;
   const { fetchWithAuth, setLoading } = useApi();
+  const { subscribeToChatRooms, unreadCount } = useNotification();
   const { weddingData } = useWedding();
   const isGuest = !getToken();
   const guestBlurClass = isGuest ? "blur-sm opacity-60" : "";
@@ -342,7 +344,11 @@ function BudgetDetailsPage() {
       const userRes = await fetchWithAuth("/plan/user", { skipLoading: true });
       const userJson = (await userRes.json().catch(() => null)) as {
         result?: boolean;
-        data?: { roomId?: number | null; hasSeenBudgetGuide?: boolean };
+        data?: {
+          roomId?: number | null;
+          hasSeenBudgetGuide?: boolean;
+          chatRooms?: { id: number }[];
+        };
       } | null;
 
       setHasSeenBudgetGuide(
@@ -392,6 +398,19 @@ function BudgetDetailsPage() {
       } else {
         setDetailData(null);
       }
+
+      // SSE Subscription for the user's chat rooms
+      if (
+        userJson?.result &&
+        userJson.data?.chatRooms &&
+        userJson.data.chatRooms.length > 0
+      ) {
+        const roomIds = userJson.data.chatRooms.map(
+          (r: { id: number }) => r.id,
+        );
+        subscribeToChatRooms(roomIds);
+      }
+
       if (chartRes.ok && chartJson?.result && chartJson.data?.list) {
         setCategoryList(chartJson.data.list);
       } else {
@@ -411,7 +430,13 @@ function BudgetDetailsPage() {
     } finally {
       setDetailLoading(false);
     }
-  }, [fetchWithAuth, buildScheduleParams, roomIdFromUrl, weddingData.budget]);
+  }, [
+    fetchWithAuth,
+    buildScheduleParams,
+    roomIdFromUrl,
+    weddingData.budget,
+    subscribeToChatRooms,
+  ]);
 
   useEffect(() => {
     // Disable global loading modal for budget-detail to show skeleton instead
@@ -678,7 +703,7 @@ function BudgetDetailsPage() {
           onClose={() => setShowLoginRequiredModal(false)}
         />
 
-        <BottomTabBar showLoginButton={false} />
+        <BottomTabBar showLoginButton={false} unreadCount={unreadCount} />
         <GuideOverlay
           isOpen={showGuide}
           onClose={handleCloseGuide}
