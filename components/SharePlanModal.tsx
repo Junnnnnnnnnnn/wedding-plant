@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Link2, MessageCircle, Check } from "lucide-react";
+import { X, Share2, MessageCircle, CalendarRange, Sprout } from "lucide-react";
 import { useApi } from "@/app/contexts/ApiContext";
 
 interface SharePlanModalProps {
@@ -9,50 +9,22 @@ interface SharePlanModalProps {
   onClose: () => void;
 }
 
-/** 클립보드에 쓰기. Clipboard API 실패 시 execCommand 폴백(사용자 제스처 컨텍스트 필요). */
-function copyTextToClipboard(text: string): boolean {
-  try {
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    // Clipboard API가 막힌 경우(비동기 후 호출 등) 폴백
-  }
-  try {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.left = "-9999px";
-    ta.style.top = "0";
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
-}
-
 const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
-  const [copied, setCopied] = useState(false);
-  const [copyError, setCopyError] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareUrlLoading, setShareUrlLoading] = useState(false);
   const { fetchWithAuth } = useApi();
 
-  // 모달이 열릴 때 미리 share code 조회 (클릭 시에는 동기 복사만 하도록)
+  // 모달이 열릴 때 미리 share code 조회
   useEffect(() => {
     if (!isOpen) {
       setShareUrl(null);
-      setCopyError(null);
+      setShareError(null);
       return;
     }
     let cancelled = false;
     setShareUrlLoading(true);
-    setCopyError(null);
+    setShareError(null);
     (async () => {
       try {
         const res = await fetchWithAuth("/plan/room/share-code", {
@@ -77,7 +49,7 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
         setShareUrl(url);
       } catch (err) {
         if (!cancelled) {
-          setCopyError(
+          setShareError(
             err instanceof Error ? err.message : "링크를 불러오지 못했습니다.",
           );
         }
@@ -90,19 +62,36 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
     };
   }, [isOpen, fetchWithAuth]);
 
-  const handleCopyLink = () => {
-    setCopyError(null);
+  const handleShare = async () => {
+    setShareError(null);
     if (!shareUrl) {
-      setCopyError(
+      setShareError(
         shareUrlLoading ? "준비 중입니다." : "링크를 불러오지 못했습니다.",
       );
       return;
     }
-    if (copyTextToClipboard(shareUrl)) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+
+    const shareData = {
+      title: "웨딩 플랜 공유",
+      text: "함께 웨딩 플랜을 관리해요!",
+      url: shareUrl,
+    };
+
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          setShareError("공유에 실패했습니다.");
+        }
+      }
     } else {
-      setCopyError("링크 복사에 실패했습니다. 주소를 직접 복사해 주세요.");
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareError("링크가 클립보드에 복사되었습니다.");
+      } catch {
+        setShareError("이 브라우저에서는 공유 기능을 지원하지 않습니다.");
+      }
     }
   };
 
@@ -110,11 +99,11 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 backdrop-blur-sm px-4 pb-[75px]"
+      className="fixed inset-0 z-[110] flex items-end justify-center bg-black/50 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-t-[44px] px-5 sm:px-6 py-8 sm:p-8 shadow-2xl transition-all animate-in fade-in slide-in-from-bottom duration-300 overflow-hidden relative flex flex-col max-h-[calc(100dvh-140px)] min-h-0"
+        className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-t-[44px] px-5 sm:px-6 pt-8 pb-10 sm:p-10 shadow-2xl transition-all animate-in fade-in slide-in-from-bottom duration-300 overflow-hidden relative flex flex-col max-h-[calc(100dvh-120px)] min-h-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Decorative elements */}
@@ -139,65 +128,87 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
         </header>
 
         <div className="space-y-6 sm:space-y-8 overflow-y-auto flex-1 min-h-0 scrollbar-hide -mx-2 px-2 pb-2">
-          {/* Main Illustration/Description */}
-          <div className="bg-[#ee2b8c08] rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-center border border-[#ee2b8c11]">
-            <p className="text-[#1b0d14] font-bold text-xs sm:text-sm leading-relaxed break-keep">
-              연인이나 플랜 전문가 등에게 플랜을 공유하고 수정해봐요!
-            </p>
-            <div className="mt-3 inline-block px-3 py-1 bg-[#ff940011] rounded-full">
-              <p className="text-[#ff9400] text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
-                최대 4명까지 가능합니다.
+          {/* Info Badge */}
+          <div className="flex justify-center">
+            <div className="px-4 py-1.5 bg-[#ee2b8c08] rounded-full border border-[#ee2b8c11]">
+              <p className="text-[#ee2b8c] text-[10px] sm:text-[11px] font-bold tracking-wide">
+                현재 최대 1명까지 공유 가능 · 추후 확대 예정
               </p>
             </div>
           </div>
 
-          {/* Sharing Methods */}
-          <div className="space-y-4">
-            <h4 className="text-[9px] sm:text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] px-1">
-              공유 방법 선택
-            </h4>
-            {copyError && (
-              <p className="text-xs sm:text-sm font-bold text-red-500 -mt-2">
-                {copyError}
-              </p>
-            )}
-            <div className="flex gap-3 sm:gap-4">
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                disabled={shareUrlLoading}
-                className="flex-1 h-14 sm:h-16 bg-white border border-gray-100 rounded-2xl sm:rounded-3xl flex items-center justify-center gap-2 sm:gap-3 font-bold text-sm sm:text-base text-[#1b0d14] shadow-sm hover:shadow-md transition-all active:scale-95 min-w-0 disabled:opacity-60 disabled:pointer-events-none"
-              >
-                {copied ? (
-                  <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" />
-                ) : (
-                  <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#ee2b8c] flex-shrink-0" />
-                )}
-                <span className="truncate">
-                  {shareUrlLoading
-                    ? "준비 중"
-                    : copied
-                      ? "복사됨"
-                      : "링크 복사"}
-                </span>
-              </button>
+          {/* Benefits List */}
+          <div className="space-y-4 sm:space-y-5">
+            <div className="group flex items-center gap-4 p-4 rounded-2xl bg-[#ee2b8c03] border border-gray-50 transition-all hover:bg-[#ee2b8c08] hover:border-[#ee2b8c15] hover:translate-x-1">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#ee2b8c] to-[#ff6b9d] flex items-center justify-center text-white shadow-lg shadow-[#ee2b8c22] transition-transform group-hover:scale-110">
+                <MessageCircle className="w-6 h-6" strokeWidth={2.5} />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-black text-[#1b0d14] text-base leading-none">
+                  실시간 소통
+                </h4>
+                <p className="text-gray-400 text-[11px] sm:text-xs mt-1.5 font-bold leading-relaxed break-keep">
+                  실시간 채팅과 알림으로 파트너와 즉각적으로 소통하며 준비해요.
+                </p>
+              </div>
+            </div>
 
-              <button
-                type="button"
-                className="w-14 h-14 sm:w-16 sm:h-16 bg-[#FEE500] rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-lg shadow-[#FEE50033] hover:opacity-90 active:scale-95 transition-all flex-shrink-0"
-              >
-                <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-[#1b0d14] fill-[#1b0d14]" />
-              </button>
+            <div className="group flex items-center gap-4 p-4 rounded-2xl bg-[#ee2b8c03] border border-gray-50 transition-all hover:bg-[#ee2b8c08] hover:border-[#ee2b8c15] hover:translate-x-1">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#818cf8] flex items-center justify-center text-white shadow-lg shadow-[#6366f122] transition-transform group-hover:scale-110">
+                <CalendarRange className="w-6 h-6" strokeWidth={2.5} />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-black text-[#1b0d14] text-base leading-none">
+                  일정 공유
+                </h4>
+                <p className="text-gray-400 text-[11px] sm:text-xs mt-1.5 font-bold leading-relaxed break-keep">
+                  복잡한 웨딩 스케줄을 하나의 캘린더로 함께 보고 꼼꼼하게
+                  관리하세요.
+                </p>
+              </div>
+            </div>
+
+            <div className="group flex items-center gap-4 p-4 rounded-2xl bg-[#ee2b8c03] border border-gray-50 transition-all hover:bg-[#ee2b8c08] hover:border-[#ee2b8c15] hover:translate-x-1">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#059669] to-[#10b981] flex items-center justify-center text-white shadow-lg shadow-[#05966922] transition-transform group-hover:scale-110">
+                <Sprout className="w-6 h-6" strokeWidth={2.5} />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-black text-[#1b0d14] text-base leading-none">
+                  함께 키우는 재미
+                </h4>
+                <p className="text-gray-400 text-[11px] sm:text-xs mt-1.5 font-bold leading-relaxed break-keep">
+                  준비 단계에 따라 성장하는 우리만의 웨딩 플랜트을 함께
+                  완성해보세요.
+                </p>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Confirm Button */}
+        {/* Share Button at the bottom */}
+        <div className="mt-6 sm:mt-8 space-y-3 flex-shrink-0">
+          {shareError && (
+            <div
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-center ${shareError.includes("복사") ? "bg-green-50" : "bg-red-50"}`}
+            >
+              <div
+                className={`w-1.5 h-1.5 rounded-full animate-pulse ${shareError.includes("복사") ? "bg-green-500" : "bg-red-500"}`}
+              />
+              <p
+                className={`text-[11px] sm:text-xs font-bold ${shareError.includes("복사") ? "text-green-600" : "text-red-500"}`}
+              >
+                {shareError}
+              </p>
+            </div>
+          )}
           <button
             type="button"
-            onClick={onClose}
-            className="w-full h-14 sm:h-16 bg-[#ee2b8c] text-white rounded-2xl sm:rounded-3xl font-black text-base sm:text-lg shadow-xl shadow-[#ee2b8c33] transition-all hover:bg-[#d4237b] active:scale-95 mt-2 sm:mt-4 flex-shrink-0"
+            onClick={handleShare}
+            disabled={shareUrlLoading}
+            className="w-full h-14 sm:h-16 bg-gradient-to-r from-[#ee2b8c] to-[#ff6b9d] text-white rounded-2xl sm:rounded-3xl flex items-center justify-center gap-3 font-black text-base sm:text-lg shadow-xl shadow-[#ee2b8c33] hover:opacity-95 active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
           >
-            확인
+            <Share2 className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={3} />
+            <span>{shareUrlLoading ? "준비 중..." : "링크 공유하기"}</span>
           </button>
         </div>
       </div>
