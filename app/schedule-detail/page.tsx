@@ -132,6 +132,12 @@ function ScheduleDetailPageContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerRef = useRef<any>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [kakaoSdkReady, setKakaoSdkReady] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(!!getToken());
+  }, []);
 
   const scheduleId = useMemo(() => {
     const idParam = searchParams.get("id");
@@ -279,13 +285,21 @@ function ScheduleDetailPageContent() {
   }, [detail?.id, deleting, fetchWithAuth]);
 
   useEffect(() => {
-    if (window.kakao?.maps) return;
+    if (window.kakao?.maps?.LatLng) {
+      setKakaoSdkReady(true);
+      return;
+    }
     const script = document.createElement("script");
     const apiKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&libraries=services`;
     script.async = true;
     script.onload = () => {
-      window.kakao?.maps?.load(() => {});
+      window.kakao?.maps?.load(() => {
+        setKakaoSdkReady(true);
+      });
+    };
+    script.onerror = () => {
+      console.error("Failed to load Kakao Maps SDK");
     };
     document.head.appendChild(script);
     return () => {
@@ -294,7 +308,7 @@ function ScheduleDetailPageContent() {
   }, []);
 
   useEffect(() => {
-    if (!mapCoords || !window.kakao?.maps) {
+    if (!mapCoords || !kakaoSdkReady) {
       if (mapRef.current) {
         if (markerRef.current) {
           markerRef.current.setMap(null);
@@ -308,7 +322,7 @@ function ScheduleDetailPageContent() {
     setMapLoaded(false);
     const timer = setTimeout(() => {
       const container = document.getElementById("schedule-detail-map");
-      if (!container) return;
+      if (!container || !window.kakao?.maps?.LatLng) return;
       if (mapRef.current) {
         if (markerRef.current) {
           markerRef.current.setMap(null);
@@ -343,7 +357,7 @@ function ScheduleDetailPageContent() {
       }
     }, 150);
     return () => clearTimeout(timer);
-  }, [mapCoords]);
+  }, [mapCoords, kakaoSdkReady]);
 
   // 컨테이너 크기 변경 시 Kakao 지도 relayout (높이 300px 등으로 변경 시 지도가 새 크기에 맞게 다시 그려지도록)
   useEffect(() => {
@@ -647,12 +661,12 @@ function ScheduleDetailPageContent() {
 
         <main
           ref={mainScrollRef}
-          className={`flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-6 pt-5 min-w-0 w-full max-w-full box-border ${getToken() ? "pb-36" : "pb-24"}`}
+          className={`flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-6 pt-5 min-w-0 w-full max-w-full box-border ${isLoggedIn ? "pb-36" : "pb-24"}`}
         >
           <div className="w-full max-w-full min-w-0">{content}</div>
 
           {/* Action Buttons: 본문 하단 (로그인 시에만) */}
-          {getToken() && detail && (
+          {isLoggedIn && detail && (
             <div className="w-full max-w-full flex gap-3 mt-4 pb-2">
               <button
                 type="button"

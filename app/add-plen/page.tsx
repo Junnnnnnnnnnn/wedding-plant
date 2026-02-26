@@ -13,9 +13,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { io, Socket } from "socket.io-client";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
-import { getToken } from "@/lib/api";
+import { getToken, getApiBaseUrl } from "@/lib/api";
 import {
   addGuestScheduleItem,
   getGuestScheduleList,
@@ -154,13 +155,76 @@ function AddPlanPageContent() {
 
   const handleShareToChat = async (chatRoomId: number) => {
     try {
-      // Trigger the share notification API via backend
-      await fetchWithAuth("/plan/schedule/notification", {
-        method: "POST",
-        body: JSON.stringify({
+      const token = getToken();
+      if (!token || !savedScheduleId) {
+        setAlertConfig({
+          isOpen: true,
+          message: "공유에 실패했습니다.",
+          type: "error",
+        });
+        return;
+      }
+
+      // 사용자 정보 가져오기
+      const userRes = await fetchWithAuth("/plan/user", { skipLoading: true });
+      const userJson = await userRes.json();
+      if (!userJson.result || !userJson.data) {
+        setAlertConfig({
+          isOpen: true,
+          message: "사용자 정보를 가져올 수 없습니다.",
+          type: "error",
+        });
+        return;
+      }
+
+      const planUser = {
+        id: userJson.data.id,
+        name: userJson.data.name || "",
+        profileImageUrl: userJson.data.profileImageUrl || "",
+      };
+
+      // 소켓 연결 및 메시지 전송
+      const baseUrl = getApiBaseUrl();
+      const socketUrl = baseUrl.replace(/\/+$/, "");
+
+      const socket: Socket = io(`${socketUrl}/chat`, {
+        transports: ["websocket"],
+        auth: { token },
+        forceNew: true,
+      });
+
+      socket.on("connect", () => {
+        console.log(
+          "Socket connected for schedule share, sending message to room:",
           chatRoomId,
-          scheduleId: savedScheduleId,
-        }),
+          "scheduleId:",
+          savedScheduleId,
+        );
+
+        // schedule 메시지 전송 (joinRoom 없이 planUser 포함)
+        const messagePayload = {
+          room: chatRoomId,
+          message: savedScheduleId,
+          messageType: "schedule",
+          planUser,
+        };
+        console.log("Sending socket message:", messagePayload);
+        socket.emit("message", messagePayload);
+
+        // 메시지 전송 후 소켓 연결 해제
+        setTimeout(() => {
+          socket.disconnect();
+        }, 500);
+      });
+
+      socket.on("connect_error", (error) => {
+        console.error("Socket connection error:", error);
+        socket.disconnect();
+        setAlertConfig({
+          isOpen: true,
+          message: "공유에 실패했습니다.",
+          type: "error",
+        });
       });
 
       setAlertConfig({
@@ -1445,7 +1509,8 @@ function AddPlanPageContent() {
 
                       if (res.ok && json.result === true) {
                         if (json.data?.id) {
-                          setSavedScheduleId(json.data.id);
+                          setSavedScheduleId(Number(json.data.id));
+                          console.log("Saved schedule ID:", json.data.id);
                         }
                         setShowPlanSavedModal(true);
                         return;
