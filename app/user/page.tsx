@@ -14,6 +14,8 @@ interface PlanUserData {
   weddingDate: string;
   budget: number;
   name: string;
+  requiredAgreementDate?: string | null;
+  adAgreementDate?: string | null;
 }
 
 function toDateString(d: { year: number; month: number; day: number }) {
@@ -31,6 +33,8 @@ export default function UserPage() {
     name: string;
     weddingDate: string;
     budget: number;
+    requiredAgreementDate?: string | null;
+    adAgreementDate?: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,6 +47,8 @@ export default function UserPage() {
           ? toDateString(weddingData.date)
           : new Date().toISOString().slice(0, 10),
         budget: Number(weddingData.budget) || 1000,
+        requiredAgreementDate: null,
+        adAgreementDate: null,
       });
       setLoading(false);
       return;
@@ -59,6 +65,8 @@ export default function UserPage() {
           name: d.name ?? "",
           weddingDate: d.weddingDate ?? new Date().toISOString().slice(0, 10),
           budget: d.budget ?? 1000,
+          requiredAgreementDate: d.requiredAgreementDate ?? null,
+          adAgreementDate: d.adAgreementDate ?? null,
         });
       } else {
         setUserData({
@@ -67,6 +75,8 @@ export default function UserPage() {
             ? toDateString(weddingData.date)
             : new Date().toISOString().slice(0, 10),
           budget: Number(weddingData.budget) || 1000,
+          requiredAgreementDate: null,
+          adAgreementDate: null,
         });
       }
     } catch {
@@ -76,6 +86,8 @@ export default function UserPage() {
           ? toDateString(weddingData.date)
           : new Date().toISOString().slice(0, 10),
         budget: Number(weddingData.budget) || 1000,
+        requiredAgreementDate: null,
+        adAgreementDate: null,
       });
     } finally {
       setLoading(false);
@@ -90,6 +102,8 @@ export default function UserPage() {
     name: string;
     weddingDate: string;
     budget: number;
+    requiredAgreementDate?: string | null;
+    adAgreementDate?: string | null;
   }) => {
     const dateStr = user.weddingDate;
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -106,6 +120,8 @@ export default function UserPage() {
             weddingDate: dateStr,
             budget: user.budget,
             name: user.name.trim(),
+            requiredAgreementDate: user.requiredAgreementDate ?? null,
+            adAgreementDate: user.adAgreementDate ?? null,
           }),
         });
       } catch {

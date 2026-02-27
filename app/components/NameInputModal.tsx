@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { useApi } from "@/app/contexts/ApiContext";
+import PrivacyAgreementSection, {
+  initialAgreementState,
+  isAllRequiredAgreed,
+  type AgreementState,
+} from "./PrivacyAgreementSection";
+import { getKstDateString } from "@/lib/utils";
 
 type NameInputModalProps = {
   show: boolean;
@@ -14,22 +20,32 @@ export default function NameInputModal({
 }: NameInputModalProps) {
   const { fetchWithAuth } = useApi();
   const [name, setName] = useState("");
+  const [agreement, setAgreement] = useState<AgreementState>(
+    initialAgreementState,
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   if (!show) return null;
 
   const trimmed = name.trim();
-  const isValid = trimmed.length > 0 && trimmed.length <= 6;
+  const nameValid = trimmed.length > 0 && trimmed.length <= 6;
+  const agreementValid = isAllRequiredAgreed(agreement);
+  const isValid = nameValid && agreementValid;
 
   const handleSubmit = async () => {
     if (!isValid || saving) return;
     setSaving(true);
     setError("");
+    const agreementDate = getKstDateString();
     try {
       const res = await fetchWithAuth("/plan/setting", {
         method: "POST",
-        body: JSON.stringify({ name: trimmed }),
+        body: JSON.stringify({
+          name: trimmed,
+          requiredAgreementDate: agreementDate,
+          ...(agreement.agreeMarketing && { adAgreementDate: agreementDate }),
+        }),
       });
       if (res.ok) {
         onComplete(trimmed);
@@ -45,11 +61,11 @@ export default function NameInputModal({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 overflow-y-auto py-6"
       role="presentation"
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-white px-5 py-6 sm:p-6 shadow-xl"
+        className="w-full max-w-sm rounded-2xl bg-white px-5 py-6 sm:p-6 shadow-xl my-auto"
         role="dialog"
         aria-modal="true"
         aria-label="이름 입력"
@@ -85,6 +101,14 @@ export default function NameInputModal({
               {error}
             </p>
           )}
+        </div>
+
+        <div className="mt-5">
+          <PrivacyAgreementSection
+            agreement={agreement}
+            onAgreementChange={setAgreement}
+            compact
+          />
         </div>
 
         <button

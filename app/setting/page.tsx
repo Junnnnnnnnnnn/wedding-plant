@@ -15,7 +15,9 @@ import {
   getToken,
   HAS_COMPLETED_GUEST_SETTING_KEY,
   isPlanDataComplete,
+  setGuestAgreement,
 } from "@/lib/api";
+import { getKstDateString } from "@/lib/utils";
 import CountUp from "../../components/CountUp";
 
 // 3D(WebGL)는 클라이언트에서만 로드해 Context Lost·엑스박스 방지
@@ -299,6 +301,11 @@ function SettingPageContent() {
     if (!getToken()) {
       if (typeof window !== "undefined") {
         sessionStorage.setItem(HAS_COMPLETED_GUEST_SETTING_KEY, "1");
+        const agreementDate = getKstDateString();
+        setGuestAgreement({
+          requiredAgreementDate: agreementDate,
+          ...(agreeMarketing && { adAgreementDate: agreementDate }),
+        });
       }
       router.push("/main");
       return;
@@ -306,6 +313,7 @@ function SettingPageContent() {
     if (weddingData.date) {
       const { year, month, day } = weddingData.date;
       const weddingDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const agreementDate = getKstDateString(); // 한국(KST) 기준 YYYY-MM-DD
       try {
         const res = await fetchWithAuth("/plan/setting", {
           method: "POST",
@@ -313,6 +321,8 @@ function SettingPageContent() {
             weddingDate,
             budget: Number(weddingData.budget) || 0,
             name: weddingData.name.trim(),
+            requiredAgreementDate: agreementDate, // 필수: 동의 시 항상 전송
+            ...(agreeMarketing && { adAgreementDate: agreementDate }), // 선택: 마케팅 동의 시에만 전송
           }),
         });
         if (!res.ok) {

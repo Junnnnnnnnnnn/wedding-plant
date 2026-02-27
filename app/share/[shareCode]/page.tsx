@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getToken, setShareAfterLogin, clearToken } from "@/lib/api";
 import { useApi } from "@/app/contexts/ApiContext";
@@ -14,7 +14,6 @@ export default function SharePage() {
   const shareCode = params.shareCode as string;
   const { fetchWithAuth } = useApi();
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!shareCode) return;
@@ -29,13 +28,10 @@ export default function SharePage() {
     if (joinedCodes.has(shareCode)) return;
     joinedCodes.add(shareCode);
 
-    abortControllerRef.current = new AbortController();
-
     const joinRoom = async () => {
       try {
         const res = await fetchWithAuth(`/plan/room/${shareCode}`, {
           method: "POST",
-          signal: abortControllerRef.current?.signal,
         });
         if (res.status === 401) {
           clearToken();
@@ -48,18 +44,12 @@ export default function SharePage() {
           router.replace("/plan-list");
         }
       } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          console.error("Failed to join room:", err);
-          joinedCodes.delete(shareCode);
-        }
+        joinedCodes.delete(shareCode);
+        console.error("Failed to join room:", err);
       }
     };
 
     joinRoom();
-
-    return () => {
-      abortControllerRef.current?.abort();
-    };
   }, [shareCode, fetchWithAuth, router]);
 
   const handleCloseModal = () => {

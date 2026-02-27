@@ -37,3 +37,9 @@ export function getKstDate(): Date {
   const { year, month, day } = getKstToday();
   return new Date(year, month - 1, day);
 }
+
+/** 한국 표준시(KST) 기준 오늘 날짜를 "YYYY-MM-DD" 형식으로 반환 */
+export function getKstDateString(): string {
+  const { year, month, day } = getKstToday();
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}

@@ -9,6 +9,36 @@ export const SHARE_AFTER_LOGIN_KEY = "plan_share_after_login";
 export const HAS_COMPLETED_GUEST_SETTING_KEY =
   "plan_has_completed_guest_setting";
 
+/** 비회원이 동의한 약관 데이터 (로그인 시 PATCH로 전송용). sessionStorage에 저장 */
+export const GUEST_AGREEMENT_KEY = "plan_guest_agreement";
+
+export interface GuestAgreementData {
+  requiredAgreementDate: string;
+  adAgreementDate?: string | null;
+}
+
+export function getGuestAgreement(): GuestAgreementData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(GUEST_AGREEMENT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as GuestAgreementData;
+    return parsed?.requiredAgreementDate ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setGuestAgreement(data: GuestAgreementData): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(GUEST_AGREEMENT_KEY, JSON.stringify(data));
+}
+
+export function clearGuestAgreement(): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(GUEST_AGREEMENT_KEY);
+}
+
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   // sessionStorage는 탭(창) 단위라 공유 링크를 새 탭에서 열면 토큰이 없을 수 있음

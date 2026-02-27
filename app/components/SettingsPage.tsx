@@ -20,8 +20,16 @@ interface SettingsPageProps {
     weddingDate: string;
     budget: number;
     profileImageUrl?: string | null;
+    requiredAgreementDate?: string | null;
+    adAgreementDate?: string | null;
   };
-  onSave: (user: { name: string; weddingDate: string; budget: number }) => void;
+  onSave: (user: {
+    name: string;
+    weddingDate: string;
+    budget: number;
+    requiredAgreementDate?: string | null;
+    adAgreementDate?: string | null;
+  }) => void;
   onClose: () => void;
   onSignOut?: () => void;
 }

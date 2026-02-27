@@ -13,11 +13,14 @@ import {
   clearReturnPathAfterLogin,
   HAS_COMPLETED_GUEST_SETTING_KEY,
   isPlanDataComplete,
+  getGuestAgreement,
+  clearGuestAgreement,
 } from "@/lib/api";
 import {
   getGuestScheduleList,
   clearGuestScheduleList,
 } from "@/lib/guestSchedule";
+import { getKstDateString } from "@/lib/utils";
 import NameInputModal from "./NameInputModal";
 
 type KakaoLoginAlertProps = {
@@ -238,6 +241,7 @@ export default function KakaoLoginAlert({
               }
               const { year, month, day } = weddingData.date;
               const weddingDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const guestAgreement = getGuestAgreement();
               try {
                 await fetchWithAuth("/plan/setting", {
                   method: "POST",
@@ -245,8 +249,15 @@ export default function KakaoLoginAlert({
                     weddingDate,
                     budget: Number(weddingData.budget) || 0,
                     name: nameToUse,
+                    requiredAgreementDate:
+                      guestAgreement?.requiredAgreementDate ??
+                      getKstDateString(),
+                    ...(guestAgreement?.adAgreementDate && {
+                      adAgreementDate: guestAgreement.adAgreementDate,
+                    }),
                   }),
                 });
+                clearGuestAgreement();
               } catch {
                 // POST 실패해도 /main으로 이동
               }
