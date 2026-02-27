@@ -119,11 +119,23 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "웨딩 플랜트",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://wedding-plant.vercel.app",
+    description: "우리만의 완벽한 셀프 웨딩 예산 관리",
+  };
+
   return (
     <html lang="ko">
       <body
         className={`${hakgyoansim.className} ${hakgyoansim.variable} ${tmoney.variable} ${kakao.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <ApiProvider>
           <AuthRedirectToMain />
           <NotificationProvider>
@@ -134,9 +146,10 @@ export default function RootLayout({
               <Suspense fallback={null}>
                 <ApiErrorModal />
               </Suspense>
-              {process.env.NEXT_PUBLIC_GA_ID && (
-                <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
-              )}
+              {process.env.NODE_ENV === "production" &&
+                process.env.NEXT_PUBLIC_GA_ID && (
+                  <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+                )}
             </WeddingProvider>
           </NotificationProvider>
         </ApiProvider>
