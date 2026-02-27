@@ -36,17 +36,6 @@ import NoPlanFoundModal from "../components/NoPlanFoundModal";
 import PlanFilterModal, {
   type PlanSortOption,
 } from "../components/PlanFilterModal";
-
-/** 정렬 옵션 → 버튼 표시용 라벨(가격/날짜/이름) + 방향 */
-function getSortButtonLabel(
-  opt: PlanSortOption
-): { label: string; isDesc: boolean } {
-  const desc = opt.endsWith("_desc");
-  if (opt.startsWith("price_")) return { label: "가격", isDesc: desc };
-  if (opt.startsWith("date_")) return { label: "날짜", isDesc: desc };
-  if (opt.startsWith("name_")) return { label: "제목", isDesc: desc };
-  return { label: "필터", isDesc: true };
-}
 import ScrollDownAnimation from "../components/ScrollDownAnimation";
 import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
 import { useWedding } from "../contexts/WeddingContext";
@@ -62,6 +51,31 @@ import {
 import { getGuestScheduleList } from "@/lib/guestSchedule";
 import { parseLocalDate, getKstDate } from "@/lib/utils";
 import { useScrollDirection } from "../hooks/useScrollDirection";
+
+/** 정렬 옵션 → 버튼 표시용 라벨(가격/날짜/이름) + 방향 */
+function getSortButtonLabel(opt: PlanSortOption): {
+  label: string;
+  isDesc: boolean;
+} {
+  const desc = opt.endsWith("_desc");
+  if (opt.startsWith("price_")) return { label: "가격", isDesc: desc };
+  if (opt.startsWith("date_")) return { label: "시작", isDesc: desc };
+  if (opt.startsWith("name_")) return { label: "제목", isDesc: desc };
+  return { label: "필터", isDesc: true };
+}
+
+/** 정렬 옵션 → API sortColumn, sort */
+function getSortApiParams(opt: PlanSortOption): {
+  sortColumn: "title" | "amount" | "startDate";
+  sort: "ASC" | "DESC";
+} {
+  const desc = opt.endsWith("_desc");
+  const sort = desc ? "DESC" : "ASC";
+  if (opt.startsWith("price_")) return { sortColumn: "amount", sort };
+  if (opt.startsWith("date_")) return { sortColumn: "startDate", sort };
+  if (opt.startsWith("name_")) return { sortColumn: "title", sort };
+  return { sortColumn: "startDate", sort: "DESC" };
+}
 
 /** API weddingDate "YYYY-MM-DD" → { year, month, day } */
 function parseWeddingDate(
@@ -135,9 +149,6 @@ interface ScheduleListItem {
 }
 
 const SCHEDULE_FETCH_COUNT = 10000;
-const SCHEDULE_SORT = "DESC";
-const SCHEDULE_SORT_COLUMN = "createDate";
-
 /** 카테고리명으로 파스텔 색상 반환 (동일 이름 = 동일 색상) */
 function getCategoryColor(categoryName: string): string {
   const colors = [
@@ -307,7 +318,9 @@ function MainPageContent() {
   const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [sortOptions, setSortOptions] = useState<PlanSortOption[]>(["date_desc"]);
+  const [sortOptions, setSortOptions] = useState<PlanSortOption[]>([
+    "date_desc",
+  ]);
 
   // Guide Overlay State. 로그인 시: GET /plan/user 응답으로만 설정·참조( localStorage 미참조 )
   const [hasSeenMainGuide, setHasSeenMainGuide] = useState<boolean | null>(
@@ -399,7 +412,11 @@ function MainPageContent() {
             skipLoading: true,
           }),
           fetchWithAuth(
-            `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=DESC&sortColumn=startDate&status=NORMAL`,
+            (() => {
+              const opt = sortOptions[0] ?? "date_desc";
+              const { sortColumn, sort } = getSortApiParams(opt);
+              return `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=${sort}&sortColumn=${sortColumn}&status=NORMAL`;
+            })(),
             { skipLoading: true },
           ),
           fetchWithAuth(`/plan/user/room/member/${encodeURIComponent(code)}`, {
@@ -440,7 +457,7 @@ function MainPageContent() {
         sharedFetchingRef.current = false;
       }
     },
-    [fetchWithAuth],
+    [fetchWithAuth, sortOptions],
   );
 
   const fetchingSharedStatusRef = useRef<"NORMAL" | "COMPLETED" | null>(null);
@@ -451,8 +468,10 @@ function MainPageContent() {
       fetchingSharedStatusRef.current = status;
       setScheduleLoading(true);
       try {
+        const opt = sortOptions[0] ?? "date_desc";
+        const { sortColumn, sort } = getSortApiParams(opt);
         const res = await fetchWithAuth(
-          `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=DESC&sortColumn=startDate&status=${status}`,
+          `/plan/schedule/room/${encodeURIComponent(code)}/list?page=1&count=10000&sort=${sort}&sortColumn=${sortColumn}&status=${status}`,
           { skipLoading: true },
         );
         const json = (await res.json()) as {
@@ -461,19 +480,26 @@ function MainPageContent() {
         };
         if (fetchingSharedStatusRef.current !== status) return;
         if (json.result === true && json.data?.list) {
-          setSharedRoomScheduleList(json.data.list);
+          setSharedRoomScheduleList((prev) => {
+            const other = prev.filter((p) => p.status !== status);
+            return [...other, ...json.data!.list];
+          });
         } else {
-          setSharedRoomScheduleList([]);
+          setSharedRoomScheduleList((prev) =>
+            prev.filter((p) => p.status !== status),
+          );
         }
       } catch {
         if (fetchingSharedStatusRef.current === status) {
-          setSharedRoomScheduleList([]);
+          setSharedRoomScheduleList((prev) =>
+            prev.filter((p) => p.status !== status),
+          );
         }
       } finally {
         setScheduleLoading(false);
       }
     },
-    [fetchWithAuth, shareCode],
+    [fetchWithAuth, shareCode, sortOptions],
   );
 
   const fetchSharedRoomCounts = useCallback(
@@ -999,11 +1025,13 @@ function MainPageContent() {
       scheduleFetchingRef.current = true;
       setScheduleLoading(true);
       try {
+        const opt = sortOptions[0] ?? "date_desc";
+        const { sortColumn, sort } = getSortApiParams(opt);
         const params = new URLSearchParams({
           page: "1",
           count: String(SCHEDULE_FETCH_COUNT),
-          sort: SCHEDULE_SORT,
-          sortColumn: roomIdParam?.trim() ? "startDate" : SCHEDULE_SORT_COLUMN,
+          sort,
+          sortColumn,
         });
         if (requestedStatus) params.set("status", requestedStatus);
         const url = roomIdParam?.trim()
@@ -1019,16 +1047,23 @@ function MainPageContent() {
           if (fetchingStatusRef.current === requestedStatus) {
             if (requestedStatus === "NORMAL") setPlannedTotal(total);
             else setCompletedTotal(total);
-            setScheduleList(list);
+            setScheduleList((prev) => {
+              const other = prev.filter((p) => p.status !== requestedStatus);
+              return [...other, ...list];
+            });
             setRemovedItems(new Set()); // 신규 리스트 로드 시 애니메이션 상태 초기화
           }
         } else if (fetchingStatusRef.current === requestedStatus) {
-          setScheduleList([]);
+          setScheduleList((prev) =>
+            prev.filter((p) => p.status !== requestedStatus),
+          );
           setRemovedItems(new Set());
         }
       } catch {
         if (fetchingStatusRef.current === requestedStatus) {
-          setScheduleList([]);
+          setScheduleList((prev) =>
+            prev.filter((p) => p.status !== requestedStatus),
+          );
           setRemovedItems(new Set());
         }
       } finally {
@@ -1037,7 +1072,7 @@ function MainPageContent() {
         scheduleFetchingRef.current = false;
       }
     },
-    [fetchWithAuth],
+    [fetchWithAuth, sortOptions],
   );
 
   // 로그인되어 있을 때만 스케줄 API 호출. share 있으면 fetchSharedRoomWithAuth에서 스케줄 로드
@@ -1065,6 +1100,33 @@ function MainPageContent() {
       fetchScheduleList(undefined, "NORMAL");
     }
   }, [fetchScheduleList, shareCode, roomId, apiPlanData]);
+
+  // 필터(sortOptions) 변경 시 현재 탭에 맞게 리패치 (완료 탭에서 필터 선택 시에도 적용)
+  const prevSortOptionsRef = useRef(sortOptions);
+  useEffect(() => {
+    if (prevSortOptionsRef.current === sortOptions) return;
+    prevSortOptionsRef.current = sortOptions;
+    if (!getToken()) return;
+    const status = activeTab === "planned" ? "NORMAL" : "COMPLETED";
+    const roomIdParam =
+      roomId?.trim() ||
+      (apiPlanData && apiPlanData !== "none" && apiPlanData.roomId
+        ? String(apiPlanData.roomId)
+        : null);
+    if (shareCode?.trim()) {
+      fetchSharedRoomScheduleList(status);
+    } else if (apiPlanData !== null) {
+      fetchScheduleList(roomIdParam ?? undefined, status);
+    }
+  }, [
+    sortOptions,
+    activeTab,
+    shareCode,
+    roomId,
+    apiPlanData,
+    fetchSharedRoomScheduleList,
+    fetchScheduleList,
+  ]);
 
   // 탭별 리스트 카운킹 (게스트 모드는 로컬 리스트 기준, 로그인 모드는 명시적 상태 활용)
   const plannedCount = useMemo(() => {
@@ -1097,34 +1159,42 @@ function MainPageContent() {
     });
   }, [effectiveScheduleList, activeTab, togglingIds]);
 
+  // 카테고리 순서를 알파벳순으로 고정 → 필터(정렬) 리패치 시 순서가 바뀌지 않아 스크롤 위치 유지
   const currentTabCategories = useMemo(() => {
     const cats = baseVisibleList
       .map((p) => p.categoryName)
       .filter((c) => c && c.trim() !== "");
-    return ["전체", ...Array.from(new Set(cats))];
+    const unique = Array.from(new Set(cats)).sort((a, b) =>
+      a.localeCompare(b, "ko"),
+    );
+    return ["전체", ...unique];
   }, [baseVisibleList]);
 
   const visibleScheduleList = useMemo(() => {
-    let list =
+    const list =
       selectedCategory === "전체"
         ? [...baseVisibleList]
         : baseVisibleList.filter((p) => p.categoryName === selectedCategory);
 
-    const compare = (a: ScheduleListItem, b: ScheduleListItem, opt: PlanSortOption): number => {
+    const compare = (
+      a: ScheduleListItem,
+      b: ScheduleListItem,
+      opt: PlanSortOption,
+    ): number => {
       switch (opt) {
         case "price_desc":
           return (b.amount ?? 0) - (a.amount ?? 0);
         case "price_asc":
           return (a.amount ?? 0) - (b.amount ?? 0);
         case "date_desc": {
-          const aDate = a.createDate ?? a.startDate ?? "";
-          const bDate = b.createDate ?? b.startDate ?? "";
+          const aDate = a.startDate ?? a.createDate ?? "";
+          const bDate = b.startDate ?? b.createDate ?? "";
           if (!aDate && !bDate) return b.id - a.id;
           return new Date(bDate).getTime() - new Date(aDate).getTime();
         }
         case "date_asc": {
-          const aDate = a.createDate ?? a.startDate ?? "";
-          const bDate = b.createDate ?? b.startDate ?? "";
+          const aDate = a.startDate ?? a.createDate ?? "";
+          const bDate = b.startDate ?? b.createDate ?? "";
           if (!aDate && !bDate) return a.id - b.id;
           return new Date(aDate).getTime() - new Date(bDate).getTime();
         }
@@ -1138,13 +1208,16 @@ function MainPageContent() {
     };
 
     const opts =
-      sortOptions.length > 0 ? sortOptions : (["date_desc"] as PlanSortOption[]);
+      sortOptions.length > 0
+        ? sortOptions
+        : (["date_desc"] as PlanSortOption[]);
     return [...list].sort((a, b) => {
-      for (const opt of opts) {
-        const diff = compare(a, b, opt);
-        if (diff !== 0) return diff;
-      }
-      return 0;
+      let result = 0;
+      opts.some((opt) => {
+        result = compare(a, b, opt);
+        return result !== 0;
+      });
+      return result;
     });
   }, [baseVisibleList, selectedCategory, sortOptions]);
 
@@ -1168,7 +1241,79 @@ function MainPageContent() {
   const mainScrollRef = useRef<HTMLElement>(null);
   const firstSectionRef = useRef<HTMLDivElement>(null);
   const secondSectionRef = useRef<HTMLDivElement>(null);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const selectedCategoryButtonRef = useRef<HTMLButtonElement | null>(null);
+  const categoryDragRef = useRef({
+    active: false,
+    startX: 0,
+    startScrollLeft: 0,
+    hasMoved: false,
+  });
   const [allowPlanListScroll, setAllowPlanListScroll] = useState(false);
+
+  // PC에서 카테고리 영역 드래그 스크롤 (드래그 시 버튼 클릭 방지)
+  useEffect(() => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      categoryDragRef.current = {
+        active: true,
+        startX: e.clientX,
+        startScrollLeft: el.scrollLeft,
+        hasMoved: false,
+      };
+    };
+    const DRAG_THRESHOLD = 5;
+    const handleMouseMove = (e: MouseEvent) => {
+      const ref = categoryDragRef.current;
+      if (!ref.active) return;
+      const dx = Math.abs(e.clientX - ref.startX);
+      if (dx >= DRAG_THRESHOLD) ref.hasMoved = true;
+      el.scrollLeft = ref.startScrollLeft + (ref.startX - e.clientX);
+    };
+    const handleMouseUp = () => {
+      categoryDragRef.current.active = false;
+    };
+    const handleClickCapture = (e: MouseEvent) => {
+      if (categoryDragRef.current.hasMoved) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    el.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    el.addEventListener("click", handleClickCapture, true);
+    return () => {
+      el.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      el.removeEventListener("click", handleClickCapture, true);
+    };
+  }, []);
+
+  // 리패치 후에도 선택한 카테고리가 보이도록 스크롤 (전체가 아닐 때만)
+  const prevListRef = useRef(effectiveScheduleList);
+  useEffect(() => {
+    if (selectedCategory === "전체") return;
+    if (prevListRef.current === effectiveScheduleList) return;
+    prevListRef.current = effectiveScheduleList;
+    const btn = selectedCategoryButtonRef.current;
+    if (!btn) return;
+    const scrollToSelected = () => {
+      btn.scrollIntoView({ inline: "center", block: "nearest" });
+    };
+    scrollToSelected();
+    const t1 = setTimeout(scrollToSelected, 100);
+    const t2 = setTimeout(scrollToSelected, 300);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [effectiveScheduleList, selectedCategory]);
+
   const scrollDirection = useScrollDirection(mainScrollRef);
 
   const { scrollY } = useScroll({ container: mainScrollRef });
@@ -1793,7 +1938,10 @@ function MainPageContent() {
                   </button>
                 </div>
                 {/* 카테고리 필터 영역 (테스트) */}
-                <div className="flex w-full items-center gap-1.5 overflow-x-auto scrollbar-hide py-1.5 mt-0.5 mask-linear-right">
+                <div
+                  ref={categoryScrollRef}
+                  className="flex w-full items-center gap-1.5 overflow-x-auto scrollbar-hide py-1.5 mt-0.5 mask-linear-right select-none cursor-grab active:cursor-grabbing"
+                >
                   {isPlanLoading ? (
                     <span
                       className="skeleton-shimmer block h-6 w-48 rounded"
@@ -1805,6 +1953,9 @@ function MainPageContent() {
                       return (
                         <button
                           key={catName}
+                          ref={
+                            isSelected ? selectedCategoryButtonRef : undefined
+                          }
                           type="button"
                           onClick={() => setSelectedCategory(catName)}
                           className={`shrink-0 px-3 py-1 rounded-md text-[12px] font-bold transition-all flex items-center gap-1 ${
@@ -1838,9 +1989,15 @@ function MainPageContent() {
                       <>
                         <span>{label}</span>
                         {isDesc ? (
-                          <ArrowDown className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                          <ArrowDown
+                            className="h-3.5 w-3.5 shrink-0"
+                            strokeWidth={2.5}
+                          />
                         ) : (
-                          <ArrowUp className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                          <ArrowUp
+                            className="h-3.5 w-3.5 shrink-0"
+                            strokeWidth={2.5}
+                          />
                         )}
                       </>
                     );
@@ -1993,15 +2150,10 @@ function MainPageContent() {
                 className="mt-2 w-full flex flex-col gap-3 min-h-[200px] relative bg-transparent"
               >
                 {/* 
-                  플랜 리스트 로딩 상태: 
-                  1. scheduleLoading: API 호출 중
-                  2. !scheduleInitialFetched: 초기 로드 전
-                  3. isPlanLoading: 유저/방 정보 로딩 중 (상단 섹션과 보조를 맞춤)
+                  플랜 리스트 로딩: 초기 로드/유저·방 로딩 시에만 스켈레톤.
+                  필터 리패치 시에는 스켈레톤 미표시 → 카테고리 스크롤 위치 유지.
                 */}
-                {scheduleLoading ||
-                !scheduleInitialFetched ||
-                isPlanLoading ||
-                isSharedLoading ? (
+                {!scheduleInitialFetched || isPlanLoading || isSharedLoading ? (
                   Array.from({ length: 5 }).map((_, idx) => (
                     <li
                       key={`skeleton-plan-${idx}`}

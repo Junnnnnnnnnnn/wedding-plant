@@ -14,8 +14,8 @@ export type PlanSortOption =
 const SORT_OPTIONS: { value: PlanSortOption; label: string }[] = [
   { value: "price_asc", label: "낮은 가격순" },
   { value: "price_desc", label: "높은 가격순" },
-  { value: "date_asc", label: "오래된 등록일순" },
-  { value: "date_desc", label: "최근 등록일순" },
+  { value: "date_asc", label: "플랜 시작일 오래된순" },
+  { value: "date_desc", label: "플랜 시작일 최신순" },
   { value: "name_asc", label: "제목 가나다순" },
   { value: "name_desc", label: "제목 가나다역순" },
 ];
