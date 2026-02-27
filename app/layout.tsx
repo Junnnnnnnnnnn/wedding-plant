@@ -95,6 +95,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "웨딩 플랜트 - 우리만의 완벽한 셀프 웨딩 예산 관리",
+  verification: {
+    google: "89hMDRNVKvw-QiX9s9bk64ZTcJOYqoRuWsIdfutI0q8",
+  },
   description:
     "복잡한 결혼 준비, 웨딩 플랜트와 함께 쉽고 체계적으로 예산을 관리하고 일정을 세워보세요.",
   keywords: [
