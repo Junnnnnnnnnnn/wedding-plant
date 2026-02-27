@@ -308,7 +308,8 @@ const ChatMessage = React.memo(
               <div
                 className="relative min-w-[220px] max-w-[280px] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100"
                 style={{
-                  boxShadow: "inset 0 0 1px rgba(255, 255, 255, 1), 0 4px 12px rgba(0, 0, 0, 0.08)",
+                  boxShadow:
+                    "inset 0 0 1px rgba(255, 255, 255, 1), 0 4px 12px rgba(0, 0, 0, 0.08)",
                 }}
               >
                 {/* 제목 헤더 */}
@@ -324,18 +325,21 @@ const ChatMessage = React.memo(
                   <div className="text-[11px] font-medium text-gray-500 mb-2">
                     {msg.schedule.categoryName}
                   </div>
-                  
+
                   {/* 날짜 */}
                   {msg.schedule.startDate && (
                     <div className="text-xs text-gray-500 mb-1">
-                      {new Date(msg.schedule.startDate).toLocaleDateString("ko-KR", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
+                      {new Date(msg.schedule.startDate).toLocaleDateString(
+                        "ko-KR",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        },
+                      )}
                     </div>
                   )}
-                  
+
                   {/* 장소 */}
                   {msg.schedule.location && (
                     <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
@@ -343,10 +347,12 @@ const ChatMessage = React.memo(
                       <span className="truncate">{msg.schedule.location}</span>
                     </div>
                   )}
-                  
+
                   {/* 금액 */}
                   <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-200/60">
-                    <span className="text-[11px] text-gray-400 font-medium">비용</span>
+                    <span className="text-[11px] text-gray-400 font-medium">
+                      비용
+                    </span>
                     <span className="text-base font-extrabold text-[#ee2b8c]">
                       {Number(msg.schedule.amount) > 0
                         ? `${Number(msg.schedule.amount).toLocaleString()}만원`
@@ -992,7 +998,9 @@ export default function ChatPage() {
               isLoadingMore={isLoadingMore}
               scrollToBottom={scrollToBottom}
               onScheduleClick={(scheduleId) => {
-                router.push(`/schedule-detail?id=${scheduleId}&roomId=${chatRoomId}`);
+                router.push(
+                  `/schedule-detail?id=${scheduleId}&roomId=${chatRoomId}`,
+                );
               }}
             />
           </div>

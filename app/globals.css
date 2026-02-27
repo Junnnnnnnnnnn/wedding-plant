@@ -93,14 +93,18 @@ body {
 }
 
 body {
-  font-family: var(--font-dunggeunmiso), "TmoneyRoundWindRegular", Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-dunggeunmiso), "TmoneyRoundWindRegular", Arial, Helvetica,
+    sans-serif;
 }
 
 /* input/textarea: 한글 글리프 누락 방지 - 시스템 폰트 사용 */
 input,
 textarea,
 [contenteditable="true"] {
-  font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Nanum Gothic", sans-serif;
+  font-family:
+    "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Nanum Gothic",
+    sans-serif;
 }
 
 /* 입력란에 테마(학교안심 덩근미소) 폰트 적용 */

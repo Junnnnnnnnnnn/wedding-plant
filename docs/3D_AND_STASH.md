@@ -31,8 +31,8 @@ git checkout HEAD -- components/Lanyard.tsx app/setting/page.tsx
 
 ## 요약
 
-| 목적           | 명령 |
-|----------------|------|
-| 3D 동작 버전 고정 | `git add` + `git commit` (위 두 파일) |
-| stash 적용     | `git stash pop` |
-| 3D만 복구      | `git checkout HEAD -- components/Lanyard.tsx app/setting/page.tsx` |
+| 목적              | 명령                                                               |
+| ----------------- | ------------------------------------------------------------------ |
+| 3D 동작 버전 고정 | `git add` + `git commit` (위 두 파일)                              |
+| stash 적용        | `git stash pop`                                                    |
+| 3D만 복구         | `git checkout HEAD -- components/Lanyard.tsx app/setting/page.tsx` |
