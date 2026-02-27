@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  ArrowDown,
+  ArrowUp,
   Calendar,
   Check,
   CircleDollarSign,
@@ -31,6 +33,20 @@ import LoginRequiredModal from "../components/LoginRequiredModal";
 import GuestPlanLimitModal from "../components/GuestPlanLimitModal";
 import SharePlanModal from "@/components/SharePlanModal";
 import NoPlanFoundModal from "../components/NoPlanFoundModal";
+import PlanFilterModal, {
+  type PlanSortOption,
+} from "../components/PlanFilterModal";
+
+/** 정렬 옵션 → 버튼 표시용 라벨(가격/날짜/이름) + 방향 */
+function getSortButtonLabel(
+  opt: PlanSortOption
+): { label: string; isDesc: boolean } {
+  const desc = opt.endsWith("_desc");
+  if (opt.startsWith("price_")) return { label: "가격", isDesc: desc };
+  if (opt.startsWith("date_")) return { label: "날짜", isDesc: desc };
+  if (opt.startsWith("name_")) return { label: "제목", isDesc: desc };
+  return { label: "필터", isDesc: true };
+}
 import ScrollDownAnimation from "../components/ScrollDownAnimation";
 import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
 import { useWedding } from "../contexts/WeddingContext";
@@ -112,6 +128,8 @@ interface ScheduleListItem {
   title: string;
   amount: number | null;
   startDate: string | null;
+  /** 등록일 (ISO 문자열). API에서 반환 시 사용 */
+  createDate?: string | null;
   /** COMPLETED 일 때 체크박스·취소선·회색 표시 */
   status?: string | null;
 }
@@ -288,6 +306,8 @@ function MainPageContent() {
   >(undefined);
   const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [sortOptions, setSortOptions] = useState<PlanSortOption[]>(["date_desc"]);
 
   // Guide Overlay State. 로그인 시: GET /plan/user 응답으로만 설정·참조( localStorage 미참조 )
   const [hasSeenMainGuide, setHasSeenMainGuide] = useState<boolean | null>(
@@ -1085,9 +1105,48 @@ function MainPageContent() {
   }, [baseVisibleList]);
 
   const visibleScheduleList = useMemo(() => {
-    if (selectedCategory === "전체") return baseVisibleList;
-    return baseVisibleList.filter((p) => p.categoryName === selectedCategory);
-  }, [baseVisibleList, selectedCategory]);
+    let list =
+      selectedCategory === "전체"
+        ? [...baseVisibleList]
+        : baseVisibleList.filter((p) => p.categoryName === selectedCategory);
+
+    const compare = (a: ScheduleListItem, b: ScheduleListItem, opt: PlanSortOption): number => {
+      switch (opt) {
+        case "price_desc":
+          return (b.amount ?? 0) - (a.amount ?? 0);
+        case "price_asc":
+          return (a.amount ?? 0) - (b.amount ?? 0);
+        case "date_desc": {
+          const aDate = a.createDate ?? a.startDate ?? "";
+          const bDate = b.createDate ?? b.startDate ?? "";
+          if (!aDate && !bDate) return b.id - a.id;
+          return new Date(bDate).getTime() - new Date(aDate).getTime();
+        }
+        case "date_asc": {
+          const aDate = a.createDate ?? a.startDate ?? "";
+          const bDate = b.createDate ?? b.startDate ?? "";
+          if (!aDate && !bDate) return a.id - b.id;
+          return new Date(aDate).getTime() - new Date(bDate).getTime();
+        }
+        case "name_desc":
+          return (b.title ?? "").localeCompare(a.title ?? "", "ko");
+        case "name_asc":
+          return (a.title ?? "").localeCompare(b.title ?? "", "ko");
+        default:
+          return 0;
+      }
+    };
+
+    const opts =
+      sortOptions.length > 0 ? sortOptions : (["date_desc"] as PlanSortOption[]);
+    return [...list].sort((a, b) => {
+      for (const opt of opts) {
+        const diff = compare(a, b, opt);
+        if (diff !== 0) return diff;
+      }
+      return 0;
+    });
+  }, [baseVisibleList, selectedCategory, sortOptions]);
 
   if (!scheduleLoading && !isSharedLoading) {
     lastPlannedCountRef.current =
@@ -1765,11 +1824,32 @@ function MainPageContent() {
                   )}
                 </div>
               </div>
-              {!(
-                isRoomView &&
-                String(myRoomPermission ?? "").toUpperCase() === "READ"
-              ) && (
-                <div className="flex shrink-0 pb-1.5">
+              <div className="flex shrink-0 pb-1.5 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowFilterModal(true)}
+                  className="inline-flex items-center justify-center gap-1.5 h-[36px] px-3.5 py-0 rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 border-2 border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
+                  aria-label="필터"
+                >
+                  {(() => {
+                    const current = sortOptions[0] ?? "date_desc";
+                    const { label, isDesc } = getSortButtonLabel(current);
+                    return (
+                      <>
+                        <span>{label}</span>
+                        {isDesc ? (
+                          <ArrowDown className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                        ) : (
+                          <ArrowUp className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                        )}
+                      </>
+                    );
+                  })()}
+                </button>
+                {!(
+                  isRoomView &&
+                  String(myRoomPermission ?? "").toUpperCase() === "READ"
+                ) && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1826,8 +1906,8 @@ function MainPageContent() {
                       strokeWidth={2.5}
                     />
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             {/* 탭 영역 - Sticky 고정 */}
             <div
@@ -2150,6 +2230,12 @@ function MainPageContent() {
           show={showNoPlanModal}
           onConfirm={() => router.push("/setting")}
           onCancel={() => router.push("/plan-list")}
+        />
+        <PlanFilterModal
+          isOpen={showFilterModal}
+          onClose={() => setShowFilterModal(false)}
+          sortOptions={sortOptions}
+          onSortChange={setSortOptions}
         />
         {!showNoPlanModal && (
           <GuideOverlay

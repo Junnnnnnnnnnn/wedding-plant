@@ -1787,7 +1787,10 @@ function AddPlanPageContent() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 bg-[#1b0d14]/60 backdrop-blur-md"
-                onClick={() => setShowChatShareSelection(false)}
+                onClick={() => {
+                  setShowChatShareSelection(false);
+                  handlePlanSavedCancel();
+                }}
               />
               <motion.div
                 initial={{ y: "100%" }}
@@ -1802,7 +1805,10 @@ function AddPlanPageContent() {
                   </h3>
                   <button
                     type="button"
-                    onClick={() => setShowChatShareSelection(false)}
+                    onClick={() => {
+                      setShowChatShareSelection(false);
+                      handlePlanSavedCancel();
+                    }}
                     className="w-10 h-10 bg-stone-50 rounded-full flex items-center justify-center text-stone-400"
                   >
                     <X className="w-5 h-5" />
