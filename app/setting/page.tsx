@@ -3,8 +3,10 @@
 import dynamic from "next/dynamic";
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Check } from "lucide-react";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import LandingHero from "../components/LandingHero";
+import TermsModal from "../components/TermsModal";
 import CelebrationEffects from "../components/CelebrationEffects";
 import DatePickerWheel from "../components/DatePickerWheel";
 import { useWedding } from "../contexts/WeddingContext";
@@ -56,6 +58,29 @@ function SettingPageContent() {
   const [nextStep, setNextStep] = useState<"second" | "third" | "fourth">(
     "second",
   );
+
+  // 약관 동의 상태
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [agreeLocation, setAgreeLocation] = useState(false);
+  const [agreeThirdParty, setAgreeThirdParty] = useState(false);
+  const [agreeMarketing, setAgreeMarketing] = useState(false);
+
+  // 약관 모달 상태
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showThirdPartyModal, setShowThirdPartyModal] = useState(false);
+  const [showMarketingModal, setShowMarketingModal] = useState(false);
+
+  const isAllRequiredAgreed = agreePrivacy && agreeLocation && agreeThirdParty;
+  const isAllAgreed = isAllRequiredAgreed && agreeMarketing;
+
+  const handleAgreeAll = () => {
+    const newValue = !isAllAgreed;
+    setAgreePrivacy(newValue);
+    setAgreeLocation(newValue);
+    setAgreeThirdParty(newValue);
+    setAgreeMarketing(newValue);
+  };
 
   // 비로그인 + 이미 setting 완료(플래그 있음) + weddingDate 등 데이터 다 찼으면 → main으로 리다이렉트
   // (다시 setting 접근 시 차단. 플로우 중에는 플래그가 없으므로 리다이렉트 안 함)
@@ -542,7 +567,7 @@ function SettingPageContent() {
         )}
 
         {showSeventh && (
-          <div className="flex flex-1 flex-col items-center pt-20 pb-12 animate-fade-in">
+          <div className="flex flex-1 flex-col items-center pt-10 pb-12 animate-fade-in overflow-y-auto w-full">
             <LandingHero
               title="자 이제 시작해볼까요?"
               subtitle="결혼식까지 든든한 플랜을 같이 짜보아요"
@@ -550,16 +575,211 @@ function SettingPageContent() {
               titleSize="text-2xl sm:text-4xl"
               subtitleSize="text-sm sm:text-lg"
             />
-            <div className="relative flex flex-1 w-full max-h-[50vh] items-center justify-center overflow-hidden rounded-xl">
-              <Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
+            <div className="relative flex flex-shrink-0 w-[200px] h-[40vh] min-h-[180px] items-center justify-center overflow-hidden rounded-xl mb-4 mt-2">
+              <Lanyard position={[0, 0, 25]} gravity={[0, -40, 0]} />
             </div>
-            <button
-              type="button"
-              onClick={handleGoToMain}
-              className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
-            >
-              계획 짜러 가기
-            </button>
+
+            {/* 개인정보 및 이용약관 동의 레이아웃 */}
+            <div className="w-full max-w-[320px] mb-8 flex flex-col gap-3">
+              <label className="flex items-center gap-2 cursor-pointer mb-1">
+                <div
+                  className={`flex items-center justify-center w-5 h-5 rounded-full border transition-colors ${
+                    isAllAgreed
+                      ? "bg-[#FFAAB8] border-[#FFAAB8]"
+                      : "bg-white border-stone-300"
+                  }`}
+                >
+                  <Check
+                    strokeWidth={3}
+                    className={`w-3 h-3 ${isAllAgreed ? "text-white" : "text-stone-300"}`}
+                  />
+                </div>
+                <input
+                  type="checkbox"
+                  className="hidden"
+                  checked={isAllAgreed}
+                  onChange={handleAgreeAll}
+                />
+                <span className="text-sm font-semibold text-stone-800">
+                  전체 동의합니다.
+                </span>
+              </label>
+
+              <hr className="border-stone-200" />
+
+              <div className="flex flex-col gap-3.5 mt-2">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div
+                      className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${
+                        agreePrivacy
+                          ? "bg-[#FFAAB8] border-[#FFAAB8]"
+                          : "bg-white border-stone-300"
+                      }`}
+                    >
+                      <Check
+                        strokeWidth={3}
+                        className={`w-2.5 h-2.5 ${agreePrivacy ? "text-white" : "text-stone-300"}`}
+                      />
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={agreePrivacy}
+                      onChange={() => setAgreePrivacy(!agreePrivacy)}
+                    />
+                    <span className="text-xs text-stone-600">
+                      (필수) 개인정보 수집 및 이용 동의
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivacyModal(true)}
+                    className="text-[10px] text-stone-400 underline"
+                  >
+                    보기
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div
+                      className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${
+                        agreeLocation
+                          ? "bg-[#FFAAB8] border-[#FFAAB8]"
+                          : "bg-white border-stone-300"
+                      }`}
+                    >
+                      <Check
+                        strokeWidth={3}
+                        className={`w-2.5 h-2.5 ${agreeLocation ? "text-white" : "text-stone-300"}`}
+                      />
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={agreeLocation}
+                      onChange={() => setAgreeLocation(!agreeLocation)}
+                    />
+                    <span className="text-xs text-stone-600">
+                      (필수) 위치정보 수집 및 이용 동의
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowLocationModal(true)}
+                    className="text-[10px] text-stone-400 underline"
+                  >
+                    보기
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div
+                      className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${
+                        agreeThirdParty
+                          ? "bg-[#FFAAB8] border-[#FFAAB8]"
+                          : "bg-white border-stone-300"
+                      }`}
+                    >
+                      <Check
+                        strokeWidth={3}
+                        className={`w-2.5 h-2.5 ${agreeThirdParty ? "text-white" : "text-stone-300"}`}
+                      />
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={agreeThirdParty}
+                      onChange={() => setAgreeThirdParty(!agreeThirdParty)}
+                    />
+                    <span className="text-xs text-stone-600">
+                      (필수) 개인정보 제3자 제공 동의
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowThirdPartyModal(true)}
+                    className="text-[10px] text-stone-400 underline"
+                  >
+                    보기
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div
+                      className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${
+                        agreeMarketing
+                          ? "bg-[#FFAAB8] border-[#FFAAB8]"
+                          : "bg-white border-stone-300"
+                      }`}
+                    >
+                      <Check
+                        strokeWidth={3}
+                        className={`w-2.5 h-2.5 ${agreeMarketing ? "text-white" : "text-stone-300"}`}
+                      />
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={agreeMarketing}
+                      onChange={() => setAgreeMarketing(!agreeMarketing)}
+                    />
+                    <span className="text-xs text-stone-600">
+                      (선택) 마케팅 목적 이용 동의
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowMarketingModal(true)}
+                    className="text-[10px] text-stone-400 underline"
+                  >
+                    보기
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full flex justify-center">
+              <button
+                type="button"
+                onClick={handleGoToMain}
+                disabled={!isAllRequiredAgreed}
+                className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
+              >
+                계획 짜러 가기
+              </button>
+            </div>
+
+            <TermsModal
+              isOpen={showPrivacyModal}
+              onClose={() => setShowPrivacyModal(false)}
+              title="개인정보 수집 및 이용 동의"
+              content={`본 서비스는 개인정보보호법 제15조에 따라 아래와 같이 개인정보를 수집 및 이용합니다.\n\n1. 수집 목적\n- 회원 가입 및 서비스 제공\n- 고객 상담 및 불만 처리\n- 서비스 이용 기록 분석 및 개선\n\n2. 수집 항목\n- (필수) 이름, 이메일 주소, 프로필 이미지\n- (필수) 소셜 로그인 식별자 (카카오톡, 구글, 네이버 등)\n\n3. 보유 및 이용 기간\n- 회원 탈퇴 시 지체 없이 파기\n- 단, 관계 법령에 따라 보존할 필요가 있는 경우 해당 법령에서 정한 기간 동안 보존합니다.\n\n4. 동의 거부 권리\n- 귀하는 개인정보 수집 및 이용에 대해 동의를 거부할 권리가 있습니다. 단, 필수 항목 동의 거부 시 서비스 이용이 제한될 수 있습니다.`}
+            />
+
+            <TermsModal
+              isOpen={showLocationModal}
+              onClose={() => setShowLocationModal(false)}
+              title="위치정보 수집 및 이용 동의"
+              content={`본 서비스는 위치정보의 보호 및 이용 등에 관한 법률 제15조에 따라 아래와 같이 위치정보를 수집 및 이용합니다.\n\n1. 수집 목적\n- 예식장 위치 안내 및 하객 길찾기 서비스 제공\n- 위치 기반 웨딩 일정 관리 및 알림 기능 제공\n\n2. 수집 항목\n- (필수) GPS 좌표 (위도, 경도) 및 장소 정보\n\n3. 보유 및 이용 기간\n- 서비스 제공 목적 달성 시 또는 회원 탈퇴 시 지체 없이 파기합니다.\n\n4. 동의 거부 권리\n- 귀하는 위치정보 수집 및 이용에 대해 동의를 거부할 권리가 있습니다. 단, 동의 거부 시 위치 기반 기능(길안내 등) 이용이 제한됩니다.`}
+            />
+
+            <TermsModal
+              isOpen={showThirdPartyModal}
+              onClose={() => setShowThirdPartyModal(false)}
+              title="개인정보 제3자 제공 동의"
+              content={`본 서비스는 개인정보보호법 제17조에 따라 아래와 같이 개인정보를 제3자에게 제공합니다.\n\n1. 제공받는 자\n- 동일한 웨딩 플랜 룸(공유 룸)에 참여 및 초대된 다른 사용자\n\n2. 제공 목적\n- 일정, 예산, 채팅 등 웨딩 준비 데이터의 공동 관리 및 원활한 커뮤니케이션\n\n3. 제공 항목\n- (필수) 이름, 프로필 이미지, 채팅 내역, 일정 및 예산 입력 정보\n\n4. 보유 및 이용 기간\n- 웨딩 플랜 룸 참여 기간 동안 유지되며, 퇴장 시 또는 회원 탈퇴 시 파기됩니다.\n\n5. 동의 거부 권리\n- 귀하는 개인정보 제3자 제공에 대해 동의를 거부할 권리가 있습니다. 단, 동의 거부 시 플랜 공유 룸 기능 및 협업 서비스 이용이 불가능합니다.`}
+            />
+
+            <TermsModal
+              isOpen={showMarketingModal}
+              onClose={() => setShowMarketingModal(false)}
+              title="마케팅 목적 이용 동의"
+              content={`1. 수집 및 이용 목적\n- 신규 서비스 및 업데이트 안내\n- 이벤트, 프로모션 알림 및 혜택 제공\n- 맞춤형 웨딩 정보 및 광고 전송 (앱 푸시, 이메일, 알림톡 등)\n\n2. 수집 항목\n- (선택) 이름, 이메일 주소, 서비스 이용 기록\n\n3. 보유 및 이용 기간\n- 회원 탈퇴 시 또는 마케팅 목적 이용 동의 철회 시까지 보관 및 이용됩니다.\n\n4. 동의 거부 권리\n- 귀하는 마케팅 목적 이용에 대한 동의를 선택적으로 거부하실 수 있습니다. 동의를 거부하셔도 웨딩 플랜트의 기본 서비스는 정상적으로 이용하실 수 있습니다.`}
+            />
           </div>
         )}
       </main>
