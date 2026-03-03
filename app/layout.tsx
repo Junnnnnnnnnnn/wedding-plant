@@ -93,7 +93,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://wedding-plant.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  applicationName: "웨딩 플랜트",
   title: "웨딩 플랜트 - 우리만의 완벽한 셀프 웨딩 예산 관리",
   verification: {
     google: "89hMDRNVKvw-QiX9s9bk64ZTcJOYqoRuWsIdfutI0q8",
@@ -112,8 +117,12 @@ export const metadata: Metadata = {
     title: "웨딩 플랜트 - 스마트한 결혼 준비",
     description: "우리만의 완벽한 셀프 웨딩 예산 관리",
     siteName: "웨딩 플랜트",
+    url: siteUrl,
     locale: "ko_KR",
     type: "website",
+  },
+  alternates: {
+    canonical: siteUrl,
   },
 };
 
@@ -126,7 +135,7 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "웨딩 플랜트",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://wedding-plant.vercel.app",
+    url: siteUrl,
     description: "우리만의 완벽한 셀프 웨딩 예산 관리",
   };
 
