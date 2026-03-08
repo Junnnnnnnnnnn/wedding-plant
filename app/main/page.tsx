@@ -180,6 +180,25 @@ function isStartDatePast(startDate: string | null): boolean {
   return start.getTime() < today.getTime();
 }
 
+/** startDate와 오늘(KST) 비교 → 예정 | 임박 | D-day | 지남 */
+function getDateStatusLabel(
+  startDate: string | null,
+): "예정" | "임박" | "D-day" | "지남" {
+  if (!startDate?.trim()) return "예정";
+  const start = parseLocalDate(startDate);
+  if (!start) return "예정";
+  const today = getKstDate();
+  start.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  const startMs = start.getTime();
+  const todayMs = today.getTime();
+  const diffDays = Math.floor((startMs - todayMs) / (24 * 60 * 60 * 1000));
+  if (diffDays < 0) return "지남";
+  if (diffDays === 0) return "D-day";
+  if (diffDays <= 5) return "임박";
+  return "예정";
+}
+
 /** 공유 방 호스트 정보 (public API 응답) */
 interface SharedRoomUser {
   id: string;
@@ -2184,6 +2203,7 @@ function MainPageContent() {
                         checkedItems.has(plan.id) ||
                         plan.status === "COMPLETED";
                       const amount = plan.amount ?? 0;
+                      const dateStatus = getDateStatusLabel(plan.startDate);
                       const categoryColor = getCategoryColor(plan.categoryName);
                       const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
                       const dateLabel = plan.startDate?.trim()
@@ -2277,13 +2297,19 @@ function MainPageContent() {
                                   : "미정"}
                               </div>
                               <span
-                                className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${
+                                className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-black tracking-tight ${
                                   isChecked
-                                    ? "bg-[#ee2b8c] text-white"
-                                    : "bg-gray-100 text-gray-500"
+                                    ? "bg-emerald-50 text-emerald-600"
+                                    : dateStatus === "D-day"
+                                      ? "bg-[#ee2b8c] text-white shadow-xs"
+                                      : dateStatus === "임박"
+                                        ? "bg-orange-50 text-orange-600"
+                                        : dateStatus === "예정"
+                                          ? "bg-sky-50 text-sky-600"
+                                          : "bg-slate-100 text-slate-400"
                                 }`}
                               >
-                                {isChecked ? "완료" : "예정"}
+                                {isChecked ? "완료" : dateStatus}
                               </span>
                             </div>
                           </Link>
