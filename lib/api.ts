@@ -108,11 +108,33 @@ export function clearShareAfterLogin(): void {
   sessionStorage.removeItem(SHARE_AFTER_LOGIN_KEY);
 }
 
-/** 세션/로컬 스토리지, 인증 등 모든 저장값 삭제 */
+/** 앱이 사용하는 모든 storage 키 (clearAllStoredData에서 참조) */
+const APP_SESSION_KEYS = [
+  AUTH_TOKEN_KEY,
+  SHARE_AFTER_LOGIN_KEY,
+  HAS_COMPLETED_GUEST_SETTING_KEY,
+  GUEST_AGREEMENT_KEY,
+  "plan_return_path_after_login",
+  "weddingData",
+  "weddingDate", // legacy
+  "guest_schedule_list_v1",
+  "hasSeenMainGuide",
+  "hasSeenBudgetGuide",
+  "returnToPlanList",
+] as const;
+
+const APP_LOCAL_KEYS = [
+  AUTH_TOKEN_KEY,
+  "hasSeenMainGuide",
+  "hasSeenBudgetGuide",
+  "hasSeenChatGuide",
+] as const;
+
+/** 앱이 사용하는 세션/로컬 스토리지 값만 선별 삭제 (타 라이브러리/애널리틱스 키는 보존) */
 export function clearAllStoredData(): void {
   if (typeof window === "undefined") return;
-  sessionStorage.clear();
-  localStorage.clear();
+  APP_SESSION_KEYS.forEach((key) => sessionStorage.removeItem(key));
+  APP_LOCAL_KEYS.forEach((key) => localStorage.removeItem(key));
   window.dispatchEvent(new Event(AUTH_TOKEN_CHANGED_EVENT));
 }
 

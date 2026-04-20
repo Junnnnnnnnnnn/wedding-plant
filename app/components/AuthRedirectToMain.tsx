@@ -49,9 +49,6 @@ export default function AuthRedirectToMain() {
       })
       .catch(() => {
         // 네트워크/파싱 실패 시 무시 (다음 방문 시 다시 시도)
-      })
-      .finally(() => {
-        checkedRef.current = false;
       });
 
     return () => {

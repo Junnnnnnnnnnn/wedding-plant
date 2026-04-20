@@ -73,6 +73,16 @@ export default function DatePickerWheel({
   const programmaticScrollRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 언마운트 시 pending 스크롤 타이머 정리 (setState on unmounted 방지)
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   const years = Array.from({ length: 100 }, (_, i) => currentYear + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const getDaysInMonth = (year: number, month: number) => {

@@ -18,6 +18,20 @@ export function useKakaoAuth() {
 
   const handleKakaoAuth = useCallback(async () => {
     setLoading(true);
+
+    // OAuth로 외부 이동할 때는 setLoading(false)를 호출하지 않음.
+    // 브라우저 unload 전까지 로딩이 유지되어야 사용자가 빈 화면에 머물지 않음.
+    let willRedirect = false;
+    const redirectToOAuth = (url: string) => {
+      willRedirect = true;
+      // 첫 페인트가 끝난 뒤 이동시켜 로딩 오버레이가 반드시 한 프레임 보이도록 함
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.location.href = url;
+        });
+      });
+    };
+
     const token = getToken();
     if (!token) {
       // 공유 링크(share)가 있으면 로그인 후 복원을 위해 저장
@@ -38,16 +52,11 @@ export function useKakaoAuth() {
       if (pathname === "/main") url = "/api/auth/kakao?from=main";
       else if (pathname === "/") url = "/api/auth/kakao?from=home";
 
-      // 리다이렉트 직전에 로딩을 끄지 않음 (브라우저 전환 시점까지 유도)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          window.location.href = url;
-        });
-      });
+      redirectToOAuth(url);
       return;
     }
     try {
-      const res = await fetchWithAuth("/plan/user");
+      const res = await fetchWithAuth("/plan/user", { skipLoading: true });
       const json = (await res.json()) as {
         result?: boolean;
         data?: {
@@ -59,12 +68,12 @@ export function useKakaoAuth() {
       if (json.result === true && json.data && isPlanDataComplete(json.data)) {
         router.push("/main");
       } else {
-        window.location.href = "/api/auth/kakao";
+        redirectToOAuth("/api/auth/kakao");
       }
     } catch {
-      window.location.href = "/api/auth/kakao";
+      redirectToOAuth("/api/auth/kakao");
     } finally {
-      setLoading(false);
+      if (!willRedirect) setLoading(false);
     }
   }, [fetchWithAuth, setLoading, router, pathname]);
 

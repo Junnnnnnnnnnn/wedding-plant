@@ -149,6 +149,7 @@ export default function KakaoLoginAlert({
               resetData();
               router.replace("/plan-list");
             }
+            return;
           }
 
           // 저장된 돌아가기 경로 확인

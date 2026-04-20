@@ -46,6 +46,7 @@ export function NotificationProvider({
   children: React.ReactNode;
 }) {
   const eventSourcesRef = useRef<Map<number, EventSource>>(new Map());
+  const reconnectTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
   const params = useParams();
   const pathname = usePathname();
@@ -160,6 +161,12 @@ export function NotificationProvider({
       newIds.forEach((id) => {
         const createConnection = (roomId: number) => {
           try {
+            // 재연결로 들어온 경우 pending 타이머 정리
+            const pending = reconnectTimersRef.current.get(roomId);
+            if (pending) {
+              clearTimeout(pending);
+              reconnectTimersRef.current.delete(roomId);
+            }
             // 이미 연결되어 있다면 패스
             if (eventSourcesRef.current.has(roomId)) return;
 
@@ -231,8 +238,12 @@ export function NotificationProvider({
               console.error(`[SSE Room ${roomId}] 연결 에러:`, err);
               es.close();
               eventSourcesRef.current.delete(roomId);
-              // 3초 후 재연결 시도
-              setTimeout(() => createConnection(roomId), 3000);
+              // 3초 후 재연결 시도 (타이머를 추적해 언마운트/재구독 시 정리)
+              const timer = setTimeout(() => {
+                reconnectTimersRef.current.delete(roomId);
+                createConnection(roomId);
+              }, 3000);
+              reconnectTimersRef.current.set(roomId, timer);
             };
           } catch (err) {
             console.error(`[SSE Room ${roomId}] 연결 생성 실패:`, err);
@@ -305,12 +316,15 @@ export function NotificationProvider({
     initNotifications();
   }, [subscribeToChatRooms, updateRoomUnreadCount, updateUnreadCount]);
 
-  // 컴포넌트 언마운트 시 모든 연결 종료
+  // 컴포넌트 언마운트 시 모든 연결/재연결 타이머 종료
   useEffect(() => {
     const eventSources = eventSourcesRef.current;
+    const reconnectTimers = reconnectTimersRef.current;
     return () => {
       eventSources.forEach((es) => es.close());
       eventSources.clear();
+      reconnectTimers.forEach((t) => clearTimeout(t));
+      reconnectTimers.clear();
     };
   }, []);
 

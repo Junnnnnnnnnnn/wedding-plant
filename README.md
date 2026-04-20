@@ -17,8 +17,7 @@ NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY=your_kakao_map_api_key_here
 
 카카오 로그인·플랜 API는 **별도 백엔드 서버**를 사용합니다. `.env`에 다음을 설정하세요 (`.env.example` 참고).
 
-- `NEXT_PUBLIC_API_BASE_URL` — 브라우저에서 호출하는 백엔드 주소 (로컬: `http://localhost:3111`)
-- `API_BASE_URL` — 서버 사이드용 (같은 값으로 설정)
+- `NEXT_PUBLIC_API_BASE_URL` — 백엔드 주소 (로컬: `http://localhost:3111`)
 
 **로컬 개발 시:** 백엔드 서버를 **3111 포트**에서 실행해 두어야 합니다.  
 실행하지 않으면 로그인 시 `ERR_CONNECTION_REFUSED`가 발생합니다.
