@@ -1,0 +1,18 @@
+# 저장소(blob)에는 항상 LF로 저장한다. 체크아웃 시 줄바꿈은 각자의
+# core.autocrlf 설정을 따르므로 Windows 작업 트리는 CRLF여도 무방하다.
+# Prettier는 .prettierrc의 endOfLine: "auto"로 양쪽 모두 통과시킨다.
+* text=auto
+
+# 바이너리: 줄바꿈 변환 금지
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.glb binary
+*.mp4 binary
