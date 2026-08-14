@@ -150,7 +150,7 @@ interface ScheduleListItem {
 
 const SCHEDULE_FETCH_COUNT = 10000;
 /** 카테고리명으로 파스텔 색상 반환 (동일 이름 = 동일 색상) */
-function getCategoryColor(categoryName: string): string {
+function getCategoryColor(categoryName?: string | null): string {
   const colors = [
     "#FFE4E9",
     "#E8DDF5",
@@ -159,10 +159,12 @@ function getCategoryColor(categoryName: string): string {
     "#D4EBF7",
     "#FFE5D9",
   ];
+  // 백엔드가 카테고리명을 비워 보내는 경우가 있어 방어한다 (없으면 첫 색상)
+  const name = typeof categoryName === "string" ? categoryName : "";
   let hash = 0;
 
-  for (let i = 0; i < categoryName.length; i += 1) {
-    hash = (hash << 5) - hash + categoryName.charCodeAt(i);
+  for (let i = 0; i < name.length; i += 1) {
+    hash = (hash << 5) - hash + name.charCodeAt(i);
     hash |= 0;
   }
 
@@ -675,13 +677,18 @@ function MainPageContent() {
         return;
       }
 
-      clearAllStoredData();
-      resetData();
-      if (status === 401) {
+      // 인증이 끊긴 경우(401/403)에만 저장 데이터를 정리한다.
+      // 5xx·네트워크 오류(status undefined)로 지우면 일시적 장애에
+      // 사용자가 강제 로그아웃되고 게스트 데이터까지 날아간다.
+      const isAuthFailure = status === 401 || status === 403;
+      if (isAuthFailure) {
+        clearAllStoredData();
+        resetData();
         router.replace("/");
-      } else {
-        router.replace("/?api_error=1");
+        return;
       }
+
+      router.replace("/?api_error=1");
     },
     [resetData, router],
   );

@@ -117,6 +117,7 @@ function ScheduleDetailPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteFeedbackModal, setShowDeleteFeedbackModal] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
     isOpen: boolean;
@@ -259,6 +260,7 @@ function ScheduleDetailPageContent() {
   const handleDelete = useCallback(async () => {
     if (!detail?.id || deleting) return;
     setDeleting(true);
+    setShowDeleteConfirm(false);
     try {
       const res = await fetchWithAuth(`/plan/schedule/${detail.id}`, {
         method: "DELETE",
@@ -266,10 +268,13 @@ function ScheduleDetailPageContent() {
       if (res.ok) {
         setShowDeleteFeedbackModal(true);
       } else {
-        const text = await res.text();
+        // 응답 원문(JSON 덩어리)을 그대로 노출하지 않는다
         setAlertConfig({
           isOpen: true,
-          message: text || "삭제에 실패했습니다.",
+          message:
+            res.status === 403
+              ? "이 플랜을 삭제할 권한이 없습니다."
+              : "삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
           type: "error",
         });
       }
@@ -682,7 +687,7 @@ function ScheduleDetailPageContent() {
               </button>
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={deleting}
                 className="flex-1 bg-white hover:bg-gray-50 text-[#1b0d14] py-3 rounded-2xl font-bold border-2 border-gray-100 hover:border-[#ee2b8c33] transition-all transform active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
               >
@@ -724,6 +729,42 @@ function ScheduleDetailPageContent() {
           type={alertConfig.type}
           onClose={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
         />
+
+        {/* 삭제는 되돌릴 수 없으므로 한 번 더 확인받는다 */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50 px-6">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="플랜 삭제 확인"
+              className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl"
+            >
+              <p className="text-center text-lg font-bold text-[#1b0d14]">
+                이 플랜을 삭제할까요?
+              </p>
+              <p className="mt-2 text-center text-sm text-gray-500">
+                삭제하면 되돌릴 수 없습니다.
+              </p>
+              <div className="mt-5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 h-12 rounded-2xl border border-gray-200 bg-white font-bold text-sm text-[#1b0d14] hover:bg-gray-50 transition-all"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex-1 h-12 rounded-2xl bg-[#ee2b8c] font-bold text-sm text-white hover:bg-[#d4237b] transition-all disabled:opacity-60"
+                >
+                  {deleting ? "삭제 중..." : "삭제하기"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

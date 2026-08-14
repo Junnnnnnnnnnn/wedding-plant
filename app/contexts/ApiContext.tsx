@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -42,6 +43,17 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loading = loadingCount > 0;
+
+  // OAuth로 외부 이동할 때는 로딩을 켠 채로 두는데(빈 화면 방지),
+  // 뒤로가기로 bfcache 복원되면 카운터가 1인 상태 그대로 살아나
+  // 전체 화면 오버레이가 영영 사라지지 않는다. 복원 시 카운터를 비운다.
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setLoadingCount(0);
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
 
   const request = useCallback(
     async (url: string, options?: ApiRequestOptions) => {

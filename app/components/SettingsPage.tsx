@@ -11,7 +11,7 @@ import {
   Heart,
   Sparkles,
 } from "lucide-react";
-import { parseLocalDate } from "@/lib/utils";
+import { parseLocalDate, getKstDate } from "@/lib/utils";
 import DatePickerModal from "./DatePickerModal";
 
 interface SettingsPageProps {
@@ -23,13 +23,14 @@ interface SettingsPageProps {
     requiredAgreementDate?: string | null;
     adAgreementDate?: string | null;
   };
+  /** 저장 성공 여부를 반환한다. 성공했을 때만 완료 표시를 띄운다. */
   onSave: (user: {
     name: string;
     weddingDate: string;
     budget: number;
     requiredAgreementDate?: string | null;
     adAgreementDate?: string | null;
-  }) => void;
+  }) => Promise<boolean> | boolean | void;
   onClose: () => void;
   onSignOut?: () => void;
 }
@@ -49,6 +50,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 }) => {
   const [formData, setFormData] = useState(user);
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const selectedDate = useMemo(() => {
@@ -57,25 +61,54 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     return d ?? new Date();
   }, [formData.weddingDate]);
 
-  const handleSave = () => {
-    onSave(formData);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+  const nameError =
+    formData.name.trim() === "" ? "이름을 입력해 주세요." : null;
+
+  const handleSave = async () => {
+    if (isSaving) return;
+    if (nameError) {
+      setSaveError(nameError);
+      return;
+    }
+    setSaveError(null);
+    setIsSaving(true);
+    try {
+      // 저장 결과를 기다린 뒤에만 완료 표시를 띄운다.
+      const ok = await onSave({ ...formData, name: formData.name.trim() });
+      if (ok === false) {
+        setSaveError("저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        return;
+      }
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    } catch {
+      setSaveError("저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDateChange = (date: Date) => {
     setFormData({ ...formData, weddingDate: formatDate(date) });
   };
 
-  // 결혼식까지 D-day 계산 (로컬 날짜 파싱으로 타임존 오차 방지)
+  // 결혼식까지 남은 일수 (KST 기준, 지난 날짜는 음수)
   const daysRemaining = (() => {
     const d = parseLocalDate(formData.weddingDate);
     if (!d) return 0;
-    const today = new Date();
+    const today = getKstDate();
     today.setHours(0, 0, 0, 0);
     d.setHours(0, 0, 0, 0);
-    return Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   })();
+
+  /** 미래는 D-N, 당일은 D-Day, 지난 날짜는 D+N */
+  const ddayLabel =
+    daysRemaining > 0
+      ? `D-${daysRemaining}`
+      : daysRemaining === 0
+        ? "D-Day"
+        : `D+${Math.abs(daysRemaining)}`;
 
   return (
     <div className="flex-1 flex flex-col bg-[#fcfbfc] animate-in slide-in-from-right duration-300 relative overflow-hidden">
@@ -131,9 +164,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
               <h3 className="text-2xl font-bold">{formData.name}님</h3>
             </div>
             <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20">
-              <span className="text-xl font-black">
-                D-{daysRemaining > 0 ? daysRemaining : "Day"}
-              </span>
+              <span className="text-xl font-black">{ddayLabel}</span>
             </div>
           </div>
         </div>
@@ -210,11 +241,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 </div>
                 <input
                   type="number"
+                  min={0}
                   placeholder="보유 예산 (만 원)"
                   value={formData.budget}
-                  onChange={(e) =>
-                    setFormData({ ...formData, budget: Number(e.target.value) })
-                  }
+                  onChange={(e) => {
+                    // 빈 값은 0으로, 음수는 0으로 막는다 (0은 유효한 예산)
+                    const raw = e.target.value;
+                    const n = raw === "" ? 0 : Number(raw);
+                    setFormData({
+                      ...formData,
+                      budget: Number.isFinite(n) ? Math.max(0, n) : 0,
+                    });
+                  }}
                   className="input-font-theme input-no-spinner w-full h-16 pl-14 pr-6 bg-white border border-[#ee2b8c0a] rounded-3xl shadow-sm outline-none focus:ring-4 focus:ring-[#ee2b8c0a] focus:border-[#ee2b8c44] font-bold text-lg text-[#1b0d14] transition-all"
                 />
                 <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-gray-400">
@@ -227,14 +265,22 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
         {/* Action Buttons */}
         <div className="space-y-4 pt-4">
+          {saveError && (
+            <p
+              role="alert"
+              className="text-center text-sm font-bold text-[#c0203c] bg-[#c0203c11] rounded-2xl py-3 px-4"
+            >
+              {saveError}
+            </p>
+          )}
           <button
             type="button"
             onClick={handleSave}
-            disabled={isSaved}
-            className={`w-full h-16 rounded-[24px] font-black text-lg transition-all transform active:scale-95 shadow-xl flex items-center justify-center gap-3 ${
+            disabled={isSaved || isSaving}
+            className={`w-full h-16 rounded-[24px] font-black text-lg transition-all transform active:scale-95 shadow-xl flex items-center justify-center gap-3 disabled:cursor-not-allowed ${
               isSaved
                 ? "bg-green-500 text-white shadow-green-100"
-                : "bg-[#1b0d14] text-white hover:bg-[#3a1c2b] shadow-[#1b0d1422]"
+                : "bg-[#1b0d14] text-white hover:bg-[#3a1c2b] shadow-[#1b0d1422] disabled:opacity-70"
             }`}
           >
             {isSaved ? (
@@ -242,18 +288,43 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             ) : (
               <Sparkles className="w-5 h-5 text-[#ee2b8c]" />
             )}
-            {isSaved ? "저장되었어요" : "프로필 수정"}
+            {isSaved ? "저장되었어요" : isSaving ? "저장 중..." : "프로필 수정"}
           </button>
 
           <div className="pt-8">
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="w-full h-14 bg-[#ee2b8c08] border border-[#ee2b8c11] rounded-[20px] font-bold text-[#ee2b8cbb] hover:text-[#ee2b8c] hover:bg-[#ee2b8c11] transition-all flex items-center justify-center gap-2 text-sm"
-            >
-              <LogOut className="w-4 h-4" />
-              로그아웃
-            </button>
+            {confirmSignOut ? (
+              // 로그아웃은 저장된 플랜 데이터까지 지우므로 한 번 더 확인받는다
+              <div className="space-y-3 rounded-[20px] border border-[#ee2b8c22] bg-[#ee2b8c08] p-4">
+                <p className="text-center text-sm font-bold text-[#1b0d14]">
+                  로그아웃하면 이 기기에 저장된 플랜 정보가 지워집니다.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmSignOut(false)}
+                    className="flex-1 h-12 rounded-2xl border border-gray-200 bg-white font-bold text-sm text-[#1b0d14] hover:bg-gray-50 transition-all"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onSignOut}
+                    className="flex-1 h-12 rounded-2xl bg-[#ee2b8c] font-bold text-sm text-white hover:bg-[#d4237b] transition-all"
+                  >
+                    로그아웃
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmSignOut(true)}
+                className="w-full h-14 bg-[#ee2b8c08] border border-[#ee2b8c11] rounded-[20px] font-bold text-[#ee2b8cbb] hover:text-[#ee2b8c] hover:bg-[#ee2b8c11] transition-all flex items-center justify-center gap-2 text-sm"
+              >
+                <LogOut className="w-4 h-4" />
+                로그아웃
+              </button>
+            )}
             <p className="text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest mt-6">
               공지 사항 및 소개
             </p>

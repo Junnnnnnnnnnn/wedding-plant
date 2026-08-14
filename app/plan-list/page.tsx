@@ -495,7 +495,15 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
             </div>
           ) : (
             plans.map((plan, index) => {
-              const progress = (plan.remainingBudget / plan.budget) * 100;
+              // 예산 0이면 나눗셈이 Infinity/NaN이 되고, 무효 CSS width는
+              // auto로 떨어져 막대가 꽉 찬 것처럼 보인다. 0~100으로 고정한다.
+              const rawProgress =
+                plan.budget > 0
+                  ? (plan.remainingBudget / plan.budget) * 100
+                  : 0;
+              const progress = Number.isFinite(rawProgress)
+                ? Math.min(100, Math.max(0, rawProgress))
+                : 0;
               const isFirst = index === 0;
 
               const handleChatRoomClick = (chatRoomId: number) => {

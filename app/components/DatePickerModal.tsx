@@ -37,22 +37,40 @@ export default function DatePickerModal({
     onClose();
   };
 
+  /**
+   * 연/월을 바꿀 때 일(day)이 그 달의 말일을 넘으면 말일로 맞춘다.
+   * 그냥 setMonth를 쓰면 1/31 → "2/31" → 3/3으로 넘어가 2월을 건너뛴다.
+   */
+  const withClampedDay = (year: number, monthIndex: number, day: number) => {
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+    return new Date(year, monthIndex, Math.min(day, lastDay));
+  };
+
   const handleMonthChange = (delta: number) => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(currentDate.getMonth() + delta);
-    setCurrentDate(newDate);
+    const target = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + delta,
+      1,
+    );
+    setCurrentDate(
+      withClampedDay(
+        target.getFullYear(),
+        target.getMonth(),
+        currentDate.getDate(),
+      ),
+    );
   };
 
   const handleYearSelect = (year: number) => {
-    const newDate = new Date(currentDate);
-    newDate.setFullYear(year);
-    setCurrentDate(newDate);
+    setCurrentDate(
+      withClampedDay(year, currentDate.getMonth(), currentDate.getDate()),
+    );
   };
 
   const handleMonthSelect = (month: number) => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(month);
-    setCurrentDate(newDate);
+    setCurrentDate(
+      withClampedDay(currentDate.getFullYear(), month, currentDate.getDate()),
+    );
   };
 
   // 모달이 열릴 때 selectedDate로 초기화

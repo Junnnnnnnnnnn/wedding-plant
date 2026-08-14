@@ -8,6 +8,14 @@ import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { getToken, clearAllStoredData } from "@/lib/api";
+import { getKstDateString } from "@/lib/utils";
+
+/** 예산은 0도 유효한 값이므로 `|| 1000` 대신 빈 값/NaN일 때만 기본값을 쓴다 */
+function toBudget(raw: unknown, fallback = 1000): number {
+  if (raw === null || raw === undefined || raw === "") return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : fallback;
+}
 
 interface PlanUserData {
   id: string;
@@ -39,17 +47,20 @@ export default function UserPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchUser = useCallback(async () => {
+    // 게스트/실패 시 사용할 로컬 기준값 (날짜는 KST 기준)
+    const localFallback = () => ({
+      name: weddingData.name ?? "",
+      weddingDate: weddingData.date
+        ? toDateString(weddingData.date)
+        : getKstDateString(),
+      budget: toBudget(weddingData.budget),
+      requiredAgreementDate: null,
+      adAgreementDate: null,
+    });
+
     const token = getToken();
     if (!token) {
-      setUserData({
-        name: weddingData.name ?? "",
-        weddingDate: weddingData.date
-          ? toDateString(weddingData.date)
-          : new Date().toISOString().slice(0, 10),
-        budget: Number(weddingData.budget) || 1000,
-        requiredAgreementDate: null,
-        adAgreementDate: null,
-      });
+      setUserData(localFallback());
       setLoading(false);
       return;
     }
@@ -63,32 +74,16 @@ export default function UserPage() {
         const d = json.data;
         setUserData({
           name: d.name ?? "",
-          weddingDate: d.weddingDate ?? new Date().toISOString().slice(0, 10),
-          budget: d.budget ?? 1000,
+          weddingDate: d.weddingDate ?? getKstDateString(),
+          budget: toBudget(d.budget),
           requiredAgreementDate: d.requiredAgreementDate ?? null,
           adAgreementDate: d.adAgreementDate ?? null,
         });
       } else {
-        setUserData({
-          name: weddingData.name ?? "",
-          weddingDate: weddingData.date
-            ? toDateString(weddingData.date)
-            : new Date().toISOString().slice(0, 10),
-          budget: Number(weddingData.budget) || 1000,
-          requiredAgreementDate: null,
-          adAgreementDate: null,
-        });
+        setUserData(localFallback());
       }
     } catch {
-      setUserData({
-        name: weddingData.name ?? "",
-        weddingDate: weddingData.date
-          ? toDateString(weddingData.date)
-          : new Date().toISOString().slice(0, 10),
-        budget: Number(weddingData.budget) || 1000,
-        requiredAgreementDate: null,
-        adAgreementDate: null,
-      });
+      setUserData(localFallback());
     } finally {
       setLoading(false);
     }
@@ -104,7 +99,7 @@ export default function UserPage() {
     budget: number;
     requiredAgreementDate?: string | null;
     adAgreementDate?: string | null;
-  }) => {
+  }): Promise<boolean> => {
     const dateStr = user.weddingDate;
     const [y, m, d] = dateStr.split("-").map(Number);
     const date = { year: y, month: m, day: d };
@@ -112,21 +107,37 @@ export default function UserPage() {
     setDate(date);
     setBudget(String(user.budget));
 
-    if (getToken()) {
-      try {
-        await fetchWithAuth("/plan/user", {
-          method: "PATCH",
-          body: JSON.stringify({
-            weddingDate: dateStr,
-            budget: user.budget,
-            name: user.name.trim(),
-            requiredAgreementDate: user.requiredAgreementDate ?? null,
-            adAgreementDate: user.adAgreementDate ?? null,
-          }),
-        });
-      } catch {
-        // ignore
-      }
+    if (!getToken()) return true; // 게스트는 로컬 저장으로 끝
+
+    try {
+      // PATCH /plan/user 는 requiredAgreementDate·adAgreementDate 를 둘 다
+      // "문자열 필수"로 검증한다. GET 응답에는 두 필드가 없어 null을 보내면
+      // 항상 400이었고, adAgreementDate 를 채우면 마케팅 미동의자에게도
+      // 수신 동의가 기록돼 버린다. 온보딩이 쓰는 /plan/setting 은 같은 값을
+      // 갱신하면서 adAgreementDate 생략을 허용하므로 이 경로를 쓴다.
+      // (requiredAgreementDate 는 여전히 필수라 값이 없으면 오늘 날짜를 보낸다.
+      //  백엔드가 이 필드를 선택 항목으로 바꾸거나 GET 응답에 포함해 주는 것이
+      //  근본 해결이다.)
+      const res = await fetchWithAuth("/plan/setting", {
+        method: "POST",
+        body: JSON.stringify({
+          weddingDate: dateStr,
+          budget: user.budget,
+          name: user.name.trim(),
+          requiredAgreementDate:
+            user.requiredAgreementDate ?? getKstDateString(),
+          ...(user.adAgreementDate
+            ? { adAgreementDate: user.adAgreementDate }
+            : {}),
+        }),
+      });
+      if (!res.ok) return false;
+      const json = (await res.json().catch(() => null)) as {
+        result?: boolean;
+      } | null;
+      return json?.result === true;
+    } catch {
+      return false;
     }
   };
 

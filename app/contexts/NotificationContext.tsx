@@ -13,6 +13,11 @@ import { useParams, usePathname } from "next/navigation";
 import { getApiBaseUrl, getToken, getPlanUserIdFromToken } from "@/lib/api";
 import NotificationToast from "../components/NotificationToast";
 
+/** SSE 재연결: 첫 지연 3초에서 시작해 2배씩, 최대 1분, 6회까지만 시도 */
+const SSE_BASE_DELAY_MS = 3000;
+const SSE_MAX_DELAY_MS = 60000;
+const SSE_MAX_RETRIES = 6;
+
 /** NotificationContext 전용 fetch 함수 (ApiContext 의존성 없이 독립 동작) */
 async function fetchApi(url: string): Promise<Response> {
   const baseUrl = getApiBaseUrl().replace(/\/+$/, "");
@@ -47,6 +52,8 @@ export function NotificationProvider({
 }) {
   const eventSourcesRef = useRef<Map<number, EventSource>>(new Map());
   const reconnectTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  /** 방별 연속 실패 횟수 (지수 백오프 계산용) */
+  const retryCountsRef = useRef<Map<number, number>>(new Map());
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
   const params = useParams();
   const pathname = usePathname();
@@ -154,6 +161,22 @@ export function NotificationProvider({
       const myUserId = getPlanUserIdFromToken();
       const baseUrl = getApiBaseUrl().replace(/\/+$/, "");
 
+      // 더 이상 필요 없는 방의 연결을 먼저 닫는다.
+      // 예전에는 추가만 하고 닫지 않아 방을 옮길수록 EventSource가 쌓였고,
+      // 호스트당 동시 연결 한도를 넘기면 일반 API 요청까지 멈췄다.
+      const wanted = new Set(roomIds);
+      eventSourcesRef.current.forEach((es, id) => {
+        if (wanted.has(id)) return;
+        es.close();
+        eventSourcesRef.current.delete(id);
+        const pendingTimer = reconnectTimersRef.current.get(id);
+        if (pendingTimer) {
+          clearTimeout(pendingTimer);
+          reconnectTimersRef.current.delete(id);
+        }
+        retryCountsRef.current.delete(id);
+      });
+
       // 현재 연결된 ID들과 요청된 ID들을 비교
       const newIds = roomIds.filter((id) => !eventSourcesRef.current.has(id));
 
@@ -234,15 +257,35 @@ export function NotificationProvider({
               }
             };
 
+            es.onopen = () => {
+              // 연결에 성공하면 백오프를 초기화한다
+              retryCountsRef.current.set(roomId, 0);
+            };
+
             es.onerror = (err) => {
               console.error(`[SSE Room ${roomId}] 연결 에러:`, err);
               es.close();
               eventSourcesRef.current.delete(roomId);
-              // 3초 후 재연결 시도 (타이머를 추적해 언마운트/재구독 시 정리)
+
+              // 지수 백오프 + 재시도 상한.
+              // 예전에는 조건 없이 3초마다 무한 재연결해, 백엔드가 계속
+              // 실패하면 방마다 분당 20회씩 요청이 나갔다.
+              const attempt = (retryCountsRef.current.get(roomId) ?? 0) + 1;
+              retryCountsRef.current.set(roomId, attempt);
+              if (attempt > SSE_MAX_RETRIES) {
+                console.error(
+                  `[SSE Room ${roomId}] 재연결 ${SSE_MAX_RETRIES}회 실패, 중단합니다.`,
+                );
+                return;
+              }
+              const delay = Math.min(
+                SSE_BASE_DELAY_MS * 2 ** (attempt - 1),
+                SSE_MAX_DELAY_MS,
+              );
               const timer = setTimeout(() => {
                 reconnectTimersRef.current.delete(roomId);
                 createConnection(roomId);
-              }, 3000);
+              }, delay);
               reconnectTimersRef.current.set(roomId, timer);
             };
           } catch (err) {

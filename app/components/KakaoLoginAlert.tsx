@@ -22,6 +22,7 @@ import {
 } from "@/lib/guestSchedule";
 import { getKstDateString } from "@/lib/utils";
 import NameInputModal from "./NameInputModal";
+import CustomAlertModal from "./CustomAlertModal";
 
 type KakaoLoginAlertProps = {
   show: boolean;
@@ -46,6 +47,8 @@ export default function KakaoLoginAlert({
   const { weddingData, resetData, setName, setBudget, setDate } = useWedding();
   const shownRef = useRef(false);
   const [showNameModal, setShowNameModal] = useState(false);
+  /** 마이그레이션 중 일부/전체가 실패했을 때 사용자에게 알릴 문구 */
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const nameResolveRef = useRef<((name: string) => void) | null>(null);
 
   /** Shows the name modal and returns a Promise that resolves with the entered name. */
@@ -243,8 +246,12 @@ export default function KakaoLoginAlert({
               const { year, month, day } = weddingData.date;
               const weddingDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               const guestAgreement = getGuestAgreement();
+              // 플랜 기본 설정 저장. 실패하면 게스트 데이터를 지우지 않고 중단한다.
+              // (예전에는 실패를 삼키고 그대로 진행해, 설정도 일정도 없는
+              //  빈 상태로 /main에 도착하는 경우가 있었다)
+              let settingSaved = false;
               try {
-                await fetchWithAuth("/plan/setting", {
+                const settingRes = await fetchWithAuth("/plan/setting", {
                   method: "POST",
                   body: JSON.stringify({
                     weddingDate,
@@ -258,47 +265,69 @@ export default function KakaoLoginAlert({
                     }),
                   }),
                 });
-                clearGuestAgreement();
+                settingSaved = settingRes.ok;
+                if (settingSaved) clearGuestAgreement();
               } catch {
-                // POST 실패해도 /main으로 이동
+                settingSaved = false;
               }
-              const guestPlans = getGuestScheduleList();
-              guestPlans.forEach(async (item) => {
-                const startDate =
-                  item.startDate?.trim() ||
-                  new Date().toISOString().slice(0, 10);
-                const body: Record<string, unknown> = {
-                  categoryName: item.categoryName,
-                  title: item.title,
-                  payType: item.payType ?? "OTHER",
-                  amount: item.amount ?? 0,
-                  startDate,
-                  location: item.location ?? "",
-                  locationLat: item.locationLat ?? 0,
-                  locationLng: item.locationLng ?? 0,
-                  memo: item.memo ?? "",
-                };
-                if (fetchedRoomId) {
-                  body.roomId = fetchedRoomId;
-                }
-                if (
-                  Array.isArray(item.addCategoryNameList) &&
-                  item.addCategoryNameList.length > 0
-                ) {
-                  body.addCategoryNameList = item.addCategoryNameList;
-                }
-                try {
-                  await fetchWithAuth("/plan/schedule", {
-                    method: "POST",
-                    body: JSON.stringify(body),
-                  });
-                } catch {
-                  // 개별 플랜 POST 실패 시 건너뜀
-                }
-              });
 
-              if (guestPlans.length > 0) {
+              if (!settingSaved) {
+                // 로컬 게스트 데이터는 그대로 두어 재시도 여지를 남긴다
+                setAlertMessage(
+                  "플랜 정보를 저장하지 못했습니다. 네트워크 확인 후 다시 시도해 주세요.",
+                );
+                router.replace("/main");
+                return;
+              }
+
+              const guestPlans = getGuestScheduleList();
+              // 전송이 모두 끝난 뒤에만 로컬 원본을 지운다.
+              // 예전에는 forEach(async …)가 await되지 않은 채 바로 아래에서
+              // clearGuestScheduleList()를 호출해 일정이 유실됐다.
+              const results = await Promise.all(
+                guestPlans.map(async (item) => {
+                  const startDate =
+                    item.startDate?.trim() || getKstDateString();
+                  const body: Record<string, unknown> = {
+                    categoryName: item.categoryName,
+                    title: item.title,
+                    payType: item.payType ?? "OTHER",
+                    amount: item.amount ?? 0,
+                    startDate,
+                    location: item.location ?? "",
+                    locationLat: item.locationLat ?? 0,
+                    locationLng: item.locationLng ?? 0,
+                    memo: item.memo ?? "",
+                  };
+                  if (fetchedRoomId) {
+                    body.roomId = fetchedRoomId;
+                  }
+                  if (
+                    Array.isArray(item.addCategoryNameList) &&
+                    item.addCategoryNameList.length > 0
+                  ) {
+                    body.addCategoryNameList = item.addCategoryNameList;
+                  }
+                  try {
+                    const r = await fetchWithAuth("/plan/schedule", {
+                      method: "POST",
+                      body: JSON.stringify(body),
+                    });
+                    return r.ok;
+                  } catch {
+                    return false;
+                  }
+                }),
+              );
+
+              const failedCount = results.filter((ok) => !ok).length;
+              if (guestPlans.length > 0 && failedCount === 0) {
+                // 전부 성공했을 때만 로컬 원본을 비운다
                 clearGuestScheduleList();
+              } else if (failedCount > 0) {
+                setAlertMessage(
+                  `플랜 ${failedCount}건을 옮기지 못했습니다. 잠시 후 다시 시도해 주세요.`,
+                );
               }
 
               await onSuccessFromMain?.();
@@ -344,6 +373,14 @@ export default function KakaoLoginAlert({
   ]);
 
   return (
-    <NameInputModal show={showNameModal} onComplete={handleNameComplete} />
+    <>
+      <NameInputModal show={showNameModal} onComplete={handleNameComplete} />
+      <CustomAlertModal
+        isOpen={alertMessage !== null}
+        message={alertMessage ?? ""}
+        type="error"
+        onClose={() => setAlertMessage(null)}
+      />
+    </>
   );
 }

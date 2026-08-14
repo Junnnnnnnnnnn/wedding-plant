@@ -1,11 +1,19 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+  Suspense,
+} from "react";
 import { ChevronLeft, ChevronRight, Plus, Check, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
+import { useNotification } from "../contexts/NotificationContext";
 import { getToken } from "@/lib/api";
 import { parseLocalDate, getKstDate } from "@/lib/utils";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
@@ -19,10 +27,17 @@ interface ScheduleListItem {
   status?: string | null;
 }
 
-/** GET /plan/schedule/calendar 응답의 day별 list 항목 */
+/**
+ * GET /plan/schedule/calendar 응답의 day별 list 항목.
+ * 백엔드는 현재 id·title만 내려주지만, status 등을 추가하면 그대로 화면에
+ * 반영되도록 선택 필드로 열어 둔다. (게스트 모드는 로컬 데이터라 항상 채워진다)
+ */
 interface CalendarPlanItem {
   id: number;
   title: string;
+  categoryName?: string | null;
+  amount?: number | null;
+  status?: string | null;
 }
 
 function CalendarPageContent() {
@@ -30,6 +45,7 @@ function CalendarPageContent() {
   const searchParams = useSearchParams();
   const roomId = searchParams.get("roomId");
   const { fetchWithAuth } = useApi();
+  const { unreadCount } = useNotification();
   const [currentDate, setCurrentDate] = useState(getKstDate());
   /** API /plan/schedule/calendar 응답: day(YYYY-MM-DD) → 플랜 목록 */
   const [calendarData, setCalendarData] = useState<
@@ -50,7 +66,13 @@ function CalendarPageContent() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
+  /** 늦게 도착한 이전 달 응답이 최신 화면을 덮어쓰지 않도록 요청 순번을 센다 */
+  const fetchSeqRef = useRef(0);
+
   const fetchSchedules = useCallback(async () => {
+    const seq = fetchSeqRef.current + 1;
+    fetchSeqRef.current = seq;
+
     const token = getToken();
     if (!token) {
       const guestList = getGuestScheduleList();
@@ -61,24 +83,55 @@ function CalendarPageContent() {
         if (!d) return;
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         if (!byDay[key]) byDay[key] = [];
-        byDay[key].push({ id: s.id, title: s.title });
+        // status를 버리면 완료 표시가 절대 뜨지 않는다. 그대로 실어 보낸다.
+        byDay[key].push({
+          id: s.id,
+          title: s.title,
+          categoryName: s.categoryName,
+          amount: s.amount,
+          status: s.status,
+        });
       });
       setCalendarData(byDay);
       return;
     }
 
+    // 달력 격자는 42칸이라 앞뒤 달의 날짜도 함께 보여준다.
+    // 현재 달만 요청하면 그 칸들이 항상 비어 보이므로 앞뒤 달까지 받아 병합한다.
+    const targets = [
+      { y: year, m: month - 1 },
+      { y: year, m: month },
+      { y: year, m: month + 1 },
+    ].map(({ y, m }) => {
+      const d = new Date(y, m, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
+
     try {
-      const params = new URLSearchParams({
-        month: String(month + 1),
-        year: String(year),
-      });
-      if (roomId?.trim()) params.set("roomId", roomId.trim());
-      const res = await fetchWithAuth(
-        `/plan/schedule/calendar?${params.toString()}`,
+      const responses = await Promise.all(
+        targets.map(async (t) => {
+          const params = new URLSearchParams({
+            month: String(t.month + 1),
+            year: String(t.year),
+          });
+          if (roomId?.trim()) params.set("roomId", roomId.trim());
+          try {
+            const res = await fetchWithAuth(
+              `/plan/schedule/calendar?${params.toString()}`,
+              { skipLoading: true },
+            );
+            return await res.json();
+          } catch {
+            return null;
+          }
+        }),
       );
-      const json = await res.json();
-      if (json.result === true && json.data?.list) {
-        const byDay: Record<string, CalendarPlanItem[]> = {};
+
+      if (fetchSeqRef.current !== seq) return; // 더 최신 요청이 있으면 버린다
+
+      const byDay: Record<string, CalendarPlanItem[]> = {};
+      responses.forEach((json) => {
+        if (!json || json.result !== true || !json.data?.list) return;
         (
           json.data.list as {
             day: string;
@@ -89,11 +142,10 @@ function CalendarPageContent() {
             byDay[item.day] = item.list;
           }
         });
-        setCalendarData(byDay);
-      } else {
-        setCalendarData({});
-      }
+      });
+      setCalendarData(byDay);
     } catch (error) {
+      if (fetchSeqRef.current !== seq) return;
       console.error("Failed to fetch schedules:", error);
       setCalendarData({});
     }
@@ -159,13 +211,15 @@ function CalendarPageContent() {
     }
     const key = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const items = calendarData[key] ?? [];
-    return items.map(({ id, title }) => ({
-      id,
-      title,
-      categoryName: "",
-      amount: null,
+    // status를 undefined로 덮어쓰면 완료 스타일 분기가 절대 참이 되지 않는다.
+    // 응답에 있는 값을 그대로 넘긴다.
+    return items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      categoryName: item.categoryName ?? "",
+      amount: item.amount ?? null,
       startDate: key,
-      status: undefined,
+      status: item.status ?? undefined,
     }));
   };
 
@@ -368,7 +422,7 @@ function CalendarPageContent() {
             } else if (tab === "rooms") router.push("/plan-list");
             else if (tab === "settings") router.push("/user");
           }}
-          unreadCount={5}
+          unreadCount={unreadCount}
         />
       </div>
 
