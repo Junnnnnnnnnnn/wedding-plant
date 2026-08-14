@@ -82,6 +82,8 @@ export default function KakaoLoginAlert({
 
     const run = async () => {
       let fetchedRoomId: number | null = null;
+      /** 게스트 설정(예산·날짜·이름)을 이 로그인에서 이관했는지 */
+      let migratedSetting = false;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       try {
@@ -118,6 +120,167 @@ export default function KakaoLoginAlert({
           url.searchParams.delete("kakao_login");
           url.hash = "";
           window.history.replaceState({}, "", url.pathname + url.search);
+
+          // 사용자 정보를 한 번만 조회해 이관·분기 양쪽에서 재사용한다
+          type PlanUserData = {
+            weddingDate?: string | null;
+            budget?: number | string | null;
+            name?: string | null;
+            roomId?: number | null;
+          };
+          let planUser: PlanUserData | null = null;
+          try {
+            const userRes = await fetchWithAuth("/plan/user");
+            const userJson = (await userRes.json()) as {
+              result?: boolean;
+              data?: PlanUserData;
+            };
+            if (userJson.result === true && userJson.data) {
+              planUser = userJson.data;
+            }
+          } catch {
+            // 조회 실패 시 planUser는 null로 두고 아래 분기에서 처리
+          }
+
+          fetchedRoomId = planUser?.roomId ?? null;
+          const hasCompletePlan = !!planUser && isPlanDataComplete(planUser);
+
+          if (planUser) {
+            const { name, weddingDate, budget } = planUser;
+            if (name) setName(name);
+            if (budget) setBudget(String(budget));
+            if (weddingDate) {
+              const parts = weddingDate.split("-").map(Number);
+              if (parts.length === 3 && !parts.some(Number.isNaN)) {
+                setDate({ year: parts[0], month: parts[1], day: parts[2] });
+              }
+            }
+          }
+
+          /**
+           * 게스트로 만든 데이터를 계정으로 옮긴다.
+           *
+           * 예전에는 이 처리가 `pathname === "/main"` 조건과 분기 우선순위
+           * 뒤에 있어서, /add-plen 등에서 로그인하거나(→ returnPath 분기가
+           * 먼저 잡힘) 이미 플랜이 있는 계정으로 로그인하면 게스트가 만든
+           * 일정과 설정이 이관되지 않은 채 resetData()로 사라졌다.
+           * 이제 경로·분기와 무관하게 항상 먼저 수행한다.
+           *
+           * @returns 이관 실패로 이동을 중단해야 하면 true
+           */
+          const migrateGuestData = async (): Promise<boolean> => {
+            const guestPlans = getGuestScheduleList();
+            // 설정 이관 조건:
+            // 1. 게스트 온보딩을 실제로 마친 사용자여야 한다.
+            //    WeddingContext가 날짜를 KST 오늘로 자동 채우므로, 플래그 없이
+            //    weddingData.date만 보면 신규 사용자에게도 엉뚱한 플랜이 생긴다.
+            // 2. 이미 플랜이 있는 계정의 예산·날짜·이름을 덮어쓰지 않는다.
+            const hasCompletedGuestSetting =
+              typeof window !== "undefined" &&
+              sessionStorage.getItem(HAS_COMPLETED_GUEST_SETTING_KEY) === "1";
+            const shouldMigrateSetting =
+              !hasCompletePlan &&
+              hasCompletedGuestSetting &&
+              !!weddingData.date;
+
+            if (!shouldMigrateSetting && guestPlans.length === 0) return false;
+
+            if (shouldMigrateSetting && weddingData.date) {
+              let nameToUse = weddingData.name?.trim() || "";
+              if (!nameToUse) {
+                nameToUse = await waitForName();
+                setName(nameToUse);
+                setLoading(true);
+              }
+              const { year, month, day } = weddingData.date;
+              const weddingDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const guestAgreement = getGuestAgreement();
+              // 실패하면 게스트 데이터를 지우지 않고 중단해 재시도 여지를 남긴다
+              let settingSaved = false;
+              try {
+                const settingRes = await fetchWithAuth("/plan/setting", {
+                  method: "POST",
+                  body: JSON.stringify({
+                    weddingDate,
+                    budget: Number(weddingData.budget) || 0,
+                    name: nameToUse,
+                    requiredAgreementDate:
+                      guestAgreement?.requiredAgreementDate ??
+                      getKstDateString(),
+                    ...(guestAgreement?.adAgreementDate && {
+                      adAgreementDate: guestAgreement.adAgreementDate,
+                    }),
+                  }),
+                });
+                settingSaved = settingRes.ok;
+                if (settingSaved) clearGuestAgreement();
+              } catch {
+                settingSaved = false;
+              }
+
+              if (!settingSaved) {
+                setAlertMessage(
+                  "플랜 정보를 저장하지 못했습니다. 네트워크 확인 후 다시 시도해 주세요.",
+                );
+                return true;
+              }
+              migratedSetting = true;
+            }
+
+            if (guestPlans.length === 0) return false;
+
+            // 전송이 모두 끝난 뒤에만 로컬 원본을 지운다
+            const results = await Promise.all(
+              guestPlans.map(async (item) => {
+                const startDate = item.startDate?.trim() || getKstDateString();
+                const body: Record<string, unknown> = {
+                  categoryName: item.categoryName,
+                  title: item.title,
+                  payType: item.payType ?? "OTHER",
+                  amount: item.amount ?? 0,
+                  startDate,
+                  location: item.location ?? "",
+                  locationLat: item.locationLat ?? 0,
+                  locationLng: item.locationLng ?? 0,
+                  memo: item.memo ?? "",
+                };
+                if (fetchedRoomId) {
+                  body.roomId = fetchedRoomId;
+                }
+                if (
+                  Array.isArray(item.addCategoryNameList) &&
+                  item.addCategoryNameList.length > 0
+                ) {
+                  body.addCategoryNameList = item.addCategoryNameList;
+                }
+                try {
+                  const r = await fetchWithAuth("/plan/schedule", {
+                    method: "POST",
+                    body: JSON.stringify(body),
+                  });
+                  return r.ok;
+                } catch {
+                  return false;
+                }
+              }),
+            );
+
+            const failedCount = results.filter((ok) => !ok).length;
+            if (failedCount === 0) {
+              clearGuestScheduleList();
+            } else {
+              setAlertMessage(
+                `플랜 ${failedCount}건을 옮기지 못했습니다. 잠시 후 다시 시도해 주세요.`,
+              );
+            }
+            return false;
+          };
+
+          const migrationBlocked = await migrateGuestData();
+          if (migrationBlocked) {
+            router.replace("/main");
+            return;
+          }
 
           // 공유 링크(shareCode) 복원 여부 확인
           const shareCode = getShareAfterLogin();
@@ -164,44 +327,14 @@ export default function KakaoLoginAlert({
             return;
           }
 
-          // GET /plan/user로 플랜 데이터 확인 - weddingDate, budget, name이 있으면 /main에 머물며 사용자·플랜·스케줄 데이터 로드
-          try {
-            const userRes = await fetchWithAuth("/plan/user");
-            const userJson = (await userRes.json()) as {
-              result?: boolean;
-              data?: {
-                weddingDate?: string | null;
-                budget?: number | string | null;
-                name?: string | null;
-                roomId?: number | null;
-              };
-            };
-            if (userJson.result === true && userJson.data) {
-              fetchedRoomId = userJson.data.roomId ?? null;
-              const { name, weddingDate, budget } = userJson.data;
-
-              // /setting 또는 /main 진입 시 사용할 수 있도록 컨텍스트에 사용자 정보 저장
-              if (name) setName(name);
-              if (budget) setBudget(String(budget));
-              if (weddingDate) {
-                const parts = weddingDate.split("-").map(Number);
-                if (parts.length === 3 && !parts.some(Number.isNaN)) {
-                  setDate({ year: parts[0], month: parts[1], day: parts[2] });
-                }
-              }
-
-              if (isPlanDataComplete(userJson.data)) {
-                // /main에서 로그인 성공 시 메인 페이지에 사용자·플랜·스케줄 등 데이터 갱신 요청
-                if (pathname === "/main") {
-                  await onSuccessFromMain?.();
-                }
-                resetData();
-                router.replace("/main");
-                return;
-              }
+          // 플랜이 이미 완성돼 있거나, 방금 게스트 설정을 이관해 완성된 경우 /main
+          if (hasCompletePlan || migratedSetting) {
+            if (pathname === "/main") {
+              await onSuccessFromMain?.();
             }
-          } catch {
-            // GET 실패 시 기존 로직으로 fallback
+            resetData();
+            router.replace("/main");
+            return;
           }
 
           // 개인 플랜이 불완전한 경우 참여 중인 방이 있는지 확인
@@ -225,116 +358,6 @@ export default function KakaoLoginAlert({
               "Failed to fetch room list during login redirect:",
               err,
             );
-          }
-
-          // 비로그인 상태로 계획을 짜던 유저가 로그인했는지 여부 확인 (신규 유저 보호용)
-          // HAS_COMPLETED_GUEST_SETTING_KEY 플래그가 있어야만 '진짜' 게스트 체험 유저
-          const isRealGuestUser =
-            pathname === "/main" &&
-            typeof window !== "undefined" &&
-            sessionStorage.getItem(HAS_COMPLETED_GUEST_SETTING_KEY) === "1";
-
-          if (isRealGuestUser) {
-            // 진짜 게스트 유저의 경우 세션의 웨딩 데이터를 백엔드에 POST 후 /main 유지
-            if (weddingData.date) {
-              let nameToUse = weddingData.name?.trim() || "";
-              if (!nameToUse) {
-                nameToUse = await waitForName();
-                setName(nameToUse);
-                setLoading(true);
-              }
-              const { year, month, day } = weddingData.date;
-              const weddingDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-              const guestAgreement = getGuestAgreement();
-              // 플랜 기본 설정 저장. 실패하면 게스트 데이터를 지우지 않고 중단한다.
-              // (예전에는 실패를 삼키고 그대로 진행해, 설정도 일정도 없는
-              //  빈 상태로 /main에 도착하는 경우가 있었다)
-              let settingSaved = false;
-              try {
-                const settingRes = await fetchWithAuth("/plan/setting", {
-                  method: "POST",
-                  body: JSON.stringify({
-                    weddingDate,
-                    budget: Number(weddingData.budget) || 0,
-                    name: nameToUse,
-                    requiredAgreementDate:
-                      guestAgreement?.requiredAgreementDate ??
-                      getKstDateString(),
-                    ...(guestAgreement?.adAgreementDate && {
-                      adAgreementDate: guestAgreement.adAgreementDate,
-                    }),
-                  }),
-                });
-                settingSaved = settingRes.ok;
-                if (settingSaved) clearGuestAgreement();
-              } catch {
-                settingSaved = false;
-              }
-
-              if (!settingSaved) {
-                // 로컬 게스트 데이터는 그대로 두어 재시도 여지를 남긴다
-                setAlertMessage(
-                  "플랜 정보를 저장하지 못했습니다. 네트워크 확인 후 다시 시도해 주세요.",
-                );
-                router.replace("/main");
-                return;
-              }
-
-              const guestPlans = getGuestScheduleList();
-              // 전송이 모두 끝난 뒤에만 로컬 원본을 지운다.
-              // 예전에는 forEach(async …)가 await되지 않은 채 바로 아래에서
-              // clearGuestScheduleList()를 호출해 일정이 유실됐다.
-              const results = await Promise.all(
-                guestPlans.map(async (item) => {
-                  const startDate =
-                    item.startDate?.trim() || getKstDateString();
-                  const body: Record<string, unknown> = {
-                    categoryName: item.categoryName,
-                    title: item.title,
-                    payType: item.payType ?? "OTHER",
-                    amount: item.amount ?? 0,
-                    startDate,
-                    location: item.location ?? "",
-                    locationLat: item.locationLat ?? 0,
-                    locationLng: item.locationLng ?? 0,
-                    memo: item.memo ?? "",
-                  };
-                  if (fetchedRoomId) {
-                    body.roomId = fetchedRoomId;
-                  }
-                  if (
-                    Array.isArray(item.addCategoryNameList) &&
-                    item.addCategoryNameList.length > 0
-                  ) {
-                    body.addCategoryNameList = item.addCategoryNameList;
-                  }
-                  try {
-                    const r = await fetchWithAuth("/plan/schedule", {
-                      method: "POST",
-                      body: JSON.stringify(body),
-                    });
-                    return r.ok;
-                  } catch {
-                    return false;
-                  }
-                }),
-              );
-
-              const failedCount = results.filter((ok) => !ok).length;
-              if (guestPlans.length > 0 && failedCount === 0) {
-                // 전부 성공했을 때만 로컬 원본을 비운다
-                clearGuestScheduleList();
-              } else if (failedCount > 0) {
-                setAlertMessage(
-                  `플랜 ${failedCount}건을 옮기지 못했습니다. 잠시 후 다시 시도해 주세요.`,
-                );
-              }
-
-              await onSuccessFromMain?.();
-              resetData();
-              router.replace("/main");
-              return;
-            }
           }
 
           // 개인 플랜도 없고 참여 중인 방도 없으면 /setting으로
