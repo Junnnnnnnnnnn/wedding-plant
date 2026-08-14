@@ -6,7 +6,6 @@ import {
   ArrowRight,
   Heart,
   Crown,
-  Plus,
   CircleHelp,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -16,7 +15,6 @@ import { useNotification } from "../contexts/NotificationContext";
 import { getToken, clearToken } from "@/lib/api";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
-import ChatRoomCreateModal from "../components/ChatRoomCreateModal";
 import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
 
 interface PlanListPageProps {
@@ -104,19 +102,15 @@ const CardMembers: React.FC<CardMembersProps> = ({ members }) => (
 
 interface CardChatRoomsProps {
   chatRooms: ChatRoom[];
-  roomId: number;
   interactive?: boolean;
   onChatRoomClick: (chatRoomId: number) => void;
-  onAddChatClick: (e: React.MouseEvent, roomId: number) => void;
   getRoomUnreadCount: (roomId: number) => number;
 }
 
 const CardChatRooms: React.FC<CardChatRoomsProps> = ({
   chatRooms,
-  roomId,
   interactive = true,
   onChatRoomClick,
-  onAddChatClick,
   getRoomUnreadCount,
 }) => (
   <div
@@ -192,19 +186,6 @@ const CardChatRooms: React.FC<CardChatRoomsProps> = ({
           </div>
         </div>
       ))}
-
-      <button
-        type="button"
-        onClick={interactive ? (e) => onAddChatClick(e, roomId) : undefined}
-        className={`flex items-center gap-3 p-3 bg-white border-2 border-dashed border-stone-100 rounded-2xl text-stone-300 transition-all ${interactive ? "hover:text-[#ee2b8c] hover:border-[#ee2b8c33] hover:bg-[#ee2b8c05] group/add-chat active:scale-[0.98]" : ""}`}
-      >
-        <div
-          className={`w-10 h-10 bg-stone-50 rounded-xl flex items-center justify-center ${interactive ? "group-hover/add-chat:bg-[#ee2b8c11] transition-all" : ""}`}
-        >
-          <Plus className="w-5 h-5" />
-        </div>
-        <span className="text-sm font-bold">새 채팅방 추가</span>
-      </button>
     </div>
   </div>
 );
@@ -259,8 +240,6 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const [loginModalTitle, setLoginModalTitle] = useState(
     "세션이 만료되었습니다. 다시 로그인해 주세요.",
   );
-  const [showChatCreateModal, setShowChatCreateModal] = useState(false);
-  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
 
   // Guide State
   const [showGuide, setShowGuide] = useState(false);
@@ -427,12 +406,6 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     }
   };
 
-  const openChatCreateModal = (e: React.MouseEvent, roomId: number) => {
-    e.stopPropagation();
-    setSelectedRoomId(roomId);
-    setShowChatCreateModal(true);
-  };
-
   return (
     <div className="min-h-screen bg-[#fcfbfc]">
       <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10 pb-24">
@@ -526,10 +499,8 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                     <div className="invisible opacity-0 pointer-events-none">
                       <CardChatRooms
                         chatRooms={plan.chatRooms || []}
-                        roomId={plan.roomId}
                         interactive={false}
                         onChatRoomClick={handleChatRoomClick}
-                        onAddChatClick={openChatCreateModal}
                         getRoomUnreadCount={getRoomUnreadCount}
                       />
                     </div>
@@ -549,9 +520,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                     <div id={isFirst ? "plan-channels-0" : undefined}>
                       <CardChatRooms
                         chatRooms={plan.chatRooms || []}
-                        roomId={plan.roomId}
                         onChatRoomClick={handleChatRoomClick}
-                        onAddChatClick={openChatCreateModal}
                         getRoomUnreadCount={getRoomUnreadCount}
                       />
                     </div>
@@ -571,13 +540,6 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
             router.replace("/");
           }}
           title={loginModalTitle}
-        />
-
-        <ChatRoomCreateModal
-          show={showChatCreateModal}
-          roomId={selectedRoomId}
-          onClose={() => setShowChatCreateModal(false)}
-          onCreated={() => fetchPlans()}
         />
 
         <GuideOverlay
