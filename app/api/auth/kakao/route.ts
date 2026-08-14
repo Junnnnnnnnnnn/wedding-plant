@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  buildState,
+  createStateNonce,
+  OAUTH_STATE_COOKIE,
+  OAUTH_STATE_MAX_AGE,
+} from "./state";
+
 const KAKAO_AUTHORIZE_URL = "https://kauth.kakao.com/oauth/authorize";
 
 export async function GET(request: NextRequest) {
@@ -16,8 +23,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const from = request.nextUrl.searchParams.get("from");
-  const state = from || "";
+  const from = request.nextUrl.searchParams.get("from") ?? "";
+  // 논스를 붙여 콜백에서 CSRF 여부를 검증한다
+  const nonce = createStateNonce();
+  const state = buildState(nonce, from);
 
   // 개발 환경에서만 로그 출력 (디버깅용)
   if (process.env.NODE_ENV === "development") {
@@ -31,8 +40,16 @@ export async function GET(request: NextRequest) {
     response_type: "code",
     locale: "ko_KR", // 카카오 로그인 페이지를 한글로 표시
   });
-  if (state) params.set("state", state);
+  params.set("state", state);
 
   const url = `${KAKAO_AUTHORIZE_URL}?${params.toString()}`;
-  return NextResponse.redirect(url);
+  const response = NextResponse.redirect(url);
+  response.cookies.set(OAUTH_STATE_COOKIE, nonce, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: OAUTH_STATE_MAX_AGE,
+  });
+  return response;
 }

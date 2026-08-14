@@ -1,6 +1,8 @@
 /* access_token을 사용해라 그냥 code 말고! */
 import { NextRequest, NextResponse } from "next/server";
 
+import { isValidNonce, OAUTH_STATE_COOKIE, parseState } from "../state";
+
 const KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
 
 export async function GET(request: NextRequest) {
@@ -8,21 +10,35 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
 
+  const { nonce, from } = parseState(searchParams.get("state"));
+  const expectedNonce = request.cookies.get(OAUTH_STATE_COOKIE)?.value ?? "";
+
+  /** 한 번 쓴 논스는 재사용되지 않도록 응답에서 쿠키를 지운다 */
+  const clearStateCookie = (response: NextResponse) => {
+    response.cookies.set(OAUTH_STATE_COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 0,
+    });
+    return response;
+  };
+
   const redirectToHome = (query?: string) => {
     const url = new URL("/", request.url);
     if (query) url.search = query;
-    return NextResponse.redirect(url);
+    return clearStateCookie(NextResponse.redirect(url));
   };
 
   const redirectWithLoginSuccess = (kakaoToken: string) => {
-    // state=main이면 /main으로 (비로그인 setting→main→로그인 시 데이터 병합용)
-    // state=home이면 /로 이동
-    const state = searchParams.get("state");
-    const path = state === "main" ? "/main" : "/";
+    // from=main이면 /main으로 (비로그인 setting→main→로그인 시 데이터 병합용)
+    // from=home이면 /로 이동
+    const path = from === "main" ? "/main" : "/";
     const url = new URL(path, request.url);
     url.search = "kakao_login=1";
     url.hash = `kakao_token=${encodeURIComponent(kakaoToken)}`;
-    return NextResponse.redirect(url.toString());
+    return clearStateCookie(NextResponse.redirect(url.toString()));
   };
 
   if (error) {
@@ -30,6 +46,13 @@ export async function GET(request: NextRequest) {
   }
 
   if (!code || typeof code !== "string") {
+    return redirectToHome("?login_error=1");
+  }
+
+  // 우리가 시작한 인증인지 확인한다. 논스가 없거나 어긋나면 중단.
+  // (검증이 없으면 공격자의 code가 담긴 콜백 URL을 피해자가 열었을 때
+  //  피해자 브라우저가 공격자 계정으로 로그인된다)
+  if (!isValidNonce(nonce, expectedNonce)) {
     return redirectToHome("?login_error=1");
   }
 

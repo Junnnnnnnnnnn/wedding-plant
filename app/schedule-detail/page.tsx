@@ -28,7 +28,7 @@ import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import CustomAlertModal from "../components/CustomAlertModal";
 import { useScrollDirection } from "../hooks/useScrollDirection";
-import { getToken } from "@/lib/api";
+import { getToken, getPlanUserIdFromToken } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
 import { parseLocalDate } from "@/lib/utils";
 
@@ -135,6 +135,12 @@ function ScheduleDetailPageContent() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [kakaoSdkReady, setKakaoSdkReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  /**
+   * 참여 방(roomId)에서 내 권한. READ면 수정·삭제를 노출하지 않는다.
+   * - null  : 아직 확인 전 (권한 게이트이므로 확인 전에는 숨긴다)
+   * - "OWN" : 개인 플랜이라 방 권한 개념이 없음 → 허용
+   */
+  const [myPermission, setMyPermission] = useState<string | null>(null);
 
   useEffect(() => {
     setIsLoggedIn(!!getToken());
@@ -149,6 +155,64 @@ function ScheduleDetailPageContent() {
 
   const roomId = searchParams.get("roomId");
   const fromParam = searchParams.get("from");
+
+  // 참여 방이면 내 권한을 확인해 READ일 때 수정·삭제를 감춘다.
+  // 서버도 권한을 검사하지만, 누를 수 없는 버튼을 보여주지 않는 편이 낫다.
+  useEffect(() => {
+    const trimmedRoomId = roomId?.trim();
+    if (!trimmedRoomId) {
+      setMyPermission("OWN"); // 개인 플랜 — 방 권한 개념 없음
+      return;
+    }
+    if (!getToken()) {
+      setMyPermission(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetchWithAuth(
+          `/plan/room/${encodeURIComponent(trimmedRoomId)}`,
+          { skipLoading: true },
+        );
+        if (!res.ok) {
+          if (!cancelled) setMyPermission(null);
+          return;
+        }
+        const json = (await res.json()) as {
+          result?: boolean;
+          data?: {
+            members?: { planUserId?: string; permission?: string }[];
+          };
+        };
+        const myId = String(getPlanUserIdFromToken() ?? "")
+          .trim()
+          .toLowerCase();
+        const me = json.data?.members?.find(
+          (m) =>
+            String(m.planUserId ?? "")
+              .trim()
+              .toLowerCase() === myId,
+        );
+        if (!cancelled) {
+          setMyPermission(String(me?.permission ?? "").toUpperCase() || null);
+        }
+      } catch {
+        if (!cancelled) setMyPermission(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, fetchWithAuth]);
+
+  /** 수정·삭제 노출 여부. 확인 전(null)에는 감춘다 */
+  const canEdit =
+    myPermission === "OWN" ||
+    myPermission === "OWNER" ||
+    myPermission === "WRITE";
 
   useEffect(() => {
     if (!scheduleId) {
@@ -670,8 +734,8 @@ function ScheduleDetailPageContent() {
         >
           <div className="w-full max-w-full min-w-0">{content}</div>
 
-          {/* Action Buttons: 본문 하단 (로그인 시에만) */}
-          {isLoggedIn && detail && (
+          {/* Action Buttons: 본문 하단 (로그인 + 쓰기 권한이 있을 때만) */}
+          {isLoggedIn && detail && canEdit && (
             <div className="w-full max-w-full flex gap-3 mt-4 pb-2">
               <button
                 type="button"
