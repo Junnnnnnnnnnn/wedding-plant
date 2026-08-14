@@ -43,10 +43,11 @@ export default function ChatRoomCreateModal({
         onClose();
         setName("");
       } else {
-        const data = await res.json().catch(() => ({}));
-        setError(
-          data.message || "채팅방 생성에 실패했습니다. 다시 시도해 주세요.",
-        );
+        // 백엔드 message를 그대로 노출하면 "Cannot POST /plan/room/1/chat" 같은
+        // 기술적인 문구가 사용자에게 보인다. 상세 내용은 콘솔로만 남긴다.
+        const data = await res.json().catch(() => null);
+        console.error("채팅방 생성 실패:", res.status, data);
+        setError("채팅방 생성에 실패했습니다. 다시 시도해 주세요.");
       }
     } catch {
       setError("네트워크 오류가 발생했습니다.");
