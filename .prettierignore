@@ -1,0 +1,12 @@
+# 외부에서 가져온 스킬 파일. 우리 포맷 규칙을 적용하지 않는다.
+# (npm run format 이 200여 개 파일을 통째로 건드려 원본과 어긋나게 만든다)
+.claude/skills/
+
+# 빌드 산출물
+.next/
+out/
+build/
+node_modules/
+
+# 락파일
+package-lock.json
