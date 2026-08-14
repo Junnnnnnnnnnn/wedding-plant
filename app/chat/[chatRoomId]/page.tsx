@@ -104,6 +104,20 @@ interface SocketMessagePayload {
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/;
 
+type LinkPreviewMeta = {
+  title?: string;
+  description?: string;
+  image?: string;
+  siteName?: string;
+} | null;
+
+/**
+ * URL별 프리뷰 결과 캐시.
+ * 같은 링크가 여러 메시지에 있거나 컴포넌트가 다시 마운트돼도
+ * 외부 API(api.microlink.io)를 반복 호출하지 않는다.
+ */
+const linkPreviewCache = new Map<string, LinkPreviewMeta>();
+
 function LinkPreview({
   url,
   isMe,
@@ -113,16 +127,26 @@ function LinkPreview({
   isMe: boolean;
   onHeightChange?: () => void;
 }) {
-  const [preview, setPreview] = useState<{
-    title?: string;
-    description?: string;
-    image?: string;
-    siteName?: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cached = linkPreviewCache.get(url);
+  const [preview, setPreview] = useState<LinkPreviewMeta>(cached ?? null);
+  const [loading, setLoading] = useState(!linkPreviewCache.has(url));
+
+  // 부모가 인라인 화살표로 넘기는 콜백이라 렌더마다 참조가 바뀐다.
+  // 의존성 배열에 그대로 넣으면 키 입력 한 번마다 프리뷰를 다시 불러온다.
+  const onHeightChangeRef = useRef(onHeightChange);
+  useEffect(() => {
+    onHeightChangeRef.current = onHeightChange;
+  });
 
   useEffect(() => {
     let isMounted = true;
+
+    // 이미 받아둔 URL이면 다시 요청하지 않는다
+    if (linkPreviewCache.has(url)) {
+      setPreview(linkPreviewCache.get(url) ?? null);
+      setLoading(false);
+      return undefined;
+    }
 
     // localhost나 내부 IP는 외부 API에서 접근 불가하므로 스킵
     const isLocalUrl =
@@ -133,8 +157,9 @@ function LinkPreview({
       url.includes("172.16.");
 
     if (isLocalUrl) {
+      linkPreviewCache.set(url, null);
       setLoading(false);
-      return;
+      return undefined;
     }
 
     const fetchMeta = async () => {
@@ -143,21 +168,26 @@ function LinkPreview({
           `https://api.microlink.io?url=${encodeURIComponent(url)}`,
         );
         const data = await res.json();
-        if (isMounted && data.status === "success") {
-          setPreview({
+        if (data.status === "success") {
+          const meta: LinkPreviewMeta = {
             title: data.data.title,
             description: data.data.description,
             image: data.data.image?.url,
             siteName: data.data.publisher,
-          });
+          };
+          linkPreviewCache.set(url, meta);
+          if (isMounted) setPreview(meta);
+        } else {
+          linkPreviewCache.set(url, null);
         }
       } catch (e) {
-        // 메타데이터 로드 실패 시 조용히 무시
+        // 메타데이터 로드 실패 시 조용히 무시 (재시도 폭주를 막기 위해 캐시)
+        linkPreviewCache.set(url, null);
       } finally {
         if (isMounted) {
           setLoading(false);
           // Metadata loaded, height will change
-          setTimeout(() => onHeightChange?.(), 50);
+          setTimeout(() => onHeightChangeRef.current?.(), 50);
         }
       }
     };
@@ -165,7 +195,7 @@ function LinkPreview({
     return () => {
       isMounted = false;
     };
-  }, [url, onHeightChange]);
+  }, [url]);
 
   if (loading) {
     return (
