@@ -24,12 +24,21 @@ export function useKakaoAuth() {
     let willRedirect = false;
     const redirectToOAuth = (url: string) => {
       willRedirect = true;
+      let navigated = false;
+      const go = () => {
+        if (navigated) return;
+        navigated = true;
+        window.location.href = url;
+      };
       // 첫 페인트가 끝난 뒤 이동시켜 로딩 오버레이가 반드시 한 프레임 보이도록 함
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          window.location.href = url;
-        });
+        requestAnimationFrame(go);
       });
+      // 문서가 hidden이면(창이 가려지거나 최소화, 백그라운드 탭)
+      // requestAnimationFrame이 멈춰 이동이 영영 일어나지 않는다.
+      // 그러면 버튼이 "확인 중..."에 멈추고 로딩 오버레이가 남으므로
+      // 타이머로 보완한다. 먼저 실행된 쪽만 이동한다.
+      setTimeout(go, 150);
     };
 
     const token = getToken();
