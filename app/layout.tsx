@@ -10,6 +10,7 @@ import { WeddingProvider } from "./contexts/WeddingContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import ApiErrorModal from "./components/ApiErrorModal";
 import ApiLoadingOverlay from "./components/ApiLoadingOverlay";
+import SessionExpiredModal from "./components/SessionExpiredModal";
 import AuthRedirectToMain from "./components/AuthRedirectToMain";
 
 const hakgyoansim = localFont({
@@ -156,6 +157,7 @@ export default function RootLayout({
               {children}
               <SpeedInsights />
               <ApiLoadingOverlay />
+              <SessionExpiredModal />
               <Suspense fallback={null}>
                 <ApiErrorModal />
               </Suspense>

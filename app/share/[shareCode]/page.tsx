@@ -33,6 +33,7 @@ export default function SharePage() {
       try {
         const res = await fetchWithAuth(`/plan/room/${shareCode}`, {
           method: "POST",
+          skipAuthHandling: true,
         });
         if (res.status === 401) {
           clearToken();

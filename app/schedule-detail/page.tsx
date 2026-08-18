@@ -257,6 +257,7 @@ function ScheduleDetailPageContent() {
         const res = await fetchWithAuth(`/plan/schedule/${scheduleId}`, {
           method: "GET",
           signal: controller.signal,
+          skipAuthHandling: true,
         });
 
         if (res.status === 401) {

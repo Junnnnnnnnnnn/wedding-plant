@@ -259,7 +259,10 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     try {
       await new Promise((r) => setTimeout(r, 400));
 
-      const userRes = await fetchWithAuth("/plan/user", { skipLoading: true });
+      const userRes = await fetchWithAuth("/plan/user", {
+        skipLoading: true,
+        skipAuthHandling: true,
+      });
       if (userRes.status === 401) {
         clearToken();
         setLoginModalTitle("세션이 만료되었습니다. 다시 로그인해 주세요.");
@@ -277,7 +280,10 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
         setHasSeenChatGuide(userJson.data.hasSeenChatGuide ?? null);
       }
 
-      const res = await fetchWithAuth("/plan/room/list", { skipLoading: true });
+      const res = await fetchWithAuth("/plan/room/list", {
+        skipLoading: true,
+        skipAuthHandling: true,
+      });
       if (res.status === 401) {
         clearToken();
         setLoginModalTitle("세션이 만료되었습니다. 다시 로그인해 주세요.");

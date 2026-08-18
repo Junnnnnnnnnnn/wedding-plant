@@ -565,6 +565,7 @@ export default function ChatPage() {
     try {
       const res = await fetchWithAuth(
         `/plan/chat/${chatRoomId}?page=${nextPage}&count=${PAGE_SIZE}&sort=DESC`,
+        { skipAuthHandling: true },
       );
       if (res.status === 401) {
         clearToken();
@@ -604,6 +605,7 @@ export default function ChatPage() {
       const res = await fetchWithAuth(`/plan/chat/name/${chatRoomId}`, {
         method: "PATCH",
         body: JSON.stringify({ name: newName }),
+        skipAuthHandling: true,
       });
 
       if (res.status === 401) {
@@ -677,7 +679,9 @@ export default function ChatPage() {
       try {
         await new Promise((resolve) => setTimeout(resolve, 100));
 
-        const res = await fetchWithAuth(`/plan/chat/info/${chatRoomId}`);
+        const res = await fetchWithAuth(`/plan/chat/info/${chatRoomId}`, {
+          skipAuthHandling: true,
+        });
         if (res.status === 401) {
           clearToken();
           setReturnPathAfterLogin(`/chat/${chatRoomId}`);
@@ -699,6 +703,7 @@ export default function ChatPage() {
         try {
           const chatRes = await fetchWithAuth(
             `/plan/chat/${chatRoomId}?page=1&count=${PAGE_SIZE}&sort=DESC`,
+            { skipAuthHandling: true },
           );
           if (chatRes.status === 401) {
             clearToken();
