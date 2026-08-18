@@ -69,15 +69,32 @@ interface JwtPayload {
   sub?: string;
 }
 
+/**
+ * base64url 문자열을 UTF-8 문자열로 디코딩한다.
+ *
+ * atob 만 쓰면 두 가지가 깨진다.
+ * - 패딩(=)이 없으면 길이에 따라 InvalidCharacterError
+ * - atob 는 바이트를 그대로 주므로 한글 같은 non-ASCII 가 깨진다
+ *   (예외가 안 나서 catch 에도 안 걸리고 값만 조용히 망가진다)
+ */
+function decodeBase64Url(value: string): string {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(
+    base64.length + ((4 - (base64.length % 4)) % 4),
+    "=",
+  );
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
 function getJwtPayload(): JwtPayload | null {
   const token = getToken();
   if (!token) return null;
   try {
     const [, payloadB64] = token.split(".");
     if (!payloadB64) return null;
-    return JSON.parse(
-      atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")),
-    ) as JwtPayload;
+    return JSON.parse(decodeBase64Url(payloadB64)) as JwtPayload;
   } catch {
     return null;
   }
