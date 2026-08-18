@@ -330,7 +330,7 @@ const ChatMessage = React.memo(
                   <LinkPreview
                     url={msg.text.match(URL_REGEX)![0]}
                     isMe={isMe}
-                    onHeightChange={() => scrollToBottom("smooth")}
+                    onHeightChange={() => scrollToBottom()}
                   />
                 )}
               </>
@@ -519,6 +519,8 @@ export default function ChatPage() {
   const socketRef = useRef<Socket | null>(null);
   const myUserIdRef = useRef<string | null>(null);
   const isLoadingMoreRef = useRef(false);
+  /** 진행 중인 히스토리 요청. 방을 나가거나 새 요청이 시작되면 취소한다 */
+  const historyAbortRef = useRef<AbortController | null>(null);
   const isFullRef = useRef(false);
   const initialLoadDoneRef = useRef(false);
   const currentPageRef = useRef(1);
@@ -526,6 +528,31 @@ export default function ChatPage() {
 
   const scrollToBottom = useCallback(() => {
     // requestAnimationFrame or setTimeout ensures we scroll AFTER the DOM update
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, 50);
+  }, []);
+
+  /**
+   * 사용자가 이미 하단 근처를 보고 있을 때만 맨 아래로 내린다.
+   *
+   * 링크 프리뷰가 로드될 때마다 무조건 scrollToBottom 을 부르면,
+   * 위로 스크롤해 과거 메시지를 읽는 중에 화면이 계속 아래로 튕긴다.
+   */
+  useEffect(
+    () => () => {
+      historyAbortRef.current?.abort();
+    },
+    [],
+  );
+
+  const scrollToBottomIfNearBottom = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom > 150) return;
     setTimeout(() => {
       if (scrollRef.current) {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -561,11 +588,15 @@ export default function ChatPage() {
     setIsLoadingMore(true);
     const scrollDiv = scrollRef.current;
     const prevScrollHeight = scrollDiv?.scrollHeight ?? 0;
+    const prevScrollTop = scrollDiv?.scrollTop ?? 0;
 
     try {
+      historyAbortRef.current?.abort();
+      const controller = new AbortController();
+      historyAbortRef.current = controller;
       const res = await fetchWithAuth(
         `/plan/chat/${chatRoomId}?page=${nextPage}&count=${PAGE_SIZE}&sort=DESC`,
-        { skipAuthHandling: true },
+        { skipAuthHandling: true, signal: controller.signal },
       );
       if (res.status === 401) {
         clearToken();
@@ -582,17 +613,27 @@ export default function ChatPage() {
           isFullRef.current = true;
         }
 
-        const newMessages = list.map(convertHistoryToMessage);
-        setMessages((prev) => [...newMessages, ...prev]);
+        const newMessages: Message[] = list.map(convertHistoryToMessage);
+        // 오프셋 페이지네이션 + 실시간 삽입 조합이라, 불러오는 사이에 새
+        // 메시지가 오면 같은 메시지가 다시 앞에 붙어 두 번 표시됐다.
+        setMessages((prev) => {
+          const existing = new Set(prev.map((m) => m.id));
+          const deduped = newMessages.filter((m) => !existing.has(m.id));
+          return deduped.length ? [...deduped, ...prev] : prev;
+        });
         currentPageRef.current = nextPage;
 
         requestAnimationFrame(() => {
           if (scrollDiv) {
-            scrollDiv.scrollTop = scrollDiv.scrollHeight - prevScrollHeight;
+            // prevScrollTop 을 더하지 않으면 읽던 위치가 최대 그만큼 어긋난다
+            scrollDiv.scrollTop =
+              scrollDiv.scrollHeight - prevScrollHeight + prevScrollTop;
           }
         });
       }
     } catch (err) {
+      // 새 요청/언마운트로 취소된 것은 오류가 아니다
+      if ((err as { name?: string })?.name === "AbortError") return;
       console.error("Failed to load chat history:", err);
     } finally {
       isLoadingMoreRef.current = false;
@@ -870,7 +911,9 @@ export default function ChatPage() {
         }
         return [...prev, newMsg];
       });
-      scrollToBottom();
+      // 내가 보낸 메시지가 아니어도 무조건 내리면, 위를 읽는 중에
+      // 화면이 아래로 끌려간다. 하단 근처일 때만 내린다.
+      scrollToBottomIfNearBottom();
     });
 
     socket.on("connect_error", (error) => {
@@ -908,7 +951,7 @@ export default function ChatPage() {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [chatRoomId, scrollToBottom]);
+  }, [chatRoomId, scrollToBottom, scrollToBottomIfNearBottom]);
 
   const handleSend = useCallback(() => {
     if (!inputValue.trim() || !socketRef.current || !chatRoomId) return;
@@ -1031,7 +1074,7 @@ export default function ChatPage() {
             <ChatMessagesList
               messages={messages}
               isLoadingMore={isLoadingMore}
-              scrollToBottom={scrollToBottom}
+              scrollToBottom={scrollToBottomIfNearBottom}
               onScheduleClick={(scheduleId) => {
                 router.push(
                   `/schedule-detail?id=${scheduleId}&roomId=${chatRoomId}`,
