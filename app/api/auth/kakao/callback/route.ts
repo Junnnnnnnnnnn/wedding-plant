@@ -1,7 +1,13 @@
 /* access_token을 사용해라 그냥 code 말고! */
 import { NextRequest, NextResponse } from "next/server";
 
-import { isValidNonce, OAUTH_STATE_COOKIE, parseState } from "../state";
+import {
+  isValidNonce,
+  KAKAO_TOKEN_COOKIE,
+  KAKAO_TOKEN_MAX_AGE,
+  OAUTH_STATE_COOKIE,
+  parseState,
+} from "../state";
 
 const KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
 
@@ -37,8 +43,19 @@ export async function GET(request: NextRequest) {
     const path = from === "main" ? "/main" : "/";
     const url = new URL(path, request.url);
     url.search = "kakao_login=1";
-    url.hash = `kakao_token=${encodeURIComponent(kakaoToken)}`;
-    return clearStateCookie(NextResponse.redirect(url.toString()));
+
+    // 토큰을 URL fragment 로 넘기면 Location 응답 헤더에 평문으로 실려
+    // CDN·플랫폼 액세스 로그에 남는다. httpOnly 쿠키로 넘기고
+    // 클라이언트는 /api/auth/kakao/token 으로 한 번만 회수한다.
+    const response = clearStateCookie(NextResponse.redirect(url.toString()));
+    response.cookies.set(KAKAO_TOKEN_COOKIE, kakaoToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: KAKAO_TOKEN_MAX_AGE,
+    });
+    return response;
   };
 
   if (error) {

@@ -12,6 +12,12 @@
 
 export const OAUTH_STATE_COOKIE = "kakao_oauth_state";
 
+/** 콜백 → 클라이언트로 카카오 access_token 을 넘길 때 쓰는 1회용 쿠키 */
+export const KAKAO_TOKEN_COOKIE = "kakao_access_token";
+
+/** 회수 전용이라 짧게 (60초) */
+export const KAKAO_TOKEN_MAX_AGE = 60;
+
 /** 인증 왕복에 넉넉한 10분 */
 export const OAUTH_STATE_MAX_AGE = 60 * 10;
 

@@ -30,11 +30,20 @@ type KakaoLoginAlertProps = {
   onSuccessFromMain?: () => void | Promise<void>;
 };
 
-function getKakaoTokenFromHash(): string | null {
-  if (typeof window === "undefined") return null;
-  const hash = window.location.hash.slice(1);
-  const params = new URLSearchParams(hash);
-  return params.get("kakao_token");
+/**
+ * 콜백이 httpOnly 쿠키에 넣어둔 카카오 access_token 을 회수한다.
+ * 예전에는 URL fragment(#kakao_token=)로 받았는데, 그 값이 서버의
+ * Location 응답 헤더에 평문으로 실려 액세스 로그에 남았다.
+ */
+async function fetchKakaoToken(): Promise<string | null> {
+  try {
+    const res = await fetch("/api/auth/kakao/token", { cache: "no-store" });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { kakaoToken?: string };
+    return json.kakaoToken?.trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 export default function KakaoLoginAlert({
@@ -69,18 +78,17 @@ export default function KakaoLoginAlert({
   useEffect(() => {
     if (!show || shownRef.current) return;
 
-    const kakaoToken = getKakaoTokenFromHash();
-    if (!kakaoToken) {
-      shownRef.current = true;
-      clearToken();
-      router.replace("/?login_error=1");
-      return;
-    }
-
     shownRef.current = true;
     setLoading(true); // 글로벌 로딩 시작
 
     const run = async () => {
+      const kakaoToken = await fetchKakaoToken();
+      if (!kakaoToken) {
+        clearToken();
+        setLoading(false);
+        router.replace("/?login_error=1");
+        return;
+      }
       let fetchedRoomId: number | null = null;
       /** 게스트 설정(예산·날짜·이름)을 이 로그인에서 이관했는지 */
       let migratedSetting = false;
