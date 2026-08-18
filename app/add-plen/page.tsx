@@ -132,6 +132,12 @@ function AddPlanPageContent() {
   >([]);
   const [showAllLocationResults, setShowAllLocationResults] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  /** Kakao Maps SDK가 실제로 쓸 수 있는 상태인지 (maps.load 완료) */
+  const [kakaoSdkReady, setKakaoSdkReady] = useState(false);
+  /** SDK 로드 자체가 실패했는지 (키 미설정·도메인 미등록·차단) */
+  const [kakaoSdkFailed, setKakaoSdkFailed] = useState(false);
+  /** 검색 요청 순번 — 늦게 온 이전 응답이 최신 결과를 덮어쓰지 않도록 */
+  const searchSeqRef = useRef(0);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const newCategoryInputRef = useRef<HTMLInputElement>(null);
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
@@ -337,27 +343,32 @@ function AddPlanPageContent() {
    */
   // eslint-disable-next-line consistent-return
   useEffect(() => {
-    // API 스크립트가 이미 로드되었는지 확인
-    if (window.kakao && window.kakao.maps) {
+    // autoload=false 라서 sdk.js 실행 직후에도 window.kakao.maps 는 존재하지만
+    // maps.load() 콜백 전까지 services / Map / LatLng 는 undefined 다.
+    // 실제 심볼이 생겼는지로 준비 여부를 판단해야 한다.
+    if (window.kakao?.maps?.LatLng) {
+      setKakaoSdkReady(true);
       return;
     }
 
-    // Kakao Maps SDK 스크립트 로드 (libraries=services 추가)
     const script = document.createElement("script");
     const apiKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&libraries=services`;
     script.async = true;
 
     script.onload = () => {
-      // Kakao Maps API 로드 완료
-      window.kakao.maps.load(() => {
-        // API 준비 완료 - 지도 생성은 검색 시에 함
+      window.kakao?.maps?.load(() => {
+        setKakaoSdkReady(true);
       });
+    };
+    script.onerror = () => {
+      // 키 미설정·도메인 미등록·네트워크 차단 시. 무한 폴링 대신 여기서 끝낸다.
+      console.error("Failed to load Kakao Maps SDK");
+      setKakaoSdkFailed(true);
     };
 
     document.head.appendChild(script);
 
-    // Cleanup: 컴포넌트 언마운트 시 스크립트 제거
     // eslint-disable-next-line consistent-return
     return () => {
       if (document.head.contains(script)) {
@@ -373,7 +384,12 @@ function AddPlanPageContent() {
 
   // 지도 컨테이너가 렌더링된 후 지도 생성
   useEffect(() => {
-    if (!showMap || !mapCoords || !window.kakao || !window.kakao.maps) {
+    if (
+      !showMap ||
+      !mapCoords ||
+      !kakaoSdkReady ||
+      !window.kakao?.maps?.LatLng
+    ) {
       // showMap이 false가 되면 지도 인스턴스 초기화
       if (!showMap && mapRef.current) {
         if (markerRef.current) {
@@ -392,8 +408,6 @@ function AddPlanPageContent() {
         return;
       }
 
-      const coords = new window.kakao.maps.LatLng(mapCoords.lat, mapCoords.lng);
-
       // showMap이 false였다가 true로 변경되면 컨테이너가 새로 생성되므로 항상 새로 생성
       // 기존 지도 인스턴스가 있으면 제거
       if (mapRef.current) {
@@ -406,16 +420,20 @@ function AddPlanPageContent() {
         mapRef.current = null;
       }
 
-      // 항상 새로 생성 (컨테이너가 새로 생성되었을 수 있으므로)
-      const options = {
-        center: coords,
-        level: 3,
-        scrollwheel: false, // 마우스 휠로 지도 확대/축소 비활성화 (페이지 스크롤 허용)
-        disableDoubleClick: true, // 더블클릭 확대 비활성화
-        disableDoubleClickZoom: true, // 더블클릭 줌 비활성화
-      };
-
       try {
+        // LatLng 생성이 try 밖에 있으면 SDK가 덜 준비된 순간 setTimeout
+        // 콜백에서 uncaught TypeError가 나 지도 생성이 통째로 스킵된다.
+        const coords = new window.kakao.maps.LatLng(
+          mapCoords.lat,
+          mapCoords.lng,
+        );
+        const options = {
+          center: coords,
+          level: 3,
+          scrollwheel: false, // 마우스 휠 확대/축소 비활성화 (페이지 스크롤 허용)
+          disableDoubleClick: true,
+          disableDoubleClickZoom: true,
+        };
         const mapInstance = new window.kakao.maps.Map(container, options);
         mapRef.current = mapInstance;
 
@@ -833,48 +851,61 @@ function AddPlanPageContent() {
     if (!location.trim()) return;
 
     setHasSearched(true);
-    // 새로운 검색 시 기존 지도 숨기기 및 초기화
     setShowMap(false);
     setMapCoords(null);
-    // 지도 인스턴스 초기화는 useEffect에서 처리됨
+    // 이전 검색 결과를 남겨두면, 새 결과가 오기 전에 사용자가 옛 항목을
+    // 눌러 엉뚱한 좌표가 저장될 수 있다.
+    setLocationSearchResults([]);
+    setShowAllLocationResults(false);
 
-    // API가 로드될 때까지 대기
-    const waitForApiAndSearch = () => {
-      if (!window.kakao || !window.kakao.maps) {
-        setTimeout(waitForApiAndSearch, 100);
-        return;
-      }
-
-      // 장소 검색 서비스 객체 생성
-      const places = new window.kakao.maps.services.Places();
-
-      // 키워드 검색 콜백 함수
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const callback = (result: any, status: any) => {
-        if (status === window.kakao.maps.services.Status.OK) {
-          // 검색 결과가 있는 경우
-          if (result.length > 0) {
-            // 검색 결과 저장 (최대 10개)
-            setLocationSearchResults(result.slice(0, 10));
-            setShowAllLocationResults(false);
-          } else {
-            // 검색 결과가 없는 경우
-            setLocationSearchResults([]);
-          }
-        } else {
-          // 검색 실패
-          setLocationSearchResults([]);
-        }
-      };
-
-      // 키워드로 장소 검색 (최대 10개)
-      places.keywordSearch(location.trim(), callback, {
-        size: 10,
+    if (kakaoSdkFailed) {
+      setAlertConfig({
+        isOpen: true,
+        message:
+          "지도 서비스를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        type: "error",
       });
+      return;
+    }
+    // SDK가 아직 준비되지 않았으면 준비된 뒤 effect가 다시 검색한다.
+    // (예전에는 100ms 재귀 폴링이라 SDK가 영영 안 뜨면 무한히 돌았다)
+    if (!kakaoSdkReady) return;
+
+    const seq = searchSeqRef.current + 1;
+    searchSeqRef.current = seq;
+
+    const places = new window.kakao.maps.services.Places();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const callback = (result: any, status: any) => {
+      // 더 최신 검색이 시작됐으면 이 응답은 버린다
+      if (searchSeqRef.current !== seq) return;
+      if (
+        status === window.kakao.maps.services.Status.OK &&
+        Array.isArray(result) &&
+        result.length > 0
+      ) {
+        setLocationSearchResults(result.slice(0, 10));
+        setShowAllLocationResults(false);
+      } else {
+        setLocationSearchResults([]);
+      }
     };
 
-    waitForApiAndSearch();
+    places.keywordSearch(location.trim(), callback, { size: 10 });
   };
+
+  // SDK가 늦게 준비된 경우, 사용자가 이미 눌러둔 검색을 이어서 실행한다.
+  // (검색 시점에 준비가 안 됐으면 handleSearchLocation 이 그냥 반환하기 때문)
+  useEffect(() => {
+    if (!kakaoSdkReady) return;
+    if (!hasSearched) return;
+    if (locationSearchResults.length > 0) return;
+    if (!location.trim()) return;
+    handleSearchLocation();
+    // handleSearchLocation 은 매 렌더 새로 만들어지므로 의존성에 넣지 않는다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kakaoSdkReady]);
 
   const handleSelectLocation = (result: {
     place_name: string;
