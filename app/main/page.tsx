@@ -772,37 +772,22 @@ function MainPageContent() {
         setScheduleList([]);
         setScheduleInitialFetched(false);
         // Important: All concurrent fetches must be inside this block
-        await Promise.all([
+        const [planUserData] = await Promise.all([
           fetchPlanUser(handleApiError, roomIdParam),
           fetchTotalAmount(handleApiError, roomIdParam),
           fetchPersonalCounts(roomIdParam),
         ]);
         if (cancelledRef.current) return;
 
-        // main?roomId 일 때도 가이드 플래그를 위해 POST 동기화 후 GET /plan/user
         await syncGuestGuideThenProceed();
         if (cancelledRef.current) return;
-        try {
-          const res = await fetchWithAuth("/plan/user", { skipLoading: true });
-          if (cancelledRef.current) return;
-          const json = (await res.json()) as {
-            result?: boolean;
-            data?: PlanUserData;
-          };
-          if (json?.result && json?.data) {
-            setHasSeenMainGuide(json.data.hasSeenMainGuide ?? true);
-
-            // SSE Subscription for the user's chat rooms
-            if (json.data.chatRooms && json.data.chatRooms.length > 0) {
-              const roomIds = json.data.chatRooms.map((r) => r.id);
-              subscribeToChatRooms(roomIds);
-            }
-          } else {
-            setHasSeenMainGuide(true);
-          }
-        } catch {
-          if (!cancelledRef.current) setHasSeenMainGuide(true);
-        }
+        // fetchPlanUser 가 이미 /plan/user 를 받아오고 SSE 구독까지 하므로
+        // 가이드 플래그만 보려고 같은 요청을 한 번 더 하지 않는다.
+        setHasSeenMainGuide(
+          planUserData && planUserData !== "none"
+            ? (planUserData.hasSeenMainGuide ?? true)
+            : true,
+        );
       } else {
         setApiPlanData(null);
         setScheduleList([]);
