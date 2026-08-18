@@ -17,6 +17,7 @@ import { io, Socket } from "socket.io-client";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import { getToken, getApiBaseUrl } from "@/lib/api";
+import { parseLocalDate } from "@/lib/utils";
 import {
   addGuestScheduleItem,
   getGuestScheduleList,
@@ -126,8 +127,9 @@ function AddPlanPageContent() {
       place_name: string;
       address_name: string;
       road_address_name?: string;
-      y: number;
-      x: number;
+      /** Kakao keywordSearch 는 좌표를 문자열로 준다 */
+      y: string;
+      x: string;
     }>
   >([]);
   const [showAllLocationResults, setShowAllLocationResults] = useState(false);
@@ -138,6 +140,8 @@ function AddPlanPageContent() {
   const [kakaoSdkFailed, setKakaoSdkFailed] = useState(false);
   /** 검색 요청 순번 — 늦게 온 이전 응답이 최신 결과를 덮어쓰지 않도록 */
   const searchSeqRef = useRef(0);
+  /** 지도에 표시 중인 좌표가 어떤 장소명으로 선택된 것인지 */
+  const selectedPlaceNameRef = useRef<string>("");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const newCategoryInputRef = useRef<HTMLInputElement>(null);
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
@@ -199,57 +203,63 @@ function AddPlanPageContent() {
         forceNew: true,
       });
 
-      socket.on("connect", () => {
-        console.log(
-          "Socket connected for schedule share, sending message to room:",
-          chatRoomId,
-          "scheduleId:",
-          savedScheduleId,
-        );
-
-        // schedule 메시지 전송 (joinRoom 없이 planUser 포함)
-        const messagePayload = {
-          room: chatRoomId,
-          message: savedScheduleId,
-          messageType: "schedule",
-          planUser,
-        };
-        console.log("Sending socket message:", messagePayload);
-        socket.emit("message", messagePayload);
-
-        // 메시지 전송 후 소켓 연결 해제
+      /** 성공/실패 안내 후 원래 화면으로 돌아간다 */
+      const finishShare = (ok: boolean) => {
+        setAlertConfig({
+          isOpen: true,
+          message: ok
+            ? editId
+              ? "수정된 플랜이 채팅방에 공유되었습니다."
+              : "채팅방에 플랜이 공유되었습니다."
+            : "공유에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+          type: ok ? "success" : "error",
+        });
+        setShowChatShareSelection(false);
+        if (!ok) return;
         setTimeout(() => {
-          socket.disconnect();
-        }, 500);
+          if (fromParam === "calendar") {
+            router.push(roomId ? `/calendar?roomId=${roomId}` : "/calendar");
+          } else {
+            router.push(roomId ? `/main?roomId=${roomId}` : "/main");
+          }
+        }, 1500);
+      };
+
+      // 연결 여부와 무관하게 성공 알림을 띄우던 것을 고친다.
+      // 연결이 안 되면 메시지는 전송되지 않는데 사용자는 공유됐다고 믿었다.
+      let settled = false;
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const settle = (ok: boolean) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        socket.disconnect();
+        finishShare(ok);
+      };
+
+      // 연결이 끝내 안 되는 경우를 대비한 타임아웃
+      timeoutId = setTimeout(() => settle(false), 10000);
+
+      socket.on("connect", () => {
+        socket.emit(
+          "message",
+          {
+            room: chatRoomId,
+            message: savedScheduleId,
+            messageType: "schedule",
+            planUser,
+          },
+          // 서버가 ack를 주면 그때 성공 처리, 안 주면 아래 타이머로 마무리
+          () => settle(true),
+        );
+        // ack 미지원 서버 대비: 전송 직후 잠시 뒤 성공으로 간주
+        setTimeout(() => settle(true), 800);
       });
 
       socket.on("connect_error", (error) => {
         console.error("Socket connection error:", error);
-        socket.disconnect();
-        setAlertConfig({
-          isOpen: true,
-          message: "공유에 실패했습니다.",
-          type: "error",
-        });
+        settle(false);
       });
-
-      setAlertConfig({
-        isOpen: true,
-        message: editId
-          ? "수정된 플랜이 채팅방에 공유되었습니다."
-          : "채팅방에 플랜이 공유되었습니다.",
-        type: "success",
-      });
-      setShowChatShareSelection(false);
-
-      // Redirect after sharing
-      setTimeout(() => {
-        if (fromParam === "calendar") {
-          router.push(roomId ? `/calendar?roomId=${roomId}` : "/calendar");
-        } else {
-          router.push(roomId ? `/main?roomId=${roomId}` : "/main");
-        }
-      }, 1500);
     } catch (error) {
       console.error("Failed to share to chat:", error);
       setAlertConfig({
@@ -450,11 +460,24 @@ function AddPlanPageContent() {
 
     return () => {
       clearTimeout(timer);
-      // cleanup은 showMap이 false가 될 때만 수행
     };
     // eslint-disable-next-line consistent-return
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showMap, mapCoords]);
+
+  // 언마운트 시 지도/마커 참조 정리.
+  // 예전에는 cleanup 이 타이머만 정리해, 페이지를 오갈 때마다 Kakao Map
+  // 인스턴스가 쌓였다.
+  useEffect(
+    () => () => {
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+        markerRef.current = null;
+      }
+      mapRef.current = null;
+    },
+    [],
+  );
 
   /** API 카테고리 항목: type USER → 모달에서 "my" 뱃지 표시 */
   type CategoryItem = {
@@ -510,10 +533,18 @@ function AddPlanPageContent() {
   }, [fetchWithAuth, roomId]);
 
   /** 모달 그리드용: API 카테고리 + 세션에서 추가한 카테고리 */
-  const categoriesForModal = useMemo(
-    () => [...allCategories, ...userAddedCategories],
-    [allCategories, userAddedCategories],
-  );
+  const categoriesForModal = useMemo(() => {
+    // 상세 응답의 addCategoryNameList 와 /plan/category 목록에 같은 이름이
+    // 겹쳐 들어와 모달에 같은 항목이 두 번 뜨는 일이 있었다. 라벨 기준으로 합친다.
+    const merged = [...allCategories, ...userAddedCategories];
+    const seen = new Set<string>();
+    return merged.filter((c) => {
+      const key = c.label.trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [allCategories, userAddedCategories]);
 
   /** "my" 뱃지 표시 대상: API type USER + 세션에서 추가한 카테고리 라벨 */
   const userAddedLabels = useMemo(
@@ -575,7 +606,9 @@ function AddPlanPageContent() {
         }
 
         if (data.startDate?.trim()) {
-          const d = new Date(data.startDate);
+          // "YYYY-MM-DD" 를 new Date 로 파싱하면 UTC 자정으로 읽혀
+          // 타임존에 따라 하루 밀린다. 로컬 파싱 유틸을 쓴다.
+          const d = parseLocalDate(data.startDate) ?? new Date(data.startDate);
           if (!Number.isNaN(d.getTime())) {
             setSelectedDate(d);
             setIsDateUndecided(false);
@@ -911,15 +944,27 @@ function AddPlanPageContent() {
     place_name: string;
     address_name: string;
     road_address_name?: string;
-    y: number;
-    x: number;
+    y: string;
+    x: string;
   }) => {
     // 선택한 장소명으로 입력값 갱신
     setLocation(result.place_name);
-    // 선택한 위치로 지도 표시
+    selectedPlaceNameRef.current = result.place_name.trim();
+    // Kakao 결과의 x/y 는 문자열이라 그대로 저장하면 백엔드에도
+    // 문자열로 전송된다. 숫자로 변환해 둔다.
+    const lat = Number(result.y);
+    const lng = Number(result.x);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      setAlertConfig({
+        isOpen: true,
+        message: "위치 좌표를 읽지 못했습니다. 다른 장소를 선택해 주세요.",
+        type: "error",
+      });
+      return;
+    }
     const newCoords = {
-      lat: result.y,
-      lng: result.x,
+      lat,
+      lng,
     };
     setMapCoords(newCoords);
     setShowMap(true);
@@ -1282,6 +1327,14 @@ function AddPlanPageContent() {
                             setMapCoords(null);
                             setHasSearched(false);
                             setShowAllLocationResults(false);
+                          } else if (
+                            mapCoords &&
+                            newValue.trim() !== selectedPlaceNameRef.current
+                          ) {
+                            // 장소를 고른 뒤 이름만 바꾸면 좌표가 그대로 남아
+                            // 엉뚱한 위치가 저장된다. 이름이 달라지면 좌표를 버린다.
+                            setShowMap(false);
+                            setMapCoords(null);
                           }
                         }}
                         placeholder="예식장, 스튜디오 등"
@@ -1521,7 +1574,11 @@ function AddPlanPageContent() {
                         (c) => c.label,
                       ),
                     };
-                    if (!isDateUndecided) {
+                    if (isDateUndecided) {
+                      // 수정 시 필드를 빼면 PATCH 시맨틱상 "변경 없음"이라
+                      // 날짜를 미정으로 되돌릴 수 없었다. null 을 명시한다.
+                      if (editId) body.startDate = null;
+                    } else {
                       body.startDate = formatDate(selectedDate);
                     }
                     if (!editId && roomId != null) {
