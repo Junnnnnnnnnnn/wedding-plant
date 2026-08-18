@@ -1384,8 +1384,12 @@ function MainPageContent() {
 
   const checkedItemsRef = useRef<Set<number>>(checkedItems);
   const scheduleListRef = useRef(scheduleList);
+  const sharedScheduleListRef = useRef(sharedRoomScheduleList);
   checkedItemsRef.current = checkedItems;
   scheduleListRef.current = scheduleList;
+  // 공유 뷰의 항목은 sharedRoomScheduleList 에만 있어, 개인 리스트만 보면
+  // 토글 시 현재 상태를 못 찾아 이미 완료인 항목에 다시 COMPLETED 를 보냈다.
+  sharedScheduleListRef.current = sharedRoomScheduleList;
   if (activeTab === "planned") plannedListRef.current = visibleScheduleList;
 
   // 체크박스 토글 핸들러 (PATCH /plan/schedule/status/{id} — COMPLETED / NORMAL)
@@ -1399,7 +1403,9 @@ function MainPageContent() {
       togglingIdsRef.current.add(id);
       setTogglingIds((prev) => new Set(prev).add(id));
 
-      const plan = scheduleListRef.current.find((p) => p.id === id);
+      const plan =
+        scheduleListRef.current.find((p) => p.id === id) ??
+        sharedScheduleListRef.current.find((p) => p.id === id);
       const isCurrentlyChecked =
         checkedItemsRef.current.has(id) || plan?.status === "COMPLETED";
       const newStatus = isCurrentlyChecked ? "NORMAL" : "COMPLETED";
@@ -1494,11 +1500,14 @@ function MainPageContent() {
     [fetchWithAuth],
   );
 
-  const roomIdForDetail =
-    roomId?.trim() ||
-    (apiPlanData && apiPlanData !== "none" && apiPlanData.roomId
-      ? String(apiPlanData.roomId)
-      : null);
+  // 공유 뷰(?share=)에서는 내 방 roomId 로 폴백하면 안 된다.
+  // 남의 플랜을 보는 중인데 내 방 id 가 붙어 상세·추가가 엉뚱한 곳으로 갔다.
+  const roomIdForDetail = isSharedView
+    ? roomId?.trim() || null
+    : roomId?.trim() ||
+      (apiPlanData && apiPlanData !== "none" && apiPlanData.roomId
+        ? String(apiPlanData.roomId)
+        : null);
 
   return (
     <div className="h-[100dvh] bg-[#fcfbfc] overflow-hidden">
@@ -1944,13 +1953,15 @@ function MainPageContent() {
                   <button
                     type="button"
                     onClick={() => {
-                      const roomIdValue =
-                        roomId ??
-                        (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
-                          ? String(apiPlanData.roomId)
-                          : null);
+                      // 공유 뷰에서는 내 방 id 를 붙이지 않는다 (내 플랜에 저장되던 문제)
+                      const roomIdValue = isSharedView
+                        ? roomId
+                        : (roomId ??
+                          (apiPlanData &&
+                          apiPlanData !== "none" &&
+                          apiPlanData.roomId
+                            ? String(apiPlanData.roomId)
+                            : null));
                       router.push(
                         roomIdValue
                           ? `/calendar?roomId=${roomIdValue}`
@@ -2036,13 +2047,15 @@ function MainPageContent() {
                   <button
                     type="button"
                     onClick={() => {
-                      const roomIdValue =
-                        roomId ??
-                        (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
-                          ? String(apiPlanData.roomId)
-                          : null);
+                      // 공유 뷰에서는 내 방 id 를 붙이지 않는다 (내 플랜에 저장되던 문제)
+                      const roomIdValue = isSharedView
+                        ? roomId
+                        : (roomId ??
+                          (apiPlanData &&
+                          apiPlanData !== "none" &&
+                          apiPlanData.roomId
+                            ? String(apiPlanData.roomId)
+                            : null));
 
                       const addPlanPath = roomIdValue
                         ? `/add-plen?roomId=${roomIdValue}`
@@ -2179,7 +2192,7 @@ function MainPageContent() {
                   플랜 리스트 로딩: 초기 로드/유저·방 로딩 시에만 스켈레톤.
                   필터 리패치 시에는 스켈레톤 미표시 → 카테고리 스크롤 위치 유지.
                 */}
-                {!scheduleInitialFetched || isPlanLoading || isSharedLoading ? (
+                {!isListLoaded || isPlanLoading || isSharedLoading ? (
                   Array.from({ length: 5 }).map((_, idx) => (
                     <li
                       key={`skeleton-plan-${idx}`}
