@@ -98,13 +98,13 @@
 
 ### C. 백엔드
 
-- `/plan/schedule/list?roomId=` 가 roomId 필터를 지원하지 않는 것으로 보임
-  (방 플랜 조회는 `/plan/schedule/room/{code}/list` 사용). 확인 필요.
+- `/plan/schedule/list` 는 roomId 필터를 받지 않는다(status·categoryName·page·count·sort 뿐).
+  방 플랜은 `/plan/schedule/room/{code}/list` 를 쓰는 게 맞다. **확인 완료 — 버그 아님.**
 - `PATCH /plan/user` 가 `requiredAgreementDate` · `adAgreementDate` 를 둘 다 문자열
   필수로 요구한다. 마케팅 미동의를 표현할 방법이 없어 프로필 저장은
   `POST /plan/setting` 으로 우회해 둔 상태다. 선택 항목으로 바꾸는 것이 근본 해결.
-- `GET /plan/room/:roomId` 에 멤버십 검사가 없다. 로그인한 사용자면 아무 방이나
-  멤버 목록을 조회할 수 있다.
+- ~~`GET /plan/room/:roomId` 에 멤버십 검사가 없다~~ → `assertRoomMember` 적용 완료
+  (`plan-room.service.ts:69`). main 브랜치에서 확인함.
 - ~~`dev` 브랜치에 `main` 의 수정이 반영돼 있지 않다~~ → 2026-08-19 머지 완료
   (충돌 없음, 보안 수정 3건 모두 반영, 빌드 통과).
 

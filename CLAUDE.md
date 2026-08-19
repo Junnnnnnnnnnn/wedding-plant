@@ -112,9 +112,23 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 ## 알려진 미해결 항목 (수정 시 유의)
 
 - **JWT를 `sessionStorage` + `localStorage` 모두 저장**: 탭 간 공유 의도지만 사실상 localStorage만으로 충분. 단순화 검토 대상.
-- **카카오 access_token이 URL hash로 클라에 노출**되는 OAuth 패턴: 백엔드 계약 변경 필요해 보류.
-- **401 자동 처리/토큰 만료 핸들링 부재**: `ApiContext`에서 401 인터셉터 미구현. 만료된 JWT로 요청 시 사용자에게 알림 없이 실패.
-- **`KakaoLoginAlert`의 250줄짜리 거대 effect**: 라우팅 결정 로직 추출이 가능하지만 위험도가 높아 별도 작업으로 분리 권장.
+- **`PATCH /plan/user`가 약관 날짜 2개를 문자열 필수로 요구**: 마케팅 미동의를 표현할 방법이 없어, 프로필 저장은 `POST /plan/setting`으로 우회해 둔 상태입니다 (`app/user/page.tsx`). 백엔드에서 선택 항목으로 바꾸는 것이 근본 해결입니다.
+- **READ 권한이 도달 불가능**: 읽기 전용 참여자는 기획에 있으나 보류 상태입니다. 공유 코드로 참여하면 백엔드가 항상 `WRITE`를 부여하고 권한 변경 수단이 없습니다. `/main`·`/calendar`의 READ 게이트는 기능이 열릴 때를 대비해 남겨둔 것이니 "죽은 코드"로 보고 지우지 마세요.
+
+### 해결된 항목 (예전 기록이 남아 있을 수 있음)
+
+- ~~카카오 access_token이 URL hash로 노출~~ → httpOnly 쿠키 + `/api/auth/kakao/token`으로 회수합니다. OAuth state 논스 검증도 있습니다.
+- ~~401 자동 처리 부재~~ → `ApiContext`가 공통 처리합니다(토큰 정리 + 복귀 경로 저장 + `SessionExpiredModal`). 자체 처리가 필요한 곳은 `skipAuthHandling: true`를 쓰며, 현재 `share` 페이지와 `chat`뿐입니다.
+- ~~`KakaoLoginAlert`의 거대 effect~~ → 라우팅 결정은 `resolveDestination()`으로 분리했습니다. 이 컴포넌트를 수정할 때는 **`node scripts/login-branches.cjs`를 수정 전후로 돌려 출력을 비교**하세요 (실제 카카오 인증 없이 10개 분기를 확인하는 유일한 수단입니다).
+
+## 개발용 스크립트
+
+`npm install --no-save puppeteer-core` 후 `chrome.exe --remote-debugging-port=9222 --user-data-dir=<경로>` 로 크롬을 띄워 두고 실행합니다.
+
+- `scripts/login-branches.cjs` — 로그인 후 라우팅 10분기를 목 응답으로 구동
+- `scripts/room-permission-ui.cjs` — 방 권한(WRITE/READ)별 UI 게이트 확인
+
+목 응답에는 **CORS 헤더와 `OPTIONS` 프리플라이트 응답이 반드시 필요**합니다. 없으면 전부 CORS로 막혀 분기까지 가지 못합니다.
 
 ## 사용자 응답 규칙
 
