@@ -108,6 +108,20 @@ export default function DatePickerWheel({
     }
   }, [selectedMonth, selectedYear, selectedDay, maxDay, setDayAndRef]);
 
+  // 연도 하한(올해)만 있고 월·일 하한이 없어, 올해의 지난 날짜를 그대로
+  // 고를 수 있었다. 결혼일이 과거가 되면 D-day 가 음수가 된다.
+  // 휠 자체는 건드리지 않고(순환 스크롤 인덱스 계산이 얽혀 있다)
+  // 선택이 과거면 오늘로 되돌린다.
+  useEffect(() => {
+    const t = getKstToday();
+    const selected = selectedYear * 10000 + selectedMonth * 100 + selectedDay;
+    const todayNum = t.year * 10000 + t.month * 100 + t.day;
+    if (selected >= todayNum) return;
+    setSelectedYear(t.year);
+    setSelectedMonth(t.month);
+    setDayAndRef(t.day);
+  }, [selectedYear, selectedMonth, selectedDay, setDayAndRef]);
+
   useEffect(() => {
     const cb = onDateChangeRef.current;
     if (cb) {

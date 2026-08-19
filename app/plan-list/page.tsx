@@ -59,46 +59,51 @@ interface CardMembersProps {
   members: Member[];
 }
 
-const CardMembers: React.FC<CardMembersProps> = ({ members }) => (
-  <div className="mb-6">
-    <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-3">
-      참여 멤버
-    </p>
-    <div className="flex items-center -space-x-2">
-      {members.map((member, idx) => (
-        <div
-          key={member.planUserId}
-          className="relative flex-shrink-0"
-          style={{ zIndex: members.length - idx }}
-        >
-          {String(member.permission ?? "").toUpperCase() === "OWNER" && (
-            <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
-              <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
-            </span>
-          )}
+const CardMembers: React.FC<CardMembersProps> = ({ members }) => {
+  // 같은 파일에서 chatRooms 는 `|| []` 로 방어하면서 members 는 안 하고 있었다.
+  // 백엔드가 이 필드를 생략하면 목록 전체가 흰 화면이 된다.
+  const list = Array.isArray(members) ? members : [];
+  return (
+    <div className="mb-6">
+      <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-3">
+        참여 멤버
+      </p>
+      <div className="flex items-center -space-x-2">
+        {list.map((member, idx) => (
           <div
-            className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
-            style={{
-              background: member.image
-                ? undefined
-                : AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
-            }}
+            key={member.planUserId}
+            className="relative flex-shrink-0"
+            style={{ zIndex: list.length - idx }}
           >
-            {member.image ? (
-              <img
-                src={member.image}
-                alt={member.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span>{member.name?.trim().charAt(0)?.toUpperCase()}</span>
+            {String(member.permission ?? "").toUpperCase() === "OWNER" && (
+              <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
+                <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
+              </span>
             )}
+            <div
+              className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
+              style={{
+                background: member.image
+                  ? undefined
+                  : AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
+              }}
+            >
+              {member.image ? (
+                <img
+                  src={member.image}
+                  alt={member.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span>{member.name?.trim().charAt(0)?.toUpperCase()}</span>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface CardChatRoomsProps {
   chatRooms: ChatRoom[];
@@ -150,7 +155,7 @@ const CardChatRooms: React.FC<CardChatRoomsProps> = ({
                 {chatRoom.name}
               </h4>
               <div className="flex items-center -space-x-1.5 mt-1">
-                {chatRoom.memberList.slice(0, 4).map((m, i) => (
+                {(chatRoom.memberList ?? []).slice(0, 4).map((m, i) => (
                   <div
                     key={m.planUserId}
                     className="w-5 h-5 rounded-full border border-white flex items-center justify-center text-[7px] font-black text-white overflow-hidden shadow-sm"
@@ -171,9 +176,9 @@ const CardChatRooms: React.FC<CardChatRoomsProps> = ({
                     )}
                   </div>
                 ))}
-                {chatRoom.memberList.length > 4 && (
+                {(chatRoom.memberList?.length ?? 0) > 4 && (
                   <div className="w-5 h-5 rounded-full border border-white bg-stone-100 flex items-center justify-center text-[7px] font-black text-stone-400">
-                    +{chatRoom.memberList.length - 4}
+                    +{(chatRoom.memberList?.length ?? 0) - 4}
                   </div>
                 )}
               </div>
