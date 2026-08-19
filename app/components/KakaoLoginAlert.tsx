@@ -340,90 +340,103 @@ export default function KakaoLoginAlert({
           }
           await syncLeftoverAgreement();
 
-          // 공유 링크(shareCode) 복원 여부 확인
-          const shareCode = getShareAfterLogin();
-          if (shareCode) {
-            // 이름 없으면 먼저 입력받기
+          /**
+           * 로그인 후 착지 지점을 정한다.
+           *
+           * 우선순위: 공유 링크 > 복귀 경로 > 완성된 플랜 > 참여 중인 방 >
+           * 신규 사용자. 각 분기가 흩어져 있으면 앞 분기에서 return 을
+           * 빠뜨렸을 때 뒤 분기가 잘못 실행되므로, 목적지를 값으로 돌려
+           * 이동은 아래 한 곳에서만 하도록 모았다.
+           *
+           * hard: true 는 SPA 라우팅이 아니라 문서 전체를 새로 여는 이동.
+           */
+          const resolveDestination = async (): Promise<{
+            path: string;
+            hard?: boolean;
+          }> => {
+            const shareCode = getShareAfterLogin();
+            if (shareCode) {
+              // 이름 없으면 먼저 입력받기
+              try {
+                const preUserRes = await fetchWithAuth("/plan/user");
+                const preUserJson = (await preUserRes.json()) as {
+                  result?: boolean;
+                  data?: { name?: string | null };
+                };
+                if (
+                  preUserJson.result === true &&
+                  preUserJson.data &&
+                  (!preUserJson.data.name || !preUserJson.data.name.trim())
+                ) {
+                  await waitForName();
+                  setLoading(true); // re-show global loading after name entry
+                }
+              } catch {
+                // name check 실패 시 무시
+              }
+              try {
+                // 방 참여 API 호출
+                await fetchWithAuth(`/plan/room/${shareCode}`, {
+                  method: "POST",
+                });
+              } catch (err) {
+                console.error("Failed to join room after login:", err);
+              } finally {
+                clearShareAfterLogin();
+                // useKakaoAuth 가 /share/CODE 를 returnPath 로도 저장해 두는데
+                // 여기서 지우지 않으면 다음 로그인이 그 공유 페이지로 끌려간다.
+                clearReturnPathAfterLogin();
+              }
+              return { path: "/plan-list" };
+            }
+
+            const returnPath = getReturnPathAfterLogin();
+            if (returnPath) {
+              clearReturnPathAfterLogin();
+              return { path: returnPath };
+            }
+
+            // 플랜이 이미 완성돼 있거나, 방금 게스트 설정을 이관해 완성된 경우
+            if (hasCompletePlan || migratedSetting) {
+              if (pathname === "/main") {
+                await onSuccessFromMain?.();
+              }
+              return { path: "/main" };
+            }
+
+            // 개인 플랜이 불완전한 경우 참여 중인 방이 있는지 확인
             try {
-              const preUserRes = await fetchWithAuth("/plan/user");
-              const preUserJson = (await preUserRes.json()) as {
+              const roomRes = await fetchWithAuth("/plan/room/list");
+              const roomJson = (await roomRes.json()) as {
                 result?: boolean;
-                data?: { name?: string | null };
+                data?: { total: number };
               };
               if (
-                preUserJson.result === true &&
-                preUserJson.data &&
-                (!preUserJson.data.name || !preUserJson.data.name.trim())
+                roomJson.result === true &&
+                roomJson.data &&
+                roomJson.data.total > 0
               ) {
-                await waitForName();
-                setLoading(true); // re-show global loading after name entry
+                return { path: "/plan-list" };
               }
-            } catch {
-              // name check 실패 시 무시
-            }
-            try {
-              // 방 참여 API 호출
-              await fetchWithAuth(`/plan/room/${shareCode}`, {
-                method: "POST",
-              });
             } catch (err) {
-              console.error("Failed to join room after login:", err);
-            } finally {
-              clearShareAfterLogin();
-              // useKakaoAuth 가 /share/CODE 를 returnPath 로도 저장해 두는데
-              // 여기서 지우지 않으면 다음 로그인이 그 공유 페이지로 끌려간다.
-              clearReturnPathAfterLogin();
-              resetData();
-              go(() => router.replace("/plan-list"));
+              console.error(
+                "Failed to fetch room list during login redirect:",
+                err,
+              );
             }
-            return;
-          }
 
-          // 저장된 돌아가기 경로 확인
-          const returnPath = getReturnPathAfterLogin();
-          if (returnPath) {
-            clearReturnPathAfterLogin();
-            resetData();
-            go(() => router.replace(returnPath));
-            return;
-          }
+            // 개인 플랜도 없고 참여 중인 방도 없으면 온보딩으로
+            return { path: "/setting", hard: true };
+          };
 
-          // 플랜이 이미 완성돼 있거나, 방금 게스트 설정을 이관해 완성된 경우 /main
-          if (hasCompletePlan || migratedSetting) {
-            if (pathname === "/main") {
-              await onSuccessFromMain?.();
-            }
-            resetData();
-            go(() => router.replace("/main"));
-            return;
-          }
-
-          // 개인 플랜이 불완전한 경우 참여 중인 방이 있는지 확인
-          try {
-            const roomRes = await fetchWithAuth("/plan/room/list");
-            const roomJson = (await roomRes.json()) as {
-              result?: boolean;
-              data?: { total: number };
-            };
-            if (
-              roomJson.result === true &&
-              roomJson.data &&
-              roomJson.data.total > 0
-            ) {
-              resetData();
-              go(() => router.replace("/plan-list"));
+          const destination = await resolveDestination();
+          resetData();
+          go(() => {
+            if (destination.hard) {
+              window.location.href = destination.path;
               return;
             }
-          } catch (err) {
-            console.error(
-              "Failed to fetch room list during login redirect:",
-              err,
-            );
-          }
-
-          // 개인 플랜도 없고 참여 중인 방도 없으면 /setting으로
-          go(() => {
-            window.location.href = "/setting";
+            router.replace(destination.path);
           });
         } else {
           clearTimeout(timeoutId);
