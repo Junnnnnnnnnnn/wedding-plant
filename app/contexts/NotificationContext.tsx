@@ -10,7 +10,12 @@ import React, {
   useMemo,
 } from "react";
 import { useParams, usePathname } from "next/navigation";
-import { getApiBaseUrl, getToken, getPlanUserIdFromToken } from "@/lib/api";
+import {
+  AUTH_TOKEN_CHANGED_EVENT,
+  getApiBaseUrl,
+  getToken,
+  getPlanUserIdFromToken,
+} from "@/lib/api";
 import NotificationToast from "../components/NotificationToast";
 
 /** SSE 재연결: 첫 지연 3초에서 시작해 2배씩, 최대 1분, 6회까지만 시도 */
@@ -304,13 +309,18 @@ export function NotificationProvider({
     [showToast],
   );
 
-  // 컴포넌트 마운트 시 유저 정보를 가져와서 채팅방 구독 및 카운트 초기화
+  // 유저 정보를 가져와 채팅방 구독 및 카운트 초기화.
+  //
+  // 예전에는 마운트 시점에 토큰이 있어야만 동작했고 의존성이 전부 안정적이라
+  // 1회만 실행됐다. OAuth 콜백 착지 시점엔 아직 앱 JWT 가 없고, 로그인 후에도
+  // Provider 가 언마운트되지 않아 미읽음 배지가 0 으로 남았다.
+  // 토큰 변경 이벤트를 구독해 로그인 직후에도 초기화한다.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const token = getToken();
-    if (!token) return;
+    if (typeof window === "undefined") return undefined;
 
     const initNotifications = async () => {
+      const token = getToken();
+      if (!token) return;
       try {
         const userRes = await fetchApi("/plan/user");
         if (!userRes.ok) return;
@@ -357,6 +367,13 @@ export function NotificationProvider({
     };
 
     initNotifications();
+
+    const handleTokenChanged = () => {
+      initNotifications();
+    };
+    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, handleTokenChanged);
+    return () =>
+      window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, handleTokenChanged);
   }, [subscribeToChatRooms, updateRoomUnreadCount, updateUnreadCount]);
 
   // 컴포넌트 언마운트 시 모든 연결/재연결 타이머 종료
