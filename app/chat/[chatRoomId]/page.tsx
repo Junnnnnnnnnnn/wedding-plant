@@ -512,6 +512,9 @@ export default function ChatPage() {
   const [showNameEditModal, setShowNameEditModal] = useState(false);
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // 초기 로드가 실패하면 빈 방으로 보였다. 오류를 화면에 드러내고 재시도를 준다.
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [, forceUpdate] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -717,6 +720,7 @@ export default function ChatPage() {
 
     const fetchChatInfo = async () => {
       setLoading(true);
+      setLoadError(false);
       try {
         await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -730,6 +734,10 @@ export default function ChatPage() {
           setLoading(false);
           return;
         }
+        // res.ok 를 안 보고 바로 json() 을 파싱했다. 403/500 이면 파싱이
+        // 실패하거나 result 가 false 라 조용히 넘어가고, 사용자에게는
+        // 이름도 메시지도 없는 빈 채팅방이 보였다.
+        if (!res.ok) throw new Error(`chat info failed: ${res.status}`);
         const json: ChatInfoResponse = await res.json();
         if (json.result && json.data) {
           setRoomName(json.data.name);
@@ -752,6 +760,8 @@ export default function ChatPage() {
             setShowLoginModal(true);
             return;
           }
+          if (!chatRes.ok)
+            throw new Error(`chat history failed: ${chatRes.status}`);
           const chatJson = await chatRes.json();
           if (chatJson.result && chatJson.data?.list) {
             const { list } = chatJson.data;
@@ -790,13 +800,18 @@ export default function ChatPage() {
           isLoadingMoreRef.current = false;
           setIsLoadingMore(false);
         }
+      } catch (err) {
+        console.error("Failed to load chat room:", err);
+        // 재시도할 수 있도록 가드를 풀어 준다
+        initialLoadDoneRef.current = false;
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
     };
 
     fetchChatInfo();
-  }, [chatRoomId, fetchWithAuth, scrollToBottom]);
+  }, [chatRoomId, fetchWithAuth, scrollToBottom, reloadKey]);
 
   // SSE 푸시 알림 연결
   useEffect(() => {
@@ -1070,6 +1085,23 @@ export default function ChatPage() {
               }
             }}
           >
+            {loadError && (
+              <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+                <p className="text-stone-500 text-sm font-medium">
+                  대화를 불러오지 못했습니다.
+                  <br />
+                  네트워크 상태를 확인한 뒤 다시 시도해 주세요.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setReloadKey((k) => k + 1)}
+                  className="h-11 px-6 rounded-full bg-[#ee2b8c] text-white text-sm font-bold shadow-lg shadow-[#ee2b8c33] active:scale-95 transition-transform"
+                >
+                  다시 시도
+                </button>
+              </div>
+            )}
+
             {/* History loading or initial messages would start here */}
             <ChatMessagesList
               messages={messages}

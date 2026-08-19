@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "motion/react";
 import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
-import { getToken } from "@/lib/api";
+import { getToken, getPlanUserIdFromToken } from "@/lib/api";
 import { parseLocalDate, getKstDate } from "@/lib/utils";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
 
@@ -47,6 +47,12 @@ function CalendarPageContent() {
   const { fetchWithAuth } = useApi();
   const { unreadCount } = useNotification();
   const [currentDate, setCurrentDate] = useState(getKstDate());
+  /**
+   * roomId 모드에서 내 권한. READ 면 플랜 추가 버튼을 감춘다.
+   * /main 은 이미 같은 판단을 하는데 캘린더에만 빠져 있어서, 읽기 전용
+   * 참여자에게도 "+" 가 보이고 눌러야만 실패를 알 수 있었다.
+   */
+  const [myRoomPermission, setMyRoomPermission] = useState<string | null>(null);
   /** API /plan/schedule/calendar 응답: day(YYYY-MM-DD) → 플랜 목록 */
   const [calendarData, setCalendarData] = useState<
     Record<string, CalendarPlanItem[]>
@@ -154,6 +160,41 @@ function CalendarPageContent() {
   useEffect(() => {
     fetchSchedules();
   }, [fetchSchedules]);
+
+  useEffect(() => {
+    const room = roomId?.trim();
+    if (!room || !getToken()) {
+      setMyRoomPermission(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetchWithAuth(
+          `/plan/room/${encodeURIComponent(room)}`,
+          { skipLoading: true },
+        );
+        if (!res.ok) return;
+        const json = (await res.json()) as {
+          result?: boolean;
+          data?: { members?: { planUserId?: string; permission?: string }[] };
+        };
+        if (cancelled || json.result !== true) return;
+        const myId = String(getPlanUserIdFromToken() ?? "").trim();
+        const me = json.data?.members?.find(
+          (m) => String(m.planUserId ?? "").trim() === myId,
+        );
+        setMyRoomPermission(
+          me?.permission ? me.permission.toUpperCase() : null,
+        );
+      } catch {
+        // 권한 조회 실패 시엔 기존처럼 버튼을 보여 준다(서버가 최종 판단)
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchWithAuth, roomId]);
 
   const daysInMonth = useMemo(() => {
     const lastDay = new Date(year, month + 1, 0).getDate();
@@ -265,6 +306,8 @@ function CalendarPageContent() {
   };
 
   const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+
+  const isReadOnly = myRoomPermission === "READ";
 
   const getAddPlanPath = (date?: {
     day: number;
@@ -405,13 +448,15 @@ function CalendarPageContent() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => router.push(getAddPlanPath())}
-          className="absolute bottom-28 right-6 w-14 h-14 bg-[#ee2b8c] text-white rounded-full flex items-center justify-center shadow-xl shadow-[#ee2b8c44] active:scale-95 transition-transform z-50"
-        >
-          <Plus className="w-8 h-8" strokeWidth={3} />
-        </button>
+        {!isReadOnly && (
+          <button
+            type="button"
+            onClick={() => router.push(getAddPlanPath())}
+            className="absolute bottom-28 right-6 w-14 h-14 bg-[#ee2b8c] text-white rounded-full flex items-center justify-center shadow-xl shadow-[#ee2b8c44] active:scale-95 transition-transform z-50"
+          >
+            <Plus className="w-8 h-8" strokeWidth={3} />
+          </button>
+        )}
 
         <BottomTabBar
           activeTab="home"
@@ -501,16 +546,18 @@ function CalendarPageContent() {
                   ))
                 )}
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(getAddPlanPath(selectedDateParams))
-                  }
-                  className="flex items-center justify-center gap-2 w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:text-[#ee2b8c] hover:border-[#ee2b8c33] hover:bg-[#ee2b8c05] transition-all font-bold text-sm mt-2"
-                >
-                  <Plus className="w-4 h-4" strokeWidth={3} />
-                  플랜 추가하기
-                </button>
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(getAddPlanPath(selectedDateParams))
+                    }
+                    className="flex items-center justify-center gap-2 w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:text-[#ee2b8c] hover:border-[#ee2b8c33] hover:bg-[#ee2b8c05] transition-all font-bold text-sm mt-2"
+                  >
+                    <Plus className="w-4 h-4" strokeWidth={3} />
+                    플랜 추가하기
+                  </button>
+                )}
               </div>
 
               <button

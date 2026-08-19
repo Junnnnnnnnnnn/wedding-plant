@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
@@ -31,6 +31,7 @@ export default function GuideOverlay({
   const [activeStepId, setActiveStepId] = useState<string | null>(null);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [mounted, setMounted] = useState(false);
+  const wasOpenRef = useRef(false);
 
   // Ensure we only render on the client
   useEffect(() => {
@@ -47,11 +48,16 @@ export default function GuideOverlay({
   }, [isOpen]);
 
   // 처음 열릴 때 첫 번째 스텝 스팟라이트 자동 표시
+  //
+  // 호출하는 세 페이지 모두 guideSteps 를 렌더마다 새 배열로 만들기 때문에,
+  // steps 를 의존성으로 두고 무조건 첫 스텝으로 되돌리면 부모가 리렌더될
+  // 때마다(예: SSE 미읽음 수 변경) 가이드가 1단계로 튕겼다.
+  // 닫힘 → 열림으로 바뀌는 순간에만 초기화한다.
   useEffect(() => {
-    if (isOpen && steps.length > 0) {
-      // Always start with the first step
+    if (isOpen && !wasOpenRef.current && steps.length > 0) {
       setActiveStepId(steps[0].id);
     }
+    wasOpenRef.current = isOpen;
   }, [isOpen, steps]);
 
   // Update rect on resize or scroll
