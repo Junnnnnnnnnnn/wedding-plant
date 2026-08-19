@@ -58,6 +58,15 @@ export default function KakaoLoginAlert({
   const [showNameModal, setShowNameModal] = useState(false);
   /** 마이그레이션 중 일부/전체가 실패했을 때 사용자에게 알릴 문구 */
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  /**
+   * 이관 실패 안내를 닫은 뒤에 실행할 이동.
+   *
+   * 예전에는 setAlertMessage 직후 곧바로 router.replace 를 불렀다.
+   * 이 컴포넌트는 로그인 착지 페이지에만 마운트돼 있어서, 이동과 동시에
+   * 언마운트되며 안내가 화면에 뜨지도 못하고 사라졌다. 게스트가 만든
+   * 플랜이 옮겨지지 않았는데 사용자는 아무것도 듣지 못했다.
+   */
+  const pendingNavRef = useRef<(() => void) | null>(null);
   const nameResolveRef = useRef<((name: string) => void) | null>(null);
 
   /** Shows the name modal and returns a Promise that resolves with the entered name. */
@@ -90,6 +99,18 @@ export default function KakaoLoginAlert({
         return;
       }
       let fetchedRoomId: number | null = null;
+      /** 이관 도중 사용자에게 알려야 할 문구 (있으면 이동 전에 먼저 보여준다) */
+      let pendingMessage: string | null = null;
+      /** 안내가 밀려 있으면 사용자가 확인을 누른 뒤에 이동한다 */
+      const go = (navigate: () => void) => {
+        if (!pendingMessage) {
+          navigate();
+          return;
+        }
+        pendingNavRef.current = navigate;
+        setAlertMessage(pendingMessage);
+        setLoading(false);
+      };
       /** 게스트 설정(예산·날짜·이름)을 이 로그인에서 이관했는지 */
       let migratedSetting = false;
       const controller = new AbortController();
@@ -224,9 +245,8 @@ export default function KakaoLoginAlert({
               }
 
               if (!settingSaved) {
-                setAlertMessage(
-                  "플랜 정보를 저장하지 못했습니다. 네트워크 확인 후 다시 시도해 주세요.",
-                );
+                pendingMessage =
+                  "플랜 정보를 저장하지 못했습니다. 네트워크 확인 후 다시 시도해 주세요.";
                 return true;
               }
               migratedSetting = true;
@@ -274,9 +294,7 @@ export default function KakaoLoginAlert({
             if (failedCount === 0) {
               clearGuestScheduleList();
             } else {
-              setAlertMessage(
-                `플랜 ${failedCount}건을 옮기지 못했습니다. 잠시 후 다시 시도해 주세요.`,
-              );
+              pendingMessage = `플랜 ${failedCount}건을 옮기지 못했습니다. 잠시 후 다시 시도해 주세요.`;
             }
             return false;
           };
@@ -317,7 +335,7 @@ export default function KakaoLoginAlert({
 
           const migrationBlocked = await migrateGuestData();
           if (migrationBlocked) {
-            router.replace("/main");
+            go(() => router.replace("/main"));
             return;
           }
           await syncLeftoverAgreement();
@@ -356,7 +374,7 @@ export default function KakaoLoginAlert({
               // 여기서 지우지 않으면 다음 로그인이 그 공유 페이지로 끌려간다.
               clearReturnPathAfterLogin();
               resetData();
-              router.replace("/plan-list");
+              go(() => router.replace("/plan-list"));
             }
             return;
           }
@@ -366,7 +384,7 @@ export default function KakaoLoginAlert({
           if (returnPath) {
             clearReturnPathAfterLogin();
             resetData();
-            router.replace(returnPath);
+            go(() => router.replace(returnPath));
             return;
           }
 
@@ -376,7 +394,7 @@ export default function KakaoLoginAlert({
               await onSuccessFromMain?.();
             }
             resetData();
-            router.replace("/main");
+            go(() => router.replace("/main"));
             return;
           }
 
@@ -393,7 +411,7 @@ export default function KakaoLoginAlert({
               roomJson.data.total > 0
             ) {
               resetData();
-              router.replace("/plan-list");
+              go(() => router.replace("/plan-list"));
               return;
             }
           } catch (err) {
@@ -404,7 +422,9 @@ export default function KakaoLoginAlert({
           }
 
           // 개인 플랜도 없고 참여 중인 방도 없으면 /setting으로
-          window.location.href = "/setting";
+          go(() => {
+            window.location.href = "/setting";
+          });
         } else {
           clearTimeout(timeoutId);
           clearToken();
@@ -445,7 +465,12 @@ export default function KakaoLoginAlert({
         isOpen={alertMessage !== null}
         message={alertMessage ?? ""}
         type="error"
-        onClose={() => setAlertMessage(null)}
+        onClose={() => {
+          setAlertMessage(null);
+          const navigate = pendingNavRef.current;
+          pendingNavRef.current = null;
+          navigate?.();
+        }}
       />
     </>
   );
