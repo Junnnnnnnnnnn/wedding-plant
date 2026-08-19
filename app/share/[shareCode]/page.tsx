@@ -31,6 +31,10 @@ export default function SharePage() {
 
     const joinRoom = async () => {
       try {
+        // 여기만은 공통 401 처리에 맡기지 않는다. 공유 코드를 다시
+        // 저장해야(setShareAfterLogin) 재로그인 후 참여가 이어지고,
+        // joinedCodes 에서도 빼 줘야 재시도가 가능하다. 공통 처리는
+        // 복귀 경로만 저장하므로 이 둘을 대신하지 못한다.
         const res = await fetchWithAuth(`/plan/room/${shareCode}`, {
           method: "POST",
           skipAuthHandling: true,

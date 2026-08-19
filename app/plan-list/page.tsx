@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { Plan, ChatRoom, Member } from "@/types";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
-import { getToken, clearToken } from "@/lib/api";
+import { getToken } from "@/lib/api";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
@@ -264,14 +264,11 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     try {
       await new Promise((r) => setTimeout(r, 400));
 
-      const userRes = await fetchWithAuth("/plan/user", {
-        skipLoading: true,
-        skipAuthHandling: true,
-      });
+      const userRes = await fetchWithAuth("/plan/user", { skipLoading: true });
+      // 401 은 ApiContext 가 공통 처리한다(토큰 정리 + 복귀 경로 저장 +
+      // 재로그인 안내). 예전에는 여기서 따로 처리하느라 복귀 경로가
+      // 저장되지 않아, 다시 로그인해도 /plan-list 로 돌아오지 못했다.
       if (userRes.status === 401) {
-        clearToken();
-        setLoginModalTitle("세션이 만료되었습니다. 다시 로그인해 주세요.");
-        setShowLoginModal(true);
         setListLoading(false);
         return;
       }
@@ -287,12 +284,8 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
 
       const res = await fetchWithAuth("/plan/room/list", {
         skipLoading: true,
-        skipAuthHandling: true,
       });
       if (res.status === 401) {
-        clearToken();
-        setLoginModalTitle("세션이 만료되었습니다. 다시 로그인해 주세요.");
-        setShowLoginModal(true);
         setListLoading(false);
         return;
       }

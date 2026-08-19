@@ -21,7 +21,6 @@ import {
   useState,
   type ReactElement,
 } from "react";
-import LoginRequiredModal from "../components/LoginRequiredModal";
 import FeedbackModal from "../components/FeedbackModal";
 import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
@@ -115,7 +114,6 @@ function ScheduleDetailPageContent() {
   const [detail, setDetail] = useState<ScheduleDetailData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteFeedbackModal, setShowDeleteFeedbackModal] = useState(false);
@@ -257,11 +255,16 @@ function ScheduleDetailPageContent() {
         const res = await fetchWithAuth(`/plan/schedule/${scheduleId}`, {
           method: "GET",
           signal: controller.signal,
-          skipAuthHandling: true,
         });
 
         if (res.status === 401) {
-          setShowLoginRequiredModal(true);
+          // 이 경로는 토큰이 있을 때만 도달한다(비로그인 게스트는 위에서
+          // 로컬 데이터로 처리하고 끝난다). 따라서 ApiContext 의 공통 401
+          // 처리가 토큰 정리·복귀 경로 저장·재로그인 안내를 모두 맡는다.
+          //
+          // 예전에는 skipAuthHandling 으로 공통 처리를 건너뛰고 자체 모달만
+          // 띄웠다. clearToken 을 하지 않아 만료된 토큰이 남았고, 모달을
+          // 닫아도 getToken() 이 참이라 이동조차 안 돼 화면에 갇혔다.
           setError("로그인이 필요합니다.");
         } else {
           const json = (await res.json().catch(() => null)) as unknown;
@@ -766,15 +769,6 @@ function ScheduleDetailPageContent() {
           scrollDirection={scrollDirection}
           showLoginButton={false}
           unreadCount={unreadCount}
-        />
-        <LoginRequiredModal
-          show={showLoginRequiredModal}
-          onClose={() => {
-            setShowLoginRequiredModal(false);
-            if (!getToken()) {
-              router.push("/");
-            }
-          }}
         />
         <FeedbackModal
           isOpen={showDeleteFeedbackModal}

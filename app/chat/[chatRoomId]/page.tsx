@@ -653,7 +653,10 @@ export default function ChatPage() {
       });
 
       if (res.status === 401) {
+        // 다른 401 처리와 달리 복귀 경로만 빠져 있었다. 재로그인 후
+        // 이 채팅방으로 돌아오지 못했다.
         clearToken();
+        setReturnPathAfterLogin(`/chat/${chatRoomId}`);
         setShowLoginModal(true);
         return;
       }
