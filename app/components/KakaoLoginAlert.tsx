@@ -281,11 +281,46 @@ export default function KakaoLoginAlert({
             return false;
           };
 
+          /**
+           * 게스트로 동의한 약관을 계정에 반영한다.
+           *
+           * 예전에는 이 동기화가 설정 이관(shouldMigrateSetting) 안에만
+           * 있었다. 그래서 이미 플랜이 있는 계정으로 로그인하면 게스트
+           * 동의가 백엔드에 올라가지 않고 sessionStorage 에 남아, 다음에
+           * 다시 약관 동의를 요구받았다. 이관 여부와 무관하게 남아 있으면
+           * 한 번 더 시도한다.
+           */
+          const syncLeftoverAgreement = async () => {
+            const leftover = getGuestAgreement();
+            if (!leftover || !planUser) return;
+            const { weddingDate, budget, name } = planUser;
+            // /plan/setting 은 이 셋을 함께 요구한다. 없으면 보낼 수 없다.
+            if (!weddingDate || !name?.trim()) return;
+            try {
+              const agreementRes = await fetchWithAuth("/plan/setting", {
+                method: "POST",
+                body: JSON.stringify({
+                  weddingDate,
+                  budget: Number(budget) || 0,
+                  name: name.trim(),
+                  requiredAgreementDate: leftover.requiredAgreementDate,
+                  ...(leftover.adAgreementDate && {
+                    adAgreementDate: leftover.adAgreementDate,
+                  }),
+                }),
+              });
+              if (agreementRes.ok) clearGuestAgreement();
+            } catch {
+              // 실패해도 로그인 흐름은 계속한다. 값은 남겨 다음에 재시도.
+            }
+          };
+
           const migrationBlocked = await migrateGuestData();
           if (migrationBlocked) {
             router.replace("/main");
             return;
           }
+          await syncLeftoverAgreement();
 
           // 공유 링크(shareCode) 복원 여부 확인
           const shareCode = getShareAfterLogin();

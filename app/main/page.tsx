@@ -50,7 +50,7 @@ import {
   HAS_COMPLETED_GUEST_SETTING_KEY,
 } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
-import { parseLocalDate, getKstDate } from "@/lib/utils";
+import { parseLocalDate, getKstDate, getDaysUntil } from "@/lib/utils";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 
 /** 정렬 옵션 → 버튼 표시용 라벨(가격/날짜/이름) + 방향 */
@@ -104,16 +104,7 @@ function formatWeddingDate(date?: {
 // 결혼식 날짜로부터 오늘까지의 D-day 계산 (일 단위)
 function getDDay(weddingDate?: { year: number; month: number; day: number }) {
   if (!weddingDate) return null;
-  const wedding = new Date(
-    weddingDate.year,
-    weddingDate.month - 1,
-    weddingDate.day,
-  );
-  const today = getKstDate();
-  wedding.setHours(0, 0, 0, 0);
-  const diffMs = wedding.getTime() - today.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  return diffDays;
+  return getDaysUntil(weddingDate);
 }
 
 /** GET /plan/user 응답의 data.members 항목 */

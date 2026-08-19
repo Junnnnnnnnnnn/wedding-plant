@@ -20,14 +20,22 @@ export default function TermsModal({
 
   useEffect(() => {
     setMounted(true);
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
+  }, []);
 
+  /**
+   * 닫혀 있을 때는 body 스타일을 건드리지 않는다.
+   *
+   * 예전에는 isOpen 이 false 여도 overflow 를 "unset" 으로 되돌렸다.
+   * /setting 은 네 개의 TermsModal 을 한꺼번에 마운트해 두는데, 그
+   * 마운트만으로 페이지가 걸어 둔 스크롤 락이 즉시 풀렸다.
+   * 열 때 직전 값을 기억했다가 닫을 때 그대로 되돌린다.
+   */
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = previous;
     };
   }, [isOpen]);
 

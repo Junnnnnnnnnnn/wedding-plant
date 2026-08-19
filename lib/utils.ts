@@ -43,3 +43,22 @@ export function getKstDateString(): string {
   const { year, month, day } = getKstToday();
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
+
+/**
+ * KST 오늘부터 대상 날짜까지 남은 "달력 일수". 지난 날짜는 음수.
+ *
+ * 예전에는 로컬 자정 두 개의 밀리초 차를 나눠 썼는데, 사이에 서머타임
+ * 전환이 끼면 차이가 86400000 의 배수가 아니게 되어 하루가 어긋났다
+ * (`Math.floor` 를 쓰던 D-day 는 90 대신 89 가 됐다).
+ * Date.UTC 는 서머타임이 없어 항상 정확히 나뉜다.
+ */
+export function getDaysUntil(target: {
+  year: number;
+  month: number;
+  day: number;
+}): number {
+  const today = getKstToday();
+  const targetUtc = Date.UTC(target.year, target.month - 1, target.day);
+  const todayUtc = Date.UTC(today.year, today.month - 1, today.day);
+  return Math.round((targetUtc - todayUtc) / 86400000);
+}

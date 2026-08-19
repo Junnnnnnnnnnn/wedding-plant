@@ -146,7 +146,16 @@ function BudgetDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const scheduleFetchingRef = useRef(false);
-  const isFirstFilterRun = useRef(true);
+  /**
+   * 마지막으로 조회한 필터. 탭·카테고리가 실제로 바뀌었을 때만 다시 받는다.
+   *
+   * 예전에는 필터 effect 의 의존성에 detailData 와 (fetchScheduleAll 을 통해)
+   * roomId 가 물려 있어서, 진입 시 loadData 가 이 둘을 세팅하는 순간
+   * effect 가 다시 돌아 count=10000 목록을 한 번 더 받아 왔다.
+   */
+  const lastFilterKeyRef = useRef<string | null>(null);
+  /** 필터 조합별 목록 캐시. 탭을 오갈 때마다 전량을 다시 받지 않는다. */
+  const scheduleCacheRef = useRef(new Map<string, ScheduleListItem[]>());
 
   const [activeTab, setActiveTab] = useState<"예정" | "사용">("예정");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
@@ -236,6 +245,12 @@ function BudgetDetailsPage() {
   /** 스케줄 목록 count=10000으로 전체 요청 (탭/카테고리 변경 시 사용) */
   const fetchScheduleAll = useCallback(async () => {
     if (!getToken() || scheduleFetchingRef.current) return;
+    const cacheKey = `${roomId ?? ""}|${activeTab}|${selectedCategory ?? ""}`;
+    const cached = scheduleCacheRef.current.get(cacheKey);
+    if (cached) {
+      setScheduleList(cached);
+      return;
+    }
     scheduleFetchingRef.current = true;
     try {
       const params = buildScheduleParams(1, activeTab, selectedCategory);
@@ -249,6 +264,7 @@ function BudgetDetailsPage() {
       };
       if (res.ok && json.result === true && json.data) {
         const list = json.data.list ?? [];
+        scheduleCacheRef.current.set(cacheKey, list);
         setScheduleList(list);
       } else {
         setScheduleList([]);
@@ -311,6 +327,8 @@ function BudgetDetailsPage() {
     setError(null);
     try {
       const scheduleParams = buildScheduleParams(1, "예정", null);
+      // 새로 불러오는 것이므로 이전 캐시는 버린다
+      scheduleCacheRef.current.clear();
 
       // 비로그인에서 가이드 본 뒤 로그인: POST has-seen 두 개 먼저 호출 후 GET /plan/user
       const seenMain =
@@ -418,6 +436,9 @@ function BudgetDetailsPage() {
       }
       if (scheduleRes.ok && scheduleJson?.result && scheduleJson.data) {
         const list = scheduleJson.data.list ?? [];
+        // 이 응답은 "예정 / 전체 카테고리" 조합이다. 그 키로 캐시해 두면
+        // 다른 탭에 갔다가 돌아올 때 다시 받지 않는다.
+        scheduleCacheRef.current.set(`${currentRoomId ?? ""}|예정|`, list);
         setScheduleList(list);
       } else {
         setScheduleList([]);
@@ -446,11 +467,15 @@ function BudgetDetailsPage() {
 
   /** 탭 또는 카테고리 변경 시 count=10000으로 전체 다시 로드 */
   useEffect(() => {
-    if (isFirstFilterRun.current) {
-      isFirstFilterRun.current = false;
+    if (!detailData) return;
+    const filterKey = `${activeTab}|${selectedCategory ?? ""}`;
+    if (lastFilterKeyRef.current === null) {
+      // 최초 진입분은 loadData 가 이미 받아 왔다
+      lastFilterKeyRef.current = filterKey;
       return;
     }
-    if (!detailData) return;
+    if (lastFilterKeyRef.current === filterKey) return;
+    lastFilterKeyRef.current = filterKey;
     if (!getToken()) {
       const guestList = getGuestScheduleList().map((p) => ({
         id: p.id,

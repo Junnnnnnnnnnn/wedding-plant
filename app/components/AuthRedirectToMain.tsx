@@ -21,6 +21,12 @@ export default function AuthRedirectToMain() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // 카카오 콜백 착지 직후에는 이전 계정의 토큰이 아직 남아 있을 수 있다.
+    // 그 토큰으로 /plan/user 를 부르면 남의 플랜이 완성돼 있다는 이유로
+    // /main 으로 튕겨, 새 토큰 교환이 끝나기 전까지 다른 계정 데이터가
+    // 잠깐 보였다. 이 구간의 라우팅은 KakaoLoginAlert 가 끝까지 책임진다.
+    if (new URLSearchParams(window.location.search).has("kakao_login")) return;
+
     const token = getToken();
     // JWT 없을 때(예: 로그인 없이 둘러보기 후 setting → main) /plan/user 요청 금지
     if (!token || !ENTRY_PATHS.includes(pathname)) return;

@@ -26,6 +26,20 @@ export default function DatePickerWheel({
   const [selectedMonth, setSelectedMonth] = useState(defaultDate.month);
   const [selectedDay, setSelectedDay] = useState(defaultDate.day);
 
+  /**
+   * 마지막으로 부모에 알린 값. 저장된 날짜가 이미 유효하면 마운트만으로
+   * onDateChange 를 태우지 않는다.
+   *
+   * 예전에는 화면에 들어가기만 해도 초기값이 그대로 부모로 올라가
+   * WeddingContext 를 통해 sessionStorage 에 다시 써졌다. 사용자가
+   * 아무것도 만지지 않았는데 저장 값이 확정되는 셈이었다.
+   */
+  const lastSentRef = useRef<string | null>(
+    initialDate
+      ? `${initialDate.year}-${initialDate.month}-${initialDate.day}`
+      : null,
+  );
+
   const yearRef = useRef<HTMLDivElement>(null);
   const monthRef = useRef<HTMLDivElement>(null);
   const dayRef = useRef<HTMLDivElement>(null);
@@ -123,14 +137,14 @@ export default function DatePickerWheel({
   }, [selectedYear, selectedMonth, selectedDay, setDayAndRef]);
 
   useEffect(() => {
-    const cb = onDateChangeRef.current;
-    if (cb) {
-      cb({
-        year: selectedYear,
-        month: selectedMonth,
-        day: selectedDay,
-      });
-    }
+    const key = `${selectedYear}-${selectedMonth}-${selectedDay}`;
+    if (lastSentRef.current === key) return;
+    lastSentRef.current = key;
+    onDateChangeRef.current?.({
+      year: selectedYear,
+      month: selectedMonth,
+      day: selectedDay,
+    });
   }, [selectedYear, selectedMonth, selectedDay]);
 
   const itemHeight = 48; // h-12 = 48px

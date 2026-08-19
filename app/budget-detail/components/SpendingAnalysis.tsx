@@ -3,7 +3,7 @@ import { HelpCircle } from "lucide-react";
 import { BudgetStats, Expense, Category } from "../types";
 
 const SAVINGS_TOOLTIP =
-  "초기 자본에서 사용한 금액을 뺀 나머지예요. 플러스면 아직 쓸 수 있는 여유 예산, 마이너스면 사용액이 초기 자본을 초과한 상태예요.";
+  "초기 자본에서 이미 '사용'한 금액만 뺀 값이에요. 위 카드의 '남은 금액'은 여기에 '예정' 금액까지 뺀 값이라 더 작습니다.";
 
 interface SpendingAnalysisProps {
   stats: BudgetStats;
@@ -26,7 +26,9 @@ const SpendingAnalysis: React.FC<SpendingAnalysisProps> = ({
     stats.initialCapital > 0
       ? Math.round((stats.usedTotal / stats.initialCapital) * 100)
       : 0;
-  // 초기 자본에서 usedAmount를 뺀 나머지
+  // 초기 자본에서 usedAmount만 뺀 값.
+  // 위 StatCard 의 "남은 금액"(초기 자본 - 예정 - 사용)과는 다른 수치다.
+  // 라벨 없이 숫자만 두었더니 같은 화면에 "남은 금액"이 두 값으로 보였다.
   const savings = stats.initialCapital - stats.usedTotal;
 
   useEffect(() => {
@@ -83,6 +85,7 @@ const SpendingAnalysis: React.FC<SpendingAnalysisProps> = ({
           <div
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-extrabold tracking-tight ${savings >= 0 ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"}`}
           >
+            <span className="opacity-70 font-bold">사용 후 잔액</span>
             <span>
               {savings >= 0 ? "+" : "-"}
               {Math.abs(savings).toLocaleString("ko-KR")}

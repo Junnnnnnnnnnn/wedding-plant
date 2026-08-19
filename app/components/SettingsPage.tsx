@@ -11,7 +11,7 @@ import {
   Heart,
   Sparkles,
 } from "lucide-react";
-import { parseLocalDate, getKstDate } from "@/lib/utils";
+import { parseLocalDate, getDaysUntil } from "@/lib/utils";
 import DatePickerModal from "./DatePickerModal";
 
 interface SettingsPageProps {
@@ -96,10 +96,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const daysRemaining = (() => {
     const d = parseLocalDate(formData.weddingDate);
     if (!d) return 0;
-    const today = getKstDate();
-    today.setHours(0, 0, 0, 0);
-    d.setHours(0, 0, 0, 0);
-    return Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return getDaysUntil({
+      year: d.getFullYear(),
+      month: d.getMonth() + 1,
+      day: d.getDate(),
+    });
   })();
 
   /** 미래는 D-N, 당일은 D-Day, 지난 날짜는 D+N */

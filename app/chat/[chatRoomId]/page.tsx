@@ -935,11 +935,22 @@ export default function ChatPage() {
       console.error("Socket connection error:", error);
     });
 
-    socket.on("error", (errorMessage: string) => {
-      console.error("Socket error:", errorMessage);
+    socket.on("error", (payload: unknown) => {
+      console.error("Socket error:", payload);
+      // string 으로 타이핑돼 있었지만 서버는 객체도 보낸다. 객체를 그대로
+      // 메시지에 넣으면 "Objects are not valid as a React child" 로 화면
+      // 전체가 크래시했다. 문자열이 아닌 건 일반 안내로 대체한다.
+      const raw =
+        typeof payload === "string"
+          ? payload
+          : (payload as { message?: unknown } | null)?.message;
+      const message =
+        typeof raw === "string" && raw.trim()
+          ? raw.trim()
+          : "채팅 연결에 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.";
       setAlertConfig({
         isOpen: true,
-        message: errorMessage,
+        message,
         type: "error",
       });
     });

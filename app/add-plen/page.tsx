@@ -71,6 +71,37 @@ const getColorByLabel = (label: string) => {
   return PASTEL_COLORS[index];
 };
 
+/**
+ * 제목에서 카테고리를 추천할 때 쓰는 매칭 규칙.
+ *
+ * 예전에는 단순히 `제목.includes(라벨)` 이었다. 그래서 "홀" 같은 한 글자
+ * 라벨이 "홀리데이 스냅"에, "기타" 가 "기타 소품"에 계속 따라붙었다.
+ *
+ * - 한 글자 라벨은 아예 추천하지 않는다 (신호 대비 잡음이 너무 크다)
+ * - 두 글자 라벨은 토큰 경계에 있을 때만 (문자열 처음·끝이거나 공백·구두점 옆)
+ * - 세 글자 이상은 종전대로 부분 문자열 매칭
+ */
+const TOKEN_BOUNDARY = /[\s,./·()[\]{}\-_|]/;
+
+function matchesCategoryLabel(inputText: string, rawLabel: string): boolean {
+  const label = rawLabel.trim().toLowerCase();
+  if (label.length < 2) return false;
+  if (label.length >= 3) return inputText.includes(label);
+
+  let from = 0;
+  for (;;) {
+    const at = inputText.indexOf(label, from);
+    if (at === -1) return false;
+    const before = at === 0 ? "" : inputText[at - 1];
+    const afterIndex = at + label.length;
+    const after = afterIndex >= inputText.length ? "" : inputText[afterIndex];
+    const okBefore = before === "" || TOKEN_BOUNDARY.test(before);
+    const okAfter = after === "" || TOKEN_BOUNDARY.test(after);
+    if (okBefore && okAfter) return true;
+    from = at + 1;
+  }
+}
+
 function AddPlanPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -147,6 +178,13 @@ function AddPlanPageContent() {
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  /**
+   * 게스트 저장을 이미 마쳤는지. 게스트 경로는 setIsSaving 을 켜지 않아
+   * 중복 제출 가드가 전혀 없었고, 저장 버튼을 빠르게 두 번 누르면
+   * 같은 플랜이 두 건 들어갔다. disabled 는 리렌더 후에야 적용되므로
+   * 동기적으로 막히는 ref 가 필요하다.
+   */
+  const guestSavedRef = useRef(false);
   const [showDuplicateCategoryModal, setShowDuplicateCategoryModal] =
     useState(false);
   const [showPlanSavedModal, setShowPlanSavedModal] = useState(false);
@@ -514,8 +552,11 @@ function AddPlanPageContent() {
               type: "SYSTEM" | "USER" | "ROOM";
             }>;
           };
-        };
-        if (!json.result || !json.data?.list) return;
+        } | null;
+        // .catch(() => null) 을 달아 놓고 null 이 아닌 타입으로 단언하고
+        // 있었다. 비-JSON 응답이면 json.result 에서 TypeError 가 나 바깥
+        // catch 로 삼켜지고, 카테고리 목록이 빈 채로 남았다.
+        if (!json?.result || !json.data?.list) return;
         const list = json.data.list
           .map((item) => ({
             id: item.id,
@@ -583,9 +624,9 @@ function AddPlanPageContent() {
             memo?: string | null;
             addCategoryNameList?: string[] | null;
           };
-        };
+        } | null;
 
-        if (!res.ok || !json.result || !json.data) {
+        if (!res.ok || !json?.result || !json.data) {
           setShowSystemErrorModal(true);
           return;
         }
@@ -680,9 +721,10 @@ function AddPlanPageContent() {
   useEffect(() => {
     if (inputValue.trim()) {
       const inputText = inputValue.trim().toLowerCase();
-      const results = categoriesForModal.filter((category) =>
-        inputText.includes(category.label.toLowerCase()),
-      );
+      const results = categoriesForModal
+        .filter((category) => matchesCategoryLabel(inputText, category.label))
+        // 더 구체적인(긴) 라벨을 위로 올린다
+        .sort((a, b) => b.label.length - a.label.length);
       setSearchResults(results);
     } else {
       setSearchResults([]);
@@ -1527,6 +1569,7 @@ function AddPlanPageContent() {
                   onClick={async () => {
                     if (!validateForm()) return;
                     if (!getToken()) {
+                      if (guestSavedRef.current) return;
                       const existing = getGuestScheduleList();
                       if (existing.length >= 3) {
                         setShowLoginRequiredModal(true);
@@ -1553,7 +1596,9 @@ function AddPlanPageContent() {
                           (c) => c.label,
                         ),
                       };
+                      guestSavedRef.current = true;
                       addGuestScheduleItem(guestItem);
+                      setIsSaving(true);
                       setShowPlanSavedModal(true);
                       return;
                     }

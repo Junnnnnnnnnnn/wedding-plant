@@ -51,13 +51,30 @@ const ApiContext = createContext<ApiContextType | undefined>(undefined);
 
 export function ApiProvider({ children }: { children: ReactNode }) {
   const [loadingCount, setLoadingCount] = useState(0);
+  const [manualLoading, setManualLoading] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
 
-  const setLoading = useCallback((value: boolean) => {
-    setLoadingCount((prev) => (value ? prev + 1 : Math.max(0, prev - 1)));
+  /** 진행 중인 요청 수. 요청 래퍼만 건드린다. */
+  const beginRequest = useCallback(() => {
+    setLoadingCount((prev) => prev + 1);
+  }, []);
+  const endRequest = useCallback(() => {
+    setLoadingCount((prev) => Math.max(0, prev - 1));
   }, []);
 
-  const loading = loadingCount > 0;
+  /**
+   * 수동 로딩은 요청 카운터와 분리된 별도 플래그다.
+   *
+   * 예전에는 setLoading 이 이름만 boolean 이고 실제로는 같은 카운터를
+   * 증감했다. 그래서 budget-detail·main·user 처럼 짝 없이
+   * setLoading(false) 만 부르는 화면이 무관한 진행 중 요청의 카운터를
+   * 깎아, 아직 끝나지 않은 요청의 오버레이가 먼저 사라졌다.
+   */
+  const setLoading = useCallback((value: boolean) => {
+    setManualLoading(value);
+  }, []);
+
+  const loading = loadingCount > 0 || manualLoading;
 
   const dismissSessionExpired = useCallback(() => {
     setSessionExpired(false);
@@ -91,7 +108,10 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   // 전체 화면 오버레이가 영영 사라지지 않는다. 복원 시 카운터를 비운다.
   useEffect(() => {
     const handlePageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) setLoadingCount(0);
+      if (e.persisted) {
+        setLoadingCount(0);
+        setManualLoading(false);
+      }
     };
     window.addEventListener("pageshow", handlePageShow);
     return () => window.removeEventListener("pageshow", handlePageShow);
@@ -100,7 +120,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const request = useCallback(
     async (url: string, options?: ApiRequestOptions) => {
       const skipLoading = options?.skipLoading === true;
-      if (!skipLoading) setLoading(true);
+      if (!skipLoading) beginRequest();
       try {
         const res = await fetch(url, {
           ...options,
@@ -112,10 +132,10 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         });
         return res;
       } finally {
-        if (!skipLoading) setLoading(false);
+        if (!skipLoading) endRequest();
       }
     },
-    [setLoading],
+    [beginRequest, endRequest],
   );
 
   const buildBackendUrl = useCallback((path: string) => {
@@ -129,7 +149,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     async (path: string, options?: ApiRequestOptions) => {
       const url = buildBackendUrl(path);
       const skipLoading = options?.skipLoading === true;
-      if (!skipLoading) setLoading(true);
+      if (!skipLoading) beginRequest();
       try {
         const headers: HeadersInit = {
           Accept: "application/json",
@@ -139,10 +159,10 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         const res = await fetch(url, { ...options, headers });
         return res;
       } finally {
-        if (!skipLoading) setLoading(false);
+        if (!skipLoading) endRequest();
       }
     },
-    [buildBackendUrl, setLoading],
+    [buildBackendUrl, beginRequest, endRequest],
   );
 
   const fetchWithAuth = useCallback(
@@ -150,7 +170,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       const token = getToken();
       const url = buildBackendUrl(path);
       const skipLoading = options?.skipLoading === true;
-      if (!skipLoading) setLoading(true);
+      if (!skipLoading) beginRequest();
       try {
         const headers: HeadersInit = {
           Accept: "application/json",
@@ -166,10 +186,10 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         }
         return res;
       } finally {
-        if (!skipLoading) setLoading(false);
+        if (!skipLoading) endRequest();
       }
     },
-    [buildBackendUrl, setLoading, handleUnauthorized],
+    [buildBackendUrl, beginRequest, endRequest, handleUnauthorized],
   );
 
   const value = useMemo(
