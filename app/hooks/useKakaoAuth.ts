@@ -7,6 +7,7 @@ import {
   getToken,
   setShareAfterLogin,
   setReturnPathAfterLogin,
+  clearReturnPathAfterLogin,
   isPlanDataComplete,
 } from "@/lib/api";
 
@@ -41,9 +42,14 @@ export function useKakaoAuth() {
       setTimeout(go, 150);
     };
 
-    const token = getToken();
-    if (!token) {
-      // 공유 링크(share)가 있으면 로그인 후 복원을 위해 저장
+    /**
+     * OAuth 로 나가기 전, 로그인 후 복귀에 필요한 값을 저장한다.
+     *
+     * 예전에는 이 처리가 `!token` 분기 안에만 있어서, 만료된 토큰이
+     * 남아 있으면 ?share= 링크가 통째로 무시됐다(토큰 존재 여부만 보고
+     * 유효성은 안 봤기 때문). 어느 경로로 나가든 항상 저장한다.
+     */
+    const rememberReturnTarget = () => {
       const share =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("share")
@@ -53,15 +59,24 @@ export function useKakaoAuth() {
       // 현재 경로 저장 (메인/랜딩 제외하고 목록 등 특정 페이지에서 온 경우)
       if (pathname !== "/" && pathname !== "/main") {
         setReturnPathAfterLogin(pathname);
+      } else {
+        // 랜딩·메인에서 시작했다면 이전에 남은 복귀 경로를 지운다.
+        // 취소된 로그인이 남긴 stale 값이 다음 로그인의 분기를 가로챘다.
+        clearReturnPathAfterLogin();
       }
+    };
 
-      // /main 에서 로그인 시 콜백에서 /main으로 보냄 → 플랜 데이터 있으면 /main 유지, 없으면 /setting으로
-      // / 에서 로그인 시 콜백에서 /로 보냄 → 플랜 데이터 확인 후 바로 /setting이나 /main으로 이동.
-      let url = "/api/auth/kakao";
-      if (pathname === "/main") url = "/api/auth/kakao?from=main";
-      else if (pathname === "/") url = "/api/auth/kakao?from=home";
+    /** /main → from=main, / → from=home (콜백의 착지 지점 결정) */
+    const oauthUrl = () => {
+      if (pathname === "/main") return "/api/auth/kakao?from=main";
+      if (pathname === "/") return "/api/auth/kakao?from=home";
+      return "/api/auth/kakao";
+    };
 
-      redirectToOAuth(url);
+    const token = getToken();
+    if (!token) {
+      rememberReturnTarget();
+      redirectToOAuth(oauthUrl());
       return;
     }
     try {
@@ -77,10 +92,12 @@ export function useKakaoAuth() {
       if (json.result === true && json.data && isPlanDataComplete(json.data)) {
         router.push("/main");
       } else {
-        redirectToOAuth("/api/auth/kakao");
+        rememberReturnTarget();
+        redirectToOAuth(oauthUrl());
       }
     } catch {
-      redirectToOAuth("/api/auth/kakao");
+      rememberReturnTarget();
+      redirectToOAuth(oauthUrl());
     } finally {
       if (!willRedirect) setLoading(false);
     }

@@ -101,24 +101,21 @@ export default function KakaoLoginAlert({
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
-        const data = (await res.json()) as {
-          data?: { token?: string };
-          result?: boolean;
-          error?: string;
-        };
 
-        if (res.status === 401) {
-          clearTimeout(timeoutId);
-          clearToken();
-          router.replace("/");
-          return;
-        }
+        // 상태 코드를 파싱보다 먼저 본다. 게이트웨이가 502·HTML 을 주면
+        // res.json() 이 먼저 throw 되어 아래 분기에 도달하지 못했다.
         if (!res.ok) {
-          clearTimeout(timeoutId);
           clearToken();
+          // 401 도 그냥 랜딩으로 보내면 사용자가 이유를 몰라 무한 재시도한다
           router.replace("/?login_error=1");
           return;
         }
+
+        const data = (await res.json().catch(() => null)) as {
+          data?: { token?: string };
+          result?: boolean;
+          error?: string;
+        } | null;
 
         const token = data?.data?.token;
         if (token) {
@@ -320,6 +317,9 @@ export default function KakaoLoginAlert({
               console.error("Failed to join room after login:", err);
             } finally {
               clearShareAfterLogin();
+              // useKakaoAuth 가 /share/CODE 를 returnPath 로도 저장해 두는데
+              // 여기서 지우지 않으면 다음 로그인이 그 공유 페이지로 끌려간다.
+              clearReturnPathAfterLogin();
               resetData();
               router.replace("/plan-list");
             }

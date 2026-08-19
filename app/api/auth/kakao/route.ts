@@ -14,13 +14,15 @@ export async function GET(request: NextRequest) {
   const clientId = process.env.KAKAO_REST_API_KEY;
 
   if (!redirectUri || !clientId) {
-    return NextResponse.json(
-      {
-        error:
-          "카카오 인증이 설정되지 않았습니다 (REST API 키 또는 Redirect URI)",
-      },
-      { status: 500 },
+    // 이 라우트는 window.location.href 로 문서 이동해 들어온다.
+    // JSON 을 반환하면 앱 UI 가 사라지고 돌아갈 버튼도 없는 화면이 뜬다.
+    // 콜백 라우트와 동일하게 랜딩으로 되돌린다.
+    console.error(
+      "카카오 인증이 설정되지 않았습니다 (REST API 키 또는 Redirect URI)",
     );
+    const url = new URL("/", request.url);
+    url.search = "login_error=1";
+    return NextResponse.redirect(url);
   }
 
   const from = request.nextUrl.searchParams.get("from") ?? "";

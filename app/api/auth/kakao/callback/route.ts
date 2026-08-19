@@ -59,6 +59,13 @@ export async function GET(request: NextRequest) {
   };
 
   if (error) {
+    // 사용자가 동의 화면에서 취소한 것(access_denied)은 오류가 아니다.
+    // 예전에는 이것도 login_error 로 보내 LoginErrorModal 이 멀쩡한
+    // 로그인 세션까지 지웠다. 원래 있던 화면으로 조용히 돌려보낸다.
+    if (error === "access_denied") {
+      const url = new URL(from === "main" ? "/main" : "/", request.url);
+      return clearStateCookie(NextResponse.redirect(url));
+    }
     return redirectToHome("?login_error=1");
   }
 

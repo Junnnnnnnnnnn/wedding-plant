@@ -5,6 +5,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check } from "lucide-react";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
+import CustomAlertModal from "../components/CustomAlertModal";
 import LandingHero from "../components/LandingHero";
 import TermsModal from "../components/TermsModal";
 import CelebrationEffects from "../components/CelebrationEffects";
@@ -46,6 +47,8 @@ function SettingPageContent() {
   const [showFourth, setShowFourth] = useState(false);
   const [showFifth, setShowFifth] = useState(false);
   const [showSeventh, setShowSeventh] = useState(false);
+  /** 플랜 설정 저장 실패 안내 */
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isDatePickerFadingOut, setIsDatePickerFadingOut] = useState(false);
   const [isBudgetFadingOut, setIsBudgetFadingOut] = useState(false);
@@ -326,10 +329,21 @@ function SettingPageContent() {
           }),
         });
         if (!res.ok) {
-          await res.json().catch(() => ({}));
+          // 예전에는 파싱만 하고 그대로 /main 으로 갔다. 사용자는 온보딩을
+          // 마쳤다고 믿지만 서버에는 아무것도 저장되지 않은 상태였다.
+          const body = await res.json().catch(() => null);
+          console.error("플랜 설정 저장 실패:", res.status, body);
+          setSaveError(
+            "설정을 저장하지 못했습니다. 네트워크 확인 후 다시 시도해 주세요.",
+          );
+          return;
         }
-      } catch {
-        // POST 실패해도 /main으로 이동
+      } catch (err) {
+        console.error("플랜 설정 저장 실패:", err);
+        setSaveError(
+          "설정을 저장하지 못했습니다. 네트워크 확인 후 다시 시도해 주세요.",
+        );
+        return;
       }
     }
     router.push("/main");
@@ -369,6 +383,12 @@ function SettingPageContent() {
   return (
     <div className="flex h-[100dvh] justify-center bg-[#fcfbfc] px-0 text-stone-900 lg:bg-white lg:px-6 overflow-hidden overscroll-none">
       <KakaoLoginAlert show={showKakaoLogin} />
+      <CustomAlertModal
+        isOpen={saveError !== null}
+        message={saveError ?? ""}
+        type="error"
+        onClose={() => setSaveError(null)}
+      />
       <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#fcfbfc] px-4 sm:px-6 py-8 overscroll-none grid-bg">
         {/* Decorative Blur Elements (match app/page.tsx) */}
         <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none" />
