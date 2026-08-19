@@ -30,6 +30,7 @@ import CountUp from "@/components/CountUp";
 import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import LoginRequiredModal from "../components/LoginRequiredModal";
+import CustomAlertModal from "../components/CustomAlertModal";
 import GuestPlanLimitModal from "../components/GuestPlanLimitModal";
 import SharePlanModal from "@/components/SharePlanModal";
 import NoPlanFoundModal from "../components/NoPlanFoundModal";
@@ -169,6 +170,20 @@ function getCategoryColor(categoryName?: string | null): string {
   }
 
   return colors[Math.abs(hash) % colors.length];
+}
+
+/**
+ * 정렬용 시각. 날짜가 없거나 파싱 불가면 null 을 돌려준다.
+ * (빈 문자열을 new Date 에 넣으면 NaN 이 되어 정렬이 무너진다)
+ */
+function getSortTime(item: {
+  startDate?: string | null;
+  createDate?: string | null;
+}): number | null {
+  const raw = item.startDate?.trim() || item.createDate?.trim() || "";
+  if (!raw) return null;
+  const t = new Date(raw).getTime();
+  return Number.isNaN(t) ? null : t;
 }
 
 /** startDate가 오늘보다 이전(지난 날짜)이면 true */
@@ -333,6 +348,8 @@ function MainPageContent() {
 
   // 로그인 및 공유 모달 상태
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  /** READ 권한 멤버가 쓰기 동작을 시도했을 때 안내 */
+  const [readOnlyNotice, setReadOnlyNotice] = useState<string | null>(null);
   const [loginRequiredTitle, setLoginRequiredTitle] = useState<
     string | undefined
   >(undefined);
@@ -1181,6 +1198,15 @@ function MainPageContent() {
     return ["전체", ...unique];
   }, [baseVisibleList]);
 
+  // 필터로 고른 카테고리의 마지막 플랜을 완료하면 그 칩이 목록에서
+  // 사라지는데 selectedCategory 는 남아, 다른 카테고리에 플랜이 있어도
+  // "모든 플랜을 완료했어요"만 보였다. 사라지면 전체로 되돌린다.
+  useEffect(() => {
+    if (selectedCategory === "전체") return;
+    if (currentTabCategories.includes(selectedCategory)) return;
+    setSelectedCategory("전체");
+  }, [currentTabCategories, selectedCategory]);
+
   const visibleScheduleList = useMemo(() => {
     const list =
       selectedCategory === "전체"
@@ -1198,16 +1224,23 @@ function MainPageContent() {
         case "price_asc":
           return (a.amount ?? 0) - (b.amount ?? 0);
         case "date_desc": {
-          const aDate = a.startDate ?? a.createDate ?? "";
-          const bDate = b.startDate ?? b.createDate ?? "";
-          if (!aDate && !bDate) return b.id - a.id;
-          return new Date(bDate).getTime() - new Date(aDate).getTime();
+          // ?? 는 빈 문자열을 걸러내지 못해 new Date("").getTime() 이 NaN 이
+          // 되고, comparator 가 NaN 을 반환하면 sort 가 "같음"으로 취급해
+          // 미정 항목이 섞인 목록의 순서가 예측 불가능해졌다.
+          const aTime = getSortTime(a);
+          const bTime = getSortTime(b);
+          if (aTime === null && bTime === null) return b.id - a.id;
+          if (aTime === null) return 1; // 날짜 없는 항목은 뒤로
+          if (bTime === null) return -1;
+          return bTime - aTime;
         }
         case "date_asc": {
-          const aDate = a.startDate ?? a.createDate ?? "";
-          const bDate = b.startDate ?? b.createDate ?? "";
-          if (!aDate && !bDate) return a.id - b.id;
-          return new Date(aDate).getTime() - new Date(bDate).getTime();
+          const aTime = getSortTime(a);
+          const bTime = getSortTime(b);
+          if (aTime === null && bTime === null) return a.id - b.id;
+          if (aTime === null) return 1;
+          if (bTime === null) return -1;
+          return aTime - bTime;
         }
         case "name_desc":
           return (b.title ?? "").localeCompare(a.title ?? "", "ko");
@@ -1384,6 +1417,12 @@ function MainPageContent() {
         setShowLoginRequiredModal(true);
         return;
       }
+      // 권한은 추가 버튼 노출에만 쓰이고 토글에는 검사가 없었다.
+      // READ 멤버가 체크하면 서버가 거절해 카운트만 깜빡였다 원복됐다.
+      if (String(myRoomPermission ?? "").toUpperCase() === "READ") {
+        setReadOnlyNotice("읽기 권한만 있어 플랜 상태를 변경할 수 없습니다.");
+        return;
+      }
       if (togglingIdsRef.current.has(id)) return;
       togglingIdsRef.current.add(id);
       setTogglingIds((prev) => new Set(prev).add(id));
@@ -1482,7 +1521,7 @@ function MainPageContent() {
         // togglingId 제거는 위에서 선언한 setTimeout(300ms)에서 담당함
       }
     },
-    [fetchWithAuth],
+    [fetchWithAuth, myRoomPermission],
   );
 
   // 공유 뷰(?share=)에서는 내 방 roomId 로 폴백하면 안 된다.
@@ -2387,6 +2426,12 @@ function MainPageContent() {
             }
           }}
           unreadCount={unreadCount}
+        />
+        <CustomAlertModal
+          isOpen={readOnlyNotice !== null}
+          message={readOnlyNotice ?? ""}
+          type="warning"
+          onClose={() => setReadOnlyNotice(null)}
         />
         <LoginRequiredModal
           show={showLoginRequiredModal}
