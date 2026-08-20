@@ -2380,7 +2380,9 @@ function MainPageContent() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4
-                              className={`font-user-content text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
+                              // 색 클래스를 겹쳐 쓰면 생성된 CSS 순서가 승자를
+                              // 정해 완료 표시가 흐려진다. 한쪽만 낸다.
+                              className={`font-user-content font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : "text-[#1b0d14]"}`}
                             >
                               {plan.title}
                             </h4>

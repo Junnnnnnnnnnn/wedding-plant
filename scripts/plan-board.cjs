@@ -67,6 +67,14 @@ const SCHEDULES = [
     status: "COMPLETED",
   },
   {
+    id: 7,
+    categoryName: "상견례",
+    title: "양가 상견례 식사",
+    amount: 45,
+    startDate: "2026-08-09",
+    status: "COMPLETED",
+  },
+  {
     id: 4,
     categoryName: "스드메",
     title: "본식 촬영",
@@ -320,7 +328,40 @@ const boxOf = (page, sel) =>
   });
   await wait(900);
   await page.screenshot({ path: path.join(OUT, "board-1280-calendar.png") });
-  console.log("캡처 board-1280-calendar.png");
+  const monthSummary = await page.evaluate(
+    () =>
+      [...document.querySelectorAll("span")]
+        .map((x) => x.innerText.trim())
+        .find((t) => t.startsWith("이번 달 지출")) ?? "(없음)",
+  );
+  console.log(`캡처 board-1280-calendar.png   ${monthSummary}`);
+
+  // 완료한 날을 눌러 금액이 목록에 뜨는지 본다 ("얼마를 왜 썼는지")
+  await page.evaluate(() => {
+    const cell = [...document.querySelectorAll("div")].find((d) =>
+      d.className?.includes?.("min-h-[100px]") &&
+      d.innerText.includes("웨딩홀"),
+    );
+    if (cell) cell.click();
+  });
+  await wait(700);
+  await page.screenshot({ path: path.join(OUT, "board-1280-day.png") });
+  const dayText = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll("button")].find((b) =>
+      b.innerText.includes("웨딩홀"),
+    );
+    return btn ? btn.innerText.replace(/\s+/g, " ").trim() : "(없음)";
+  });
+  console.log(`캡처 board-1280-day.png   ${dayText}`);
+  // 모달 하단의 "확인" 으로 닫는다. 헤더의 aria-label="닫기" 를 쓰면
+  // 캘린더 헤더의 X 까지 잡혀 /main 으로 나가 버린다.
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find(
+      (x) => x.innerText.trim() === "확인",
+    );
+    if (b) b.click();
+  });
+  await wait(600);
 
   // 보드로 복귀
   await page.evaluate(() => {

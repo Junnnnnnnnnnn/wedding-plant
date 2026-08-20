@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { parseLocalDate } from "@/lib/utils";
 import PlanTaskCardBody from "../components/PlanTaskCard";
 import {
@@ -118,8 +118,21 @@ export default function PlanBoard({
       const list = (groups.get(key) ?? [])
         .slice()
         .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""));
-      const sum = list.reduce((acc, i) => acc + (i.amount ?? 0), 0);
-      return { key, label: monthLabel(key), list, sum };
+      // 완료된 일정은 지우지 않고 아래로 모은다. "언제 얼마를 왜 썼는지"가
+      // 남아 있어야 하기 때문에, 숨기는 대신 예정과 갈라 놓는다.
+      const todo = list.filter((i) => i.status !== "COMPLETED");
+      const done = list.filter((i) => i.status === "COMPLETED");
+      const sumOf = (arr: BoardItem[]) =>
+        arr.reduce((acc, i) => acc + (i.amount ?? 0), 0);
+      return {
+        key,
+        label: monthLabel(key),
+        list,
+        todo,
+        done,
+        sum: sumOf(list),
+        doneSum: sumOf(done),
+      };
     });
   }, [items]);
 
@@ -268,6 +281,45 @@ export default function PlanBoard({
     );
   }
 
+  const renderCard = (item: BoardItem) => {
+    const done = item.status === "COMPLETED";
+    const isDragging = dragId === item.id;
+    return (
+      <div
+        key={item.id}
+        role="button"
+        tabIndex={0}
+        onPointerDown={(e) => handlePointerDown(e, item)}
+        onClick={() => onSelect(item.id)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect(item.id);
+          }
+        }}
+        // select-none: 마우스로 끌 때 카드 안 글자가 파랗게
+        // 잡히는 걸 막는다. 보드 카드는 본래 선택 대상이 아니다.
+        // 완료 카드는 기록으로 남기되 눈길은 예정 쪽에 두게 한다 —
+        // 그림자를 빼고 테두리를 중성색으로 낮춘다.
+        className={`select-none rounded-[20px] border p-4 text-left transition-all ${
+          canEdit ? "cursor-grab" : "cursor-pointer"
+        } ${isDragging ? "opacity-40" : "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#ee2b8c22]"} ${
+          item.id === selectedId
+            ? "border-[#ee2b8c66] shadow-[0_0_0_1px_#ee2b8c66]"
+            : done
+              ? "border-[#ece5e9]"
+              : "border-[#ee2b8c14]"
+        } ${done ? "bg-[#f8f6f7]" : "bg-white shadow-sm"}`}
+      >
+        <PlanTaskCardBody
+          item={item}
+          toggleDisabled={!canEdit || isPending(item.id)}
+          onToggle={canEdit ? () => handleToggle(item) : undefined}
+        />
+      </div>
+    );
+  };
+
   if (columns.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-10 text-center">
@@ -332,42 +384,7 @@ export default function PlanBoard({
                   isHover ? "bg-[#fff2f6]" : ""
                 }`}
               >
-                {col.list.map((item) => {
-                  const done = item.status === "COMPLETED";
-                  const isDragging = dragId === item.id;
-                  return (
-                    <div
-                      key={item.id}
-                      role="button"
-                      tabIndex={0}
-                      onPointerDown={(e) => handlePointerDown(e, item)}
-                      onClick={() => onSelect(item.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          onSelect(item.id);
-                        }
-                      }}
-                      // select-none: 마우스로 끌 때 카드 안 글자가 파랗게
-                      // 잡히는 걸 막는다. 보드 카드는 본래 선택 대상이 아니다.
-                      className={`select-none rounded-[20px] border p-4 text-left shadow-sm transition-all ${
-                        canEdit ? "cursor-grab" : "cursor-pointer"
-                      } ${isDragging ? "opacity-40" : "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#ee2b8c22]"} ${
-                        item.id === selectedId
-                          ? "border-[#ee2b8c66] shadow-[0_0_0_1px_#ee2b8c66]"
-                          : "border-[#ee2b8c14]"
-                      } ${done ? "bg-[#faf8f9]" : "bg-white"}`}
-                    >
-                      <PlanTaskCardBody
-                        item={item}
-                        toggleDisabled={!canEdit || isPending(item.id)}
-                        onToggle={
-                          canEdit ? () => handleToggle(item) : undefined
-                        }
-                      />
-                    </div>
-                  );
-                })}
+                {col.todo.map(renderCard)}
 
                 {canEdit && (
                   <button
@@ -378,6 +395,27 @@ export default function PlanBoard({
                     + 플랜 추가
                   </button>
                 )}
+
+                {/*
+                  완료한 일정은 지우지 않고 여기로 모은다. 지난 달 컬럼을
+                  펼치면 그 달에 무엇을 얼마에 끝냈는지가 그대로 남는다.
+                */}
+                {col.done.length > 0 && (
+                  <div className="mt-2 flex items-center gap-2 px-1">
+                    <span className="inline-flex items-center gap-1 text-[11.5px] font-bold tracking-tight text-[#a79ba3]">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                      완료 {col.done.length}
+                    </span>
+                    <span className="h-px flex-1 bg-[#efe8ec]" />
+                    {col.doneSum > 0 && (
+                      <span className="text-[11.5px] font-bold tracking-tight text-[#7a6c74]">
+                        {col.doneSum.toLocaleString("ko-KR")}만 원 씀
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {col.done.map(renderCard)}
               </div>
             </section>
           );

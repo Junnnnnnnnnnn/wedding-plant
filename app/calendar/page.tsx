@@ -34,8 +34,8 @@ interface ScheduleListItem {
 
 /**
  * GET /plan/schedule/calendar 응답의 day별 list 항목.
- * 백엔드는 현재 id·title만 내려주지만, status 등을 추가하면 그대로 화면에
- * 반영되도록 선택 필드로 열어 둔다. (게스트 모드는 로컬 데이터라 항상 채워진다)
+ * status·categoryName·amount 까지 내려온다 — 완료한 일정이 언제 얼마짜리였는지
+ * 달력에서 바로 보여야 하기 때문이다. 구버전 응답도 견디도록 선택 필드로 둔다.
  */
 interface CalendarPlanItem {
   id: number;
@@ -316,10 +316,9 @@ function CalendarPageContent() {
 
   // ── 보드 뷰 (≥768) ─────────────────────────────────────────────
   //
-  // 캘린더는 /plan/schedule/calendar 로 "그 달의 day 별 목록"을 받는데,
-  // 응답에 amount·status·categoryName 이 비어 오는 경우가 있어 달별 보드로는
-  // 부족하다. 보드는 /main 과 같은 /plan/schedule/list 를 한 번에 받아
-  // startDate 로 달을 나눈다.
+  // 캘린더는 /plan/schedule/calendar 로 "그 달의 day 별 목록"을 받는다.
+  // 보드는 달 경계를 넘나들며 끌어야 해서 그 달만 받는 응답으로는 모자라다.
+  // /main 과 같은 /plan/schedule/list 를 한 번에 받아 startDate 로 달을 나눈다.
   const [boardView, setBoardView] = useState<"board" | "calendar">("board");
   const [boardItems, setBoardItems] = useState<BoardItem[]>([]);
   const [boardLoading, setBoardLoading] = useState(false);
@@ -329,6 +328,31 @@ function CalendarPageContent() {
   );
   const isTabletUp = useIsTabletUp();
   const isDesktop = useIsDesktop();
+
+  /**
+   * 보고 있는 달의 합계. calendarData 는 앞뒤 달까지 합쳐 들고 있으므로
+   * 이 달의 날짜 키만 골라 센다. 완료를 따로 세는 게 핵심이다 —
+   * 캘린더를 지나간 달로 넘기면 그 달에 실제로 쓴 돈이 남아 있어야 한다.
+   */
+  const monthTotals = useMemo(() => {
+    const prefix = `${year}-${String(month + 1).padStart(2, "0")}-`;
+    let spent = 0;
+    let planned = 0;
+    let doneCount = 0;
+    Object.entries(calendarData).forEach(([day, list]) => {
+      if (!day.startsWith(prefix)) return;
+      list.forEach((item) => {
+        const amount = item.amount ?? 0;
+        if (item.status === "COMPLETED") {
+          spent += amount;
+          doneCount += 1;
+        } else {
+          planned += amount;
+        }
+      });
+    });
+    return { spent, planned, doneCount };
+  }, [calendarData, year, month]);
 
   /** 셀이 커지는 ≥768 에서는 일정 미리보기를 한 줄 더 보여준다 */
   const visibleEventCount = isTabletUp ? 3 : 2;
@@ -536,84 +560,124 @@ function CalendarPageContent() {
               onError={setBoardError}
             />
           ) : (
-            /* Calendar Grid Container */
-            <div className="grid grid-cols-7 px-4 content-start border-l border-t border-gray-50 md:px-8">
-              {/* Weekdays */}
-              {weekdays.map((d, i) => (
-                <div
-                  key={d}
-                  className={`text-center py-4 text-xs font-bold border-b border-r border-gray-50 ${
-                    i === 0
-                      ? "text-red-400"
-                      : i === 6
-                        ? "text-blue-400"
-                        : "text-gray-400"
-                  }`}
-                >
-                  {d}
+            <>
+              {(monthTotals.spent > 0 || monthTotals.planned > 0) && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 pb-3 md:px-8">
+                  {monthTotals.spent > 0 && (
+                    <span className="inline-flex items-baseline gap-1.5 text-[12.5px] text-[#7a6c74]">
+                      <Check
+                        className="w-3 h-3 self-center text-[#a79ba3]"
+                        strokeWidth={3}
+                      />
+                      이번 달 지출
+                      <b className="text-[13.5px] font-bold tracking-tight text-[#1b0d14]">
+                        {monthTotals.spent.toLocaleString("ko-KR")}만 원
+                      </b>
+                    </span>
+                  )}
+                  {monthTotals.planned > 0 && (
+                    <span className="inline-flex items-baseline gap-1.5 text-[12.5px] text-[#7a6c74]">
+                      예정
+                      <b className="text-[13.5px] font-bold tracking-tight text-[#ee2b8c]">
+                        {monthTotals.planned.toLocaleString("ko-KR")}만 원
+                      </b>
+                    </span>
+                  )}
                 </div>
-              ))}
-
-              {/* Days */}
-              {daysInMonth.map((dateObj, idx) => {
-                const daySchedules = getSchedulesForDay(
-                  dateObj.day,
-                  dateObj.month,
-                  dateObj.year,
-                );
-                const isToday =
-                  getKstDate().getDate() === dateObj.day &&
-                  getKstDate().getMonth() === dateObj.month &&
-                  getKstDate().getFullYear() === dateObj.year;
-
-                return (
+              )}
+              {/* Calendar Grid Container */}
+              <div className="grid grid-cols-7 px-4 content-start border-l border-t border-gray-50 md:px-8">
+                {/* Weekdays */}
+                {weekdays.map((d, i) => (
                   <div
-                    key={idx}
-                    onClick={() => handleDayClick(dateObj)}
-                    className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors md:min-h-[118px] md:p-1.5 ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
+                    key={d}
+                    className={`text-center py-4 text-xs font-bold border-b border-r border-gray-50 ${
+                      i === 0
+                        ? "text-red-400"
+                        : i === 6
+                          ? "text-blue-400"
+                          : "text-gray-400"
+                    }`}
                   >
-                    <div className="flex justify-center items-center mb-1">
-                      <span
-                        className={`text-xs font-bold ${
-                          !dateObj.isCurrentMonth
-                            ? "text-gray-300"
-                            : isToday
-                              ? "bg-[#ee2b8c] text-white w-5 h-5 flex items-center justify-center rounded-full"
-                              : idx % 7 === 0
-                                ? "text-red-400"
-                                : idx % 7 === 6
-                                  ? "text-blue-400"
-                                  : "text-gray-700"
-                        }`}
-                      >
-                        {dateObj.day}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-0.5 overflow-hidden">
-                      {daySchedules.slice(0, visibleEventCount).map((s) => (
-                        <div
-                          key={s.id}
-                          className={`font-user-content text-[8px] p-1 rounded-md truncate transition-colors md:text-[11px] md:px-1.5 md:py-1 ${
-                            s.status === "COMPLETED"
-                              ? "bg-gray-100 text-gray-400 line-through"
-                              : "bg-[#ee2b8c10] text-[#ee2b8c]"
+                    {d}
+                  </div>
+                ))}
+
+                {/* Days */}
+                {daysInMonth.map((dateObj, idx) => {
+                  const daySchedules = getSchedulesForDay(
+                    dateObj.day,
+                    dateObj.month,
+                    dateObj.year,
+                  );
+                  const isToday =
+                    getKstDate().getDate() === dateObj.day &&
+                    getKstDate().getMonth() === dateObj.month &&
+                    getKstDate().getFullYear() === dateObj.year;
+
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => handleDayClick(dateObj)}
+                      className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors md:min-h-[118px] md:p-1.5 ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
+                    >
+                      <div className="flex justify-center items-center mb-1">
+                        <span
+                          className={`text-xs font-bold ${
+                            !dateObj.isCurrentMonth
+                              ? "text-gray-300"
+                              : isToday
+                                ? "bg-[#ee2b8c] text-white w-5 h-5 flex items-center justify-center rounded-full"
+                                : idx % 7 === 0
+                                  ? "text-red-400"
+                                  : idx % 7 === 6
+                                    ? "text-blue-400"
+                                    : "text-gray-700"
                           }`}
                         >
-                          {s.title}
-                        </div>
-                      ))}
-                      {daySchedules.length > visibleEventCount && (
-                        <div className="flex justify-center mt-0.5">
-                          <div className="text-[10px] font-black text-[#ee2b8c] bg-[#ee2b8c0a] px-2 py-0.5 rounded-full border border-[#ee2b8c15] shadow-sm shadow-[#ee2b8c05]">
-                            +{daySchedules.length - visibleEventCount}
+                          {dateObj.day}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-0.5 overflow-hidden">
+                        {daySchedules.slice(0, visibleEventCount).map((s) => (
+                          <div
+                            key={s.id}
+                            className={`font-user-content flex items-baseline gap-1 text-[8px] p-1 rounded-md transition-colors md:text-[11px] md:px-1.5 md:py-1 ${
+                              s.status === "COMPLETED"
+                                ? "bg-gray-100 text-gray-400"
+                                : "bg-[#ee2b8c10] text-[#ee2b8c]"
+                            }`}
+                          >
+                            <span
+                              className={`truncate ${s.status === "COMPLETED" ? "line-through" : ""}`}
+                            >
+                              {s.title}
+                            </span>
+                            {/*
+                              쓴 돈은 셀에서 바로 보여야 달을 넘겨 가며
+                              "언제 얼마를 썼는지"를 훑을 수 있다. 좁은 폰에서는
+                              제목이 먼저라 감춘다.
+                            */}
+                            {s.amount ? (
+                              <span className="ml-auto hidden shrink-0 font-bold tabular-nums md:inline">
+                                {s.amount.toLocaleString("ko-KR")}
+                              </span>
+                            ) : null}
                           </div>
-                        </div>
-                      )}
+                        ))}
+                        {daySchedules.length > visibleEventCount && (
+                          <div className="flex justify-center mt-0.5">
+                            <div className="text-[10px] font-black text-[#ee2b8c] bg-[#ee2b8c0a] px-2 py-0.5 rounded-full border border-[#ee2b8c15] shadow-sm shadow-[#ee2b8c05]">
+                              +{daySchedules.length - visibleEventCount}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
 
@@ -686,13 +750,33 @@ function CalendarPageContent() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
+                        {/*
+                          text-[#1b0d14] 와 text-gray-400 을 같이 얹으면
+                          어느 쪽이 이길지 클래스 순서가 아니라 생성된 CSS
+                          순서가 정한다. 완료 표시가 사라지므로 하나만 낸다.
+                        */}
                         <p
-                          className={`font-bold text-[#1b0d14] truncate ${plan.status === "COMPLETED" ? "line-through text-gray-400" : ""}`}
+                          className={`font-bold truncate ${plan.status === "COMPLETED" ? "line-through text-gray-400" : "text-[#1b0d14]"}`}
                         >
                           {plan.title}
                         </p>
                         <p className="text-xs text-gray-400 font-bold">
                           {plan.categoryName}
+                          {plan.amount ? (
+                            <>
+                              {plan.categoryName ? " · " : ""}
+                              <span
+                                className={
+                                  plan.status === "COMPLETED"
+                                    ? "text-[#7a6c74]"
+                                    : "text-[#ee2b8c]"
+                                }
+                              >
+                                {plan.amount.toLocaleString("ko-KR")}만 원
+                                {plan.status === "COMPLETED" ? " 씀" : ""}
+                              </span>
+                            </>
+                          ) : null}
                         </p>
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-300" />
