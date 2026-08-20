@@ -15,6 +15,7 @@ export interface BoardItem {
   title: string;
   amount: number | null;
   startDate: string | null;
+  startTime?: string | null;
   status?: string | null;
 }
 

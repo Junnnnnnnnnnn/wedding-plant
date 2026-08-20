@@ -152,6 +152,78 @@ const PAGES = [
       await wait(2200);
       await page.screenshot({ path: path.join(OUT, `misc-${tag}-${w}.png`) });
       console.log(`캡처 misc-${tag}-${w}.png`);
+
+      // 일정 폼은 단계식이라 제목·카테고리를 채워야 일자·시간 카드가 나온다
+      if (tag === "addplen") {
+        const filled = await page.evaluate(() => {
+          const input = document.querySelector(
+            'input[placeholder="어떤 지출인가요?"]',
+          );
+          if (!input) return "제목 입력칸 없음";
+          const setter = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            "value",
+          ).set;
+          setter.call(input, "드레스 투어");
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          return "ok";
+        });
+        await wait(1200);
+        // "카테고리 선택" 을 눌러 모달을 열고 첫 항목을 고른다.
+        // 제목 추천 칩은 문구가 데이터에 따라 달라져 하네스가 흔들린다.
+        await page.evaluate(() => {
+          const btn = [...document.querySelectorAll("button")].find(
+            (b) => b.innerText.trim() === "카테고리 선택",
+          );
+          if (btn) btn.click();
+        });
+        await wait(900);
+        await page.evaluate(() => {
+          const btn = [...document.querySelectorAll("button")].find((b) =>
+            ["스드메", "예식장", "예물", "기타", "웨딩홀"].includes(
+              b.innerText.trim(),
+            ),
+          );
+          if (btn) btn.click();
+        });
+        await wait(1200);
+        // 결제 유형 → 금액까지 채워야 일자·시간 카드가 열린다
+        await page.evaluate(() => {
+          const btn = [...document.querySelectorAll("button")].find(
+            (b) => b.innerText.trim() === "카드",
+          );
+          if (btn) btn.click();
+        });
+        await wait(900);
+        await page.evaluate(() => {
+          const input = [...document.querySelectorAll("input")].find(
+            (i) => i.placeholder && i.placeholder.includes("0"),
+          );
+          if (!input) return;
+          const setter = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            "value",
+          ).set;
+          setter.call(input, "185");
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        await wait(1500);
+        await page.evaluate(() => {
+          document
+            .querySelector('input[type="time"]')
+            ?.scrollIntoView({ block: "center" });
+        });
+        await wait(500);
+        await page.screenshot({
+          path: path.join(OUT, `misc-addplen-form-${w}.png`),
+        });
+        const hasTime = await page.evaluate(
+          () => !!document.querySelector('input[type="time"]'),
+        );
+        console.log(
+          `캡처 misc-addplen-form-${w}.png   제목=${filled} 시간칸=${hasTime ? "있음" : "없음"}`,
+        );
+      }
     }
   }
 

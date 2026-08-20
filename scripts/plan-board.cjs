@@ -48,6 +48,7 @@ const SCHEDULES = [
     title: "드레스 투어",
     amount: null,
     startDate: "2026-08-23",
+    startTime: "11:00",
     status: "NORMAL",
   },
   {
@@ -64,6 +65,7 @@ const SCHEDULES = [
     title: "웨딩홀 계약금",
     amount: 620,
     startDate: "2026-08-02",
+    startTime: "15:00",
     status: "COMPLETED",
   },
   {
@@ -223,6 +225,7 @@ function installMocks(page) {
           title: s.title,
           categoryName: s.categoryName,
           amount: s.amount,
+          startTime: s.startTime ?? null,
           status: s.status,
         });
       });

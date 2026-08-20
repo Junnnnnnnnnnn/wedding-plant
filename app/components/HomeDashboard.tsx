@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/api";
-import { getKstDate, parseLocalDate } from "@/lib/utils";
+import { formatKoreanTime, getKstDate, parseLocalDate } from "@/lib/utils";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import ActivityPanel from "./ActivityPanel";
@@ -21,6 +21,8 @@ interface HomeDashboardProps {
   coupleName: string;
   /** "2026년 11월 14일 (토)". 날짜 미설정이면 null 이 온다 */
   weddingDateText: string | null;
+  /** 예식장 이름. 결혼식 날짜 옆에 붙는다 */
+  venue?: string | null;
   /**
    * 플랜 정보를 아직 못 받은 상태.
    *
@@ -85,6 +87,7 @@ function monthKey(d: Date): string {
 export default function HomeDashboard({
   coupleName,
   weddingDateText,
+  venue = null,
   planLoading,
   dDayLabel,
   dDayCount,
@@ -251,8 +254,14 @@ export default function HomeDashboard({
               <h1 className="font-user-content truncate text-[26px] font-semibold leading-tight tracking-tight text-[#1b0d14]">
                 {coupleName || "이름"}
               </h1>
-              <p className="mt-1.5 text-[13px] text-[#7a6c74]">
+              <p className="mt-1.5 truncate text-[13px] text-[#7a6c74]">
                 {weddingDateText ?? "결혼식 날짜를 설정해 주세요"}
+                {venue?.trim() ? (
+                  <>
+                    <span className="mx-1.5 text-[#e0d5db]">·</span>
+                    {venue.trim()}
+                  </>
+                ) : null}
               </p>
             </div>
             <div className="flex shrink-0 items-baseline gap-1.5 border-l border-stone-100 pl-5">
@@ -532,6 +541,12 @@ export default function HomeDashboard({
                       className={`block text-[11.5px] ${i === 0 ? "font-bold text-[#ee2b8c]" : "text-gray-400"}`}
                     >
                       {longDayLabel(item.startDate)}
+                      {formatKoreanTime(item.startTime) ? (
+                        <>
+                          <span className="mx-1 opacity-50">·</span>
+                          {formatKoreanTime(item.startTime)}
+                        </>
+                      ) : null}
                     </span>
                     <span className="mt-0.5 block text-[15px] font-bold tracking-tight text-[#1b0d14]">
                       {item.title}

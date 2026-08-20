@@ -4,6 +4,8 @@ export interface GuestScheduleItem {
   title: string;
   amount: number | null;
   startDate: string | null;
+  /** 시작 시각 "HH:mm". 날짜만 정하고 시간은 비워 둘 수 있다 */
+  startTime?: string | null;
   status?: string | null;
   /** client-only marker */
   _guest?: true;

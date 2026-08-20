@@ -122,6 +122,8 @@ interface PlanUserData {
   weddingDate: string;
   budget: number;
   name: string;
+  /** 예식장 이름. 프로필에서 넣지 않았으면 null */
+  weddingVenue?: string | null;
   roomId?: number | null;
   members?: PlanUserMember[];
   chatRooms?: { id: number; name: string }[];
@@ -136,6 +138,8 @@ interface ScheduleListItem {
   title: string;
   amount: number | null;
   startDate: string | null;
+  /** 시작 시각 "HH:mm". 안 정했으면 null */
+  startTime?: string | null;
   /** 등록일 (ISO 문자열). API에서 반환 시 사용 */
   createDate?: string | null;
   /** COMPLETED 일 때 체크박스·취소선·회색 표시 */
@@ -888,6 +892,7 @@ function MainPageContent() {
         name: sharedRoomUser.name ?? "",
         budget: String(sharedRoomUser.budget ?? 1000),
         date,
+        venue: null,
       };
     }
     if (apiPlanData && apiPlanData !== "none") {
@@ -896,6 +901,7 @@ function MainPageContent() {
         name: apiPlanData.name ?? "",
         budget: String(apiPlanData.budget ?? 1000),
         date,
+        venue: apiPlanData.weddingVenue ?? null,
       };
     }
     // JWT 없음 → 세션 스토리지에 있는 이름·날짜·예산 적용
@@ -903,6 +909,7 @@ function MainPageContent() {
       name: weddingData.name ?? "",
       budget: weddingData.budget ?? "1000",
       date: weddingData.date,
+      venue: null,
     };
   }, [shareCode, apiPlanData, sharedRoomUser, weddingData]);
 
@@ -2461,6 +2468,7 @@ function MainPageContent() {
       <HomeDashboard
         coupleName={displayData.name}
         weddingDateText={weddingDateText}
+        venue={displayData.venue}
         planLoading={isPlanLoading}
         dDayLabel={dDayLabel}
         dDayCount={dDay}

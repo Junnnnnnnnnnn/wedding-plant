@@ -20,7 +20,7 @@ import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { useIsDesktop, useIsTabletUp } from "../hooks/useMediaQuery";
 import { getToken, getPlanUserIdFromToken } from "@/lib/api";
-import { parseLocalDate, getKstDate } from "@/lib/utils";
+import { formatKoreanTime, parseLocalDate, getKstDate } from "@/lib/utils";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
 
 interface ScheduleListItem {
@@ -29,6 +29,7 @@ interface ScheduleListItem {
   title: string;
   amount: number | null;
   startDate: string | null;
+  startTime?: string | null;
   status?: string | null;
 }
 
@@ -42,6 +43,7 @@ interface CalendarPlanItem {
   title: string;
   categoryName?: string | null;
   amount?: number | null;
+  startTime?: string | null;
   status?: string | null;
 }
 
@@ -100,6 +102,7 @@ function CalendarPageContent() {
           title: s.title,
           categoryName: s.categoryName,
           amount: s.amount,
+          startTime: s.startTime ?? null,
           status: s.status,
         });
       });
@@ -265,6 +268,7 @@ function CalendarPageContent() {
       categoryName: item.categoryName ?? "",
       amount: item.amount ?? null,
       startDate: key,
+      startTime: item.startTime ?? null,
       status: item.status ?? undefined,
     }));
   };
@@ -432,34 +436,27 @@ function CalendarPageContent() {
       unreadCount={unreadCount}
       masterWidthClassName="lg:flex-1"
       detailWidthClassName="w-[318px] 2xl:w-[364px]"
+      /*
+        고른 게 없으면 pane 자체를 접는다(null 이 아니라 undefined).
+        보드는 가로 폭이 전부인 화면이라, 안내문만 띄운 320~360px 을
+        늘 물고 있으면 넓은 화면에서도 월 컬럼이 잘린다.
+      */
       detail={
-        isTabletUp ? (
-          selectedScheduleId ? (
-            <ScheduleDetailView
-              key={selectedScheduleId}
-              scheduleId={selectedScheduleId}
-              roomId={roomId}
-              from="calendar"
-              variant="inspector"
-              onClose={() => setSelectedScheduleId(null)}
-              onDeleted={() => {
-                setSelectedScheduleId(null);
-                fetchBoardItems();
-                fetchSchedules();
-              }}
-            />
-          ) : null
+        isTabletUp && selectedScheduleId ? (
+          <ScheduleDetailView
+            key={selectedScheduleId}
+            scheduleId={selectedScheduleId}
+            roomId={roomId}
+            from="calendar"
+            variant="inspector"
+            onClose={() => setSelectedScheduleId(null)}
+            onDeleted={() => {
+              setSelectedScheduleId(null);
+              fetchBoardItems();
+              fetchSchedules();
+            }}
+          />
         ) : undefined
-      }
-      detailEmpty={
-        <div className="flex h-full flex-col items-center justify-center gap-2.5 px-10 text-center">
-          <b className="text-[15px] font-bold text-stone-500">
-            플랜을 선택하세요
-          </b>
-          <span className="max-w-[240px] text-[13px] leading-relaxed text-gray-400">
-            카드를 누르면 금액·일자·위치·메모를 이 자리에서 바로 볼 수 있습니다.
-          </span>
-        </div>
       }
       bottomBarSlot={
         <BottomTabBar
@@ -762,9 +759,18 @@ function CalendarPageContent() {
                         </p>
                         <p className="text-xs text-gray-400 font-bold">
                           {plan.categoryName}
-                          {plan.amount ? (
+                          {formatKoreanTime(plan.startTime) ? (
                             <>
                               {plan.categoryName ? " · " : ""}
+                              {formatKoreanTime(plan.startTime)}
+                            </>
+                          ) : null}
+                          {plan.amount ? (
+                            <>
+                              {plan.categoryName ||
+                              formatKoreanTime(plan.startTime)
+                                ? " · "
+                                : ""}
                               <span
                                 className={
                                   plan.status === "COMPLETED"

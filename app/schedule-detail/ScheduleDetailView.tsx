@@ -29,7 +29,7 @@ import CustomAlertModal from "../components/CustomAlertModal";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { getToken, getPlanUserIdFromToken } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
-import { parseLocalDate } from "@/lib/utils";
+import { formatKoreanTime, parseLocalDate } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -46,6 +46,8 @@ type ScheduleDetailData = {
   payType?: "CASH" | "CREDIT" | "OTHER" | string | null;
   amount?: number | null;
   startDate?: string | null;
+  /** 시작 시각 "HH:mm". 안 정했으면 비어 있다 */
+  startTime?: string | null;
   location?: string | null;
   locationLat?: number | string | null;
   locationLng?: number | string | null;
@@ -253,6 +255,7 @@ export default function ScheduleDetailView({
         categoryName: guest.categoryName,
         amount: guest.amount ?? 0,
         startDate: guest.startDate,
+        startTime: guest.startTime ?? null,
         status:
           guest.status === "COMPLETED" || guest.status === "NORMAL"
             ? (guest.status as "COMPLETED" | "NORMAL")
@@ -544,6 +547,12 @@ export default function ScheduleDetailView({
               <Calendar className="w-3.5 h-3.5" />
               <span className="font-medium text-xs">
                 {formatDate(detail.startDate)}
+                {formatKoreanTime(detail.startTime) ? (
+                  <>
+                    <span className="mx-1 opacity-60">·</span>
+                    {formatKoreanTime(detail.startTime)}
+                  </>
+                ) : null}
               </span>
             </div>
             <div className="h-px bg-white/25 mb-3" />

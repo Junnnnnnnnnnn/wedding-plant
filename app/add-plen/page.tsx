@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   MessageCircle,
   ChevronRight,
+  Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { io, Socket } from "socket.io-client";
@@ -139,6 +140,8 @@ function AddPlanPageContent() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isDateUndecided, setIsDateUndecided] = useState(false);
+  /** 시작 시각 "HH:mm". 빈 문자열이면 "시간은 아직 안 정함" */
+  const [startTime, setStartTime] = useState("");
   const [paymentType, setPaymentType] = useState<
     "현금" | "카드" | "기타" | null
   >(null);
@@ -618,6 +621,7 @@ function AddPlanPageContent() {
             categoryName?: string;
             amount?: number;
             startDate?: string | null;
+            startTime?: string | null;
             payType?: string;
             location?: string | null;
             locationLat?: number | string | null;
@@ -658,6 +662,8 @@ function AddPlanPageContent() {
         } else {
           setIsDateUndecided(true);
         }
+
+        setStartTime(data.startTime?.trim() ?? "");
 
         const payType =
           data.payType && PAY_TYPE_FROM_API[data.payType]
@@ -1349,6 +1355,32 @@ function AddPlanPageContent() {
                         미정
                       </button>
                     </div>
+                    {/*
+                      시간은 선택이다. 날짜만 잡아 두는 일정이 훨씬 많아서
+                      비워 두는 걸 기본으로 하고, 날짜가 미정이면 아예 감춘다.
+                    */}
+                    {!isDateUndecided && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-stone-400 shrink-0" />
+                        <input
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          step={300}
+                          aria-label="시작 시각"
+                          className="flex-1 px-4 py-3 rounded-2xl border border-stone-200 bg-stone-50 text-base font-medium text-stone-700 outline-none transition-colors focus:border-[#ee2b8c]/40 focus:bg-white"
+                        />
+                        {startTime ? (
+                          <button
+                            type="button"
+                            onClick={() => setStartTime("")}
+                            className="px-4 py-3 rounded-2xl text-sm font-medium text-stone-400 border border-stone-200 bg-stone-50 transition-colors hover:bg-stone-100"
+                          >
+                            지우기
+                          </button>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                   {/* 위치 */}
                   <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
@@ -1584,6 +1616,7 @@ function AddPlanPageContent() {
                         startDate: isDateUndecided
                           ? null
                           : formatDate(selectedDate),
+                        startTime: isDateUndecided ? null : startTime || null,
                         status: "NORMAL",
                         location: location.trim() || "",
                         locationLat: mapCoords?.lat ?? 0,
@@ -1623,8 +1656,11 @@ function AddPlanPageContent() {
                       // 수정 시 필드를 빼면 PATCH 시맨틱상 "변경 없음"이라
                       // 날짜를 미정으로 되돌릴 수 없었다. null 을 명시한다.
                       if (editId) body.startDate = null;
+                      // 날짜가 미정이면 시각도 의미가 없다
+                      body.startTime = "";
                     } else {
                       body.startDate = formatDate(selectedDate);
+                      body.startTime = startTime || "";
                     }
                     if (!editId && roomId != null) {
                       body.roomId = roomId;

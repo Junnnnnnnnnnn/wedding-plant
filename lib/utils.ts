@@ -62,3 +62,23 @@ export function getDaysUntil(target: {
   const todayUtc = Date.UTC(today.year, today.month - 1, today.day);
   return Math.round((targetUtc - todayUtc) / 86400000);
 }
+
+/**
+ * "HH:mm" 을 "오전 11:00" 으로. 시간이 없으면 빈 문자열을 돌려주므로
+ * 부르는 쪽에서 `time && ...` 로 걸러 쓰면 된다.
+ *
+ * 일정의 시각은 선택 항목이라 대부분 비어 있다. 24시간 표기를 그대로
+ * 두면 "14:30" 이 결혼 준비 맥락에서 잘 안 읽혀 오전·오후로 바꾼다.
+ */
+export function formatKoreanTime(time?: string | null): string {
+  const t = time?.trim();
+  if (!t) return "";
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t);
+  if (!m) return "";
+  const hour = Number(m[1]);
+  const minute = m[2];
+  if (hour < 0 || hour > 23) return "";
+  const meridiem = hour < 12 ? "오전" : "오후";
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${meridiem} ${h12}:${minute}`;
+}

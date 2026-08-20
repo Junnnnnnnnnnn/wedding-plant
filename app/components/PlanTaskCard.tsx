@@ -1,7 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { parseLocalDate } from "@/lib/utils";
+import { formatKoreanTime, parseLocalDate } from "@/lib/utils";
 
 export interface PlanTaskItem {
   id: number;
@@ -9,6 +9,8 @@ export interface PlanTaskItem {
   title: string;
   amount: number | null;
   startDate: string | null;
+  /** 시작 시각 "HH:mm". 안 정했으면 비어 있다 */
+  startTime?: string | null;
   status?: string | null;
   /** 일정 장소. 홈의 "다가오는 일정"에서 쓴다 */
   location?: string | null;
@@ -89,7 +91,15 @@ export default function PlanTaskCardBody({
             {item.categoryName}
           </span>
         )}
-        <span>{formatTaskDay(item.startDate)}</span>
+        <span>
+          {formatTaskDay(item.startDate)}
+          {formatKoreanTime(item.startTime) ? (
+            <>
+              <span className="mx-1 opacity-50">·</span>
+              {formatKoreanTime(item.startTime)}
+            </>
+          ) : null}
+        </span>
         {item.amount ? (
           <span
             className={`font-bold tracking-tight ${done ? "text-[#a79ba3]" : "text-[#1b0d14]"}`}

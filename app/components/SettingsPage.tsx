@@ -10,6 +10,7 @@ import {
   Check,
   Heart,
   Sparkles,
+  MapPin,
 } from "lucide-react";
 import { parseLocalDate, getDaysUntil } from "@/lib/utils";
 import DatePickerModal from "./DatePickerModal";
@@ -18,6 +19,7 @@ interface SettingsPageProps {
   user: {
     name: string;
     weddingDate: string;
+    weddingVenue?: string | null;
     budget: number;
     profileImageUrl?: string | null;
     requiredAgreementDate?: string | null;
@@ -27,6 +29,7 @@ interface SettingsPageProps {
   onSave: (user: {
     name: string;
     weddingDate: string;
+    weddingVenue?: string | null;
     budget: number;
     requiredAgreementDate?: string | null;
     adAgreementDate?: string | null;
@@ -225,6 +228,27 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 >
                   <Calendar className="w-6 h-6 text-purple-600" />
                 </button>
+              </div>
+            </div>
+
+            {/*
+              예식장 이름. 비워 둘 수 있다 — 아직 안 정한 사람이 대부분이고,
+              넣어 두면 홈 상단에 결혼식 날짜와 나란히 붙는다.
+            */}
+            <div className="group space-y-2">
+              <div className="relative">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#ee2b8c] transition-colors">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="예식장 (선택)"
+                  value={formData.weddingVenue ?? ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, weddingVenue: e.target.value })
+                  }
+                  className="w-full h-16 pl-14 pr-6 bg-white border border-[#ee2b8c0a] rounded-3xl shadow-sm outline-none focus:ring-4 focus:ring-[#ee2b8c0a] focus:border-[#ee2b8c44] font-bold text-lg text-[#1b0d14] transition-all"
+                />
               </div>
             </div>
           </section>

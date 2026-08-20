@@ -22,6 +22,7 @@ interface PlanUserData {
   weddingDate: string;
   budget: number;
   name: string;
+  weddingVenue?: string | null;
   requiredAgreementDate?: string | null;
   adAgreementDate?: string | null;
 }
@@ -40,6 +41,7 @@ export default function UserPage() {
   const [userData, setUserData] = useState<{
     name: string;
     weddingDate: string;
+    weddingVenue?: string | null;
     budget: number;
     requiredAgreementDate?: string | null;
     adAgreementDate?: string | null;
@@ -54,6 +56,8 @@ export default function UserPage() {
         ? toDateString(weddingData.date)
         : getKstDateString(),
       budget: toBudget(weddingData.budget),
+      // 예식장은 백엔드에만 있다. 게스트는 넣을 곳이 없어 비워 둔다.
+      weddingVenue: null,
       requiredAgreementDate: null,
       adAgreementDate: null,
     });
@@ -75,6 +79,7 @@ export default function UserPage() {
         setUserData({
           name: d.name ?? "",
           weddingDate: d.weddingDate ?? getKstDateString(),
+          weddingVenue: d.weddingVenue ?? null,
           budget: toBudget(d.budget),
           requiredAgreementDate: d.requiredAgreementDate ?? null,
           adAgreementDate: d.adAgreementDate ?? null,
@@ -96,6 +101,7 @@ export default function UserPage() {
   const handleSave = async (user: {
     name: string;
     weddingDate: string;
+    weddingVenue?: string | null;
     budget: number;
     requiredAgreementDate?: string | null;
     adAgreementDate?: string | null;
@@ -124,6 +130,9 @@ export default function UserPage() {
           weddingDate: dateStr,
           budget: user.budget,
           name: user.name.trim(),
+          // 항상 보낸다. 빈 문자열이면 백엔드가 지운다 — 지우기를 표현할
+          // 방법이 없으면 한 번 넣은 예식장을 못 빼게 된다.
+          weddingVenue: (user.weddingVenue ?? "").trim(),
           requiredAgreementDate:
             user.requiredAgreementDate ?? getKstDateString(),
           ...(user.adAgreementDate
