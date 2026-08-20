@@ -12,6 +12,8 @@ interface AppShellProps {
   /** 데스크톱 레일의 활성 메뉴. 없으면 pathname 으로 결정 */
   activeRailView?: RailViewType;
   unreadCount?: number;
+  /** 레일 하단에 표시할 사용자 */
+  railUser?: { name: string; caption?: string | null } | null;
 
   /** 마스터 컬럼 내용 */
   children: React.ReactNode;
@@ -54,6 +56,7 @@ export default function AppShell({
   activeTab,
   activeRailView,
   unreadCount,
+  railUser = null,
   children,
   detail,
   detailEmpty,
@@ -72,7 +75,11 @@ export default function AppShell({
     <div
       className={cn("flex h-[100dvh] overflow-hidden bg-[#fcfbfc]", className)}
     >
-      <SideNavRail activeView={activeRailView} unreadCount={unreadCount} />
+      <SideNavRail
+        user={railUser}
+        activeView={activeRailView}
+        unreadCount={unreadCount}
+      />
 
       <div className="flex min-w-0 flex-1 xl:mx-auto xl:max-w-[1440px]">
         <div

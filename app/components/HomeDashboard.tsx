@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MessageCircle, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/api";
 import { getKstDate, parseLocalDate } from "@/lib/utils";
@@ -30,15 +30,17 @@ interface HomeDashboardProps {
    * 스켈레톤을 그려 텍스트를 내보내지 않는다.
    */
   planLoading: boolean;
+  /** "D-86" 전체 라벨 */
   dDayLabel: string;
+  /** 남은 일수. 시안처럼 숫자만 크게 쓰려고 따로 받는다 */
+  dDayCount: number | null;
+  /** GET /plan/user/amount/detail 의 plannedUseAmount (만원). 없으면 null */
+  plannedUseAmount: number | null;
   /** 만원 단위 */
   totalBudget: number;
-  usedBudget: number;
   remainingBudget: number;
   budgetUsagePercentage: number;
-  schedules: PlanTaskItem[];
-  scheduleLoading: boolean;
-  chatRooms: { id: number; name: string }[];
+  chatRooms: { id: number; name: string; lastMessage?: string | null }[];
   /** 참여 방. 예산·활동 조회 범위를 정한다 */
   roomId: string | null;
   /** READ 권한이면 추가·완료를 막는다 */
@@ -52,7 +54,22 @@ interface HomeDashboardProps {
 }
 
 /** 스택바에 쓰는 색. 진한 것부터 옅은 것 순으로 큰 항목에 붙인다 */
+const ROOM_COLORS = ["#ee2b8c", "#7c6cf0", "#f0a23c", "#059669", "#0ea5e9"];
+
+function roomColor(id: number): string {
+  return ROOM_COLORS[Math.abs(id) % ROOM_COLORS.length];
+}
+
 const STACK_COLORS = ["#ee2b8c", "#ff7ab5", "#ffa8cd", "#ffd0e3"];
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+/** "8월 23일 일요일" — 시안의 일정 표기 */
+function longDayLabel(startDate: string | null): string {
+  const d = startDate ? parseLocalDate(startDate) : null;
+  if (!d) return "날짜 미정";
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAYS[d.getDay()]}요일`;
+}
 
 function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -70,12 +87,11 @@ export default function HomeDashboard({
   weddingDateText,
   planLoading,
   dDayLabel,
+  dDayCount,
+  plannedUseAmount,
   totalBudget,
-  usedBudget,
   remainingBudget,
   budgetUsagePercentage,
-  schedules,
-  scheduleLoading,
   chatRooms,
   roomId,
   canEdit,
@@ -89,6 +105,49 @@ export default function HomeDashboard({
   const { fetchWithAuth } = useApi();
   const { getRoomUnreadCount } = useNotification();
   const [categories, setCategories] = useState<CategoryChartItem[]>([]);
+
+  /**
+   * 일정은 대시보드가 직접 받는다.
+   *
+   * /main 의 목록은 탭(예정/완료)에 묶여 있고 status 하나만 담는다. 대시보드는
+   * "이번 달 할 일"과 "이번 달 지출"에 완료 항목도 함께 써야 해서, 보드와 같이
+   * status 없이 전체를 한 번 받는다.
+   */
+  const [schedules, setSchedules] = useState<PlanTaskItem[]>([]);
+  const [scheduleLoading, setScheduleLoading] = useState(true);
+
+  const fetchSchedules = useCallback(async () => {
+    if (!getToken()) {
+      setScheduleLoading(false);
+      return;
+    }
+    try {
+      const params = new URLSearchParams({
+        page: "1",
+        count: "10000",
+        sort: "ASC",
+        sortColumn: "startDate",
+      });
+      const url = roomId?.trim()
+        ? `/plan/schedule/room/${encodeURIComponent(roomId.trim())}/list?${params.toString()}`
+        : `/plan/schedule/list?${params.toString()}`;
+      const res = await fetchWithAuth(url, { skipLoading: true });
+      const json = (await res.json().catch(() => null)) as {
+        result?: boolean;
+        data?: { list?: PlanTaskItem[] };
+      } | null;
+      if (json?.result === true && json.data?.list)
+        setSchedules(json.data.list);
+    } catch {
+      setSchedules([]);
+    } finally {
+      setScheduleLoading(false);
+    }
+  }, [fetchWithAuth, roomId]);
+
+  useEffect(() => {
+    fetchSchedules();
+  }, [fetchSchedules]);
 
   const fetchCategoryChart = useCallback(async () => {
     if (!getToken()) return;
@@ -151,6 +210,18 @@ export default function HomeDashboard({
     [categories],
   );
 
+  /** 이번 달에 완료로 잡힌 지출 합 (만원) */
+  const thisMonthSpent = useMemo(
+    () =>
+      schedules.reduce((sum, item) => {
+        if (item.status !== "COMPLETED") return sum;
+        const d = item.startDate ? parseLocalDate(item.startDate) : null;
+        if (!d || monthKey(d) !== thisMonth) return sum;
+        return sum + (item.amount ?? 0);
+      }, 0),
+    [schedules, thisMonth],
+  );
+
   const pct = (v: number) => (totalBudget > 0 ? (v / totalBudget) * 100 : 0);
 
   return (
@@ -185,9 +256,18 @@ export default function HomeDashboard({
               </p>
             </div>
             <div className="flex shrink-0 items-baseline gap-1.5 border-l border-stone-100 pl-5">
-              <b className="font-user-content text-[36px] font-bold leading-none tracking-[-0.05em] text-[#ee2b8c]">
-                {dDayLabel}
-              </b>
+              {dDayCount != null && dDayCount > 0 ? (
+                <>
+                  <b className="font-user-content text-[36px] font-bold leading-none tracking-[-0.05em] text-[#ee2b8c]">
+                    {dDayCount}
+                  </b>
+                  <span className="text-[12.5px] text-gray-400">일 남음</span>
+                </>
+              ) : (
+                <b className="font-user-content text-[30px] font-bold leading-none tracking-[-0.05em] text-[#ee2b8c]">
+                  {dDayLabel}
+                </b>
+              )}
             </div>
           </>
         )}
@@ -251,10 +331,40 @@ export default function HomeDashboard({
                       <PlanTaskCardBody
                         item={item}
                         toggleDisabled={!canEdit}
-                        onToggle={canEdit ? () => onToggle(item.id) : undefined}
+                        onToggle={
+                          canEdit
+                            ? () => {
+                                // 낙관적으로 자체 목록도 뒤집는다.
+                                // 실제 요청과 되돌리기는 /main 이 맡는다.
+                                setSchedules((prev) =>
+                                  prev.map((x) =>
+                                    x.id === item.id
+                                      ? {
+                                          ...x,
+                                          status:
+                                            x.status === "COMPLETED"
+                                              ? "NORMAL"
+                                              : "COMPLETED",
+                                        }
+                                      : x,
+                                  ),
+                                );
+                                onToggle(item.id);
+                              }
+                            : undefined
+                        }
                       />
                     </button>
                   ))}
+              {!scheduleLoading && canEdit && (
+                <button
+                  type="button"
+                  onClick={onAddPlan}
+                  className="w-[176px] shrink-0 rounded-[20px] border-[1.5px] border-dashed border-[#f0d9e5] p-4 text-left text-[14.5px] font-bold tracking-tight text-[#c9b8c2] transition-colors hover:border-[#ee2b8c66] hover:text-[#ee2b8c]"
+                >
+                  + {today.getMonth() + 1}월에 할 일 추가
+                </button>
+              )}
             </div>
           </section>
         )}
@@ -285,10 +395,10 @@ export default function HomeDashboard({
                 </div>
               </div>
               <div className="shrink-0 text-right text-[13px] text-gray-400">
-                지출/예정
+                이번 달 지출
                 <br />
                 <b className="font-user-content text-[16px] font-bold tracking-tight text-[#1b0d14]">
-                  {usedBudget.toLocaleString("ko-KR")}만원
+                  {thisMonthSpent.toLocaleString("ko-KR")}만원
                 </b>
               </div>
             </div>
@@ -350,9 +460,25 @@ export default function HomeDashboard({
 
             <div className="mt-5 flex items-center gap-3 border-t border-dashed border-[#f2eaee] pt-[18px]">
               <p className="m-0 flex-1 text-[12.5px] leading-relaxed text-[#7a6c74] break-keep">
-                전체 예산의{" "}
-                <b className="text-[#1b0d14]">{budgetUsagePercentage}%</b>를
-                쓰고 있어요.
+                {plannedUseAmount != null ? (
+                  <>
+                    예정된 지출까지 반영하면{" "}
+                    <b className="text-[#1b0d14]">
+                      {Math.max(
+                        0,
+                        remainingBudget - plannedUseAmount,
+                      ).toLocaleString("ko-KR")}
+                      만원
+                    </b>
+                    이 남습니다.
+                  </>
+                ) : (
+                  <>
+                    전체 예산의{" "}
+                    <b className="text-[#1b0d14]">{budgetUsagePercentage}%</b>를
+                    쓰고 있어요.
+                  </>
+                )}
               </p>
               {canEdit && (
                 <button
@@ -405,14 +531,7 @@ export default function HomeDashboard({
                     <span
                       className={`block text-[11.5px] ${i === 0 ? "font-bold text-[#ee2b8c]" : "text-gray-400"}`}
                     >
-                      {item.startDate
-                        ? (() => {
-                            const d = parseLocalDate(item.startDate);
-                            return d
-                              ? `${d.getMonth() + 1}월 ${d.getDate()}일`
-                              : "";
-                          })()
-                        : ""}
+                      {longDayLabel(item.startDate)}
                     </span>
                     <span className="mt-0.5 block text-[15px] font-bold tracking-tight text-[#1b0d14]">
                       {item.title}
@@ -423,12 +542,17 @@ export default function HomeDashboard({
                           {item.categoryName}
                         </span>
                       )}
-                      {item.amount ? (
-                        <span className="font-user-content font-bold tracking-tight text-[#1b0d14]">
-                          {item.amount.toLocaleString("ko-KR")}만원
+                      {item.location && (
+                        <span className="min-w-0 truncate">
+                          {item.location}
                         </span>
-                      ) : null}
+                      )}
                     </span>
+                    {item.amount ? (
+                      <span className="font-user-content mt-1 block text-[15px] font-bold tracking-tight text-[#1b0d14]">
+                        {(item.amount * 10000).toLocaleString("ko-KR")}원
+                      </span>
+                    ) : null}
                   </button>
                 ))}
               </div>
@@ -465,11 +589,21 @@ export default function HomeDashboard({
                         }
                         className="flex w-full min-w-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-[#faf7f9]"
                       >
-                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#ee2b8c0a] text-[#ee2b8c]">
-                          <MessageCircle className="h-[18px] w-[18px]" />
+                        <span
+                          className="grid h-9 w-9 shrink-0 place-items-center rounded-full font-user-content text-[12.5px] font-bold text-white"
+                          style={{ background: roomColor(room.id) }}
+                        >
+                          {room.name?.trim().charAt(0) || "채"}
                         </span>
-                        <span className="min-w-0 flex-1 truncate text-[13.5px] font-bold tracking-tight text-[#1b0d14]">
-                          {room.name}
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[13.5px] font-bold tracking-tight text-[#1b0d14]">
+                            {room.name}
+                          </span>
+                          {room.lastMessage && (
+                            <span className="mt-0.5 block truncate text-[12px] text-gray-400">
+                              {room.lastMessage}
+                            </span>
+                          )}
                         </span>
                         {unread > 0 && (
                           <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#ee2b8c] px-1 text-[10px] font-bold leading-none text-white">

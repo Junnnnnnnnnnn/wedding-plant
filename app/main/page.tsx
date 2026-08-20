@@ -140,6 +140,8 @@ interface ScheduleListItem {
   createDate?: string | null;
   /** COMPLETED 일 때 체크박스·취소선·회색 표시 */
   status?: string | null;
+  /** 장소. 대시보드의 "다가오는 일정"이 쓴다 */
+  location?: string | null;
 }
 
 const SCHEDULE_FETCH_COUNT = 10000;
@@ -1571,11 +1573,51 @@ function MainPageContent() {
         ? String(apiPlanData.roomId)
         : null);
 
+  /**
+   * 예정 지출. 예산 패널의 "예정된 지출까지 반영하면 …" 문구에 쓴다.
+   * GET /plan/user/amount/detail (방이면 /plan/room/amount/detail/{roomId})
+   */
+  const [plannedUseAmount, setPlannedUseAmount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!getToken() || isSharedView) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const url = roomIdForDetail
+          ? `/plan/room/amount/detail/${encodeURIComponent(roomIdForDetail)}`
+          : "/plan/user/amount/detail";
+        const res = await fetchWithAuth(url, { skipLoading: true });
+        const json = (await res.json().catch(() => null)) as {
+          result?: boolean;
+          data?: { plannedUseAmount?: number };
+        } | null;
+        if (!cancelled && json?.result === true && json.data) {
+          setPlannedUseAmount(json.data.plannedUseAmount ?? null);
+        }
+      } catch {
+        // 예산 패널의 부가 문구라 실패해도 조용히 넘어간다
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchWithAuth, isSharedView, roomIdForDetail]);
+
   return (
     <AppShell
       activeTab={roomId || shareCode ? "rooms" : "home"}
       activeRailView={roomId || shareCode ? "rooms" : "home"}
       unreadCount={unreadCount}
+      railUser={
+        displayData.name
+          ? {
+              name: displayData.name,
+              caption: weddingDateText
+                ? `${dDayLabel} · ${weddingDateText.replace(/^\d{4}년 /, "").replace(/ \(.\)$/, "")}`
+                : null,
+            }
+          : null
+      }
       gridBackground
       bottomBarSlot={
         <BottomTabBar
@@ -2419,12 +2461,11 @@ function MainPageContent() {
         weddingDateText={weddingDateText}
         planLoading={isPlanLoading}
         dDayLabel={dDayLabel}
+        dDayCount={dDay}
+        plannedUseAmount={plannedUseAmount}
         totalBudget={initialBudget}
-        usedBudget={usedBudget}
         remainingBudget={remainingBudget}
         budgetUsagePercentage={budgetUsagePercentage}
-        schedules={effectiveScheduleList}
-        scheduleLoading={!isListLoaded}
         chatRooms={chatRoomsForPanel}
         roomId={roomIdForDetail}
         canEdit={

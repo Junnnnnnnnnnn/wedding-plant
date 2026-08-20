@@ -10,6 +10,8 @@ export interface PlanTaskItem {
   amount: number | null;
   startDate: string | null;
   status?: string | null;
+  /** 일정 장소. 홈의 "다가오는 일정"에서 쓴다 */
+  location?: string | null;
 }
 
 export function formatTaskDay(startDate: string | null): string {

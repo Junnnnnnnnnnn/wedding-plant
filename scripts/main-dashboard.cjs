@@ -52,20 +52,63 @@ const CATEGORIES = [
   "신혼집",
 ];
 
-/** 리스트가 스크롤되는지 보려면 화면보다 길어야 한다 */
-const SCHEDULES = Array.from({ length: 18 }, (_, i) => {
-  const day = ((i * 3) % 27) + 1;
-  const month = 8 + Math.floor(i / 9);
-  return {
-    id: i + 1,
-    categoryName: CATEGORIES[i % CATEGORIES.length],
-    title: `${CATEGORIES[i % CATEGORIES.length]} 준비 ${i + 1}`,
-    amount: (i % 5) * 35 + 20,
-    startDate: `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
-    createDate: "2026-08-01T09:00:00+09:00",
-    status: i % 6 === 0 ? "COMPLETED" : "NORMAL",
-  };
-});
+/** 시안(B/D)과 같은 데이터. 레이아웃을 눈으로 대조하려고 그대로 맞췄다 */
+const SCHEDULES = [
+  {
+    id: 1,
+    categoryName: "스드메",
+    title: "드레스 투어",
+    amount: null,
+    startDate: "2026-08-23",
+    status: "NORMAL",
+    location: "청담 브라이덜",
+  },
+  {
+    id: 2,
+    categoryName: "예식장",
+    title: "예식장 2차 미팅",
+    amount: null,
+    startDate: "2026-08-29",
+    status: "NORMAL",
+    location: "그랜드하얏트 서울",
+  },
+  {
+    id: 3,
+    categoryName: "예식장",
+    title: "웨딩홀 계약금",
+    amount: 620,
+    startDate: "2026-08-02",
+    status: "COMPLETED",
+    location: null,
+  },
+  {
+    id: 4,
+    categoryName: "스드메",
+    title: "본식 촬영",
+    amount: 185,
+    startDate: "2026-09-12",
+    status: "NORMAL",
+    location: "아모레 스튜디오",
+  },
+  {
+    id: 5,
+    categoryName: "예물",
+    title: "예물 상담",
+    amount: null,
+    startDate: "2026-09-27",
+    status: "NORMAL",
+    location: "종로 귀금속거리",
+  },
+  {
+    id: 6,
+    categoryName: "청첩장",
+    title: "청첩장 발송",
+    amount: null,
+    startDate: "2026-10-10",
+    status: "NORMAL",
+    location: null,
+  },
+];
 
 function installMocks(page) {
   page.on("request", (req) => {
@@ -97,6 +140,13 @@ function installMocks(page) {
       return;
     }
 
+    if (/^\/plan\/chat\/message\/count\/\d+$/.test(p0)) {
+      const rid = Number(p0.split("/").pop());
+      req
+        .respond(ok({ count: rid === 101 ? 2 : rid === 102 ? 5 : 0 }))
+        .catch(() => {});
+      return;
+    }
     if (p0 === "/plan/user") {
       req
         .respond(
@@ -122,7 +172,23 @@ function installMocks(page) {
                 permission: "WRITE",
               },
             ],
-            chatRooms: [{ id: 101, name: "스드메" }],
+            chatRooms: [
+              {
+                id: 101,
+                name: "스드메",
+                lastMessage: "드레스 투어 23일 일요일 11시로 잡았어",
+              },
+              {
+                id: 102,
+                name: "항공 · 숙소",
+                lastMessage: "말레 직항이 40만원 더 비싸긴 한데",
+              },
+              {
+                id: 103,
+                name: "예물 · 예단",
+                lastMessage: "어머니가 종로 아는 곳 있으시대",
+              },
+            ],
           }),
         )
         .catch(() => {});
@@ -199,6 +265,22 @@ function installMocks(page) {
               },
               { categoryName: "신혼여행", totalAmount: 125, usedAmount: 125 },
             ],
+          }),
+        )
+        .catch(() => {});
+      return;
+    }
+    if (
+      p0 === "/plan/user/amount/detail" ||
+      p0.startsWith("/plan/room/amount/detail")
+    ) {
+      req
+        .respond(
+          ok({
+            initialCapital: 4200,
+            totalPlannedAndUsedAmount: 1340,
+            plannedUseAmount: 1850,
+            usedAmount: 1340,
           }),
         )
         .catch(() => {});
@@ -282,7 +364,7 @@ function installMocks(page) {
       waitUntil: "networkidle2",
       timeout: 60000,
     });
-    await wait(2000);
+    await wait(3500);
     await page.screenshot({ path: path.join(OUT, `main-${w}.png`) });
 
     // 플랜 리스트가 실제로 스크롤 가능한가
