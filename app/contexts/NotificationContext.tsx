@@ -44,6 +44,15 @@ interface NotificationContextType {
   resetUnreadCount: () => void;
   resetRoomUnreadCount: (roomId: number) => void;
   getRoomUnreadCount: (roomId: number) => number;
+  /**
+   * 지금 사용자가 보고 있는 채팅방을 알린다. 그 방의 토스트는 뜨지 않는다.
+   *
+   * 채팅이 /chat/[id] 라우트에만 있던 시절에는 pathname 으로 판단해도
+   * 충분했다. 넓은 화면에서 목록 옆 pane 으로 열리면 경로가 /plan-list 라
+   * 판단이 빗나가, 보고 있는 방의 메시지가 그대로 토스트로 떴다.
+   * 채팅 뷰가 마운트/언마운트 시 직접 호출한다.
+   */
+  setActiveRoomId: (roomId: string | number | null) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -64,13 +73,24 @@ export function NotificationProvider({
   const pathname = usePathname();
 
   // 현재 접속 중인 채팅방 ID를 Ref로 관리 (Clova Closure 문제 해결)
-  const currentRoomIdRef = useRef<string | null>(null);
+  //
+  // routeRoomIdRef : /chat/[id] 라우트에서 경로로 유추한 값 (fallback)
+  // activeRoomIdRef: 채팅 뷰가 setActiveRoomId 로 직접 알려준 값 (우선)
+  //
+  // pane 으로 열린 채팅은 경로가 /plan-list 라 라우트로는 알 수 없다.
+  // 명시 값이 있으면 그것을 쓰고, 없을 때만 경로로 떨어진다.
+  const routeRoomIdRef = useRef<string | null>(null);
+  const activeRoomIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const isChatPage = pathname?.startsWith("/chat/");
-    currentRoomIdRef.current =
+    routeRoomIdRef.current =
       isChatPage && params?.chatRoomId ? String(params.chatRoomId) : null;
   }, [pathname, params]);
+
+  const setActiveRoomId = useCallback((roomId: string | number | null) => {
+    activeRoomIdRef.current = roomId == null ? null : String(roomId);
+  }, []);
 
   const [toastState, setToastState] = useState<{
     show: boolean;
@@ -213,11 +233,10 @@ export function NotificationProvider({
                   return;
                 }
 
-                // 현재 유저가 이미 해당 채팅방에 있다면 알림 표시하지 않음
-                if (
-                  currentRoomIdRef.current &&
-                  String(roomId) === currentRoomIdRef.current
-                ) {
+                // 현재 유저가 이미 해당 채팅방을 보고 있다면 알림 표시하지 않음
+                const viewingRoomId =
+                  activeRoomIdRef.current ?? routeRoomIdRef.current;
+                if (viewingRoomId && String(roomId) === viewingRoomId) {
                   return;
                 }
 
@@ -398,6 +417,7 @@ export function NotificationProvider({
       resetUnreadCount,
       resetRoomUnreadCount,
       getRoomUnreadCount,
+      setActiveRoomId,
     }),
     [
       unreadCount,
@@ -408,6 +428,7 @@ export function NotificationProvider({
       resetUnreadCount,
       resetRoomUnreadCount,
       getRoomUnreadCount,
+      setActiveRoomId,
     ],
   );
 

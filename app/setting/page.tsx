@@ -389,7 +389,7 @@ function SettingPageContent() {
         type="error"
         onClose={() => setSaveError(null)}
       />
-      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#fcfbfc] px-4 sm:px-6 py-8 overscroll-none grid-bg">
+      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#fcfbfc] px-4 sm:px-6 py-8 overscroll-none grid-bg lg:max-w-[600px] lg:px-10 lg:py-12">
         {/* Decorative Blur Elements (match app/page.tsx) */}
         <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none" />
@@ -822,7 +822,7 @@ export default function SettingPage() {
     <Suspense
       fallback={
         <div className="flex h-[100dvh] justify-center bg-[#fcfbfc] px-0 lg:bg-white lg:px-6 overflow-hidden">
-          <div className="h-full w-full max-w-[500px] bg-[#fcfbfc] grid-bg" />
+          <div className="h-full w-full max-w-[500px] bg-[#fcfbfc] grid-bg lg:max-w-[600px]" />
         </div>
       }
     >

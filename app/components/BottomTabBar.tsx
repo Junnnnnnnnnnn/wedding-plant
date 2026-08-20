@@ -1,30 +1,13 @@
 "use client";
 
-import {
-  Home,
-  Search,
-  LayoutGrid,
-  Settings,
-  MessageCircle,
-} from "lucide-react";
+import { Home, MessageCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { TAB_ITEMS, TAB_ROUTES, TabType, pathnameToTab } from "./tabs";
 
-export type TabType = "home" | "feed" | "rooms" | "settings";
-
-const TAB_ROUTES: Record<TabType, string> = {
-  home: "/main",
-  feed: "/main",
-  rooms: "/plan-list",
-  settings: "/user",
-};
-
-function pathnameToTab(pathname: string): TabType {
-  if (pathname === "/main" || pathname === "/calendar") return "home";
-  if (pathname === "/plan-list") return "rooms";
-  if (pathname === "/user" || pathname === "/setting") return "settings";
-  return "home";
-}
+// 탭 정의는 tabs.ts 로 옮겼다. 좌측 레일(SideNavRail)과 같은 소스를 봐야
+// 탭 구성이 갈라지지 않는다. 기존 import 경로를 깨지 않도록 재export 한다.
+export type { TabType };
 
 interface BottomTabBarProps {
   /** 활성 탭. 없으면 pathname으로 자동 결정 */
@@ -56,12 +39,7 @@ export default function BottomTabBar({
     id: TabType;
     label: string;
     icon: typeof Home;
-  }> = [
-    { id: "home", label: "홈", icon: Home },
-    { id: "feed", label: "피드", icon: Search },
-    { id: "rooms", label: "참여 플랜", icon: LayoutGrid },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
+  }> = TAB_ITEMS;
 
   const handleClick = (tab: TabType) => {
     if (tab === "feed") {

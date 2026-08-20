@@ -54,3 +54,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scripts/*.cjs 하네스 산출물 (리포 루트에 캡처·요약을 떨군다)
+/baseline.txt
+/shot-*.png
+/main-*.png
+/planlist-*.png

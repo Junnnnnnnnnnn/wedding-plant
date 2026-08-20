@@ -118,7 +118,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       <div className="absolute top-1/2 -right-32 w-80 h-80 bg-[#ee2b8c05] rounded-full blur-3xl pointer-events-none" />
 
       {/* 헤더 + 닫기 버튼 */}
-      <header className="px-6 pt-12 pb-6 flex justify-between items-center relative z-10">
+      <header className="px-6 pt-12 pb-6 flex justify-between items-center relative z-10 w-full md:mx-auto md:max-w-[640px] md:px-8 md:pt-10">
         <div className="flex items-center gap-4">
           {/* 프로필 사진: 있으면 이미지, 없으면 이름 첫 글자 원형 */}
           {user.profileImageUrl ? (
@@ -153,7 +153,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         </button>
       </header>
 
-      <div className="flex-1 px-6 space-y-8 overflow-y-auto no-scrollbar pb-40 relative z-10">
+      <div className="flex-1 px-6 space-y-8 overflow-y-auto no-scrollbar pb-40 relative z-10 w-full md:mx-auto md:max-w-[640px] md:px-8 md:pb-16">
         {/* 결혼식 D-day 카드 */}
         <div className="bg-gradient-to-br from-[#ee2b8c] to-[#ff7eb3] p-6 rounded-[32px] text-white shadow-xl shadow-[#ee2b8c22] relative overflow-hidden">
           <Heart className="absolute -bottom-4 -right-4 w-32 h-32 opacity-10 rotate-12" />

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { io, Socket } from "socket.io-client";
+import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import { getToken, getApiBaseUrl } from "@/lib/api";
@@ -1082,9 +1083,8 @@ function AddPlanPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fcfbfc]">
-      <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
-      <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
+    <AppShell activeTab="home" activeRailView="home" gridBackground>
+      <div className="relative flex h-full min-h-0 w-full flex-col">
         <div className="absolute top-0 left-0 z-50 w-full pointer-events-none">
           <div className="px-6 py-4 pointer-events-auto">
             <button
@@ -1109,9 +1109,9 @@ function AddPlanPageContent() {
 
         <main
           ref={mainScrollRef}
-          className="flex flex-1 flex-col items-center overflow-y-auto px-6 pt-14 pb-24"
+          className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 pt-14 pb-24 md:px-8 md:pb-12"
         >
-          <div className="w-full pt-2">
+          <div className="w-full pt-2 md:max-w-[680px]">
             <div className="flex flex-col items-start justify-start">
               <span className="text-[32px] font-semibold text-[#ee2b8c] leading-none">
                 {editId ? "플랜 수정" : "계획을 추가해보세요"}
@@ -1132,7 +1132,7 @@ function AddPlanPageContent() {
             </div>
           )}
           {/* 폼 카드 영역 */}
-          <div className="mt-6 w-full space-y-5">
+          <div className="mt-6 w-full space-y-5 md:max-w-[680px]">
             {/* 제목 */}
             <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
               <label className="block text-sm font-semibold text-stone-600 mb-2">
@@ -1507,7 +1507,7 @@ function AddPlanPageContent() {
                       <div ref={mapContainerRef} className="mt-3 w-full">
                         <div
                           id="map"
-                          className="w-full h-[180px] rounded-2xl overflow-hidden border border-stone-200"
+                          className="w-full h-[180px] rounded-2xl overflow-hidden border border-stone-200 md:h-[260px] lg:h-[320px]"
                           style={{ pointerEvents: "auto" }}
                         />
                       </div>
@@ -1678,12 +1678,14 @@ function AddPlanPageContent() {
               </div>
             )}
         </main>
-        {/* 하단 탭바 - Sticky로 최상단에 고정 */}
-        <BottomTabBar
-          showLoginButton={false}
-          scrollDirection={scrollDirection}
-          unreadCount={unreadCount}
-        />
+        {/* 하단 탭바 — 모바일 전용. ≥768 은 셸의 좌측 레일이 대신한다 */}
+        <div className="md:hidden">
+          <BottomTabBar
+            showLoginButton={false}
+            scrollDirection={scrollDirection}
+            unreadCount={unreadCount}
+          />
+        </div>
         <LoginRequiredModal
           show={showLoginRequiredModal}
           onClose={() => setShowLoginRequiredModal(false)}
@@ -2065,7 +2067,7 @@ function AddPlanPageContent() {
           onClose={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
         />
       </div>
-    </div>
+    </AppShell>
   );
 }
 

@@ -11,9 +11,14 @@ import {
 import { ChevronLeft, ChevronRight, Plus, Check, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
+import CustomAlertModal from "../components/CustomAlertModal";
+import ScheduleDetailView from "../schedule-detail/ScheduleDetailView";
+import PlanBoard, { BoardItem } from "./PlanBoard";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
+import { useIsDesktop, useIsTabletUp } from "../hooks/useMediaQuery";
 import { getToken, getPlanUserIdFromToken } from "@/lib/api";
 import { parseLocalDate, getKstDate } from "@/lib/utils";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
@@ -309,6 +314,62 @@ function CalendarPageContent() {
 
   const isReadOnly = myRoomPermission === "READ";
 
+  // ── 보드 뷰 (≥768) ─────────────────────────────────────────────
+  //
+  // 캘린더는 /plan/schedule/calendar 로 "그 달의 day 별 목록"을 받는데,
+  // 응답에 amount·status·categoryName 이 비어 오는 경우가 있어 달별 보드로는
+  // 부족하다. 보드는 /main 과 같은 /plan/schedule/list 를 한 번에 받아
+  // startDate 로 달을 나눈다.
+  const [boardView, setBoardView] = useState<"board" | "calendar">("board");
+  const [boardItems, setBoardItems] = useState<BoardItem[]>([]);
+  const [boardLoading, setBoardLoading] = useState(false);
+  const [boardError, setBoardError] = useState<string | null>(null);
+  const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(
+    null,
+  );
+  const isTabletUp = useIsTabletUp();
+  const isDesktop = useIsDesktop();
+
+  /** 셀이 커지는 ≥768 에서는 일정 미리보기를 한 줄 더 보여준다 */
+  const visibleEventCount = isTabletUp ? 3 : 2;
+
+  const fetchBoardItems = useCallback(async () => {
+    if (!getToken()) {
+      setBoardItems(getGuestScheduleList() as BoardItem[]);
+      return;
+    }
+    setBoardLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: "1",
+        count: "10000",
+        sort: "ASC",
+        sortColumn: "startDate",
+      });
+      const url = roomId?.trim()
+        ? `/plan/schedule/room/${encodeURIComponent(roomId.trim())}/list?${params.toString()}`
+        : `/plan/schedule/list?${params.toString()}`;
+      const res = await fetchWithAuth(url, { skipLoading: true });
+      const json = (await res.json()) as {
+        result?: boolean;
+        data?: { list?: BoardItem[] };
+      };
+      setBoardItems(
+        json.result === true && json.data?.list ? json.data.list : [],
+      );
+    } catch {
+      setBoardItems([]);
+      setBoardError("플랜을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setBoardLoading(false);
+    }
+  }, [fetchWithAuth, roomId]);
+
+  useEffect(() => {
+    if (!isTabletUp) return;
+    fetchBoardItems();
+  }, [isTabletUp, fetchBoardItems]);
+
   const getAddPlanPath = (date?: {
     day: number;
     month: number;
@@ -326,34 +387,123 @@ function CalendarPageContent() {
     return `/add-plen?${params.toString()}`;
   };
 
-  return (
-    <div className="h-[100dvh] bg-[#fcfbfc] overflow-hidden">
-      {/* Desktop Letterbox Background */}
-      <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
+  const showBoard = isTabletUp && boardView === "board";
 
-      <div className="h-full max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col z-10">
+  /** 넓은 화면은 옆 인스펙터에서 열고, 좁은 화면은 지금처럼 상세 라우트로 간다 */
+  const openSchedule = (id: number) => {
+    if (isDesktop) {
+      setSelectedScheduleId(id);
+      setIsModalOpen(false);
+      return;
+    }
+    router.push(
+      `/schedule-detail?id=${id}&from=calendar${roomId ? `&roomId=${roomId}` : ""}`,
+    );
+  };
+
+  return (
+    <AppShell
+      activeTab="home"
+      activeRailView="board"
+      unreadCount={unreadCount}
+      masterWidthClassName="lg:flex-1"
+      detailWidthClassName="w-[318px] 2xl:w-[364px]"
+      detail={
+        isTabletUp ? (
+          selectedScheduleId ? (
+            <ScheduleDetailView
+              key={selectedScheduleId}
+              scheduleId={selectedScheduleId}
+              roomId={roomId}
+              from="calendar"
+              variant="inspector"
+              onClose={() => setSelectedScheduleId(null)}
+              onDeleted={() => {
+                setSelectedScheduleId(null);
+                fetchBoardItems();
+                fetchSchedules();
+              }}
+            />
+          ) : null
+        ) : undefined
+      }
+      detailEmpty={
+        <div className="flex h-full flex-col items-center justify-center gap-2.5 px-10 text-center">
+          <b className="text-[15px] font-bold text-stone-500">
+            플랜을 선택하세요
+          </b>
+          <span className="max-w-[240px] text-[13px] leading-relaxed text-gray-400">
+            카드를 누르면 금액·일자·위치·메모를 이 자리에서 바로 볼 수 있습니다.
+          </span>
+        </div>
+      }
+      bottomBarSlot={
+        <BottomTabBar
+          activeTab="home"
+          onTabClick={(tab) => {
+            if (tab === "home") {
+              if (roomId) router.push(`/main?roomId=${roomId}`);
+              else router.push("/main");
+            } else if (tab === "rooms") router.push("/plan-list");
+            else if (tab === "settings") router.push("/user");
+          }}
+          unreadCount={unreadCount}
+        />
+      }
+    >
+      <div className="flex h-full min-h-0 w-full flex-col">
         {/* Main Content Scroll Area */}
-        <div className="flex-1 overflow-y-auto w-full flex flex-col pb-24 scrollbar-hide">
+        <div
+          className={`flex w-full flex-col pb-24 scrollbar-hide md:pb-0 ${
+            showBoard
+              ? "min-h-0 flex-1 overflow-hidden"
+              : "flex-1 overflow-y-auto"
+          }`}
+        >
           {/* Header */}
-          <header className="px-6 pt-8 pb-4 flex items-center justify-between">
+          <header className="px-6 pt-8 pb-4 flex items-center justify-between md:px-8 md:pt-6">
             <h1 className="text-2xl font-black text-[#1b0d14]">
-              {year}년 {month + 1}월
+              {showBoard ? "플랜 보드" : `${year}년 ${month + 1}월`}
             </h1>
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handlePrevMonth}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <ChevronLeft className="w-6 h-6 text-gray-600" />
-              </button>
-              <button
-                type="button"
-                onClick={handleNextMonth}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <ChevronRight className="w-6 h-6 text-gray-600" />
-              </button>
+              {/* 보드 ↔ 캘린더 — 넓은 화면 전용 */}
+              {isTabletUp && (
+                <div className="mr-2 flex gap-0.5 rounded-xl bg-[#f6f2f5] p-[3px]">
+                  {(["board", "calendar"] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      aria-pressed={boardView === v}
+                      onClick={() => setBoardView(v)}
+                      className={`rounded-[9px] px-3.5 py-1.5 text-[12.5px] transition-colors ${
+                        boardView === v
+                          ? "bg-white font-bold text-[#1b0d14] shadow-sm"
+                          : "text-[#7a6c74]"
+                      }`}
+                    >
+                      {v === "board" ? "보드" : "캘린더"}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!showBoard && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrevMonth}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <ChevronLeft className="w-6 h-6 text-gray-600" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextMonth}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <ChevronRight className="w-6 h-6 text-gray-600" />
+                  </button>
+                </>
+              )}
               <div className="w-px h-4 bg-gray-200 mx-1" />
               <button
                 type="button"
@@ -368,107 +518,115 @@ function CalendarPageContent() {
             </div>
           </header>
 
-          {/* Calendar Grid Container */}
-          <div className="grid grid-cols-7 px-4 content-start border-l border-t border-gray-50">
-            {/* Weekdays */}
-            {weekdays.map((d, i) => (
-              <div
-                key={d}
-                className={`text-center py-4 text-xs font-bold border-b border-r border-gray-50 ${
-                  i === 0
-                    ? "text-red-400"
-                    : i === 6
-                      ? "text-blue-400"
-                      : "text-gray-400"
-                }`}
-              >
-                {d}
-              </div>
-            ))}
-
-            {/* Days */}
-            {daysInMonth.map((dateObj, idx) => {
-              const daySchedules = getSchedulesForDay(
-                dateObj.day,
-                dateObj.month,
-                dateObj.year,
-              );
-              const isToday =
-                getKstDate().getDate() === dateObj.day &&
-                getKstDate().getMonth() === dateObj.month &&
-                getKstDate().getFullYear() === dateObj.year;
-
-              return (
+          {showBoard ? (
+            <PlanBoard
+              items={boardItems}
+              loading={boardLoading}
+              canEdit={!isReadOnly}
+              selectedId={selectedScheduleId}
+              onSelect={openSchedule}
+              onItemsChange={setBoardItems}
+              onAdd={(monthKey) => {
+                const params = new URLSearchParams();
+                if (roomId?.trim()) params.set("roomId", roomId.trim());
+                params.set("from", "calendar");
+                if (monthKey) params.set("date", `${monthKey}-01`);
+                router.push(`/add-plen?${params.toString()}`);
+              }}
+              onError={setBoardError}
+            />
+          ) : (
+            /* Calendar Grid Container */
+            <div className="grid grid-cols-7 px-4 content-start border-l border-t border-gray-50 md:px-8">
+              {/* Weekdays */}
+              {weekdays.map((d, i) => (
                 <div
-                  key={idx}
-                  onClick={() => handleDayClick(dateObj)}
-                  className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
+                  key={d}
+                  className={`text-center py-4 text-xs font-bold border-b border-r border-gray-50 ${
+                    i === 0
+                      ? "text-red-400"
+                      : i === 6
+                        ? "text-blue-400"
+                        : "text-gray-400"
+                  }`}
                 >
-                  <div className="flex justify-center items-center mb-1">
-                    <span
-                      className={`text-xs font-bold ${
-                        !dateObj.isCurrentMonth
-                          ? "text-gray-300"
-                          : isToday
-                            ? "bg-[#ee2b8c] text-white w-5 h-5 flex items-center justify-center rounded-full"
-                            : idx % 7 === 0
-                              ? "text-red-400"
-                              : idx % 7 === 6
-                                ? "text-blue-400"
-                                : "text-gray-700"
-                      }`}
-                    >
-                      {dateObj.day}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-0.5 overflow-hidden">
-                    {daySchedules.slice(0, 2).map((s) => (
-                      <div
-                        key={s.id}
-                        className={`font-user-content text-[8px] p-1 rounded-md truncate transition-colors ${
-                          s.status === "COMPLETED"
-                            ? "bg-gray-100 text-gray-400 line-through"
-                            : "bg-[#ee2b8c10] text-[#ee2b8c]"
+                  {d}
+                </div>
+              ))}
+
+              {/* Days */}
+              {daysInMonth.map((dateObj, idx) => {
+                const daySchedules = getSchedulesForDay(
+                  dateObj.day,
+                  dateObj.month,
+                  dateObj.year,
+                );
+                const isToday =
+                  getKstDate().getDate() === dateObj.day &&
+                  getKstDate().getMonth() === dateObj.month &&
+                  getKstDate().getFullYear() === dateObj.year;
+
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => handleDayClick(dateObj)}
+                    className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors md:min-h-[118px] md:p-1.5 ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
+                  >
+                    <div className="flex justify-center items-center mb-1">
+                      <span
+                        className={`text-xs font-bold ${
+                          !dateObj.isCurrentMonth
+                            ? "text-gray-300"
+                            : isToday
+                              ? "bg-[#ee2b8c] text-white w-5 h-5 flex items-center justify-center rounded-full"
+                              : idx % 7 === 0
+                                ? "text-red-400"
+                                : idx % 7 === 6
+                                  ? "text-blue-400"
+                                  : "text-gray-700"
                         }`}
                       >
-                        {s.title}
-                      </div>
-                    ))}
-                    {daySchedules.length > 2 && (
-                      <div className="flex justify-center mt-0.5">
-                        <div className="text-[10px] font-black text-[#ee2b8c] bg-[#ee2b8c0a] px-2 py-0.5 rounded-full border border-[#ee2b8c15] shadow-sm shadow-[#ee2b8c05]">
-                          +{daySchedules.length - 2}
+                        {dateObj.day}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5 overflow-hidden">
+                      {daySchedules.slice(0, visibleEventCount).map((s) => (
+                        <div
+                          key={s.id}
+                          className={`font-user-content text-[8px] p-1 rounded-md truncate transition-colors md:text-[11px] md:px-1.5 md:py-1 ${
+                            s.status === "COMPLETED"
+                              ? "bg-gray-100 text-gray-400 line-through"
+                              : "bg-[#ee2b8c10] text-[#ee2b8c]"
+                          }`}
+                        >
+                          {s.title}
                         </div>
-                      </div>
-                    )}
+                      ))}
+                      {daySchedules.length > visibleEventCount && (
+                        <div className="flex justify-center mt-0.5">
+                          <div className="text-[10px] font-black text-[#ee2b8c] bg-[#ee2b8c0a] px-2 py-0.5 rounded-full border border-[#ee2b8c15] shadow-sm shadow-[#ee2b8c05]">
+                            +{daySchedules.length - visibleEventCount}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {!isReadOnly && (
+        {/* 보드에는 컬럼마다 "+ 플랜 추가"가 있어 떠 있는 버튼이 필요 없다 */}
+        {!isReadOnly && !showBoard && (
           <button
             type="button"
             onClick={() => router.push(getAddPlanPath())}
-            className="absolute bottom-28 right-6 w-14 h-14 bg-[#ee2b8c] text-white rounded-full flex items-center justify-center shadow-xl shadow-[#ee2b8c44] active:scale-95 transition-transform z-50"
+            className="absolute bottom-28 right-6 w-14 h-14 bg-[#ee2b8c] text-white rounded-full flex items-center justify-center shadow-xl shadow-[#ee2b8c44] active:scale-95 transition-transform z-50 md:bottom-8"
           >
             <Plus className="w-8 h-8" strokeWidth={3} />
           </button>
         )}
-
-        <BottomTabBar
-          activeTab="home"
-          onTabClick={(tab) => {
-            if (tab === "home") {
-              if (roomId) router.push(`/main?roomId=${roomId}`);
-              else router.push("/main");
-            } else if (tab === "rooms") router.push("/plan-list");
-            else if (tab === "settings") router.push("/user");
-          }}
-          unreadCount={unreadCount}
-        />
       </div>
 
       {/* Day Detail Modal */}
@@ -512,11 +670,7 @@ function CalendarPageContent() {
                     <button
                       type="button"
                       key={plan.id}
-                      onClick={() =>
-                        router.push(
-                          `/schedule-detail?id=${plan.id}&from=calendar${roomId ? `&roomId=${roomId}` : ""}`,
-                        )
-                      }
+                      onClick={() => openSchedule(plan.id)}
                       className="font-user-content flex items-center gap-4 bg-gray-50 p-4 rounded-2xl hover:bg-gray-100 transition-colors text-left"
                     >
                       <div
@@ -571,7 +725,14 @@ function CalendarPageContent() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+
+      <CustomAlertModal
+        isOpen={boardError !== null}
+        message={boardError ?? ""}
+        type="error"
+        onClose={() => setBoardError(null)}
+      />
+    </AppShell>
   );
 }
 

@@ -12,6 +12,7 @@ import {
   Info,
   LogOut,
   Mail,
+  MessageCircle,
   Pencil,
   Plus,
 } from "lucide-react";
@@ -27,6 +28,8 @@ import {
 } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "motion/react";
 import CountUp from "@/components/CountUp";
+import ActivityPanel from "../components/ActivityPanel";
+import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import LoginRequiredModal from "../components/LoginRequiredModal";
@@ -52,6 +55,7 @@ import {
 import { getGuestScheduleList } from "@/lib/guestSchedule";
 import { parseLocalDate, getKstDate, getDaysUntil } from "@/lib/utils";
 import { useScrollDirection } from "../hooks/useScrollDirection";
+import { useIsTabletUp } from "../hooks/useMediaQuery";
 
 /** 정렬 옵션 → 버튼 표시용 라벨(가격/날짜/이름) + 방향 */
 function getSortButtonLabel(opt: PlanSortOption): {
@@ -292,7 +296,8 @@ function MainPageContent() {
   const roomId = searchParams.get("roomId");
   const { weddingData, resetData } = useWedding();
   const { fetchWithAuth, setLoading } = useApi();
-  const { subscribeToChatRooms, unreadCount } = useNotification();
+  const { subscribeToChatRooms, unreadCount, getRoomUnreadCount } =
+    useNotification();
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
     null,
   );
@@ -1391,6 +1396,22 @@ function MainPageContent() {
   const headerOpacity = useTransform(scrollY, [50, 200], [1, 0.2]);
   const headerScale = useTransform(scrollY, [0, 200], [1, 0.9]);
 
+  /**
+   * ≥768 에서는 스냅 스크롤을 걷어내고 대시보드로 배치한다.
+   *
+   * 모바일의 두 섹션(340px 헤더 + 100dvh 리스트)은 "한 화면씩 넘기는"
+   * 구조라 넓은 화면에서는 어색하다. 태블릿부터는 두 섹션을 각각 자기
+   * 높이대로 두고, 1024 부터는 좌(헤더+예산)·우(필터+탭+리스트) 2열로 나눈다.
+   *
+   * 높이·opacity·scale 이 인라인 style(모션 값)이라 Tailwind 로 덮을 수 없어
+   * 분기를 JS 로 둔다.
+   */
+  const isTabletUp = useIsTabletUp();
+
+  /** 넓은 화면의 좌측 컬럼에 붙는 대화 목록 (GET /plan/user 의 chatRooms) */
+  const chatRoomsForPanel =
+    apiPlanData && apiPlanData !== "none" ? (apiPlanData.chatRooms ?? []) : [];
+
   const checkedItemsRef = useRef<Set<number>>(checkedItems);
   const scheduleListRef = useRef(scheduleList);
   const sharedScheduleListRef = useRef(sharedRoomScheduleList);
@@ -1525,872 +1546,12 @@ function MainPageContent() {
         : null);
 
   return (
-    <div className="h-[100dvh] bg-[#fcfbfc] overflow-hidden">
-      <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
-      <div className="h-full max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
-        <KakaoLoginAlert
-          show={searchParams.get("kakao_login") === "1"}
-          onSuccessFromMain={async () => {
-            const planData = await fetchPlanUser(handleApiError);
-            const roomIdForAmount =
-              planData && planData !== "none" && planData.roomId != null
-                ? String(planData.roomId)
-                : undefined;
-            fetchTotalAmount(handleApiError, roomIdForAmount);
-            fetchScheduleList();
-          }}
-        />
-        <main
-          ref={mainScrollRef}
-          className={`flex flex-1 flex-col items-center overflow-y-auto w-full px-4 sm:px-6 transition-all duration-500 snap-y snap-mandatory scroll-smooth ${isNoPlanBlur ? "blur-xl scale-[0.98] pointer-events-none select-none opacity-60" : ""}`}
-        >
-          {shareCode && sharedRoomUser === "error" && (
-            <div className="w-full mt-4 px-4 py-3 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
-              공유 링크가 유효하지 않거나 만료되었습니다.
-            </div>
-          )}
-          <motion.div
-            ref={firstSectionRef}
-            className="w-full shrink-0 pt-8 pb-10 origin-top snap-start flex flex-col justify-start"
-            style={{
-              height: "340px",
-              opacity: headerOpacity,
-              scale: headerScale,
-              transformPerspective: 1000,
-            }}
-          >
-            {/* 상단 영역: 1행=이름·초대(이름 우측), 2행=결혼식 날짜(좌측)·D-day(날짜 오른쪽), 오른쪽=프로필 */}
-            <div className="w-full flex items-start justify-between gap-4">
-              {/* 왼쪽: [이름(좌)·초대(우)] + [결혼식 날짜(좌)·D-day(우)] */}
-              <div
-                id="main-header-info"
-                className="flex flex-col items-start min-w-0 flex-1 p-2 -m-2 rounded-xl transition-colors"
-              >
-                {/* 1행: 이름(좌) · 초대(이름 바로 옆, 이름 길이에 따라 가변) */}
-                <div className="flex items-center gap-2 flex-nowrap min-w-0">
-                  {isPlanLoading ? (
-                    <span
-                      className="skeleton-shimmer h-[42px] w-[120px] rounded-lg shrink-0"
-                      aria-hidden
-                    />
-                  ) : (
-                    <span className="font-user-content text-3xl sm:text-[42px] font-semibold text-[#1b0d14] leading-tight shrink-0 min-w-0 break-keep line-clamp-2">
-                      {displayData.name || "이름"}
-                    </span>
-                  )}
-                  {isPlanLoading ? (
-                    <span
-                      className="skeleton-shimmer h-10 w-[88px] shrink-0 rounded-full"
-                      aria-hidden
-                    />
-                  ) : isSharedView && roomMembers.length > 0 ? (
-                    <div
-                      className="flex shrink-0 -space-x-2 items-center"
-                      aria-label="함께하는 멤버"
-                    >
-                      {(() => {
-                        const planId = getPlanUserIdFromToken()
-                          ?.trim()
-                          .toLowerCase();
-                        const subId = getSubFromToken()?.trim().toLowerCase();
-                        const apiPlanId =
-                          apiPlanData && apiPlanData !== "none"
-                            ? String(apiPlanData.id).trim().toLowerCase()
-                            : "";
-                        const myIds = [planId, subId, apiPlanId].filter(
-                          (id): id is string => !!id,
-                        );
-                        const list = [...roomMembers];
-                        const idx = list.findIndex((m) => {
-                          const id = String(m.planUserId ?? "")
-                            .trim()
-                            .toLowerCase();
-                          return myIds.some((myId) => myId === id);
-                        });
-                        if (idx >= 0 && idx !== 0) {
-                          const [me] = list.splice(idx, 1);
-                          list.unshift(me);
-                        }
-                        return list.slice(0, 2);
-                      })().map((member, i) => (
-                        <div
-                          key={member.planUserId}
-                          className="relative flex-shrink-0"
-                          style={{ zIndex: i }}
-                        >
-                          {(String(member.permission ?? "").toUpperCase() ===
-                            "OWNER" ||
-                            String(member.planUserId ?? "")
-                              .trim()
-                              .toLowerCase() ===
-                              String(sharedRoomUser.id)
-                                .trim()
-                                .toLowerCase()) && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                              aria-hidden
-                            >
-                              <Crown
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
-                          {String(member.permission ?? "").toUpperCase() ===
-                            "WRITE" &&
-                            String(member.permission ?? "").toUpperCase() !==
-                              "OWNER" && (
-                              <span
-                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
-                                aria-hidden
-                              >
-                                <Pencil
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
-                          <div
-                            className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
-                            style={{
-                              background: member.image
-                                ? undefined
-                                : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
-                            }}
-                            title={member.name}
-                          >
-                            {member.image ? (
-                              <img
-                                src={member.image}
-                                alt={member.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span>
-                                {member.name?.trim().charAt(0)?.toUpperCase() ||
-                                  "?"}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                      {roomMembers.length === 1 && (
-                        <button
-                          type="button"
-                          onClick={() => setShowShareModal(true)}
-                          className="relative flex-shrink-0 z-10 w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 bg-stone-50 hover:bg-stone-100 transition-colors shadow-sm"
-                          aria-label="멤버 초대하기"
-                        >
-                          <Plus className="w-5 h-5" strokeWidth={3} />
-                        </button>
-                      )}
-                    </div>
-                  ) : apiPlanData &&
-                    apiPlanData !== "none" &&
-                    apiPlanData.members &&
-                    apiPlanData.members.length > 0 ? (
-                    <div
-                      className="flex shrink-0 -space-x-2 items-center"
-                      aria-label="함께하는 멤버"
-                    >
-                      {(() => {
-                        const list = [...apiPlanData.members];
-                        const ownerIdx = list.findIndex(
-                          (m) =>
-                            String(m.permission ?? "").toUpperCase() ===
-                            "OWNER",
-                        );
-                        if (ownerIdx >= 0 && ownerIdx !== 0) {
-                          const [owner] = list.splice(ownerIdx, 1);
-                          list.unshift(owner);
-                        }
-                        return list.slice(0, 2);
-                      })().map((member, i) => (
-                        <div
-                          key={member.planUserId}
-                          className="relative flex-shrink-0"
-                          style={{ zIndex: i }}
-                        >
-                          {String(member.permission ?? "").toUpperCase() ===
-                            "OWNER" && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                              aria-hidden
-                            >
-                              <Crown
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
-                          {String(member.permission ?? "").toUpperCase() ===
-                            "WRITE" &&
-                            String(member.permission ?? "").toUpperCase() !==
-                              "OWNER" && (
-                              <span
-                                className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
-                                aria-hidden
-                              >
-                                <Pencil
-                                  className="w-2.5 h-2.5"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                            )}
-                          <div
-                            className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
-                            style={{
-                              background: member.image
-                                ? undefined
-                                : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
-                            }}
-                            title={member.name}
-                          >
-                            {member.image ? (
-                              <img
-                                src={member.image}
-                                alt={member.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span>
-                                {member.name?.trim().charAt(0)?.toUpperCase() ||
-                                  "?"}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                      {apiPlanData.members?.length === 1 && (
-                        <button
-                          type="button"
-                          onClick={() => setShowShareModal(true)}
-                          className="relative flex-shrink-0 z-10 w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 bg-stone-50 hover:bg-stone-100 transition-colors shadow-sm"
-                          aria-label="멤버 초대하기"
-                        >
-                          <Plus className="w-5 h-5" strokeWidth={3} />
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!getToken()) {
-                          setShowShareModal(false);
-                          setShowLoginRequiredModal(true);
-                          return;
-                        }
-                        setShowShareModal(true);
-                      }}
-                      className="flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-[#1b0d14] bg-stone-100 hover:bg-stone-200 transition-colors border border-stone-200"
-                      aria-label="플랜 초대하기"
-                    >
-                      <Mail
-                        className="h-4 w-4 text-stone-600"
-                        strokeWidth={2}
-                      />
-                      초대
-                    </button>
-                  )}
-                </div>
-                {/* 2행: 결혼식 날짜(좌측) + D-day(날짜 오른쪽에 붙임) */}
-                <div className="mt-[5px] flex items-center gap-1.5 flex-nowrap min-w-0 max-w-[200px] sm:max-w-none">
-                  {isPlanLoading ? (
-                    <>
-                      <span
-                        className="skeleton-shimmer h-3.5 w-[152px] rounded shrink-0"
-                        aria-hidden
-                      />
-                      <span
-                        className="skeleton-shimmer h-10 w-14 shrink-0 rounded-full"
-                        aria-hidden
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[12px] font-normal leading-tight text-gray-500 shrink-0">
-                        {weddingDateText
-                          ? `결혼식: ${weddingDateText}`
-                          : "\u00A0"}
-                      </span>
-                      <span
-                        className="flex h-5 shrink-0 items-center rounded-full px-4 py-2 text-sm font-semibold leading-none"
-                        style={{
-                          background: "#ee2b8c",
-                          color: "#fff",
-                          boxShadow: "0 2px 8px rgba(238, 43, 140, 0.35)",
-                        }}
-                      >
-                        {dDayLabel}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowGuide(true)}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"
-                  aria-label="가이드 보기"
-                >
-                  <CircleHelp className="h-6 w-6" strokeWidth={2} />
-                </button>
-                {/* roomId 또는 shareCode일 때 우측 상단 나가기 버튼 */}
-                {(shareCode || roomId) && (
-                  <button
-                    type="button"
-                    onClick={() => router.push("/plan-list")}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-600 text-white cursor-pointer hover:bg-stone-700 transition-colors"
-                    aria-label="나가기"
-                  >
-                    <LogOut className="h-6 w-6" strokeWidth={2} />
-                  </button>
-                )}
-              </div>
-            </div>
-            {/* TodayFocus - 로딩 시 요소별 스켈레톤 */}
-            <div className="mt-4 w-full">
-              {isPlanLoading ? (
-                <div className="flex w-full flex-col rounded-[24px] border-2 border-stone-200/50 bg-white/50 p-6">
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="skeleton-shimmer h-10 w-10 shrink-0 rounded-full"
-                      aria-hidden
-                    />
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <span
-                        className="skeleton-shimmer block h-5 w-20 rounded"
-                        aria-hidden
-                      />
-                      <span
-                        className="skeleton-shimmer block h-[42px] w-28 rounded"
-                        aria-hidden
-                      />
-                    </div>
-                  </div>
-                  <span
-                    className="skeleton-shimmer mt-4 block h-6 w-48 rounded"
-                    aria-hidden
-                  />
-                  <div className="mt-4 flex items-center gap-2">
-                    <span
-                      className="skeleton-shimmer h-2 flex-1 rounded-full"
-                      aria-hidden
-                    />
-                    <span
-                      className="skeleton-shimmer h-4 w-8 shrink-0 rounded"
-                      aria-hidden
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div
-                  id="main-budget-card"
-                  onClick={() => {
-                    router.push(
-                      roomIdForDetail
-                        ? `/budget-detail?roomId=${roomIdForDetail}`
-                        : "/budget-detail",
-                    );
-                  }}
-                  className="flex w-full flex-col rounded-[24px] p-6 cursor-pointer hover:opacity-95 transition-opacity"
-                  style={{
-                    background: budgetGradient,
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/30">
-                      <CircleDollarSign
-                        className="h-5 w-5 text-white"
-                        strokeWidth={2}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold leading-5 text-white">
-                        남은 예산
-                      </p>
-                      <p
-                        className={
-                          Math.abs(remainingBudget) >= 1000
-                            ? "my-3 text-[32px] max-[350px]:text-[28px] font-semibold leading-7 text-white"
-                            : "my-3 text-[42px] max-[350px]:text-[37px] font-semibold leading-7 text-white"
-                        }
-                      >
-                        <span className="whitespace-nowrap">
-                          <CountUp
-                            to={remainingBudget}
-                            separator=","
-                            duration={0.1}
-                            className="inline"
-                          />
-                          만 원
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <p className="mt-1 pl-[52px] py-2 text-xl max-[350px]:text-[15px] font-semibold leading-none text-white">
-                    <CountUp
-                      to={usedBudget}
-                      separator=","
-                      duration={0.1}
-                      className="inline"
-                    />
-                    만 원 지출/예정
-                  </p>
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
-                      <div
-                        className="h-full rounded-full bg-white"
-                        style={{ width: `${budgetUsagePercentageForBar}%` }}
-                      />
-                    </div>
-                    <span className="shrink-0 text-sm font-normal leading-5 text-white">
-                      {budgetUsagePercentage}%
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-          <motion.div
-            ref={secondSectionRef}
-            className="w-full min-h-[100dvh] h-[100dvh] pt-4 snap-start bg-transparent relative flex flex-col shrink-0"
-          >
-            {/* 하단 영역 */}
-            <div className="flex justify-between items-end gap-3">
-              <div className="flex flex-col items-start w-full overflow-hidden pt-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xl font-bold text-[#1b0d14] shrink-0">
-                    플랜 리스트
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      // 공유 뷰에서는 내 방 id 를 붙이지 않는다 (내 플랜에 저장되던 문제)
-                      const roomIdValue = isSharedView
-                        ? roomId
-                        : (roomId ??
-                          (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
-                            ? String(apiPlanData.roomId)
-                            : null));
-                      router.push(
-                        roomIdValue
-                          ? `/calendar?roomId=${roomIdValue}`
-                          : "/calendar",
-                      );
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-[#ee2b8c] hover:bg-[#ee2b8c10] transition-all rounded-lg active:scale-95"
-                    aria-label="캘린더 보기"
-                  >
-                    <Calendar className="h-5 w-5" strokeWidth={2.5} />
-                  </button>
-                </div>
-                {/* 카테고리 필터 영역 (테스트) */}
-                <div
-                  ref={categoryScrollRef}
-                  className="flex w-full items-center gap-1.5 overflow-x-auto scrollbar-hide py-1.5 mt-0.5 mask-linear-right select-none cursor-grab active:cursor-grabbing"
-                >
-                  {isPlanLoading ? (
-                    <span
-                      className="skeleton-shimmer block h-6 w-48 rounded"
-                      aria-hidden
-                    />
-                  ) : displayCount > 0 ? (
-                    currentTabCategories.map((catName) => {
-                      const isSelected = selectedCategory === catName;
-                      return (
-                        <button
-                          key={catName}
-                          ref={
-                            isSelected ? selectedCategoryButtonRef : undefined
-                          }
-                          type="button"
-                          onClick={() => setSelectedCategory(catName)}
-                          className={`shrink-0 px-3 py-1 rounded-md text-[12px] font-bold transition-all flex items-center gap-1 ${
-                            isSelected
-                              ? "bg-[#ee2b8c] text-white shadow-sm"
-                              : "bg-gray-100/80 text-gray-600 hover:bg-gray-200 active:scale-95"
-                          }`}
-                        >
-                          {catName}
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <span className="text-[14px] text-gray-400 font-medium">
-                      플랜을 추가해볼까요?
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex shrink-0 pb-1.5 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowFilterModal(true)}
-                  className="inline-flex items-center justify-center gap-1.5 h-[36px] px-3.5 py-0 rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 border-2 border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
-                  aria-label="필터"
-                >
-                  {(() => {
-                    const current = sortOptions[0] ?? "date_desc";
-                    const { label, isDesc } = getSortButtonLabel(current);
-                    return (
-                      <>
-                        <span>{label}</span>
-                        {isDesc ? (
-                          <ArrowDown
-                            className="h-3.5 w-3.5 shrink-0"
-                            strokeWidth={2.5}
-                          />
-                        ) : (
-                          <ArrowUp
-                            className="h-3.5 w-3.5 shrink-0"
-                            strokeWidth={2.5}
-                          />
-                        )}
-                      </>
-                    );
-                  })()}
-                </button>
-                {!(
-                  isRoomView &&
-                  String(myRoomPermission ?? "").toUpperCase() === "READ"
-                ) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      // 공유 뷰에서는 내 방 id 를 붙이지 않는다 (내 플랜에 저장되던 문제)
-                      const roomIdValue = isSharedView
-                        ? roomId
-                        : (roomId ??
-                          (apiPlanData &&
-                          apiPlanData !== "none" &&
-                          apiPlanData.roomId
-                            ? String(apiPlanData.roomId)
-                            : null));
-
-                      const addPlanPath = roomIdValue
-                        ? `/add-plen?roomId=${roomIdValue}`
-                        : "/add-plen";
-                      if (getToken()) {
-                        router.push(addPlanPath);
-                        return;
-                      }
-                      if (isSharedView) {
-                        setLoginRequiredTitle(
-                          "플랜을 추가하려면 로그인해 주세요",
-                        );
-                        setShowLoginRequiredModal(true);
-                        return;
-                      }
-
-                      // Guest: allow up to 3 plans saved in sessionStorage
-                      const guestCount = effectiveScheduleList.length;
-                      if (guestCount === 0) {
-                        // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
-                        setShowGuestPlanLimitModal(true);
-                        return;
-                      }
-                      if (guestCount >= 3) {
-                        setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
-                        setShowLoginRequiredModal(true);
-                        return;
-                      }
-                      router.push(addPlanPath);
-                    }}
-                    className="flex h-[36px] justify-center items-center gap-1.5 px-3.5 py-0 text-white rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
-                    style={{
-                      backgroundColor:
-                        !getToken() &&
-                        !isSharedView &&
-                        effectiveScheduleList.length >= 3
-                          ? "#cbd5e1"
-                          : "#ee2b8c",
-                    }}
-                  >
-                    추가
-                    <CirclePlus
-                      className="h-4 w-4 shrink-0 text-white"
-                      strokeWidth={2.5}
-                    />
-                  </button>
-                )}
-              </div>
-            </div>
-            {/* 탭 영역 - Sticky 고정 */}
-            <div
-              id="main-tabs"
-              className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm px-0 sm:px-2 py-2 -mx-4 sm:mx-0 px-4 sm:px-2 border-b border-gray-50/50"
-            >
-              <div className="flex bg-gray-100/50 p-1.5 rounded-2xl border border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab("planned");
-                    setSelectedCategory("전체");
-                    if (shareCode?.trim()) {
-                      fetchSharedRoomScheduleList("NORMAL");
-                    } else if (getToken()) {
-                      const roomIdParam =
-                        roomId?.trim() ||
-                        (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
-                          ? String(apiPlanData.roomId)
-                          : null);
-                      fetchScheduleList(roomIdParam ?? undefined, "NORMAL");
-                    }
-                  }}
-                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
-                    activeTab === "planned"
-                      ? "bg-white text-[#ee2b8c] shadow-sm"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  <span>계획 중</span>
-                  <span
-                    className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "planned" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}
-                  >
-                    {plannedCount}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab("completed");
-                    setSelectedCategory("전체");
-                    if (shareCode?.trim()) {
-                      fetchSharedRoomScheduleList("COMPLETED");
-                    } else if (getToken()) {
-                      const roomIdParam =
-                        roomId?.trim() ||
-                        (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
-                          ? String(apiPlanData.roomId)
-                          : null);
-                      fetchScheduleList(roomIdParam ?? undefined, "COMPLETED");
-                    }
-                  }}
-                  className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
-                    activeTab === "completed"
-                      ? "bg-white text-[#ee2b8c] shadow-sm"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  <span>완료</span>
-                  <span
-                    className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "completed" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}
-                  >
-                    {completedCount}
-                  </span>
-                </button>
-              </div>
-            </div>
-            <div
-              className={`flex-1 w-full pb-24 min-h-0 scrollbar-hide ${allowPlanListScroll ? "overflow-y-auto" : "overflow-hidden touch-pan-y"}`}
-              style={{
-                maskImage:
-                  "linear-gradient(to bottom, transparent 0%, black 24px, black 100%)",
-                WebkitMaskImage:
-                  "linear-gradient(to bottom, transparent 0%, black 24px, black 100%)",
-              }}
-            >
-              <ul
-                id="main-plan-list"
-                className="mt-2 w-full flex flex-col gap-3 min-h-[200px] relative bg-transparent"
-              >
-                {/* 
-                  플랜 리스트 로딩: 초기 로드/유저·방 로딩 시에만 스켈레톤.
-                  필터 리패치 시에는 스켈레톤 미표시 → 카테고리 스크롤 위치 유지.
-                */}
-                {!isListLoaded || isPlanLoading || isSharedLoading ? (
-                  Array.from({ length: 5 }).map((_, idx) => (
-                    <li
-                      key={`skeleton-plan-${idx}`}
-                      className="flex items-center gap-4 rounded-3xl border border-[#ee2b8c0a] bg-white p-4 shadow-sm animate-pulse"
-                    >
-                      <div className="w-14 h-14 rounded-2xl bg-stone-50 shrink-0" />
-                      <div className="min-w-0 flex-1 space-y-2">
-                        <div className="h-5 w-3/4 bg-stone-50 rounded" />
-                        <div className="space-y-1">
-                          <div className="h-3 w-1/2 bg-stone-50 rounded" />
-                          <div className="h-3 w-1/3 bg-stone-50 rounded" />
-                        </div>
-                      </div>
-                      <div className="text-right space-y-2">
-                        <div className="h-5 w-16 bg-stone-50 rounded ml-auto" />
-                        <div className="h-4 w-10 bg-stone-50 rounded-lg ml-auto" />
-                      </div>
-                    </li>
-                  ))
-                ) : isListLoaded && effectiveScheduleList.length === 0 ? (
-                  <li className="flex flex-1 flex-col items-center justify-center py-16">
-                    <p className="text-4xl font-semibold text-stone-400">텅~</p>
-                  </li>
-                ) : (
-                  <AnimatePresence initial={false}>
-                    {visibleScheduleList.map((plan) => {
-                      const isChecked =
-                        checkedItems.has(plan.id) ||
-                        plan.status === "COMPLETED";
-                      const amount = plan.amount ?? 0;
-                      const dateStatus = getDateStatusLabel(plan.startDate);
-                      const categoryColor = getCategoryColor(plan.categoryName);
-                      const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
-                      const dateLabel = plan.startDate?.trim()
-                        ? (() => {
-                            const { dateText, weekday } = formatDate(
-                              plan.startDate as string,
-                            );
-                            return `${dateText} (${weekday})`;
-                          })()
-                        : "미정";
-
-                      return (
-                        <motion.li
-                          key={plan.id}
-                          layout
-                          className="w-full"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{
-                            opacity: [1, 1, 0],
-                            y: [0, -10, -10],
-                            x: [0, 0, activeTab === "planned" ? 500 : -500],
-                            scale: [1, 1.05, 1.05],
-                            transition: {
-                              duration: 0.6,
-                              times: [0, 0.4, 1],
-                              ease: "easeInOut",
-                            },
-                          }}
-                        >
-                          <Link
-                            href={detailHref}
-                            onClick={() => {
-                              sessionStorage.setItem(
-                                "returnToPlanList",
-                                "true",
-                              );
-                            }}
-                            className={`relative flex w-full items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
-                            aria-label={`플랜 상세 보기: ${plan.title}`}
-                          >
-                            {mounted &&
-                              activeTab === "planned" &&
-                              isStartDatePast(plan.startDate) && (
-                                <PastDateIndicator />
-                              )}
-                            <div
-                              className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                              style={{
-                                backgroundColor: `${categoryColor}`,
-                              }}
-                            >
-                              <button
-                                type="button"
-                                id={String(plan.id)}
-                                disabled={togglingIds.has(plan.id)}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleToggleCheck(plan.id);
-                                }}
-                                className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
-                                  isChecked
-                                    ? "bg-[#ee2b8c] border-[#ee2b8c]"
-                                    : "bg-white/80 border-[#ee2b8c]"
-                                }`}
-                              >
-                                {isChecked && (
-                                  <Check
-                                    className="h-3 w-3 text-white"
-                                    strokeWidth={3}
-                                  />
-                                )}
-                              </button>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4
-                                className={`font-user-content text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
-                              >
-                                {plan.title}
-                              </h4>
-                              <div className="font-user-content text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
-                                <p className="truncate">{plan.categoryName}</p>
-                                <p className="truncate">{dateLabel}</p>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
-                                {amount > 0
-                                  ? `${amount.toLocaleString("ko-KR")}만 원`
-                                  : "미정"}
-                              </div>
-                              <span
-                                className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-black tracking-tight ${
-                                  isChecked
-                                    ? "bg-emerald-50 text-emerald-600"
-                                    : dateStatus === "D-day"
-                                      ? "bg-[#ee2b8c] text-white shadow-xs"
-                                      : dateStatus === "임박"
-                                        ? "bg-orange-50 text-orange-600"
-                                        : dateStatus === "예정"
-                                          ? "bg-sky-50 text-sky-600"
-                                          : "bg-slate-100 text-slate-400"
-                                }`}
-                              >
-                                {isChecked ? "완료" : dateStatus}
-                              </span>
-                            </div>
-                          </Link>
-                        </motion.li>
-                      );
-                    })}
-                    {visibleScheduleList.length === 0 && (
-                      <motion.li
-                        key={`empty-${activeTab}`}
-                        layout
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex flex-1 flex-col items-center justify-center py-16"
-                      >
-                        <p className="text-xl font-semibold text-stone-400 text-center w-full">
-                          {activeTab === "completed"
-                            ? "완료한 플랜이 없어요"
-                            : "모든 플랜을 완료했어요! 🎉"}
-                        </p>
-                      </motion.li>
-                    )}
-                  </AnimatePresence>
-                )}
-              </ul>
-              {tokenChecked &&
-                !getToken() &&
-                !showGuestPlanLimitModal &&
-                !showLoginRequiredModal && (
-                  <div className="mt-4 w-full">
-                    <button
-                      type="button"
-                      onClick={() => setShowLoginRequiredModal(true)}
-                      className="w-full h-16 bg-[#ee2b8c] text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-lg shadow-xl shadow-[#ee2b8c44] hover:bg-[#d4237b] transition-all transform hover:scale-[1.02] active:scale-95"
-                    >
-                      로그인 하기
-                    </button>
-                  </div>
-                )}
-            </div>
-          </motion.div>
-
-          {/* 스크롤 유도 애니메이션 */}
-          <ScrollDownAnimation scrollContainerRef={mainScrollRef} />
-        </main>
-        {/* 하단 탭바 - Sticky로 최상단에 고정 */}
+    <AppShell
+      activeTab={roomId || shareCode ? "rooms" : "home"}
+      activeRailView={roomId || shareCode ? "rooms" : "home"}
+      unreadCount={unreadCount}
+      gridBackground
+      bottomBarSlot={
         <BottomTabBar
           activeTab={roomId || shareCode ? "rooms" : undefined}
           showLoginButton={false}
@@ -2418,53 +1579,962 @@ function MainPageContent() {
           }}
           unreadCount={unreadCount}
         />
-        <CustomAlertModal
-          isOpen={readOnlyNotice !== null}
-          message={readOnlyNotice ?? ""}
-          type="warning"
-          onClose={() => setReadOnlyNotice(null)}
-        />
-        <LoginRequiredModal
-          show={showLoginRequiredModal}
-          onClose={() => {
-            setShowLoginRequiredModal(false);
-            setLoginRequiredTitle(undefined);
-          }}
-          title={loginRequiredTitle}
-        />
-        <GuestPlanLimitModal
-          show={showGuestPlanLimitModal}
-          onClose={() => setShowGuestPlanLimitModal(false)}
-          onConfirm={() => router.push("/add-plen")}
-        />
-        {/* 플랜 공유하기 모달: 닫을 때 plan/user 재조회하여 members 반영 */}
-        <SharePlanModal
-          isOpen={showShareModal}
-          onClose={() => {
-            setShowShareModal(false);
-            fetchPlanUser(handleApiError);
-          }}
-        />
-        <NoPlanFoundModal
-          show={showNoPlanModal}
-          onConfirm={() => router.push("/setting")}
-          onCancel={() => router.push("/plan-list")}
-        />
-        <PlanFilterModal
-          isOpen={showFilterModal}
-          onClose={() => setShowFilterModal(false)}
-          sortOptions={sortOptions}
-          onSortChange={setSortOptions}
-        />
-        {!showNoPlanModal && (
-          <GuideOverlay
-            isOpen={showGuide}
-            onClose={handleCloseGuide}
-            steps={guideSteps}
-          />
+      }
+    >
+      <KakaoLoginAlert
+        show={searchParams.get("kakao_login") === "1"}
+        onSuccessFromMain={async () => {
+          const planData = await fetchPlanUser(handleApiError);
+          const roomIdForAmount =
+            planData && planData !== "none" && planData.roomId != null
+              ? String(planData.roomId)
+              : undefined;
+          fetchTotalAmount(handleApiError, roomIdForAmount);
+          fetchScheduleList();
+        }}
+      />
+      <main
+        ref={mainScrollRef}
+        className={`flex flex-1 min-h-0 flex-col items-center overflow-y-auto w-full px-4 sm:px-6 transition-all duration-500 snap-y snap-mandatory scroll-smooth md:grid md:snap-none md:items-stretch md:grid-cols-1 md:gap-x-6 md:px-8 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:grid-rows-1 lg:overflow-hidden xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)] ${isNoPlanBlur ? "blur-xl scale-[0.98] pointer-events-none select-none opacity-60" : ""}`}
+      >
+        {shareCode && sharedRoomUser === "error" && (
+          <div className="w-full mt-4 px-4 py-3 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium md:col-span-full">
+            공유 링크가 유효하지 않거나 만료되었습니다.
+          </div>
         )}
-      </div>
-    </div>
+        <motion.div
+          ref={firstSectionRef}
+          className="w-full shrink-0 pt-8 pb-10 origin-top snap-start flex flex-col justify-start md:pb-6 lg:min-h-0 lg:overflow-y-auto lg:pt-6 scrollbar-hide"
+          style={
+            // 태블릿 이상: 고정 340px 과 스크롤 연동 페이드/축소를 끈다.
+            // 스냅이 없으니 "위로 밀려 사라지는" 연출의 근거도 사라진다.
+            isTabletUp
+              ? { height: "auto" }
+              : {
+                  height: "340px",
+                  opacity: headerOpacity,
+                  scale: headerScale,
+                  transformPerspective: 1000,
+                }
+          }
+        >
+          {/* 상단 영역: 1행=이름·초대(이름 우측), 2행=결혼식 날짜(좌측)·D-day(날짜 오른쪽), 오른쪽=프로필 */}
+          <div className="w-full flex items-start justify-between gap-4">
+            {/* 왼쪽: [이름(좌)·초대(우)] + [결혼식 날짜(좌)·D-day(우)] */}
+            <div
+              id="main-header-info"
+              className="flex flex-col items-start min-w-0 flex-1 p-2 -m-2 rounded-xl transition-colors"
+            >
+              {/* 1행: 이름(좌) · 초대(이름 바로 옆, 이름 길이에 따라 가변) */}
+              <div className="flex items-center gap-2 flex-nowrap min-w-0">
+                {isPlanLoading ? (
+                  <span
+                    className="skeleton-shimmer h-[42px] w-[120px] rounded-lg shrink-0"
+                    aria-hidden
+                  />
+                ) : (
+                  <span className="font-user-content text-3xl sm:text-[42px] font-semibold text-[#1b0d14] leading-tight shrink-0 min-w-0 break-keep line-clamp-2">
+                    {displayData.name || "이름"}
+                  </span>
+                )}
+                {isPlanLoading ? (
+                  <span
+                    className="skeleton-shimmer h-10 w-[88px] shrink-0 rounded-full"
+                    aria-hidden
+                  />
+                ) : isSharedView && roomMembers.length > 0 ? (
+                  <div
+                    className="flex shrink-0 -space-x-2 items-center"
+                    aria-label="함께하는 멤버"
+                  >
+                    {(() => {
+                      const planId = getPlanUserIdFromToken()
+                        ?.trim()
+                        .toLowerCase();
+                      const subId = getSubFromToken()?.trim().toLowerCase();
+                      const apiPlanId =
+                        apiPlanData && apiPlanData !== "none"
+                          ? String(apiPlanData.id).trim().toLowerCase()
+                          : "";
+                      const myIds = [planId, subId, apiPlanId].filter(
+                        (id): id is string => !!id,
+                      );
+                      const list = [...roomMembers];
+                      const idx = list.findIndex((m) => {
+                        const id = String(m.planUserId ?? "")
+                          .trim()
+                          .toLowerCase();
+                        return myIds.some((myId) => myId === id);
+                      });
+                      if (idx >= 0 && idx !== 0) {
+                        const [me] = list.splice(idx, 1);
+                        list.unshift(me);
+                      }
+                      return list.slice(0, 2);
+                    })().map((member, i) => (
+                      <div
+                        key={member.planUserId}
+                        className="relative flex-shrink-0"
+                        style={{ zIndex: i }}
+                      >
+                        {(String(member.permission ?? "").toUpperCase() ===
+                          "OWNER" ||
+                          String(member.planUserId ?? "")
+                            .trim()
+                            .toLowerCase() ===
+                            String(sharedRoomUser.id).trim().toLowerCase()) && (
+                          <span
+                            className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                            aria-hidden
+                          >
+                            <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
+                          </span>
+                        )}
+                        {String(member.permission ?? "").toUpperCase() ===
+                          "WRITE" &&
+                          String(member.permission ?? "").toUpperCase() !==
+                            "OWNER" && (
+                            <span
+                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
+                              aria-hidden
+                            >
+                              <Pencil
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
+                            </span>
+                          )}
+                        <div
+                          className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
+                          style={{
+                            background: member.image
+                              ? undefined
+                              : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
+                          }}
+                          title={member.name}
+                        >
+                          {member.image ? (
+                            <img
+                              src={member.image}
+                              alt={member.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>
+                              {member.name?.trim().charAt(0)?.toUpperCase() ||
+                                "?"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {roomMembers.length === 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowShareModal(true)}
+                        className="relative flex-shrink-0 z-10 w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 bg-stone-50 hover:bg-stone-100 transition-colors shadow-sm"
+                        aria-label="멤버 초대하기"
+                      >
+                        <Plus className="w-5 h-5" strokeWidth={3} />
+                      </button>
+                    )}
+                  </div>
+                ) : apiPlanData &&
+                  apiPlanData !== "none" &&
+                  apiPlanData.members &&
+                  apiPlanData.members.length > 0 ? (
+                  <div
+                    className="flex shrink-0 -space-x-2 items-center"
+                    aria-label="함께하는 멤버"
+                  >
+                    {(() => {
+                      const list = [...apiPlanData.members];
+                      const ownerIdx = list.findIndex(
+                        (m) =>
+                          String(m.permission ?? "").toUpperCase() === "OWNER",
+                      );
+                      if (ownerIdx >= 0 && ownerIdx !== 0) {
+                        const [owner] = list.splice(ownerIdx, 1);
+                        list.unshift(owner);
+                      }
+                      return list.slice(0, 2);
+                    })().map((member, i) => (
+                      <div
+                        key={member.planUserId}
+                        className="relative flex-shrink-0"
+                        style={{ zIndex: i }}
+                      >
+                        {String(member.permission ?? "").toUpperCase() ===
+                          "OWNER" && (
+                          <span
+                            className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
+                            aria-hidden
+                          >
+                            <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
+                          </span>
+                        )}
+                        {String(member.permission ?? "").toUpperCase() ===
+                          "WRITE" &&
+                          String(member.permission ?? "").toUpperCase() !==
+                            "OWNER" && (
+                            <span
+                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
+                              aria-hidden
+                            >
+                              <Pencil
+                                className="w-2.5 h-2.5"
+                                strokeWidth={2.5}
+                              />
+                            </span>
+                          )}
+                        <div
+                          className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
+                          style={{
+                            background: member.image
+                              ? undefined
+                              : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
+                          }}
+                          title={member.name}
+                        >
+                          {member.image ? (
+                            <img
+                              src={member.image}
+                              alt={member.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>
+                              {member.name?.trim().charAt(0)?.toUpperCase() ||
+                                "?"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {apiPlanData.members?.length === 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowShareModal(true)}
+                        className="relative flex-shrink-0 z-10 w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 bg-stone-50 hover:bg-stone-100 transition-colors shadow-sm"
+                        aria-label="멤버 초대하기"
+                      >
+                        <Plus className="w-5 h-5" strokeWidth={3} />
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!getToken()) {
+                        setShowShareModal(false);
+                        setShowLoginRequiredModal(true);
+                        return;
+                      }
+                      setShowShareModal(true);
+                    }}
+                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-[#1b0d14] bg-stone-100 hover:bg-stone-200 transition-colors border border-stone-200"
+                    aria-label="플랜 초대하기"
+                  >
+                    <Mail className="h-4 w-4 text-stone-600" strokeWidth={2} />
+                    초대
+                  </button>
+                )}
+              </div>
+              {/* 2행: 결혼식 날짜(좌측) + D-day(날짜 오른쪽에 붙임) */}
+              <div className="mt-[5px] flex items-center gap-1.5 flex-nowrap min-w-0 max-w-[200px] sm:max-w-none">
+                {isPlanLoading ? (
+                  <>
+                    <span
+                      className="skeleton-shimmer h-3.5 w-[152px] rounded shrink-0"
+                      aria-hidden
+                    />
+                    <span
+                      className="skeleton-shimmer h-10 w-14 shrink-0 rounded-full"
+                      aria-hidden
+                    />
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[12px] font-normal leading-tight text-gray-500 shrink-0">
+                      {weddingDateText
+                        ? `결혼식: ${weddingDateText}`
+                        : "\u00A0"}
+                    </span>
+                    <span
+                      className="flex h-5 shrink-0 items-center rounded-full px-4 py-2 text-sm font-semibold leading-none"
+                      style={{
+                        background: "#ee2b8c",
+                        color: "#fff",
+                        boxShadow: "0 2px 8px rgba(238, 43, 140, 0.35)",
+                      }}
+                    >
+                      {dDayLabel}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowGuide(true)}
+                className="flex h-12 w-12 shrink-0 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"
+                aria-label="가이드 보기"
+              >
+                <CircleHelp className="h-6 w-6" strokeWidth={2} />
+              </button>
+              {/* roomId 또는 shareCode일 때 우측 상단 나가기 버튼 */}
+              {(shareCode || roomId) && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/plan-list")}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-600 text-white cursor-pointer hover:bg-stone-700 transition-colors"
+                  aria-label="나가기"
+                >
+                  <LogOut className="h-6 w-6" strokeWidth={2} />
+                </button>
+              )}
+            </div>
+          </div>
+          {/* TodayFocus - 로딩 시 요소별 스켈레톤 */}
+          <div className="mt-4 w-full">
+            {isPlanLoading ? (
+              <div className="flex w-full flex-col rounded-[24px] border-2 border-stone-200/50 bg-white/50 p-6">
+                <div className="flex items-start gap-3">
+                  <span
+                    className="skeleton-shimmer h-10 w-10 shrink-0 rounded-full"
+                    aria-hidden
+                  />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <span
+                      className="skeleton-shimmer block h-5 w-20 rounded"
+                      aria-hidden
+                    />
+                    <span
+                      className="skeleton-shimmer block h-[42px] w-28 rounded"
+                      aria-hidden
+                    />
+                  </div>
+                </div>
+                <span
+                  className="skeleton-shimmer mt-4 block h-6 w-48 rounded"
+                  aria-hidden
+                />
+                <div className="mt-4 flex items-center gap-2">
+                  <span
+                    className="skeleton-shimmer h-2 flex-1 rounded-full"
+                    aria-hidden
+                  />
+                  <span
+                    className="skeleton-shimmer h-4 w-8 shrink-0 rounded"
+                    aria-hidden
+                  />
+                </div>
+              </div>
+            ) : (
+              <div
+                id="main-budget-card"
+                onClick={() => {
+                  router.push(
+                    roomIdForDetail
+                      ? `/budget-detail?roomId=${roomIdForDetail}`
+                      : "/budget-detail",
+                  );
+                }}
+                className="flex w-full flex-col rounded-[24px] p-6 cursor-pointer hover:opacity-95 transition-opacity"
+                style={{
+                  background: budgetGradient,
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/30">
+                    <CircleDollarSign
+                      className="h-5 w-5 text-white"
+                      strokeWidth={2}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold leading-5 text-white">
+                      남은 예산
+                    </p>
+                    <p
+                      className={
+                        Math.abs(remainingBudget) >= 1000
+                          ? "my-3 text-[32px] max-[350px]:text-[28px] font-semibold leading-7 text-white"
+                          : "my-3 text-[42px] max-[350px]:text-[37px] font-semibold leading-7 text-white"
+                      }
+                    >
+                      <span className="whitespace-nowrap">
+                        <CountUp
+                          to={remainingBudget}
+                          separator=","
+                          duration={0.1}
+                          className="inline"
+                        />
+                        만 원
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-1 pl-[52px] py-2 text-xl max-[350px]:text-[15px] font-semibold leading-none text-white">
+                  <CountUp
+                    to={usedBudget}
+                    separator=","
+                    duration={0.1}
+                    className="inline"
+                  />
+                  만 원 지출/예정
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
+                    <div
+                      className="h-full rounded-full bg-white"
+                      style={{ width: `${budgetUsagePercentageForBar}%` }}
+                    />
+                  </div>
+                  <span className="shrink-0 text-sm font-normal leading-5 text-white">
+                    {budgetUsagePercentage}%
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/*
+            대화 — 태블릿 이상에서만. 모바일은 하단 탭의 "참여 플랜"이 그 자리를
+            대신하고, 넓은 화면에서는 예산 카드 아래가 비어 그 공간을 쓴다.
+          */}
+          {chatRoomsForPanel.length > 0 && (
+            <section className="mt-6 hidden w-full rounded-[24px] border border-[#ee2b8c0f] bg-white p-5 shadow-sm md:block">
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h2 className="text-[15px] font-bold tracking-tight text-[#1b0d14]">
+                  대화
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => router.push("/plan-list")}
+                  className="text-[12.5px] text-[#ee2b8c] hover:underline"
+                >
+                  전체
+                </button>
+              </div>
+              <div className="grid gap-1">
+                {chatRoomsForPanel.map((room) => {
+                  const roomUnread = getRoomUnreadCount(room.id);
+                  return (
+                    <button
+                      key={room.id}
+                      type="button"
+                      onClick={() => router.push(`/plan-list?chat=${room.id}`)}
+                      className="flex w-full min-w-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-[#faf7f9]"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ee2b8c0a] text-[#ee2b8c]">
+                        <MessageCircle className="h-[18px] w-[18px]" />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[13.5px] font-bold tracking-tight text-[#1b0d14]">
+                        {room.name}
+                      </span>
+                      {roomUnread > 0 && (
+                        <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#ee2b8c] px-1 text-[10px] font-bold leading-none text-white">
+                          {roomUnread > 9 ? "9+" : roomUnread}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* 최근 활동 — 기록이 없으면 스스로 렌더하지 않는다 */}
+          <ActivityPanel roomId={roomIdForDetail} />
+        </motion.div>
+        <motion.div
+          ref={secondSectionRef}
+          className="w-full min-h-[100dvh] h-[100dvh] pt-4 snap-start bg-transparent relative flex flex-col shrink-0 md:min-h-0 md:h-auto md:snap-align-none lg:pt-6"
+        >
+          {/* 하단 영역 */}
+          <div className="flex justify-between items-end gap-3">
+            <div className="flex flex-col items-start w-full overflow-hidden pt-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xl font-bold text-[#1b0d14] shrink-0">
+                  플랜 리스트
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // 공유 뷰에서는 내 방 id 를 붙이지 않는다 (내 플랜에 저장되던 문제)
+                    const roomIdValue = isSharedView
+                      ? roomId
+                      : (roomId ??
+                        (apiPlanData &&
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
+                          ? String(apiPlanData.roomId)
+                          : null));
+                    router.push(
+                      roomIdValue
+                        ? `/calendar?roomId=${roomIdValue}`
+                        : "/calendar",
+                    );
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-[#ee2b8c] hover:bg-[#ee2b8c10] transition-all rounded-lg active:scale-95"
+                  aria-label="캘린더 보기"
+                >
+                  <Calendar className="h-5 w-5" strokeWidth={2.5} />
+                </button>
+              </div>
+              {/* 카테고리 필터 영역 (테스트) */}
+              <div
+                ref={categoryScrollRef}
+                className="flex w-full items-center gap-1.5 overflow-x-auto scrollbar-hide py-1.5 mt-0.5 mask-linear-right select-none cursor-grab active:cursor-grabbing"
+              >
+                {isPlanLoading ? (
+                  <span
+                    className="skeleton-shimmer block h-6 w-48 rounded"
+                    aria-hidden
+                  />
+                ) : displayCount > 0 ? (
+                  currentTabCategories.map((catName) => {
+                    const isSelected = selectedCategory === catName;
+                    return (
+                      <button
+                        key={catName}
+                        ref={isSelected ? selectedCategoryButtonRef : undefined}
+                        type="button"
+                        onClick={() => setSelectedCategory(catName)}
+                        className={`shrink-0 px-3 py-1 rounded-md text-[12px] font-bold transition-all flex items-center gap-1 ${
+                          isSelected
+                            ? "bg-[#ee2b8c] text-white shadow-sm"
+                            : "bg-gray-100/80 text-gray-600 hover:bg-gray-200 active:scale-95"
+                        }`}
+                      >
+                        {catName}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <span className="text-[14px] text-gray-400 font-medium">
+                    플랜을 추가해볼까요?
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex shrink-0 pb-1.5 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowFilterModal(true)}
+                className="inline-flex items-center justify-center gap-1.5 h-[36px] px-3.5 py-0 rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 border-2 border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
+                aria-label="필터"
+              >
+                {(() => {
+                  const current = sortOptions[0] ?? "date_desc";
+                  const { label, isDesc } = getSortButtonLabel(current);
+                  return (
+                    <>
+                      <span>{label}</span>
+                      {isDesc ? (
+                        <ArrowDown
+                          className="h-3.5 w-3.5 shrink-0"
+                          strokeWidth={2.5}
+                        />
+                      ) : (
+                        <ArrowUp
+                          className="h-3.5 w-3.5 shrink-0"
+                          strokeWidth={2.5}
+                        />
+                      )}
+                    </>
+                  );
+                })()}
+              </button>
+              {!(
+                isRoomView &&
+                String(myRoomPermission ?? "").toUpperCase() === "READ"
+              ) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // 공유 뷰에서는 내 방 id 를 붙이지 않는다 (내 플랜에 저장되던 문제)
+                    const roomIdValue = isSharedView
+                      ? roomId
+                      : (roomId ??
+                        (apiPlanData &&
+                        apiPlanData !== "none" &&
+                        apiPlanData.roomId
+                          ? String(apiPlanData.roomId)
+                          : null));
+
+                    const addPlanPath = roomIdValue
+                      ? `/add-plen?roomId=${roomIdValue}`
+                      : "/add-plen";
+                    if (getToken()) {
+                      router.push(addPlanPath);
+                      return;
+                    }
+                    if (isSharedView) {
+                      setLoginRequiredTitle(
+                        "플랜을 추가하려면 로그인해 주세요",
+                      );
+                      setShowLoginRequiredModal(true);
+                      return;
+                    }
+
+                    // Guest: allow up to 3 plans saved in sessionStorage
+                    const guestCount = effectiveScheduleList.length;
+                    if (guestCount === 0) {
+                      // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
+                      setShowGuestPlanLimitModal(true);
+                      return;
+                    }
+                    if (guestCount >= 3) {
+                      setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
+                      setShowLoginRequiredModal(true);
+                      return;
+                    }
+                    router.push(addPlanPath);
+                  }}
+                  className="flex h-[36px] justify-center items-center gap-1.5 px-3.5 py-0 text-white rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
+                  style={{
+                    backgroundColor:
+                      !getToken() &&
+                      !isSharedView &&
+                      effectiveScheduleList.length >= 3
+                        ? "#cbd5e1"
+                        : "#ee2b8c",
+                  }}
+                >
+                  추가
+                  <CirclePlus
+                    className="h-4 w-4 shrink-0 text-white"
+                    strokeWidth={2.5}
+                  />
+                </button>
+              )}
+            </div>
+          </div>
+          {/* 탭 영역 - Sticky 고정 */}
+          <div
+            id="main-tabs"
+            className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm px-0 sm:px-2 py-2 -mx-4 sm:mx-0 px-4 sm:px-2 border-b border-gray-50/50"
+          >
+            <div className="flex bg-gray-100/50 p-1.5 rounded-2xl border border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("planned");
+                  setSelectedCategory("전체");
+                  if (shareCode?.trim()) {
+                    fetchSharedRoomScheduleList("NORMAL");
+                  } else if (getToken()) {
+                    const roomIdParam =
+                      roomId?.trim() ||
+                      (apiPlanData &&
+                      apiPlanData !== "none" &&
+                      apiPlanData.roomId
+                        ? String(apiPlanData.roomId)
+                        : null);
+                    fetchScheduleList(roomIdParam ?? undefined, "NORMAL");
+                  }
+                }}
+                className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
+                  activeTab === "planned"
+                    ? "bg-white text-[#ee2b8c] shadow-sm"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                <span>계획 중</span>
+                <span
+                  className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "planned" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}
+                >
+                  {plannedCount}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("completed");
+                  setSelectedCategory("전체");
+                  if (shareCode?.trim()) {
+                    fetchSharedRoomScheduleList("COMPLETED");
+                  } else if (getToken()) {
+                    const roomIdParam =
+                      roomId?.trim() ||
+                      (apiPlanData &&
+                      apiPlanData !== "none" &&
+                      apiPlanData.roomId
+                        ? String(apiPlanData.roomId)
+                        : null);
+                    fetchScheduleList(roomIdParam ?? undefined, "COMPLETED");
+                  }
+                }}
+                className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
+                  activeTab === "completed"
+                    ? "bg-white text-[#ee2b8c] shadow-sm"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                <span>완료</span>
+                <span
+                  className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "completed" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}
+                >
+                  {completedCount}
+                </span>
+              </button>
+            </div>
+          </div>
+          <div
+            // 모바일에서는 헤더 섹션을 다 올린 뒤에야 리스트가 스크롤된다
+            // (스냅 두 섹션이 서로 먹지 않게). 태블릿 이상은 스냅이 없어
+            // 그 게이트를 걸면 리스트가 아예 스크롤되지 않는다.
+            //
+            // 768~1023 은 단일 컬럼이라 페이지 전체가 흐르는 편이 낫다. 여기서
+            // 자체 스크롤을 잡으면 헤더·예산·대화가 화면을 다 먹고 리스트만
+            // 좁은 틈에서 스크롤된다. 2열이 되는 1024 부터 되돌린다.
+            className={`flex-1 w-full pb-24 min-h-0 scrollbar-hide md:overflow-visible md:pb-6 lg:overflow-y-auto ${allowPlanListScroll || isTabletUp ? "overflow-y-auto" : "overflow-hidden touch-pan-y"}`}
+            style={{
+              maskImage:
+                "linear-gradient(to bottom, transparent 0%, black 24px, black 100%)",
+              WebkitMaskImage:
+                "linear-gradient(to bottom, transparent 0%, black 24px, black 100%)",
+            }}
+          >
+            <ul
+              id="main-plan-list"
+              className="mt-2 w-full flex flex-col gap-3 min-h-[200px] relative bg-transparent"
+            >
+              {/* 
+                  플랜 리스트 로딩: 초기 로드/유저·방 로딩 시에만 스켈레톤.
+                  필터 리패치 시에는 스켈레톤 미표시 → 카테고리 스크롤 위치 유지.
+                */}
+              {!isListLoaded || isPlanLoading || isSharedLoading ? (
+                Array.from({ length: 5 }).map((_, idx) => (
+                  <li
+                    key={`skeleton-plan-${idx}`}
+                    className="flex items-center gap-4 rounded-3xl border border-[#ee2b8c0a] bg-white p-4 shadow-sm animate-pulse"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-stone-50 shrink-0" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="h-5 w-3/4 bg-stone-50 rounded" />
+                      <div className="space-y-1">
+                        <div className="h-3 w-1/2 bg-stone-50 rounded" />
+                        <div className="h-3 w-1/3 bg-stone-50 rounded" />
+                      </div>
+                    </div>
+                    <div className="text-right space-y-2">
+                      <div className="h-5 w-16 bg-stone-50 rounded ml-auto" />
+                      <div className="h-4 w-10 bg-stone-50 rounded-lg ml-auto" />
+                    </div>
+                  </li>
+                ))
+              ) : isListLoaded && effectiveScheduleList.length === 0 ? (
+                <li className="flex flex-1 flex-col items-center justify-center py-16">
+                  <p className="text-4xl font-semibold text-stone-400">텅~</p>
+                </li>
+              ) : (
+                <AnimatePresence initial={false}>
+                  {visibleScheduleList.map((plan) => {
+                    const isChecked =
+                      checkedItems.has(plan.id) || plan.status === "COMPLETED";
+                    const amount = plan.amount ?? 0;
+                    const dateStatus = getDateStatusLabel(plan.startDate);
+                    const categoryColor = getCategoryColor(plan.categoryName);
+                    const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
+                    const dateLabel = plan.startDate?.trim()
+                      ? (() => {
+                          const { dateText, weekday } = formatDate(
+                            plan.startDate as string,
+                          );
+                          return `${dateText} (${weekday})`;
+                        })()
+                      : "미정";
+
+                    return (
+                      <motion.li
+                        key={plan.id}
+                        layout
+                        className="w-full"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{
+                          opacity: [1, 1, 0],
+                          y: [0, -10, -10],
+                          x: [0, 0, activeTab === "planned" ? 500 : -500],
+                          scale: [1, 1.05, 1.05],
+                          transition: {
+                            duration: 0.6,
+                            times: [0, 0.4, 1],
+                            ease: "easeInOut",
+                          },
+                        }}
+                      >
+                        <Link
+                          href={detailHref}
+                          onClick={() => {
+                            sessionStorage.setItem("returnToPlanList", "true");
+                          }}
+                          className={`relative flex w-full items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
+                          aria-label={`플랜 상세 보기: ${plan.title}`}
+                        >
+                          {mounted &&
+                            activeTab === "planned" &&
+                            isStartDatePast(plan.startDate) && (
+                              <PastDateIndicator />
+                            )}
+                          <div
+                            className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+                            style={{
+                              backgroundColor: `${categoryColor}`,
+                            }}
+                          >
+                            <button
+                              type="button"
+                              id={String(plan.id)}
+                              disabled={togglingIds.has(plan.id)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleToggleCheck(plan.id);
+                              }}
+                              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
+                                isChecked
+                                  ? "bg-[#ee2b8c] border-[#ee2b8c]"
+                                  : "bg-white/80 border-[#ee2b8c]"
+                              }`}
+                            >
+                              {isChecked && (
+                                <Check
+                                  className="h-3 w-3 text-white"
+                                  strokeWidth={3}
+                                />
+                              )}
+                            </button>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4
+                              className={`font-user-content text-[#1b0d14] font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : ""}`}
+                            >
+                              {plan.title}
+                            </h4>
+                            <div className="font-user-content text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
+                              <p className="truncate">{plan.categoryName}</p>
+                              <p className="truncate">{dateLabel}</p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
+                              {amount > 0
+                                ? `${amount.toLocaleString("ko-KR")}만 원`
+                                : "미정"}
+                            </div>
+                            <span
+                              className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-black tracking-tight ${
+                                isChecked
+                                  ? "bg-emerald-50 text-emerald-600"
+                                  : dateStatus === "D-day"
+                                    ? "bg-[#ee2b8c] text-white shadow-xs"
+                                    : dateStatus === "임박"
+                                      ? "bg-orange-50 text-orange-600"
+                                      : dateStatus === "예정"
+                                        ? "bg-sky-50 text-sky-600"
+                                        : "bg-slate-100 text-slate-400"
+                              }`}
+                            >
+                              {isChecked ? "완료" : dateStatus}
+                            </span>
+                          </div>
+                        </Link>
+                      </motion.li>
+                    );
+                  })}
+                  {visibleScheduleList.length === 0 && (
+                    <motion.li
+                      key={`empty-${activeTab}`}
+                      layout
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-1 flex-col items-center justify-center py-16"
+                    >
+                      <p className="text-xl font-semibold text-stone-400 text-center w-full">
+                        {activeTab === "completed"
+                          ? "완료한 플랜이 없어요"
+                          : "모든 플랜을 완료했어요! 🎉"}
+                      </p>
+                    </motion.li>
+                  )}
+                </AnimatePresence>
+              )}
+            </ul>
+            {tokenChecked &&
+              !getToken() &&
+              !showGuestPlanLimitModal &&
+              !showLoginRequiredModal && (
+                <div className="mt-4 w-full">
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginRequiredModal(true)}
+                    className="w-full h-16 bg-[#ee2b8c] text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-lg shadow-xl shadow-[#ee2b8c44] hover:bg-[#d4237b] transition-all transform hover:scale-[1.02] active:scale-95"
+                  >
+                    로그인 하기
+                  </button>
+                </div>
+              )}
+          </div>
+        </motion.div>
+
+        {/* 스크롤 유도 애니메이션 — 스냅이 있는 모바일에서만 의미가 있다 */}
+        <div className="md:hidden">
+          <ScrollDownAnimation scrollContainerRef={mainScrollRef} />
+        </div>
+      </main>
+      <CustomAlertModal
+        isOpen={readOnlyNotice !== null}
+        message={readOnlyNotice ?? ""}
+        type="warning"
+        onClose={() => setReadOnlyNotice(null)}
+      />
+      <LoginRequiredModal
+        show={showLoginRequiredModal}
+        onClose={() => {
+          setShowLoginRequiredModal(false);
+          setLoginRequiredTitle(undefined);
+        }}
+        title={loginRequiredTitle}
+      />
+      <GuestPlanLimitModal
+        show={showGuestPlanLimitModal}
+        onClose={() => setShowGuestPlanLimitModal(false)}
+        onConfirm={() => router.push("/add-plen")}
+      />
+      {/* 플랜 공유하기 모달: 닫을 때 plan/user 재조회하여 members 반영 */}
+      <SharePlanModal
+        isOpen={showShareModal}
+        onClose={() => {
+          setShowShareModal(false);
+          fetchPlanUser(handleApiError);
+        }}
+      />
+      <NoPlanFoundModal
+        show={showNoPlanModal}
+        onConfirm={() => router.push("/setting")}
+        onCancel={() => router.push("/plan-list")}
+      />
+      <PlanFilterModal
+        isOpen={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        sortOptions={sortOptions}
+        onSortChange={setSortOptions}
+      />
+      {!showNoPlanModal && (
+        <GuideOverlay
+          isOpen={showGuide}
+          onClose={handleCloseGuide}
+          steps={guideSteps}
+        />
+      )}
+    </AppShell>
   );
 }
 

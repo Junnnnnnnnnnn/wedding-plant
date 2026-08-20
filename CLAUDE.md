@@ -87,6 +87,55 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 
 `BottomTabBar`의 탭 라우팅은 `/main` (홈), `/plan-list` (참여 플랜), `/user` (Settings) 입니다. "피드" 탭은 의도적으로 "준비중" 모달만 띄우는 상태이고, `/calendar`도 home 탭으로 취급됩니다.
 
+### 적응형 셸 (태블릿·데스크톱)
+
+화면마다 반복하던 폰 프레임(`max-w-md mx-auto bg-white shadow-2xl` + `hidden lg:block ... bg-gray-100` 레터박스)은 **`app/components/AppShell.tsx`로 대체**합니다. 새 화면이나 기존 화면을 손볼 때 프레임을 직접 쓰지 말고 셸을 쓰세요.
+
+- `<768` 지금과 동일 — `max-w-md` 중앙 정렬 + `BottomTabBar`
+- `≥768` 하단 탭바 대신 좌측 아이콘 레일(`SideNavRail`, 76px)
+- `≥1024` 레일에 라벨(236px). `detail` prop 을 넘기면 마스터-디테일 2열
+- `≥1280` 마스터 컬럼 확장, 전체 최대 1440px
+
+**탭·메뉴 정의는 `app/components/tabs.ts` 한 곳에만** 둡니다. 하단 탭바는 4개(홈·피드·참여 플랜·Settings), 데스크톱 레일은 5개(+ 플랜 보드)로 **의도적으로 다릅니다** — 보드는 넓은 화면 전용 뷰라 폰에서는 `pathnameToTab` 규칙대로 홈 탭에 귀속됩니다.
+
+폭에 따라 **동작**이 갈리는 곳(라우트를 밀지, 옆 pane 을 열지)은 `app/hooks/useMediaQuery.ts`를 씁니다. 레이아웃 자체는 CSS(`md:`/`lg:`)가 맡습니다. 단, 이 훅은 서버 스냅샷이 `false`라 하이드레이션 직후 한 번 `false`로 렌더됩니다. **effect 안에서 폭으로 라우팅을 바꾸는 코드는 훅 값 대신 `window.matchMedia`를 직접 읽으세요** (`app/plan-list/page.tsx`의 승격 effect 참고). 안 그러면 데스크톱에서도 한 번 튕겨 나갑니다.
+
+`app/chat/[chatRoomId]/ChatRoomView.tsx`는 `variant="standalone" | "pane"` 을 받습니다. `pane`에서는 `fixed inset-0` + visualViewport 높이 계산을 건너뜁니다(높이를 셸이 정하므로). 방을 바꿀 때는 반드시 **`key`로 새로 마운트**하세요 — 초기 로드 여부를 ref 로 기억해서 같은 인스턴스를 재사용하면 새 방의 히스토리를 불러오지 않습니다.
+
+`app/schedule-detail/ScheduleDetailView.tsx`도 같은 구조입니다 (`variant="page" | "inspector"`). `inspector`는 보드·캘린더 옆에 붙고, 뒤로가기 대신 `onClose`를 씁니다.
+
+### 플랜 보드 (`app/calendar/PlanBoard.tsx`)
+
+`/calendar`는 ≥768에서 **보드 ↔ 캘린더** 전환이 생깁니다. 보드는 일정을 **월별 컬럼**으로 나눕니다(날짜 미정 컬럼이 맨 앞).
+
+- 데이터는 `/plan/schedule/calendar`가 아니라 **`/plan/schedule/list?count=10000`** 을 씁니다. 캘린더 응답은 `amount`·`status`·`categoryName`이 비어 오는 경우가 있어 보드 카드를 채우지 못합니다.
+- **완료 토글**: `PATCH /plan/schedule/status/{id}` — `useScheduleStatusToggle`
+- **드래그 날짜 이동**: `PATCH /plan/schedule/{id}` 에 `{ startDate }` 만 — `useScheduleDateMove`. 부분 수정 시맨틱이라 다른 필드는 그대로 남습니다(`app/add-plen/page.tsx` 저장 로직 주석 참고). 옮긴 달의 같은 일자를 유지하되 없는 날짜면 말일로 맞춥니다.
+- 드래그는 HTML5 DnD가 아니라 **pointer 이벤트**로 직접 구현했습니다(터치에서 DnD가 안 뜨기 때문). 터치는 400ms 롱프레스로 시작하고, 그 전에 움직이면 목록 스크롤로 넘깁니다. **인스펙터에서 날짜를 고치는 경로를 항상 함께 두세요** — 드래그가 안 되는 기기에서 기능이 막히면 안 됩니다.
+- 카드에 `select-none`이 필요합니다. 없으면 마우스로 끌 때 글자가 선택됩니다.
+
+`/main`의 완료 토글은 이 훅을 쓰지 **않습니다**. 거기 토글은 카드가 날아가는 애니메이션과 탭별 카운트 보정까지 얽혀 있어 억지로 공통화하면 더 읽기 어려워집니다.
+
+### 최근 활동 (`GET /plan/activity/list`)
+
+홈 좌측 컬럼의 `ActivityPanel`이 읽습니다. `roomId`를 주면 그 방의 기록, 없으면 개인 기록입니다.
+
+**문장은 프론트에서 조립합니다.** 서버는 `type`·`targetTitle`·`amount`만 주고 "…님이 …했어요" 문구는 `ActivityPanel.describe()`가 만듭니다. 서버가 완성된 문구를 내려보내면 문구 수정이 백엔드 배포에 묶입니다.
+
+기록은 이 기능이 배포된 뒤부터 쌓입니다. 기존 사용자는 한동안 비어 있는 게 정상이고, 그때는 패널이 스스로 렌더하지 않습니다.
+
+백엔드는 `~/DEV/seoul-moment-api`의 `apps/api/src/module/plen/activity/` 입니다.
+
+### 셸을 쓰지 않는 화면
+
+- **`/setting`** (온보딩) — 스텝을 한 번에 하나씩 보여주는 흐름이라 레일·탭바가 방해가 됩니다. 중앙 정렬을 유지하고 `lg`에서 컬럼 폭만 600px로 넓혔습니다.
+- **`/`** (랜딩) — 로그인 전 화면이라 내비게이션이 없습니다. 448px 띠를 없애고 화면을 채우되 내용은 가운데 컬럼에 가둡니다.
+- **`/share/[shareCode]`** — 이미 중앙 정렬 flex + `max-w-sm` 카드라 어느 폭에서도 정상입니다. 손대지 않았습니다.
+
+### `components/Lanyard.tsx`의 `window.innerWidth`는 그대로 둡니다
+
+`useMediaQuery`로 바꾸지 마세요. 이 훅은 서버 스냅샷이 `false`라 하이드레이션 직후 한 번 `false`로 렌더되는데, Lanyard 의 `isMobile`은 **dpr·물리 timeStep(1/30↔1/60)·곡선 점 개수·clearcoat**를 동시에 결정합니다. 값이 뒤늦게 뒤집히면 모바일에서 접속할 때마다 물리 월드와 지오메트리가 다시 잡힙니다. 지금처럼 첫 렌더에서 `window.innerWidth`를 동기로 읽는 편이 맞습니다.
+
 ### 시간/날짜 처리
 
 `lib/utils.ts`의 `getKstToday / getKstDate / getKstDateString / parseLocalDate`를 사용하세요. 한국 사용자 대상이라 **KST 기준**으로 통일되어야 하고, `new Date("YYYY-MM-DD")` 직접 파싱은 타임존 오프셋 문제로 금지입니다.
@@ -127,6 +176,12 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 
 - `scripts/login-branches.cjs` — 로그인 후 라우팅 10분기를 목 응답으로 구동
 - `scripts/room-permission-ui.cjs` — 방 권한(WRITE/READ)별 UI 게이트 확인
+- `scripts/plan-list-panes.cjs` — `/plan-list` 폭별 레이아웃 + 채팅 pane + 알림 토스트 억제 확인. 자체적으로 크롬을 띄우므로 `npm run dev`만 있으면 됩니다 (`SHOT_DIR`로 캡처 위치 지정)
+- `scripts/main-dashboard.cjs` — `/main` 폭별 레이아웃 + 리스트 스크롤 게이트 + 가이드 말풍선 좌표 확인. `HEADED=1`을 붙이면 브라우저를 띄워 직접 눌러볼 수 있습니다
+- `scripts/plan-board.cjs` — `/calendar` 보드 뷰. 컬럼 분리, 보드↔캘린더 전환, 인스펙터, 완료 토글(`PATCH status`), 드래그 날짜 이동(`PATCH schedule`)까지 실제 요청을 잡아 확인합니다
+- `scripts/misc-pages.cjs` — `/`, `/user`, `/add-plen`, `/setting` 폭별 캡처
+
+`plan-list-panes.cjs`는 **API 호스트로 가는 WebSocket을 막습니다.** socket.io 는 WS 로 붙어서 puppeteer 의 요청 가로채기를 우회하는데, 그대로 두면 가짜 토큰으로 공유 백엔드에 접속해 "존재하지 않는 방" 오류 모달이 뜹니다. 새 하네스를 만들 때도 같은 처리를 하세요.
 
 목 응답에는 **CORS 헤더와 `OPTIONS` 프리플라이트 응답이 반드시 필요**합니다. 없으면 전부 CORS로 막혀 분기까지 가지 못합니다.
 

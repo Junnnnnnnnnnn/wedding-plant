@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { Suspense, useEffect, useState, useCallback } from "react";
 import {
   MessageCircle,
   ArrowRight,
@@ -8,14 +8,16 @@ import {
   Crown,
   CircleHelp,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plan, ChatRoom, Member } from "@/types";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { getToken } from "@/lib/api";
-import BottomTabBar from "../components/BottomTabBar";
+import AppShell from "../components/AppShell";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
+import ChatRoomView from "../chat/[chatRoomId]/ChatRoomView";
+import { useIsDesktop } from "../hooks/useMediaQuery";
 
 interface PlanListPageProps {
   onSelectPlan?: (id: number) => void;
@@ -229,8 +231,10 @@ const CardBudget: React.FC<CardBudgetProps> = ({
   </div>
 );
 
-const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
+const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDesktop = useIsDesktop();
   const { fetchWithAuth, setLoading: setGlobalLoading } = useApi();
   const {
     subscribeToChatRooms,
@@ -410,33 +414,93 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     }
   };
 
+  /** ≥1024 에서 우측 pane 에 열어 둔 채팅방. 새로고침·링크 공유에도 복원된다 */
+  const selectedChatRoomId = searchParams.get("chat")?.trim() || null;
+
+  const handleChatRoomClick = useCallback(
+    (chatRoomId: number) => {
+      // 좁은 화면에서는 지금과 똑같이 채팅 라우트로 이동한다.
+      if (!isDesktop) {
+        router.push(`/chat/${chatRoomId}`);
+        return;
+      }
+      // 넓은 화면에서는 페이지 이동 없이 옆 pane 에서 연다.
+      router.replace(`/plan-list?chat=${chatRoomId}`, { scroll: false });
+    },
+    [isDesktop, router],
+  );
+
+  // 데스크톱에서 대화를 보다가 창을 좁히면 pane 이 사라진다.
+  // 보던 대화를 잃지 않도록 채팅 라우트로 승격시킨다.
+  //
+  // isDesktop 대신 matchMedia 를 직접 읽는다. 훅은 서버 스냅샷이 false 라
+  // 하이드레이션 직후 한 번 false 로 렌더되는데, 그 타이밍에 이 이펙트가
+  // 돌면 데스크톱에서도 채팅 라우트로 튕겨 나간다.
+  useEffect(() => {
+    if (!selectedChatRoomId) return;
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    if (window.matchMedia("(min-width: 1024px)").matches) return;
+    router.replace(`/chat/${selectedChatRoomId}`);
+  }, [selectedChatRoomId, isDesktop, router]);
+
   return (
-    <div className="min-h-screen bg-[#fcfbfc]">
-      <div className="min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10 pb-24">
-        <div className="absolute top-[-5%] right-[-10%] w-64 h-64 bg-[#ee2b8c0a] rounded-full blur-3xl pointer-events-none" />
+    <AppShell
+      activeTab="rooms"
+      activeRailView="rooms"
+      unreadCount={unreadCount}
+      gridBackground
+      detail={
+        selectedChatRoomId ? (
+          // key 로 방마다 새로 마운트한다. ChatRoomView 는 초기 로드 여부를
+          // ref 로 기억해서, 같은 인스턴스를 재사용하면 새 방의 히스토리를
+          // 불러오지 않는다.
+          <ChatRoomView
+            key={selectedChatRoomId}
+            chatRoomId={selectedChatRoomId}
+            variant="pane"
+          />
+        ) : null
+      }
+      detailEmpty={
+        <div className="flex h-full flex-col items-center justify-center gap-3 px-10 text-center">
+          <MessageCircle
+            className="h-10 w-10 text-stone-200"
+            strokeWidth={1.5}
+          />
+          <b className="text-[15px] font-bold text-stone-500">
+            대화를 선택하세요
+          </b>
+          <span className="max-w-[260px] text-[13px] leading-relaxed text-gray-400">
+            왼쪽 플랜 카드의 채팅방을 누르면 이 자리에서 바로 열립니다.
+          </span>
+        </div>
+      }
+    >
+      <div className="absolute top-[-5%] right-[-10%] w-64 h-64 bg-[#ee2b8c0a] rounded-full blur-3xl pointer-events-none" />
 
-        <header className="pt-12 px-6 mb-10 relative z-10 flex justify-between items-end">
-          <div id="plan-list-header">
-            <h2 className="text-4xl font-black text-[#1b0d14] tracking-tight">
-              참여 플랜 리스트
-            </h2>
-            <p className="text-gray-400 font-bold text-sm mt-2">
-              함께 가꾸는 소중한 결혼 준비 계획들
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowGuide(true)}
-            className="flex h-12 w-12 shrink-0 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"
-            aria-label="가이드 보기"
-          >
-            <CircleHelp className="h-6 w-6" strokeWidth={2} />
-          </button>
-        </header>
+      <header className="pt-12 px-6 mb-10 relative z-10 flex justify-between items-end shrink-0 md:px-8 md:pt-10 md:mb-8 lg:px-5 lg:pt-8 lg:mb-6">
+        <div id="plan-list-header">
+          <h2 className="text-4xl font-black text-[#1b0d14] tracking-tight lg:text-3xl">
+            참여 플랜 리스트
+          </h2>
+          <p className="text-gray-400 font-bold text-sm mt-2">
+            함께 가꾸는 소중한 결혼 준비 계획들
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowGuide(true)}
+          className="flex h-12 w-12 shrink-0 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"
+          aria-label="가이드 보기"
+        >
+          <CircleHelp className="h-6 w-6" strokeWidth={2} />
+        </button>
+      </header>
 
-        <div className="flex-1 px-6 space-y-6 relative z-10 overflow-y-auto no-scrollbar">
+      <div className="flex-1 min-h-0 px-6 pb-24 relative z-10 overflow-y-auto no-scrollbar md:px-8 md:pb-8 lg:px-5">
+        <div className="space-y-6 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 md:content-start lg:block lg:space-y-5">
           {listLoading ? (
-            <div className="space-y-6">
+            <div className="space-y-6 md:col-span-2 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 lg:block lg:space-y-5">
               {/* Skeleton Cards */}
               {[1, 2].map((i) => (
                 <div
@@ -467,7 +531,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
               ))}
             </div>
           ) : plans.length === 0 ? (
-            <div className="text-center py-20 text-gray-400">
+            <div className="text-center py-20 text-gray-400 md:col-span-2">
               <p>참여 중인 플랜이 없습니다.</p>
             </div>
           ) : (
@@ -482,10 +546,6 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                 ? Math.min(100, Math.max(0, rawProgress))
                 : 0;
               const isFirst = index === 0;
-
-              const handleChatRoomClick = (chatRoomId: number) => {
-                router.push(`/chat/${chatRoomId}`);
-              };
 
               return (
                 <div key={plan.roomId} className="w-full relative">
@@ -534,26 +594,32 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
             })
           )}
         </div>
-
-        <BottomTabBar unreadCount={unreadCount} />
-
-        <LoginRequiredModal
-          show={showLoginModal}
-          onClose={() => {
-            setShowLoginModal(false);
-            router.replace("/");
-          }}
-          title={loginModalTitle}
-        />
-
-        <GuideOverlay
-          isOpen={showGuide}
-          onClose={handleCloseGuide}
-          steps={guideSteps}
-        />
       </div>
-    </div>
+
+      <LoginRequiredModal
+        show={showLoginModal}
+        onClose={() => {
+          setShowLoginModal(false);
+          router.replace("/");
+        }}
+        title={loginModalTitle}
+      />
+
+      <GuideOverlay
+        isOpen={showGuide}
+        onClose={handleCloseGuide}
+        steps={guideSteps}
+      />
+    </AppShell>
   );
 };
+
+// useSearchParams 는 Suspense 경계가 필요하다 (main·add-plen·budget-detail 과
+// 같은 패턴).
+const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => (
+  <Suspense fallback={<div className="h-[100dvh] bg-[#fcfbfc]" />}>
+    <PlanListPageContent onSelectPlan={onSelectPlan} />
+  </Suspense>
+);
 
 export default PlanListPage;
