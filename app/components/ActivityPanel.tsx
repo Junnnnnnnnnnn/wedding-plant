@@ -23,6 +23,11 @@ interface ActivityPanelProps {
   roomId?: string | null;
   /** 몇 건까지 보여줄지 */
   count?: number;
+  /**
+   * 대시보드 그리드 안에 들어갈 때. 바깥이 간격을 잡으므로 자체 여백을
+   * 빼고, md:block 대신 항상 보이게 한다.
+   */
+  inDashboard?: boolean;
 }
 
 const AVATAR_COLORS = ["#ee2b8c", "#7c6cf0", "#f0a23c", "#059669", "#0ea5e9"];
@@ -84,6 +89,7 @@ function relativeTime(iso: string): string {
 export default function ActivityPanel({
   roomId = null,
   count = 5,
+  inDashboard = false,
 }: ActivityPanelProps) {
   const { fetchWithAuth } = useApi();
   const [items, setItems] = useState<ActivityItem[]>([]);
@@ -125,7 +131,13 @@ export default function ActivityPanel({
   if (!loaded || items.length === 0) return null;
 
   return (
-    <section className="mt-6 hidden w-full rounded-[24px] border border-[#ee2b8c0f] bg-white p-5 shadow-sm md:block">
+    <section
+      className={
+        inDashboard
+          ? "w-full rounded-[28px] border border-[#ee2b8c0f] bg-white p-6 shadow-sm"
+          : "mt-6 hidden w-full rounded-[24px] border border-[#ee2b8c0f] bg-white p-5 shadow-sm md:block"
+      }
+    >
       <h2 className="mb-3 text-[15px] font-bold tracking-tight text-[#1b0d14]">
         최근 활동
       </h2>

@@ -104,6 +104,18 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 
 `app/schedule-detail/ScheduleDetailView.tsx`도 같은 구조입니다 (`variant="page" | "inspector"`). `inspector`는 보드·캘린더 옆에 붙고, 뒤로가기 대신 `onClose`를 씁니다.
 
+### 홈 대시보드 (`app/components/HomeDashboard.tsx`)
+
+`/main` 은 ≥768 에서 **모바일 트리를 통째로 숨기고**(`md:hidden`) 대시보드를 따로 렌더합니다. 기존 스냅 두 섹션의 마크업을 한 줄도 건드리지 않아야 모바일이 픽셀 그대로 남습니다. 같은 DOM 을 CSS 로 재배치하려 들지 마세요 — 한 번 그렇게 했다가 되돌렸습니다.
+
+구성은 상단 바(커플·D-day·`[플랜 보드]` `[플랜 추가]`) → 이번 달 할 일 스트립 → 3열(예산 패널 · 다가오는 일정 타임라인 · 활동/대화)입니다. 예산은 넓은 패널, 일정은 타임라인, 활동·대화는 좁은 사이드로 **성격을 다르게** 둡니다. 같은 크기 카드 세 장은 무엇이 중요한지 안 보입니다.
+
+카테고리 스택바는 `/plan/user/amount/category-chart`(방이면 `/plan/room/amount/category-chart/{roomId}`)를 씁니다.
+
+**이름·날짜는 `planLoading` 동안 스켈레톤으로 가려야 합니다.** `WeddingContext` 가 sessionStorage 를 클라이언트에서만 읽어서, 그냥 그리면 서버 렌더와 값이 달라 하이드레이션 불일치가 납니다(실제로 났습니다).
+
+카드 속 내용은 `app/components/PlanTaskCard.tsx` 를 홈 스트립과 플랜 보드가 공유합니다. 껍데기는 각자 다릅니다 — 보드는 드래그·선택을 얹은 div, 홈은 상세로 가는 button.
+
 ### 플랜 보드 (`app/calendar/PlanBoard.tsx`)
 
 `/calendar`는 ≥768에서 **보드 ↔ 캘린더** 전환이 생깁니다. 보드는 일정을 **월별 컬럼**으로 나눕니다(날짜 미정 컬럼이 맨 앞).

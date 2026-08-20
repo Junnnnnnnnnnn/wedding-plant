@@ -12,7 +12,6 @@ import {
   Info,
   LogOut,
   Mail,
-  MessageCircle,
   Pencil,
   Plus,
 } from "lucide-react";
@@ -28,8 +27,8 @@ import {
 } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "motion/react";
 import CountUp from "@/components/CountUp";
-import ActivityPanel from "../components/ActivityPanel";
 import AppShell from "../components/AppShell";
+import HomeDashboard from "../components/HomeDashboard";
 import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import LoginRequiredModal from "../components/LoginRequiredModal";
@@ -55,7 +54,6 @@ import {
 import { getGuestScheduleList } from "@/lib/guestSchedule";
 import { parseLocalDate, getKstDate, getDaysUntil } from "@/lib/utils";
 import { useScrollDirection } from "../hooks/useScrollDirection";
-import { useIsTabletUp } from "../hooks/useMediaQuery";
 
 /** 정렬 옵션 → 버튼 표시용 라벨(가격/날짜/이름) + 방향 */
 function getSortButtonLabel(opt: PlanSortOption): {
@@ -296,8 +294,7 @@ function MainPageContent() {
   const roomId = searchParams.get("roomId");
   const { weddingData, resetData } = useWedding();
   const { fetchWithAuth, setLoading } = useApi();
-  const { subscribeToChatRooms, unreadCount, getRoomUnreadCount } =
-    useNotification();
+  const { subscribeToChatRooms, unreadCount } = useNotification();
   const [apiPlanData, setApiPlanData] = useState<PlanUserData | null | "none">(
     null,
   );
@@ -1396,18 +1393,6 @@ function MainPageContent() {
   const headerOpacity = useTransform(scrollY, [50, 200], [1, 0.2]);
   const headerScale = useTransform(scrollY, [0, 200], [1, 0.9]);
 
-  /**
-   * ≥768 에서는 스냅 스크롤을 걷어내고 대시보드로 배치한다.
-   *
-   * 모바일의 두 섹션(340px 헤더 + 100dvh 리스트)은 "한 화면씩 넘기는"
-   * 구조라 넓은 화면에서는 어색하다. 태블릿부터는 두 섹션을 각각 자기
-   * 높이대로 두고, 1024 부터는 좌(헤더+예산)·우(필터+탭+리스트) 2열로 나눈다.
-   *
-   * 높이·opacity·scale 이 인라인 style(모션 값)이라 Tailwind 로 덮을 수 없어
-   * 분기를 JS 로 둔다.
-   */
-  const isTabletUp = useIsTabletUp();
-
   /** 넓은 화면의 좌측 컬럼에 붙는 대화 목록 (GET /plan/user 의 chatRooms) */
   const chatRoomsForPanel =
     apiPlanData && apiPlanData !== "none" ? (apiPlanData.chatRooms ?? []) : [];
@@ -1421,6 +1406,47 @@ function MainPageContent() {
   // 토글 시 현재 상태를 못 찾아 이미 완료인 항목에 다시 COMPLETED 를 보냈다.
   sharedScheduleListRef.current = sharedRoomScheduleList;
   if (activeTab === "planned") plannedListRef.current = visibleScheduleList;
+
+  /**
+   * 플랜 추가로 이동. 로그인·게스트 한도 분기를 한 곳에 모은다.
+   * 리스트 상단의 "추가" 버튼과 대시보드 상단 바가 같은 경로를 쓴다.
+   */
+  const handleAddPlan = useCallback(() => {
+    // 공유 뷰에서는 내 방 id 를 붙이지 않는다 (내 플랜에 저장되던 문제)
+    const roomIdValue = isSharedView
+      ? roomId
+      : (roomId ??
+        (apiPlanData && apiPlanData !== "none" && apiPlanData.roomId
+          ? String(apiPlanData.roomId)
+          : null));
+
+    const addPlanPath = roomIdValue
+      ? `/add-plen?roomId=${roomIdValue}`
+      : "/add-plen";
+    if (getToken()) {
+      router.push(addPlanPath);
+      return;
+    }
+    if (isSharedView) {
+      setLoginRequiredTitle("플랜을 추가하려면 로그인해 주세요");
+      setShowLoginRequiredModal(true);
+      return;
+    }
+
+    // Guest: allow up to 3 plans saved in sessionStorage
+    const guestCount = effectiveScheduleList.length;
+    if (guestCount === 0) {
+      // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
+      setShowGuestPlanLimitModal(true);
+      return;
+    }
+    if (guestCount >= 3) {
+      setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
+      setShowLoginRequiredModal(true);
+      return;
+    }
+    router.push(addPlanPath);
+  }, [apiPlanData, effectiveScheduleList.length, isSharedView, roomId, router]);
 
   // 체크박스 토글 핸들러 (PATCH /plan/schedule/status/{id} — COMPLETED / NORMAL)
   const handleToggleCheck = useCallback(
@@ -1595,28 +1621,22 @@ function MainPageContent() {
       />
       <main
         ref={mainScrollRef}
-        className={`flex flex-1 min-h-0 flex-col items-center overflow-y-auto w-full px-4 sm:px-6 transition-all duration-500 snap-y snap-mandatory scroll-smooth md:grid md:snap-none md:items-stretch md:grid-cols-1 md:gap-x-6 md:px-8 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:grid-rows-1 lg:overflow-hidden xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)] ${isNoPlanBlur ? "blur-xl scale-[0.98] pointer-events-none select-none opacity-60" : ""}`}
+        className={`flex flex-1 flex-col items-center overflow-y-auto w-full px-4 sm:px-6 transition-all duration-500 snap-y snap-mandatory scroll-smooth md:hidden ${isNoPlanBlur ? "blur-xl scale-[0.98] pointer-events-none select-none opacity-60" : ""}`}
       >
         {shareCode && sharedRoomUser === "error" && (
-          <div className="w-full mt-4 px-4 py-3 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium md:col-span-full">
+          <div className="w-full mt-4 px-4 py-3 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
             공유 링크가 유효하지 않거나 만료되었습니다.
           </div>
         )}
         <motion.div
           ref={firstSectionRef}
-          className="w-full shrink-0 pt-8 pb-10 origin-top snap-start flex flex-col justify-start md:pb-6 lg:min-h-0 lg:overflow-y-auto lg:pt-6 scrollbar-hide"
-          style={
-            // 태블릿 이상: 고정 340px 과 스크롤 연동 페이드/축소를 끈다.
-            // 스냅이 없으니 "위로 밀려 사라지는" 연출의 근거도 사라진다.
-            isTabletUp
-              ? { height: "auto" }
-              : {
-                  height: "340px",
-                  opacity: headerOpacity,
-                  scale: headerScale,
-                  transformPerspective: 1000,
-                }
-          }
+          className="w-full shrink-0 pt-8 pb-10 origin-top snap-start flex flex-col justify-start"
+          style={{
+            height: "340px",
+            opacity: headerOpacity,
+            scale: headerScale,
+            transformPerspective: 1000,
+          }}
         >
           {/* 상단 영역: 1행=이름·초대(이름 우측), 2행=결혼식 날짜(좌측)·D-day(날짜 오른쪽), 오른쪽=프로필 */}
           <div className="w-full flex items-start justify-between gap-4">
@@ -2000,59 +2020,10 @@ function MainPageContent() {
               </div>
             )}
           </div>
-
-          {/*
-            대화 — 태블릿 이상에서만. 모바일은 하단 탭의 "참여 플랜"이 그 자리를
-            대신하고, 넓은 화면에서는 예산 카드 아래가 비어 그 공간을 쓴다.
-          */}
-          {chatRoomsForPanel.length > 0 && (
-            <section className="mt-6 hidden w-full rounded-[24px] border border-[#ee2b8c0f] bg-white p-5 shadow-sm md:block">
-              <div className="mb-3 flex items-baseline justify-between gap-3">
-                <h2 className="text-[15px] font-bold tracking-tight text-[#1b0d14]">
-                  대화
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => router.push("/plan-list")}
-                  className="text-[12.5px] text-[#ee2b8c] hover:underline"
-                >
-                  전체
-                </button>
-              </div>
-              <div className="grid gap-1">
-                {chatRoomsForPanel.map((room) => {
-                  const roomUnread = getRoomUnreadCount(room.id);
-                  return (
-                    <button
-                      key={room.id}
-                      type="button"
-                      onClick={() => router.push(`/plan-list?chat=${room.id}`)}
-                      className="flex w-full min-w-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-[#faf7f9]"
-                    >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ee2b8c0a] text-[#ee2b8c]">
-                        <MessageCircle className="h-[18px] w-[18px]" />
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-[13.5px] font-bold tracking-tight text-[#1b0d14]">
-                        {room.name}
-                      </span>
-                      {roomUnread > 0 && (
-                        <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#ee2b8c] px-1 text-[10px] font-bold leading-none text-white">
-                          {roomUnread > 9 ? "9+" : roomUnread}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {/* 최근 활동 — 기록이 없으면 스스로 렌더하지 않는다 */}
-          <ActivityPanel roomId={roomIdForDetail} />
         </motion.div>
         <motion.div
           ref={secondSectionRef}
-          className="w-full min-h-[100dvh] h-[100dvh] pt-4 snap-start bg-transparent relative flex flex-col shrink-0 md:min-h-0 md:h-auto md:snap-align-none lg:pt-6"
+          className="w-full min-h-[100dvh] h-[100dvh] pt-4 snap-start bg-transparent relative flex flex-col shrink-0"
         >
           {/* 하단 영역 */}
           <div className="flex justify-between items-end gap-3">
@@ -2155,46 +2126,7 @@ function MainPageContent() {
               ) && (
                 <button
                   type="button"
-                  onClick={() => {
-                    // 공유 뷰에서는 내 방 id 를 붙이지 않는다 (내 플랜에 저장되던 문제)
-                    const roomIdValue = isSharedView
-                      ? roomId
-                      : (roomId ??
-                        (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
-                          ? String(apiPlanData.roomId)
-                          : null));
-
-                    const addPlanPath = roomIdValue
-                      ? `/add-plen?roomId=${roomIdValue}`
-                      : "/add-plen";
-                    if (getToken()) {
-                      router.push(addPlanPath);
-                      return;
-                    }
-                    if (isSharedView) {
-                      setLoginRequiredTitle(
-                        "플랜을 추가하려면 로그인해 주세요",
-                      );
-                      setShowLoginRequiredModal(true);
-                      return;
-                    }
-
-                    // Guest: allow up to 3 plans saved in sessionStorage
-                    const guestCount = effectiveScheduleList.length;
-                    if (guestCount === 0) {
-                      // 기존 동작: 비로그인 + 첫 플랜 추가 시 안내 모달
-                      setShowGuestPlanLimitModal(true);
-                      return;
-                    }
-                    if (guestCount >= 3) {
-                      setLoginRequiredTitle("이미 3개의 플랜을 계획하셨어요");
-                      setShowLoginRequiredModal(true);
-                      return;
-                    }
-                    router.push(addPlanPath);
-                  }}
+                  onClick={handleAddPlan}
                   className="flex h-[36px] justify-center items-center gap-1.5 px-3.5 py-0 text-white rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
                   style={{
                     backgroundColor:
@@ -2285,14 +2217,7 @@ function MainPageContent() {
             </div>
           </div>
           <div
-            // 모바일에서는 헤더 섹션을 다 올린 뒤에야 리스트가 스크롤된다
-            // (스냅 두 섹션이 서로 먹지 않게). 태블릿 이상은 스냅이 없어
-            // 그 게이트를 걸면 리스트가 아예 스크롤되지 않는다.
-            //
-            // 768~1023 은 단일 컬럼이라 페이지 전체가 흐르는 편이 낫다. 여기서
-            // 자체 스크롤을 잡으면 헤더·예산·대화가 화면을 다 먹고 리스트만
-            // 좁은 틈에서 스크롤된다. 2열이 되는 1024 부터 되돌린다.
-            className={`flex-1 w-full pb-24 min-h-0 scrollbar-hide md:overflow-visible md:pb-6 lg:overflow-y-auto ${allowPlanListScroll || isTabletUp ? "overflow-y-auto" : "overflow-hidden touch-pan-y"}`}
+            className={`flex-1 w-full pb-24 min-h-0 scrollbar-hide ${allowPlanListScroll ? "overflow-y-auto" : "overflow-hidden touch-pan-y"}`}
             style={{
               maskImage:
                 "linear-gradient(to bottom, transparent 0%, black 24px, black 100%)",
@@ -2484,11 +2409,50 @@ function MainPageContent() {
           </div>
         </motion.div>
 
-        {/* 스크롤 유도 애니메이션 — 스냅이 있는 모바일에서만 의미가 있다 */}
-        <div className="md:hidden">
-          <ScrollDownAnimation scrollContainerRef={mainScrollRef} />
-        </div>
+        {/* 스크롤 유도 애니메이션 */}
+        <ScrollDownAnimation scrollContainerRef={mainScrollRef} />
       </main>
+
+      {/* 태블릿 이상(≥768) — D 시안의 홈 대시보드 */}
+      <HomeDashboard
+        coupleName={displayData.name}
+        weddingDateText={weddingDateText}
+        planLoading={isPlanLoading}
+        dDayLabel={dDayLabel}
+        totalBudget={initialBudget}
+        usedBudget={usedBudget}
+        remainingBudget={remainingBudget}
+        budgetUsagePercentage={budgetUsagePercentage}
+        schedules={effectiveScheduleList}
+        scheduleLoading={!isListLoaded}
+        chatRooms={chatRoomsForPanel}
+        roomId={roomIdForDetail}
+        canEdit={
+          String(myRoomPermission ?? "").toUpperCase() !== "READ" &&
+          !isSharedView
+        }
+        onAddPlan={handleAddPlan}
+        onToggle={handleToggleCheck}
+        onOpenSchedule={(id) =>
+          router.push(
+            `/schedule-detail?id=${id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`,
+          )
+        }
+        onOpenBudgetDetail={() =>
+          router.push(
+            roomIdForDetail
+              ? `/budget-detail?roomId=${roomIdForDetail}`
+              : "/budget-detail",
+          )
+        }
+        onOpenBoard={() =>
+          router.push(
+            roomIdForDetail
+              ? `/calendar?roomId=${roomIdForDetail}`
+              : "/calendar",
+          )
+        }
+      />
       <CustomAlertModal
         isOpen={readOnlyNotice !== null}
         message={readOnlyNotice ?? ""}

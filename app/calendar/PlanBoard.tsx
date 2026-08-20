@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { parseLocalDate } from "@/lib/utils";
+import PlanTaskCardBody from "../components/PlanTaskCard";
 import {
   useScheduleDateMove,
   useScheduleStatusToggle,
@@ -357,60 +358,13 @@ export default function PlanBoard({
                           : "border-[#ee2b8c14]"
                       } ${done ? "bg-[#faf8f9]" : "bg-white"}`}
                     >
-                      <div className="flex items-start gap-2.5">
-                        <button
-                          type="button"
-                          role="checkbox"
-                          aria-checked={done}
-                          aria-label={done ? "완료 해제" : "완료로 표시"}
-                          disabled={!canEdit || isPending(item.id)}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggle(item);
-                          }}
-                          className={`mt-0.5 grid h-[19px] w-[19px] shrink-0 place-items-center rounded-[7px] border-2 transition-colors disabled:opacity-50 ${
-                            done
-                              ? "border-[#ffaab8] bg-[#ffaab8]"
-                              : "border-[#e6dbe2] bg-white"
-                          }`}
-                        >
-                          <Check
-                            className={`h-[11px] w-[11px] text-white ${done ? "opacity-100" : "opacity-0"}`}
-                            strokeWidth={4}
-                          />
-                        </button>
-                        <span
-                          className={`text-[14.5px] font-bold leading-snug tracking-tight break-keep ${
-                            done
-                              ? "text-[#a79ba3] line-through decoration-[#d9cdd4]"
-                              : "text-[#1b0d14]"
-                          }`}
-                        >
-                          {item.title}
-                        </span>
-                      </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-[29px] text-[12px] text-[#7a6c74]">
-                        {item.categoryName && (
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[11px] ${
-                              done
-                                ? "bg-[#f2eef0] text-[#a79ba3]"
-                                : "bg-[#fff2f6] text-[#ee2b8c]"
-                            }`}
-                          >
-                            {item.categoryName}
-                          </span>
-                        )}
-                        <span>{formatDayLabel(item.startDate)}</span>
-                        {item.amount ? (
-                          <span
-                            className={`font-bold tracking-tight ${done ? "text-[#a79ba3]" : "text-[#1b0d14]"}`}
-                          >
-                            {item.amount.toLocaleString("ko-KR")}만 원
-                          </span>
-                        ) : null}
-                      </div>
+                      <PlanTaskCardBody
+                        item={item}
+                        toggleDisabled={!canEdit || isPending(item.id)}
+                        onToggle={
+                          canEdit ? () => handleToggle(item) : undefined
+                        }
+                      />
                     </div>
                   );
                 })}

@@ -182,6 +182,28 @@ function installMocks(page) {
         .catch(() => {});
       return;
     }
+    if (
+      p0 === "/plan/user/amount/category-chart" ||
+      p0.startsWith("/plan/room/amount/category-chart")
+    ) {
+      req
+        .respond(
+          ok({
+            list: [
+              { categoryName: "예식장", totalAmount: 620, usedAmount: 620 },
+              { categoryName: "스드메", totalAmount: 385, usedAmount: 385 },
+              {
+                categoryName: "예물 · 예단",
+                totalAmount: 210,
+                usedAmount: 210,
+              },
+              { categoryName: "신혼여행", totalAmount: 125, usedAmount: 125 },
+            ],
+          }),
+        )
+        .catch(() => {});
+      return;
+    }
     if (p0 === "/plan/user/total-amount") {
       req
         .respond(
