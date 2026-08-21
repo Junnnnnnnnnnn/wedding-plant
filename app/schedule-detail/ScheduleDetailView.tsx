@@ -24,6 +24,7 @@ import {
   type ReactElement,
 } from "react";
 import FeedbackModal from "../components/FeedbackModal";
+import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
@@ -921,22 +922,19 @@ export default function ScheduleDetailView({
     );
   }
 
-  return (
+  const body = (
     <div
       className={
         isInspector
           ? "flex h-full min-h-0 w-full flex-col overflow-hidden bg-white"
-          : "min-h-screen w-full max-w-full overflow-x-hidden bg-[#fcfbfc]"
+          : "flex h-full min-h-0 w-full flex-col overflow-hidden"
       }
     >
-      {!isInspector && (
-        <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
-      )}
       <div
         className={
           isInspector
             ? "flex h-full min-h-0 w-full flex-col overflow-hidden"
-            : "min-h-screen w-full max-w-md mx-auto bg-white shadow-2xl relative overflow-x-hidden flex flex-col grid-bg z-10 left-0 right-0"
+            : "relative flex h-full min-h-0 w-full flex-col overflow-x-hidden"
         }
       >
         {isInspector ? (
@@ -974,7 +972,7 @@ export default function ScheduleDetailView({
           className={
             isInspector
               ? "flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto overflow-x-hidden px-5 pb-6 pt-5"
-              : `flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-6 pt-5 min-w-0 w-full max-w-full box-border ${isLoggedIn ? "pb-36" : "pb-24"}`
+              : `flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-6 pt-5 min-w-0 w-full max-w-full box-border md:px-8 ${isLoggedIn ? "pb-36 md:pb-10" : "pb-24 md:pb-10"}`
           }
         >
           <div
@@ -1022,13 +1020,6 @@ export default function ScheduleDetailView({
           )}
         </main>
 
-        {!isInspector && (
-          <BottomTabBar
-            scrollDirection={scrollDirection}
-            showLoginButton={false}
-            unreadCount={unreadCount}
-          />
-        )}
         <FeedbackModal
           isOpen={showDeleteFeedbackModal}
           onClose={() => {
@@ -1087,5 +1078,30 @@ export default function ScheduleDetailView({
         )}
       </div>
     </div>
+  );
+
+  if (isInspector) return body;
+
+  /*
+    단독 라우트(/schedule-detail)도 셸을 쓴다. 예전에는 max-w-md 폰 프레임
+    이라, 넓은 화면의 홈 대시보드에서 카드를 눌러 들어오면 448px 띠로
+    떨어졌다. 인스펙터는 셸 안에 이미 들어가 있으므로 이 분기만 감싼다.
+  */
+  return (
+    <AppShell
+      activeTab="home"
+      activeRailView={fromParam === "calendar" ? "board" : "home"}
+      unreadCount={unreadCount}
+      gridBackground
+      bottomBarSlot={
+        <BottomTabBar
+          scrollDirection={scrollDirection}
+          showLoginButton={false}
+          unreadCount={unreadCount}
+        />
+      }
+    >
+      {body}
+    </AppShell>
   );
 }

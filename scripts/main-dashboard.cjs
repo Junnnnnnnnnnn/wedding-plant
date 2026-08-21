@@ -331,6 +331,36 @@ function installMocks(page) {
         .catch(() => {});
       return;
     }
+    // 일정 상세 — 인스펙터가 읽는다
+    const detailMatch = /^\/plan\/schedule\/(\d+)$/.exec(p0);
+    if (detailMatch && req.method() === "GET") {
+      const id = Number(detailMatch[1]);
+      const item = SCHEDULES.find((x) => x.id === id);
+      if (!item) {
+        req.respond(ok(null)).catch(() => {});
+        return;
+      }
+      req
+        .respond(
+          ok({
+            id: item.id,
+            title: item.title,
+            categoryName: item.categoryName,
+            amount: item.amount ?? 0,
+            startDate: item.startDate,
+            startTime: item.startTime ?? null,
+            status: item.status,
+            payType: "CREDIT",
+            location: item.location ?? "",
+            locationLat: 0,
+            locationLng: 0,
+            memo: "",
+            addCategoryNameList: [],
+          }),
+        )
+        .catch(() => {});
+      return;
+    }
     const statusMatch = /^\/plan\/schedule\/status\/(\d+)$/.exec(p0);
     if (statusMatch) {
       const id = Number(statusMatch[1]);
@@ -518,6 +548,42 @@ function installMocks(page) {
     `캡처 main-1440-empty-month.png   제목=${emptyState.제목} 추가카드=${emptyState.추가카드}`,
   );
   emptyThisMonth = false;
+
+  // 대시보드에서 일정을 누르면 >=1024 는 옆 인스펙터에서 열려야 한다.
+  // 예전에는 폭과 관계없이 /schedule-detail 로 나가 448px 폰 띠가 됐다.
+  await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
+  await page.goto(`${ORIGIN}/main`, {
+    waitUntil: "networkidle2",
+    timeout: 60000,
+  });
+  await wait(2200);
+  const opened = await page.evaluate(() => {
+    // "드레스 투어" 는 대화 패널 미리보기에도 있다. 그쪽을 누르면
+    // /plan-list 로 나가 버리므로 스트립 카드(w-[232px])만 고른다.
+    // 앞 단계에서 완료 토글을 한 뒤라 어떤 카드가 남아 있을지 모른다.
+    // 스트립(w-[232px])의 첫 카드를 그냥 누른다.
+    const btn = [...document.querySelectorAll("button")].find((b) =>
+      String(b.className).includes("w-[232px]"),
+    );
+    if (!btn) return "카드 없음";
+    const title = btn.innerText.trim().slice(0, 20);
+    btn.click();
+    return `clicked(${title})`;
+  });
+  await wait(2000);
+  const inspector = await page.evaluate(() => ({
+    라우트: location.pathname,
+    머리글: !![...document.querySelectorAll("span")].find(
+      (x) => x.innerText.trim() === "플랜 상세",
+    ),
+    제목: [...document.querySelectorAll("h2")]
+      .map((x) => x.innerText.trim())
+      .find((t) => t.includes("드레스")),
+  }));
+  await page.screenshot({ path: path.join(OUT, "main-1440-inspector.png") });
+  console.log(
+    `일정 열기 ${opened} → 라우트=${inspector.라우트} 인스펙터=${inspector.머리글 ? "열림" : "안열림"} 제목=${inspector.제목 ?? "-"}`,
+  );
 
   // 대시보드의 "+ 플랜 추가" → 우측 등록 pane (>=1024)
   await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });

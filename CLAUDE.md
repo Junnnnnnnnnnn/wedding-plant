@@ -106,6 +106,8 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 
 **두 변형은 생김새가 다릅니다.** `page`(폰)는 분홍 히어로 카드 + 회전하는 완료/예정 스티커 + 컬러 아이콘 타일을 그대로 씁니다. `inspector`(웹)는 대시보드 카드 언어입니다 — 흰 카드 + 카테고리 칩 + 상태 알약 + 큰 금액. 인스펙터의 지도에는 **"크게 보기"** 가 있습니다. 지도 DOM 을 옮기면 Kakao 인스턴스가 죽으므로, **감싼 상자만 `fixed` 로 키우고 안쪽 `#schedule-detail-map` 은 그대로 둡니다**(framer `layout` FLIP). 크기가 바뀌면 기존 `ResizeObserver` 가 `relayout()` 하고 중심을 다시 잡습니다 — `relayout()` 만 하면 커진 만큼 마커가 밀립니다. 뒷 배경은 어둡게 하지 않고 ESC 로 닫습니다.
 
+**단독 라우트(`/schedule-detail`)도 셸을 씁니다.** 예전에는 `max-w-md` 폰 프레임이라 넓은 화면의 홈 대시보드에서 카드를 눌러 들어오면 448px 띠로 떨어졌습니다. 지금은 `/main` 이 `≥1024` 에서 인스펙터 pane 을 열고(`/calendar` 와 같은 기준), 그보다 좁을 때만 이 라우트로 갑니다.
+
 **`isInspector` 분기를 지우고 하나로 합치지 마세요**, 폰 화면이 통째로 바뀝니다. `scripts/plan-board.cjs`가 `page` 변형에 분홍 히어로와 스티커가 남아 있는지 매번 확인합니다.
 
 ### 플랜 등록 pane (`app/add-plen/AddPlanView.tsx`)

@@ -29,6 +29,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from "motion/react";
 import CountUp from "@/components/CountUp";
 import AddPlanView from "../add-plen/AddPlanView";
 import AppShell from "../components/AppShell";
+import ScheduleDetailView from "../schedule-detail/ScheduleDetailView";
 import HomeDashboard from "../components/HomeDashboard";
 import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
@@ -1428,6 +1429,13 @@ function MainPageContent() {
    */
   const isDesktopWidth = useIsDesktop();
   const [isAddPaneOpen, setIsAddPaneOpen] = useState(false);
+  /**
+   * 넓은 화면에서 오른쪽에 여는 플랜 상세. 등록 pane 과 자리를 나눠 쓰므로
+   * 둘 중 하나만 열린다. 좁은 화면은 지금처럼 /schedule-detail 로 간다.
+   */
+  const [inspectorScheduleId, setInspectorScheduleId] = useState<number | null>(
+    null,
+  );
   /** 등록이 끝나면 올려서 대시보드가 일정·예산을 다시 받게 한다 */
   const [dashboardRefresh, setDashboardRefresh] = useState(0);
 
@@ -1445,6 +1453,7 @@ function MainPageContent() {
       : "/add-plen";
     if (getToken()) {
       if (isDesktopWidth) {
+        setInspectorScheduleId(null);
         setIsAddPaneOpen(true);
         return;
       }
@@ -1470,6 +1479,7 @@ function MainPageContent() {
       return;
     }
     if (isDesktopWidth) {
+      setInspectorScheduleId(null);
       setIsAddPaneOpen(true);
       return;
     }
@@ -1687,7 +1697,21 @@ function MainPageContent() {
         빈 pane 을 늘 물고 있으면 가로가 크게 좁아진다.
       */
       detail={
-        isDesktopWidth && isAddPaneOpen ? (
+        isDesktopWidth && inspectorScheduleId ? (
+          <ScheduleDetailView
+            key={inspectorScheduleId}
+            scheduleId={inspectorScheduleId}
+            roomId={roomIdForDetail}
+            variant="inspector"
+            onClose={() => setInspectorScheduleId(null)}
+            onDeleted={() => {
+              setInspectorScheduleId(null);
+              setDashboardRefresh((n) => n + 1);
+              const status = activeTab === "planned" ? "NORMAL" : "COMPLETED";
+              fetchScheduleList(roomIdForDetail ?? undefined, status);
+            }}
+          />
+        ) : isDesktopWidth && isAddPaneOpen ? (
           <AddPlanView
             variant="pane"
             roomId={
@@ -2571,13 +2595,24 @@ function MainPageContent() {
         }
         onAddPlan={handleAddPlan}
         refreshToken={dashboardRefresh}
-        narrow={isDesktopWidth && isAddPaneOpen}
+        // 상세 인스펙터도 등록 pane 과 같은 자리를 쓴다. 둘 중 뭐가 열리든
+        // 대시보드가 쓸 수 있는 폭은 400px 넘게 줄어든다.
+        narrow={
+          isDesktopWidth && (isAddPaneOpen || inspectorScheduleId !== null)
+        }
         onToggle={handleToggleCheck}
-        onOpenSchedule={(id) =>
+        onOpenSchedule={(id) => {
+          // 넓은 화면은 옆에서 열고, 좁으면 지금처럼 상세 라우트로 간다.
+          // /calendar 인스펙터와 같은 기준(>=1024)이다.
+          if (isDesktopWidth) {
+            setIsAddPaneOpen(false);
+            setInspectorScheduleId(id);
+            return;
+          }
           router.push(
             `/schedule-detail?id=${id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`,
-          )
-        }
+          );
+        }}
         onOpenBudgetDetail={() =>
           router.push(
             roomIdForDetail
