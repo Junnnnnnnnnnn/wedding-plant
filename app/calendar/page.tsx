@@ -453,10 +453,9 @@ function CalendarPageContent() {
       activeRailView="board"
       unreadCount={unreadCount}
       masterWidthClassName="lg:flex-1"
-      // 등록 폼은 입력칸이 많아 인스펙터보다 넉넉해야 한다
-      detailWidthClassName={
-        isAddPaneOpen ? "w-[392px] 2xl:w-[428px]" : "w-[318px] 2xl:w-[364px]"
-      }
+      // 상세도 등록 폼도 읽고 쓸 게 많다. 한 가지 폭으로 통일한다 —
+      // 318px 은 지도·금액·메모를 담기에 답답했다.
+      detailWidthClassName="w-[392px] xl:w-[424px] 2xl:w-[480px]"
       /*
         고른 게 없으면 pane 자체를 접는다(null 이 아니라 undefined).
         보드는 가로 폭이 전부인 화면이라, 안내문만 띄운 320~360px 을

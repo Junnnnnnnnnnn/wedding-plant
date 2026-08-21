@@ -780,7 +780,7 @@ export default function ScheduleDetailView({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="mt-4"
+            className={isInspector ? undefined : "mt-4"}
           >
             <div
               className={
@@ -839,7 +839,7 @@ export default function ScheduleDetailView({
               transition={{ duration: 0.5, delay: 0.3 }}
               className={
                 isInspector
-                  ? "mt-3 rounded-[24px] border border-[#ee2b8c0f] bg-white p-4 shadow-sm"
+                  ? "rounded-[24px] border border-[#ee2b8c0f] bg-white p-4 shadow-sm"
                   : "mt-3 bg-white rounded-2xl p-4 shadow-sm"
               }
             >
@@ -916,15 +916,23 @@ export default function ScheduleDetailView({
           ref={mainScrollRef}
           className={
             isInspector
-              ? "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-5 pb-6 pt-4"
+              ? "flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto overflow-x-hidden px-5 pb-6 pt-5"
               : `flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-6 pt-5 min-w-0 w-full max-w-full box-border ${isLoggedIn ? "pb-36" : "pb-24"}`
           }
         >
-          <div className="w-full max-w-full min-w-0">{content}</div>
+          <div
+            className={`w-full max-w-full min-w-0 ${
+              isInspector ? "flex flex-col gap-[18px]" : ""
+            }`}
+          >
+            {content}
+          </div>
 
           {/* Action Buttons: 본문 하단 (로그인 + 쓰기 권한이 있을 때만) */}
           {isLoggedIn && detail && canEdit && (
-            <div className="w-full max-w-full flex gap-3 mt-4 pb-2">
+            <div
+              className={`w-full max-w-full flex gap-3 pb-2 ${isInspector ? "" : "mt-4"}`}
+            >
               <button
                 type="button"
                 onClick={() => {
