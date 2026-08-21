@@ -196,7 +196,7 @@ function installMocks(page) {
             // 상세 API 의 amount 는 만원 단위다 (화면이 "만 원"을 붙인다)
             amount: item && item.amount ? item.amount : 0,
             startDate: item ? item.startDate : null,
-            payType: "CARD",
+            payType: "CREDIT", // 실제 enum 값. "CARD" 는 없어서 라벨이 안 붙는다
             location: "서울 강남구 논현로 842",
             locationLat: 37.51,
             locationLng: 127.02,
@@ -600,6 +600,31 @@ const boxOf = (page, sel) =>
   const dateWrite = writes.find((w) => w.kind === "date");
   console.log(
     `드래그 이동 → ${dateWrite ? `PATCH schedule/${dateWrite.id} ${dateWrite.body}` : "요청 없음 (문제)"}`,
+  );
+
+  // 폰의 /schedule-detail (page 변형). 인스펙터를 새 UI 로 바꿀 때
+  // 여기가 딸려 바뀌지 않았는지 눈으로 확인한다.
+  await page.setViewport({ width: 375, height: 900, deviceScaleFactor: 1.5 });
+  await page.goto(`${ORIGIN}/schedule-detail?id=1&from=calendar`, {
+    waitUntil: "networkidle2",
+    timeout: 60000,
+  });
+  await wait(2200);
+  await page.screenshot({ path: path.join(OUT, "detail-page-375.png") });
+  const pageVariant = await page.evaluate(() => {
+    const hero = document.querySelector('[class*="bg-[#f14d8e]"]');
+    // 완료면 초록, 예정이면 주황이다. 한쪽만 찾으면 오탐이 난다.
+    const stamp = [...document.querySelectorAll("div")].find((d) => {
+      const c = String(d.className);
+      return c.includes("from-green-400") || c.includes("from-orange-300");
+    });
+    return {
+      분홍히어로: !!hero,
+      상태스티커: !!stamp,
+    };
+  });
+  console.log(
+    `캡처 detail-page-375.png   분홍 히어로=${pageVariant.분홍히어로 ? "그대로" : "사라짐(문제)"} 상태 스티커=${pageVariant.상태스티커 ? "그대로" : "사라짐"}`,
   );
 
   await browser.close();

@@ -104,6 +104,8 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 
 `app/schedule-detail/ScheduleDetailView.tsx`도 같은 구조입니다 (`variant="page" | "inspector"`). `inspector`는 보드·캘린더 옆에 붙고, 뒤로가기 대신 `onClose`를 씁니다.
 
+**두 변형은 생김새가 다릅니다.** `page`(폰)는 분홍 히어로 카드 + 회전하는 완료/예정 스티커 + 컬러 아이콘 타일을 그대로 씁니다. `inspector`(웹)는 대시보드 카드 언어입니다 — 흰 카드 + 카테고리 칩 + 상태 알약 + 큰 금액. **`isInspector` 분기를 지우고 하나로 합치지 마세요**, 폰 화면이 통째로 바뀝니다. `scripts/plan-board.cjs`가 `page` 변형에 분홍 히어로와 스티커가 남아 있는지 매번 확인합니다.
+
 ### 플랜 등록 pane (`app/add-plen/AddPlanView.tsx`)
 
 폼 본체는 `AddPlanView` 에 있고 `app/add-plen/page.tsx` 는 쿼리를 읽어 넘기는
