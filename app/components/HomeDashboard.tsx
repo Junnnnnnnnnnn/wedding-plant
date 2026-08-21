@@ -650,7 +650,11 @@ export default function HomeDashboard({
 
           {/* 사이드 — 활동 + 대화 */}
           <div className="grid content-start gap-[22px] [&>*]:min-w-0">
-            <ActivityPanel roomId={roomId} inDashboard />
+            <ActivityPanel
+              roomId={roomId}
+              inDashboard
+              refreshToken={refreshToken}
+            />
 
             {chatRooms.length > 0 && (
               <section className="rounded-[28px] border border-[#ee2b8c0f] bg-white p-6 shadow-sm">

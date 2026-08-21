@@ -483,6 +483,7 @@ function installMocks(page) {
     "GET /plan/user/amount/detail",
     "GET /plan/user/total-amount",
     "GET /plan/schedule/list",
+    "GET /plan/activity/list",
   ];
   const missing = want.filter((w) => !seen.some((x) => x.startsWith(w)));
   console.log(
@@ -643,6 +644,7 @@ function installMocks(page) {
     "GET /plan/user/amount/category-chart",
     "GET /plan/user/amount/detail",
     "GET /plan/user/total-amount",
+    "GET /plan/activity/list",
   ];
   const missSave = wantSave.filter(
     (w) => !saveSeen.some((x) => x.startsWith(w)),

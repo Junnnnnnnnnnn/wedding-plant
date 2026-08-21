@@ -28,6 +28,11 @@ interface ActivityPanelProps {
    * 빼고, md:block 대신 항상 보이게 한다.
    */
   inDashboard?: boolean;
+  /**
+   * 값이 바뀌면 다시 받는다. 플랜을 추가하거나 완료하면 그 자체가 활동으로
+   * 쌓이므로, 부모가 올려 주지 않으면 새로고침 전까지 기록이 안 보인다.
+   */
+  refreshToken?: number;
 }
 
 const AVATAR_COLORS = ["#ee2b8c", "#7c6cf0", "#f0a23c", "#059669", "#0ea5e9"];
@@ -90,6 +95,7 @@ export default function ActivityPanel({
   roomId = null,
   count = 5,
   inDashboard = false,
+  refreshToken = 0,
 }: ActivityPanelProps) {
   const { fetchWithAuth } = useApi();
   const [items, setItems] = useState<ActivityItem[]>([]);
@@ -126,7 +132,7 @@ export default function ActivityPanel({
 
   useEffect(() => {
     fetchActivities();
-  }, [fetchActivities]);
+  }, [fetchActivities, refreshToken]);
 
   if (!loaded || items.length === 0) return null;
 
