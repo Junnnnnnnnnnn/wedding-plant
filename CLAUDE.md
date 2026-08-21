@@ -202,6 +202,20 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
   건드리지 마세요.** 말풍선 좌표를 이 rect 로 잡습니다.
   `scripts/plan-list-panes.cjs` 가 폭마다 앵커가 화면 안에 있는지 확인합니다.
 
+### 예산 상세 (`app/budget-detail/page.tsx`)
+
+`≥768` 은 셸 + 대시보드 머리글 띠를 씁니다. 폰의 "뒤로가기/가이드" 줄은
+`main` 안에 남아 함께 스크롤되고(`md:hidden`), 넓은 화면은 고정 띠를 따로 냅니다.
+
+- 넓어지면 **지출 분석 | 목록**을 나란히 둡니다(`@[980px]`). 통계 카드 셋도
+  한 줄로 폅니다 — 세로로 쌓으면 카드 하나가 1,100px 짜리 빈 상자가 됩니다.
+- 좁을 때 세로 흐름을 그대로 두려고 감싼 상자에 **`contents`** 를 씁니다.
+  일반 `div` 로 감싸면 `mt-8` 마진 상쇄가 달라져 폰 화면이 틀어집니다.
+- 폭은 `md:max-w-[1500px]` 로 묶습니다.
+- 가이드 앵커 5개(`#budget-stat-grid`·`#budget-ai-insight`·`#budget-analysis`·
+  `#budget-tab`·`#budget-list`)를 건드리지 마세요.
+  `scripts/budget-detail.cjs` 가 폭마다 열 수와 앵커 위치를 확인합니다.
+
 ### 셸을 쓰지 않는 화면
 
 - **`/setting`** (온보딩) — 스텝을 한 번에 하나씩 보여주는 흐름이라 레일·탭바가 방해가 됩니다. 중앙 정렬을 유지하고 `lg`에서 컬럼 폭만 600px로 넓혔습니다.
@@ -283,6 +297,7 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 - `scripts/main-dashboard.cjs` — `/main` 폭별 레이아웃 + 리스트 스크롤 게이트 + 가이드 말풍선 좌표 확인. `HEADED=1`을 붙이면 브라우저를 띄워 직접 눌러볼 수 있습니다
 - `scripts/plan-board.cjs` — `/calendar` 보드 뷰. 컬럼 분리, 보드↔캘린더 전환, 인스펙터, 완료 토글(`PATCH status`), 드래그 날짜 이동(`PATCH schedule`)까지 실제 요청을 잡아 확인합니다
 - `scripts/misc-pages.cjs` — `/`, `/user`, `/add-plen`, `/setting` 폭별 캡처
+- `scripts/budget-detail.cjs` — `/budget-detail` 폭별 레이아웃 + 2열 분기 + 가이드 앵커 위치
 
 `plan-list-panes.cjs`는 **API 호스트로 가는 WebSocket을 막습니다.** socket.io 는 WS 로 붙어서 puppeteer 의 요청 가로채기를 우회하는데, 그대로 두면 가짜 토큰으로 공유 백엔드에 접속해 "존재하지 않는 방" 오류 모달이 뜹니다. 새 하네스를 만들 때도 같은 처리를 하세요.
 

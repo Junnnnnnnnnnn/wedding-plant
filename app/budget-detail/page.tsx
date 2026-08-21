@@ -11,6 +11,7 @@ import React, {
 import { ArrowLeft, Sparkles, CircleHelp } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import AppShell from "../components/AppShell";
 import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
 
 import { useApi } from "../contexts/ApiContext";
@@ -527,215 +528,269 @@ function BudgetDetailsPage() {
   };
 
   return (
-    <div className="h-[100dvh] bg-[#fcfbfc] overflow-hidden">
-      <div className="hidden lg:block absolute inset-0 bg-gray-100 z-0" />
-      <div className="h-full max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden flex flex-col grid-bg z-10">
-        <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide scroll-smooth min-h-0">
-          <div className="flex justify-between items-center px-6 py-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-[#ee2b8c] hover:bg-[#ee2b8c11] px-3 py-1.5 rounded-full transition-colors w-fit backdrop-blur-sm bg-white/30 shadow-sm"
-              aria-label="뒤로가기"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-bold">뒤로가기</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowGuide(true)}
-              className="flex h-10 w-10 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors backdrop-blur-sm bg-white/30 rounded-full"
-              aria-label="가이드 보기"
-            >
-              <CircleHelp className="h-6 w-6" strokeWidth={2} />
-            </button>
-          </div>
-          <div className="pt-0 pb-32">
-            {detailLoading ? (
-              <div className="px-4 py-4 space-y-6 animate-pulse">
-                {/* Stats Skeleton */}
-                <div className="space-y-3">
-                  <div className="w-full h-32 bg-stone-50 rounded-[24px]" />
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="h-24 bg-stone-50 rounded-[20px]" />
-                    <div className="h-24 bg-stone-50 rounded-[20px]" />
-                  </div>
-                </div>
+    <AppShell
+      activeTab="home"
+      activeRailView="home"
+      unreadCount={unreadCount}
+      gridBackground
+      bottomBarSlot={
+        <BottomTabBar showLoginButton={false} unreadCount={unreadCount} />
+      }
+    >
+      {/* >=768 은 대시보드와 같은 머리글 띠. 폰은 main 안에서 같이 스크롤된다 */}
+      <header className="hidden shrink-0 items-center justify-between gap-5 border-b border-stone-100 bg-white px-8 py-5 md:flex">
+        <div className="min-w-0">
+          <h1 className="truncate text-[26px] font-semibold leading-tight tracking-tight text-[#1b0d14]">
+            예산 상세
+          </h1>
+          <p className="mt-1.5 text-[13px] text-[#7a6c74]">
+            어디에 얼마를 쓰고 있는지 한눈에
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowGuide(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-stone-400 transition-colors hover:text-stone-600"
+            aria-label="가이드 보기"
+          >
+            <CircleHelp className="h-6 w-6" strokeWidth={2} />
+          </button>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="h-10 rounded-[13px] border border-[#f0e3ea] bg-white px-3.5 text-[13px] text-[#6b6570] transition-colors hover:border-[#ee2b8c55] hover:text-[#ee2b8c]"
+          >
+            뒤로가기
+          </button>
+        </div>
+      </header>
 
-                {/* AI Button Skeleton */}
-                <div className="h-14 bg-stone-50 rounded-2xl" />
-
-                {/* Analysis Skeleton */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div className="w-24 h-6 bg-stone-50 rounded" />
-                  </div>
-                  <div className="h-48 bg-stone-50 rounded-3xl" />
-                </div>
-
-                {/* Tabs Skeleton */}
-                <div className="flex border-b border-gray-100">
-                  <div className="flex-1 h-12 bg-stone-50/50" />
-                  <div className="flex-1 h-12 bg-stone-50/50" />
-                </div>
-
-                {/* List Skeleton */}
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="h-20 bg-stone-50 rounded-2xl mx-2"
-                    />
-                  ))}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide scroll-smooth min-h-0">
+        <div className="flex justify-between items-center px-6 py-3 shrink-0 md:hidden">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-[#ee2b8c] hover:bg-[#ee2b8c11] px-3 py-1.5 rounded-full transition-colors w-fit backdrop-blur-sm bg-white/30 shadow-sm"
+            aria-label="뒤로가기"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-bold">뒤로가기</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowGuide(true)}
+            className="flex h-10 w-10 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors backdrop-blur-sm bg-white/30 rounded-full"
+            aria-label="가이드 보기"
+          >
+            <CircleHelp className="h-6 w-6" strokeWidth={2} />
+          </button>
+        </div>
+        {/*
+            @container: 아래 2열 분기를 뷰포트가 아니라 이 영역이 실제로
+            차지한 폭으로 정한다. 셸의 레일이 768/1024 에서 폭을 크게
+            바꾸므로 뷰포트 기준으로는 어긋난다.
+          */}
+        <div className="@container pt-0 pb-32 md:mx-auto md:max-w-[1500px] md:pb-10">
+          {detailLoading ? (
+            <div className="px-4 py-4 space-y-6 animate-pulse">
+              {/* Stats Skeleton */}
+              <div className="space-y-3">
+                <div className="w-full h-32 bg-stone-50 rounded-[24px]" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="h-24 bg-stone-50 rounded-[20px]" />
+                  <div className="h-24 bg-stone-50 rounded-[20px]" />
                 </div>
               </div>
-            ) : error ? (
-              <div className="px-4 py-8 text-center">
-                <p className="text-[#ee2b8c] font-semibold">{error}</p>
+
+              {/* AI Button Skeleton */}
+              <div className="h-14 bg-stone-50 rounded-2xl" />
+
+              {/* Analysis Skeleton */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="w-24 h-6 bg-stone-50 rounded" />
+                </div>
+                <div className="h-48 bg-stone-50 rounded-3xl" />
+              </div>
+
+              {/* Tabs Skeleton */}
+              <div className="flex border-b border-gray-100">
+                <div className="flex-1 h-12 bg-stone-50/50" />
+                <div className="flex-1 h-12 bg-stone-50/50" />
+              </div>
+
+              {/* List Skeleton */}
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-20 bg-stone-50 rounded-2xl mx-2" />
+                ))}
+              </div>
+            </div>
+          ) : error ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-[#ee2b8c] font-semibold">{error}</p>
+              <button
+                type="button"
+                onClick={() => loadData()}
+                className="mt-4 px-4 py-2 bg-[#ee2b8c] text-white rounded-xl font-bold text-sm"
+              >
+                다시 시도
+              </button>
+            </div>
+          ) : stats ? (
+            <>
+              {/* Prominent Stats Grid */}
+              {/*
+                넓어지면 초기 자본·예정·사용을 한 줄로 편다. 세로로 쌓아 두면
+                카드 하나가 1,100px 짜리 빈 상자가 된다. contents 로 안쪽 2열
+                상자를 지워 셋을 같은 격자에 올린다.
+              */}
+              <div
+                id="budget-stat-grid"
+                className="px-4 py-4 space-y-3 md:px-8 md:pt-6 @[980px]:md:grid @[980px]:md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)] @[980px]:md:gap-3 @[980px]:md:space-y-0"
+              >
+                <div className="w-full">
+                  <StatCard
+                    label="초기 자본"
+                    value={stats.initialCapital}
+                    variant="white"
+                    size="large"
+                    remainingAmount={remainingAmount}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3 @[980px]:md:contents">
+                  <StatCard
+                    label="예정"
+                    value={stats.plannedTotal}
+                    variant="pink-light"
+                  />
+                  <StatCard
+                    label="사용"
+                    value={stats.usedTotal}
+                    variant="pink-solid"
+                  />
+                </div>
+              </div>
+
+              {/* AI Insight Trigger */}
+              <div id="budget-ai-insight" className="px-4 mt-2 md:px-8">
                 <button
                   type="button"
-                  onClick={() => loadData()}
-                  className="mt-4 px-4 py-2 bg-[#ee2b8c] text-white rounded-xl font-bold text-sm"
+                  onClick={() => setIsAIModalOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-purple-500 to-[#ee2b8c] text-white rounded-2xl font-bold shadow-lg shadow-[#ee2b8c22] hover:opacity-95 transition-all transform active:scale-[0.98]"
                 >
-                  다시 시도
+                  <Sparkles className="w-5 h-5" />
+                  AI에게 예산 조언 받기
                 </button>
               </div>
-            ) : stats ? (
-              <>
-                {/* Prominent Stats Grid */}
-                <div id="budget-stat-grid" className="px-4 py-4 space-y-3">
-                  <div className="w-full">
-                    <StatCard
-                      label="초기 자본"
-                      value={stats.initialCapital}
-                      variant="white"
-                      size="large"
-                      remainingAmount={remainingAmount}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <StatCard
-                      label="예정"
-                      value={stats.plannedTotal}
-                      variant="pink-light"
-                    />
-                    <StatCard
-                      label="사용"
-                      value={stats.usedTotal}
-                      variant="pink-solid"
-                    />
-                  </div>
-                </div>
 
-                {/* AI Insight Trigger */}
-                <div id="budget-ai-insight" className="px-4 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsAIModalOpen(true)}
-                    className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-purple-500 to-[#ee2b8c] text-white rounded-2xl font-bold shadow-lg shadow-[#ee2b8c22] hover:opacity-95 transition-all transform active:scale-[0.98]"
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    AI에게 예산 조언 받기
-                  </button>
-                </div>
-
-                {/* Spending Analysis Section */}
-                <div className="relative">
-                  <div
-                    className={
-                      isGuest
-                        ? `pointer-events-none select-none ${guestBlurClass}`
-                        : ""
-                    }
-                  >
-                    {/* Spending Analysis Section */}
-                    <div id="budget-analysis" className="px-4 mt-8">
-                      <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-[#1b0d14]">
-                          지출 분석
-                        </h2>
-                        {selectedCategory && (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedCategory(null)}
-                            className="text-[10px] font-extrabold text-[#ee2b8c] uppercase tracking-widest bg-[#ee2b8c11] px-3 py-1 rounded-full"
-                          >
-                            필터 해제
-                          </button>
-                        )}
-                      </div>
-                      <SpendingAnalysis
-                        stats={stats}
-                        expenses={expensesForAnalysis}
-                        selectedCategory={selectedCategory}
-                        onCategorySelect={handleCategoryToggle}
-                      />
-                    </div>
-
-                    {/* Tabs */}
-                    <div id="budget-tab" className="px-4 mt-8">
-                      <div className="flex border-b border-gray-100">
-                        {(["예정", "사용"] as const).map((tab) => (
-                          <button
-                            type="button"
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${
-                              activeTab === tab
-                                ? "text-[#ee2b8c] border-[#ee2b8c]"
-                                : "text-gray-400 border-transparent hover:text-gray-600"
-                            }`}
-                          >
-                            {tab}
-                          </button>
-                        ))}
+              {/* Spending Analysis Section */}
+              <div className="relative">
+                <div
+                  className={
+                    isGuest
+                      ? `pointer-events-none select-none ${guestBlurClass}`
+                      : ""
+                  }
+                >
+                  {/*
+                      넓어지면 차트와 목록을 나란히 둔다. 좁을 때는
+                      contents 로 감싼 상자를 지워 예전 세로 흐름 그대로다.
+                    */}
+                  <div className="md:grid md:gap-x-8 md:px-8 @[980px]:md:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] @[980px]:md:items-start">
+                    <div className="contents @[980px]:md:block">
+                      <div id="budget-analysis" className="px-4 mt-8 md:px-0">
+                        <div className="flex justify-between items-center mb-4">
+                          <h2 className="text-xl font-bold text-[#1b0d14]">
+                            지출 분석
+                          </h2>
+                          {selectedCategory && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCategory(null)}
+                              className="text-[10px] font-extrabold text-[#ee2b8c] uppercase tracking-widest bg-[#ee2b8c11] px-3 py-1 rounded-full"
+                            >
+                              필터 해제
+                            </button>
+                          )}
+                        </div>
+                        <SpendingAnalysis
+                          stats={stats}
+                          expenses={expensesForAnalysis}
+                          selectedCategory={selectedCategory}
+                          onCategorySelect={handleCategoryToggle}
+                        />
                       </div>
                     </div>
-
-                    {/* Expense List: count=10000으로 전체 한 번에 로드 */}
-                    <div id="budget-list" className="mt-4">
-                      <ExpenseList expenses={listExpenses} />
-                    </div>
-                  </div>
-
-                  {isGuest && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <button
-                        type="button"
-                        onClick={() => setShowLoginRequiredModal(true)}
-                        className="rounded-2xl bg-white/70 px-6 py-3 text-sm font-bold text-stone-700 shadow-sm backdrop-blur transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                    <div className="contents @[980px]:md:block">
+                      {/* Tabs */}
+                      <div
+                        id="budget-tab"
+                        className="px-4 mt-8 md:px-0 @[980px]:md:mt-8"
                       >
-                        로그인이 필요한 서비스 입니다
-                      </button>
+                        <div className="flex border-b border-gray-100">
+                          {(["예정", "사용"] as const).map((tab) => (
+                            <button
+                              type="button"
+                              key={tab}
+                              onClick={() => setActiveTab(tab)}
+                              className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${
+                                activeTab === tab
+                                  ? "text-[#ee2b8c] border-[#ee2b8c]"
+                                  : "text-gray-400 border-transparent hover:text-gray-600"
+                              }`}
+                            >
+                              {tab}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Expense List: count=10000으로 전체 한 번에 로드 */}
+                      <div id="budget-list" className="mt-4">
+                        <ExpenseList expenses={listExpenses} />
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
-              </>
-            ) : (
-              <div className="px-4 py-8 text-center">
-                <p className="text-gray-500 font-medium">데이터가 없습니다.</p>
+
+                {isGuest && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginRequiredModal(true)}
+                      className="rounded-2xl bg-white/70 px-6 py-3 text-sm font-bold text-stone-700 shadow-sm backdrop-blur transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                    >
+                      로그인이 필요한 서비스 입니다
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </main>
+            </>
+          ) : (
+            <div className="px-4 py-8 text-center">
+              <p className="text-gray-500 font-medium">데이터가 없습니다.</p>
+            </div>
+          )}
+        </div>
+      </main>
 
-        <AIInsightsModal
-          isOpen={isAIModalOpen}
-          onClose={() => setIsAIModalOpen(false)}
-        />
-        <LoginRequiredModal
-          show={showLoginRequiredModal}
-          onClose={() => setShowLoginRequiredModal(false)}
-        />
+      <AIInsightsModal
+        isOpen={isAIModalOpen}
+        onClose={() => setIsAIModalOpen(false)}
+      />
+      <LoginRequiredModal
+        show={showLoginRequiredModal}
+        onClose={() => setShowLoginRequiredModal(false)}
+      />
 
-        <BottomTabBar showLoginButton={false} unreadCount={unreadCount} />
-        <GuideOverlay
-          isOpen={showGuide}
-          onClose={handleCloseGuide}
-          steps={guideSteps}
-        />
-      </div>
-    </div>
+      <GuideOverlay
+        isOpen={showGuide}
+        onClose={handleCloseGuide}
+        steps={guideSteps}
+      />
+    </AppShell>
   );
 }
 
