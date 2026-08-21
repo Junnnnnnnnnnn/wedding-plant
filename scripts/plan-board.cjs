@@ -209,6 +209,22 @@ function installMocks(page) {
       return;
     }
 
+    if (p0 === "/plan/category/user/list" || p0 === "/plan/category/list") {
+      req
+        .respond(
+          ok({
+            list: ["스드메", "예식장", "예물", "상견례"].map((name, i) => ({
+              id: i + 1,
+              name,
+              color: "#ee2b8c",
+              type: "SYSTEM",
+            })),
+            total: 4,
+          }),
+        )
+        .catch(() => {});
+      return;
+    }
     if (p0 === "/plan/schedule/list") {
       // 실제 API 와 같은 필터를 건다. 목이 더 관대하면 "status 없이 부르면
       // 완료가 빠진다" 같은 버그를 하네스가 못 잡는다 (실제로 못 잡았다).
@@ -369,6 +385,115 @@ const boxOf = (page, sel) =>
     if (b) b.click();
   });
   await wait(600);
+
+  // 보드의 "+ 플랜 추가" → 우측 등록 pane
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find(
+      (x) => x.innerText.trim() === "보드",
+    );
+    if (b) b.click();
+  });
+  await wait(900);
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find(
+      (x) => x.innerText.trim() === "+ 플랜 추가",
+    );
+    if (b) b.click();
+  });
+  await wait(1400);
+  // 제목·카테고리를 채워 폼이 다 펼쳐진 모습을 본다
+  await page.evaluate(() => {
+    const input = document.querySelector(
+      'input[placeholder="어떤 지출인가요?"]',
+    );
+    if (!input) return;
+    const setter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      "value",
+    ).set;
+    setter.call(input, "드레스 투어");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await wait(1100);
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find(
+      (x) => x.innerText.trim() === "카테고리 선택",
+    );
+    if (b) b.click();
+  });
+  await wait(800);
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find((x) =>
+      ["스드메", "예식장", "예물", "기타"].includes(x.innerText.trim()),
+    );
+    if (b) b.click();
+  });
+  await wait(900);
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find(
+      (x) => x.innerText.trim() === "카드",
+    );
+    if (b) b.click();
+  });
+  await wait(1100);
+  await page.screenshot({ path: path.join(OUT, "board-1440-addpane.png") });
+  // 저장 버튼까지 닿는지 — pane 아래로 끝까지 굴려 본다
+  const saveInfo = await page.evaluate(() => {
+    const title = [...document.querySelectorAll("b")].find(
+      (x) => x.innerText.trim() === "플랜 추가",
+    );
+    const pane = title?.closest("div")?.parentElement;
+    const scroller = pane?.querySelector("main");
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    const btn = [...document.querySelectorAll("button")].find((b) =>
+      /등록|저장|수정/.test(b.innerText.trim()),
+    );
+    return {
+      스크롤: scroller ? `${scroller.scrollHeight}px` : "-",
+      저장버튼: btn ? btn.innerText.trim() : "없음",
+    };
+  });
+  await wait(600);
+  await page.screenshot({ path: path.join(OUT, "board-1440-addpane-end.png") });
+  console.log(
+    `캡처 board-1440-addpane-end.png   폼높이=${saveInfo.스크롤} 저장버튼=${saveInfo.저장버튼}`,
+  );
+  const addPane = await page.evaluate(() => {
+    const title = [...document.querySelectorAll("b")].find(
+      (x) => x.innerText.trim() === "플랜 추가",
+    );
+    const box = title?.closest("div")?.parentElement?.getBoundingClientRect();
+    return {
+      열림: !!title,
+      제목입력: !!document.querySelector('input[placeholder="어떤 지출인가요?"]'),
+      라우트: location.pathname,
+      좌표: box ? `x=${Math.round(box.x)} w=${Math.round(box.width)}` : "-",
+    };
+  });
+  console.log(
+    `캡처 board-1440-addpane.png   pane=${addPane.열림 ? "열림" : "안열림"} 제목칸=${addPane.제목입력 ? "있음" : "없음"} 라우트=${addPane.라우트} ${addPane.좌표}`,
+  );
+  // 닫고 원상복구. aria-label="닫기" 는 캘린더 헤더의 X 도 잡아
+  // /main 으로 나가 버리므로, 반드시 pane 머리글 안에서만 찾는다.
+  const closed = await page.evaluate(() => {
+    const title = [...document.querySelectorAll("b")].find(
+      (x) => x.innerText.trim() === "플랜 추가",
+    );
+    const btn = title?.parentElement?.querySelector('[aria-label="닫기"]');
+    if (!btn) return false;
+    btn.click();
+    return true;
+  });
+  await wait(800);
+  const afterClose = await page.evaluate(() => ({
+    pane: !![...document.querySelectorAll("b")].find(
+      (x) => x.innerText.trim() === "플랜 추가",
+    ),
+    라우트: location.pathname,
+  }));
+  console.log(
+    `등록 pane 닫기 → ${closed ? "눌림" : "버튼 못찾음"} pane=${afterClose.pane ? "아직열림(문제)" : "닫힘"} 라우트=${afterClose.라우트}`,
+  );
 
   // 보드로 복귀
   await page.evaluate(() => {

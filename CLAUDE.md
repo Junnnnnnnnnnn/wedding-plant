@@ -104,6 +104,25 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 
 `app/schedule-detail/ScheduleDetailView.tsx`도 같은 구조입니다 (`variant="page" | "inspector"`). `inspector`는 보드·캘린더 옆에 붙고, 뒤로가기 대신 `onClose`를 씁니다.
 
+### 플랜 등록 pane (`app/add-plen/AddPlanView.tsx`)
+
+폼 본체는 `AddPlanView` 에 있고 `app/add-plen/page.tsx` 는 쿼리를 읽어 넘기는
+얇은 래퍼입니다 (`ChatRoomView`·`ScheduleDetailView` 와 같은 구조).
+
+`variant="pane"` 을 주면 **`≥1024` 에서 보드·캘린더·홈 오른쪽 컬럼에 붙습니다.**
+그보다 좁으면 지금처럼 `/add-plen` 으로 이동합니다 — 인스펙터가 열리는 기준과
+같습니다. `AppShell` 의 디테일 컬럼 자체가 `hidden lg:flex` 라 그 아래에는 둘
+자리가 없습니다.
+
+- pane 에서는 셸을 내지 않습니다(바깥이 잡음). 떠 있는 "뒤로가기" 알약 대신
+  인스펙터와 같은 머리글 + X 를 씁니다. 나가는 길은 라우팅이 아니라 `onClose`
+  입니다 — pane 에서 라우팅하면 뒤에 있던 보드까지 통째로 다시 그립니다.
+- 저장이 끝나면 `onSaved` 로 부모가 목록을 다시 받습니다.
+- 폼은 폰 폭에 맞춰 크게 잡혀 있어, pane 에서는 `cardClass`·`fieldTextClass`
+  로 카드 여백과 입력 글자만 한 단계 줄입니다. 모바일 마크업은 그대로입니다.
+- **하네스에서 pane 을 닫을 때 `[aria-label="닫기"]` 를 전역으로 찾지 마세요.**
+  캘린더 헤더의 X 까지 잡혀 `/main` 으로 나가 버립니다. 머리글 안에서 찾으세요.
+
 ### 홈 대시보드 (`app/components/HomeDashboard.tsx`)
 
 `/main` 은 ≥768 에서 **모바일 트리를 통째로 숨기고**(`md:hidden`) 대시보드를 따로 렌더합니다. 기존 스냅 두 섹션의 마크업을 한 줄도 건드리지 않아야 모바일이 픽셀 그대로 남습니다. 같은 DOM 을 CSS 로 재배치하려 들지 마세요 — 한 번 그렇게 했다가 되돌렸습니다.
@@ -113,6 +132,13 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 카테고리 스택바는 `/plan/user/amount/category-chart`(방이면 `/plan/room/amount/category-chart/{roomId}`)를 씁니다.
 
 **이름·날짜는 `planLoading` 동안 스켈레톤으로 가려야 합니다.** `WeddingContext` 가 sessionStorage 를 클라이언트에서만 읽어서, 그냥 그리면 서버 렌더와 값이 달라 하이드레이션 불일치가 납니다(실제로 났습니다).
+
+등록 pane 이 열리면 **뷰포트는 그대로인데 대시보드만 400px 넘게 줄어듭니다.**
+`lg:`/`xl:` 로는 알 수 없어 `narrow` prop 으로 알려 주고, 그때만 컨테이너 쿼리
+(`@[770px]:`)로 열을 정합니다. pane 이 닫혀 있으면 예전 규칙 그대로입니다 —
+레일이 768/1024 에서 76px↔236px 로 뛰어서 컨테이너 기준 하나로는 기존 분기를
+재현할 수 없습니다. `/main` 은 `masterWidthClassName="lg:flex-1"` 을 넘겨야
+합니다. 기본값(372/420px)은 목록 화면용이라 대시보드가 눌립니다.
 
 카드 속 내용은 `app/components/PlanTaskCard.tsx` 를 홈 스트립과 플랜 보드가 공유합니다. 껍데기는 각자 다릅니다 — 보드는 드래그·선택을 얹은 div, 홈은 상세로 가는 button.
 

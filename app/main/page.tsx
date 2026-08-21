@@ -27,6 +27,7 @@ import {
 } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "motion/react";
 import CountUp from "@/components/CountUp";
+import AddPlanView from "../add-plen/AddPlanView";
 import AppShell from "../components/AppShell";
 import HomeDashboard from "../components/HomeDashboard";
 import BottomTabBar from "../components/BottomTabBar";
@@ -53,6 +54,7 @@ import {
 } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
 import { parseLocalDate, getKstDate, getDaysUntil } from "@/lib/utils";
+import { useIsDesktop } from "../hooks/useMediaQuery";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 
 /** 정렬 옵션 → 버튼 표시용 라벨(가격/날짜/이름) + 방향 */
@@ -1420,6 +1422,15 @@ function MainPageContent() {
    * 플랜 추가로 이동. 로그인·게스트 한도 분기를 한 곳에 모은다.
    * 리스트 상단의 "추가" 버튼과 대시보드 상단 바가 같은 경로를 쓴다.
    */
+  /**
+   * 넓은 화면(>=1024)에서 오른쪽에 여는 플랜 등록 pane.
+   * 좁은 화면은 지금처럼 /add-plen 으로 간다.
+   */
+  const isDesktopWidth = useIsDesktop();
+  const [isAddPaneOpen, setIsAddPaneOpen] = useState(false);
+  /** 등록이 끝나면 올려서 대시보드가 일정·예산을 다시 받게 한다 */
+  const [dashboardRefresh, setDashboardRefresh] = useState(0);
+
   const handleAddPlan = useCallback(() => {
     // 공유 뷰에서는 내 방 id 를 붙이지 않는다 (내 플랜에 저장되던 문제)
     const roomIdValue = isSharedView
@@ -1433,6 +1444,10 @@ function MainPageContent() {
       ? `/add-plen?roomId=${roomIdValue}`
       : "/add-plen";
     if (getToken()) {
+      if (isDesktopWidth) {
+        setIsAddPaneOpen(true);
+        return;
+      }
       router.push(addPlanPath);
       return;
     }
@@ -1454,8 +1469,19 @@ function MainPageContent() {
       setShowLoginRequiredModal(true);
       return;
     }
+    if (isDesktopWidth) {
+      setIsAddPaneOpen(true);
+      return;
+    }
     router.push(addPlanPath);
-  }, [apiPlanData, effectiveScheduleList.length, isSharedView, roomId, router]);
+  }, [
+    apiPlanData,
+    effectiveScheduleList.length,
+    isDesktopWidth,
+    isSharedView,
+    roomId,
+    router,
+  ]);
 
   // 체크박스 토글 핸들러 (PATCH /plan/schedule/status/{id} — COMPLETED / NORMAL)
   const handleToggleCheck = useCallback(
@@ -1626,6 +1652,40 @@ function MainPageContent() {
           : null
       }
       gridBackground
+      /* 기본값(372/420px)은 목록 화면용이다. 대시보드는 남는 폭을 다 쓴다 */
+      masterWidthClassName="lg:flex-1"
+      detailWidthClassName="w-[392px] 2xl:w-[428px]"
+      /*
+        등록 pane 을 열었을 때만 컬럼을 만든다. 대시보드는 3열이라
+        빈 pane 을 늘 물고 있으면 가로가 크게 좁아진다.
+      */
+      detail={
+        isDesktopWidth && isAddPaneOpen ? (
+          <AddPlanView
+            variant="pane"
+            roomId={
+              roomId?.trim()
+                ? Number(roomId.trim())
+                : apiPlanData && apiPlanData !== "none" && apiPlanData.roomId
+                  ? apiPlanData.roomId
+                  : null
+            }
+            from="main"
+            onClose={() => setIsAddPaneOpen(false)}
+            onSaved={() => {
+              setDashboardRefresh((n) => n + 1);
+              const status = activeTab === "planned" ? "NORMAL" : "COMPLETED";
+              const roomIdParam =
+                roomId?.trim() ||
+                (apiPlanData && apiPlanData !== "none" && apiPlanData.roomId
+                  ? String(apiPlanData.roomId)
+                  : null);
+              fetchScheduleList(roomIdParam ?? undefined, status);
+              fetchTotalAmount(handleApiError, roomIdParam ?? undefined);
+            }}
+          />
+        ) : undefined
+      }
       bottomBarSlot={
         <BottomTabBar
           activeTab={roomId || shareCode ? "rooms" : undefined}
@@ -2483,6 +2543,8 @@ function MainPageContent() {
           !isSharedView
         }
         onAddPlan={handleAddPlan}
+        refreshToken={dashboardRefresh}
+        narrow={isDesktopWidth && isAddPaneOpen}
         onToggle={handleToggleCheck}
         onOpenSchedule={(id) =>
           router.push(

@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "motion/react";
 import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
 import CustomAlertModal from "../components/CustomAlertModal";
+import AddPlanView from "../add-plen/AddPlanView";
 import ScheduleDetailView from "../schedule-detail/ScheduleDetailView";
 import PlanBoard, { BoardItem } from "./PlanBoard";
 import { useApi } from "../contexts/ApiContext";
@@ -330,6 +331,13 @@ function CalendarPageContent() {
   const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(
     null,
   );
+  /**
+   * 넓은 화면에서 우측에 여는 플랜 등록 pane. 인스펙터와 같은 자리를
+   * 나눠 쓰므로 둘 중 하나만 열린다.
+   */
+  const [isAddPaneOpen, setIsAddPaneOpen] = useState(false);
+  /** 등록 pane 에 미리 채울 날짜 "YYYY-MM-DD" */
+  const [addPaneDate, setAddPaneDate] = useState<string | null>(null);
   const isTabletUp = useIsTabletUp();
   const isDesktop = useIsDesktop();
 
@@ -398,28 +406,38 @@ function CalendarPageContent() {
     fetchBoardItems();
   }, [isTabletUp, fetchBoardItems]);
 
-  const getAddPlanPath = (date?: {
-    day: number;
-    month: number;
-    year: number;
-  }) => {
+  /**
+   * 플랜 등록. ≥1024 는 우측 pane 에서 바로 쓰고, 그보다 좁으면 지금처럼
+   * /add-plen 으로 간다 — 인스펙터가 열리는 기준과 같다. 폭이 그보다
+   * 좁으면 보드와 폼을 나란히 두기에 양쪽 다 답답해진다.
+   */
+  const openAddPlan = (dateStr: string | null) => {
+    if (isDesktop) {
+      setSelectedScheduleId(null);
+      setIsModalOpen(false);
+      setAddPaneDate(dateStr);
+      setIsAddPaneOpen(true);
+      return;
+    }
     const params = new URLSearchParams();
     if (roomId?.trim()) params.set("roomId", roomId.trim());
     params.set("from", "calendar");
-    if (date) {
-      params.set(
-        "date",
-        `${date.year}-${String(date.month + 1).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`,
-      );
-    }
-    return `/add-plen?${params.toString()}`;
+    if (dateStr) params.set("date", dateStr);
+    router.push(`/add-plen?${params.toString()}`);
   };
+
+  /** 달력 셀·모달이 넘겨 주는 {year, month, day} 를 "YYYY-MM-DD" 로 */
+  const toDateStr = (date?: { day: number; month: number; year: number }) =>
+    date
+      ? `${date.year}-${String(date.month + 1).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`
+      : null;
 
   const showBoard = isTabletUp && boardView === "board";
 
   /** 넓은 화면은 옆 인스펙터에서 열고, 좁은 화면은 지금처럼 상세 라우트로 간다 */
   const openSchedule = (id: number) => {
     if (isDesktop) {
+      setIsAddPaneOpen(false);
       setSelectedScheduleId(id);
       setIsModalOpen(false);
       return;
@@ -435,14 +453,31 @@ function CalendarPageContent() {
       activeRailView="board"
       unreadCount={unreadCount}
       masterWidthClassName="lg:flex-1"
-      detailWidthClassName="w-[318px] 2xl:w-[364px]"
+      // 등록 폼은 입력칸이 많아 인스펙터보다 넉넉해야 한다
+      detailWidthClassName={
+        isAddPaneOpen ? "w-[392px] 2xl:w-[428px]" : "w-[318px] 2xl:w-[364px]"
+      }
       /*
         고른 게 없으면 pane 자체를 접는다(null 이 아니라 undefined).
         보드는 가로 폭이 전부인 화면이라, 안내문만 띄운 320~360px 을
         늘 물고 있으면 넓은 화면에서도 월 컬럼이 잘린다.
       */
       detail={
-        isTabletUp && selectedScheduleId ? (
+        isDesktop && isAddPaneOpen ? (
+          <AddPlanView
+            /* 날짜를 바꿔 다시 열면 폼을 새로 잡아야 한다 */
+            key={addPaneDate ?? "new"}
+            variant="pane"
+            roomId={roomId?.trim() ? Number(roomId.trim()) : null}
+            initialDate={addPaneDate}
+            from="calendar"
+            onClose={() => setIsAddPaneOpen(false)}
+            onSaved={() => {
+              fetchBoardItems();
+              fetchSchedules();
+            }}
+          />
+        ) : isTabletUp && selectedScheduleId ? (
           <ScheduleDetailView
             key={selectedScheduleId}
             scheduleId={selectedScheduleId}
@@ -547,13 +582,9 @@ function CalendarPageContent() {
               selectedId={selectedScheduleId}
               onSelect={openSchedule}
               onItemsChange={setBoardItems}
-              onAdd={(monthKey) => {
-                const params = new URLSearchParams();
-                if (roomId?.trim()) params.set("roomId", roomId.trim());
-                params.set("from", "calendar");
-                if (monthKey) params.set("date", `${monthKey}-01`);
-                router.push(`/add-plen?${params.toString()}`);
-              }}
+              onAdd={(monthKey) =>
+                openAddPlan(monthKey ? `${monthKey}-01` : null)
+              }
               onError={setBoardError}
             />
           ) : (
@@ -682,7 +713,7 @@ function CalendarPageContent() {
         {!isReadOnly && !showBoard && (
           <button
             type="button"
-            onClick={() => router.push(getAddPlanPath())}
+            onClick={() => openAddPlan(null)}
             className="absolute bottom-28 right-6 w-14 h-14 bg-[#ee2b8c] text-white rounded-full flex items-center justify-center shadow-xl shadow-[#ee2b8c44] active:scale-95 transition-transform z-50 md:bottom-8"
           >
             <Plus className="w-8 h-8" strokeWidth={3} />
@@ -793,9 +824,7 @@ function CalendarPageContent() {
                 {!isReadOnly && (
                   <button
                     type="button"
-                    onClick={() =>
-                      router.push(getAddPlanPath(selectedDateParams))
-                    }
+                    onClick={() => openAddPlan(toDateStr(selectedDateParams))}
                     className="flex items-center justify-center gap-2 w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:text-[#ee2b8c] hover:border-[#ee2b8c33] hover:bg-[#ee2b8c05] transition-all font-bold text-sm mt-2"
                   >
                     <Plus className="w-4 h-4" strokeWidth={3} />

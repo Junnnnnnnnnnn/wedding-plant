@@ -48,6 +48,16 @@ interface HomeDashboardProps {
   /** READ 권한이면 추가·완료를 막는다 */
   canEdit: boolean;
   onAddPlan: () => void;
+  /**
+   * 값이 바뀌면 일정·예산을 다시 받는다. 옆 pane 에서 플랜을 저장한 뒤
+   * 부모가 올린다 — 통째로 remount 하면 화면이 한 번 깜빡인다.
+   */
+  refreshToken?: number;
+  /**
+   * 오른쪽에 플랜 등록 pane 이 열려 폭이 크게 줄었을 때. 뷰포트는 그대로라
+   * lg:/xl: 로는 알 수 없어서 부모가 알려 준다.
+   */
+  narrow?: boolean;
   /** 완료 토글. 현재 상태를 보고 알아서 뒤집는다 */
   onToggle: (id: number) => void;
   onOpenSchedule: (id: number) => void;
@@ -99,6 +109,8 @@ export default function HomeDashboard({
   roomId,
   canEdit,
   onAddPlan,
+  refreshToken = 0,
+  narrow = false,
   onToggle,
   onOpenSchedule,
   onOpenBudgetDetail,
@@ -150,7 +162,7 @@ export default function HomeDashboard({
 
   useEffect(() => {
     fetchSchedules();
-  }, [fetchSchedules]);
+  }, [fetchSchedules, refreshToken]);
 
   const fetchCategoryChart = useCallback(async () => {
     if (!getToken()) return;
@@ -172,7 +184,7 @@ export default function HomeDashboard({
 
   useEffect(() => {
     fetchCategoryChart();
-  }, [fetchCategoryChart]);
+  }, [fetchCategoryChart, refreshToken]);
 
   // 렌더마다 새 Date 를 만들면 아래 useMemo 들이 매번 다시 계산된다
   const today = useMemo(() => getKstDate(), []);
@@ -228,7 +240,13 @@ export default function HomeDashboard({
   const pct = (v: number) => (totalBudget > 0 ? (v / totalBudget) * 100 : 0);
 
   return (
-    <div className="hidden min-h-0 flex-1 flex-col bg-[#fcfbfc] md:flex">
+    /*
+      @container: 열 개수를 뷰포트가 아니라 "대시보드가 실제로 차지한 폭"
+      으로 정한다. 오른쪽에 플랜 등록 pane 이 열리면 뷰포트는 그대로인데
+      이 영역만 400px 넘게 줄어든다. lg:/xl: 로 두면 그때도 3열을 고집해
+      글자가 한 자씩 끊긴다.
+    */
+    <div className="@container hidden min-h-0 flex-1 flex-col bg-[#fcfbfc] md:flex">
       {/* 상단 바 */}
       <header className="flex shrink-0 items-center gap-5 border-b border-stone-100 bg-white px-8 py-5">
         {planLoading ? (
@@ -378,7 +396,18 @@ export default function HomeDashboard({
           </section>
         )}
 
-        <div className="grid grid-cols-1 items-start gap-[22px] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1.05fr)_minmax(0,0.95fr)] [&>*]:min-w-0">
+        {/*
+          pane 이 닫혀 있으면 예전 그대로 뷰포트 기준이다. 열려 있을 때만
+          컨테이너 폭을 보고 열을 줄인다 — 레일이 768/1024 에서 76px↔236px
+          로 뛰어서, 컨테이너 기준 하나로는 기존 분기를 그대로 재현할 수 없다.
+        */}
+        <div
+          className={
+            narrow
+              ? "grid grid-cols-1 items-start gap-[22px] @[770px]:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] [&>*]:min-w-0"
+              : "grid grid-cols-1 items-start gap-[22px] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1.05fr)_minmax(0,0.95fr)] [&>*]:min-w-0"
+          }
+        >
           {/* 예산 — 가장 넓고 무겁게 */}
           <section className="rounded-[28px] border border-[#ee2b8c0f] bg-white p-[26px] shadow-sm lg:row-span-2 xl:row-auto">
             <div className="mb-4 flex items-baseline justify-between gap-3">

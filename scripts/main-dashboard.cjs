@@ -390,6 +390,43 @@ function installMocks(page) {
     );
   }
 
+  // 대시보드의 "+ 플랜 추가" → 우측 등록 pane (>=1024)
+  await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
+  await page.goto(`${ORIGIN}/main`, {
+    waitUntil: "networkidle2",
+    timeout: 60000,
+  });
+  await wait(2200);
+  const clicked = await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find(
+      (x) => x.innerText.replace(/\s+/g, " ").trim() === "플랜 추가",
+    );
+    if (!b) {
+      return [...document.querySelectorAll("button")]
+        .map((x) => x.innerText.replace(/\s+/g, " ").trim())
+        .filter(Boolean)
+        .slice(0, 12)
+        .join(" | ");
+    }
+    b.click();
+    return "clicked";
+  });
+  await wait(1500);
+  await page.screenshot({ path: path.join(OUT, "main-1440-addpane.png") });
+  const pane = await page.evaluate(() => {
+    const title = [...document.querySelectorAll("b")].find(
+      (x) => x.innerText.trim() === "플랜 추가",
+    );
+    return {
+      열림: !!title,
+      제목칸: !!document.querySelector('input[placeholder="어떤 지출인가요?"]'),
+      라우트: location.pathname,
+    };
+  });
+  console.log(
+    `캡처 main-1440-addpane.png   클릭=${clicked} pane=${pane.열림 ? "열림" : "안열림"} 제목칸=${pane.제목칸 ? "있음" : "없음"} 라우트=${pane.라우트}`,
+  );
+
   // 가이드 말풍선이 새 레이아웃에서도 대상 위에 붙는지 확인한다.
   // GuideOverlay 는 대상 엘리먼트의 rect 와 window.innerHeight 로 위치를
   // 계산하므로, 레일·2열 도입으로 좌표가 밀리면 여기서 드러난다.
