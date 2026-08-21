@@ -209,7 +209,8 @@ const CardBudget: React.FC<CardBudgetProps> = ({
   progress,
 }) => (
   <div className="space-y-3">
-    <div className="flex justify-between items-end">
+    {/* <768 은 지금 그대로 */}
+    <div className="flex justify-between items-end md:hidden">
       <div>
         <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-1">
           Remaining Budget
@@ -222,9 +223,19 @@ const CardBudget: React.FC<CardBudgetProps> = ({
         / {budget.toLocaleString("ko-KR")}만 원
       </p>
     </div>
-    <div className="h-2 w-full bg-[#ee2b8c0a] rounded-full overflow-hidden">
+    {/* >=768 은 홈 예산 패널과 같은 짜임 — 큰 숫자 + "N만원 중 남음" */}
+    <div className="hidden md:block">
+      <div className="font-user-content text-[22px] font-bold leading-none tracking-[-0.03em] text-[#1b0d14]">
+        {remainingBudget.toLocaleString("ko-KR")}만원
+      </div>
+      <div className="mt-1.5 text-[12.5px] text-gray-400">
+        {budget.toLocaleString("ko-KR")}만원 중 남음
+      </div>
+    </div>
+    {/* 트랙·높이·그러데이션 모두 홈 예산 패널과 같은 값 */}
+    <div className="h-2 w-full overflow-hidden rounded-full bg-[#ee2b8c0a] md:h-3 md:bg-[#f4eff2]">
       <div
-        className="h-full bg-gradient-to-r from-[#ee2b8c] to-[#ff94a1] rounded-full transition-all duration-1000"
+        className="h-full rounded-full bg-gradient-to-r from-[#ee2b8c] to-[#ff94a1] transition-all duration-1000 md:from-[#ff7ab5] md:to-[#ee2b8c]"
         style={{ width: `${progress}%` }}
       />
     </div>
@@ -450,11 +461,11 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
       unreadCount={unreadCount}
       gridBackground
       /*
-        목록이 남는 폭을 쓰고 대화는 고정 폭을 갖는다. 기본값(372/420px)은
-        목록을 폰 폭에 묶어 둬서, 넓은 화면에서 카드 한 줄만 보였다.
+        남는 폭은 대화가 가져간다. 목록은 카드 두 줄이면 충분해서 780px 에서
+        멈추고, 그 위로는 전부 채팅에 준다 — 넓은 화면에서 읽는 쪽은 대화다.
+        기본값(372/420px)은 목록을 폰 폭에 묶어 둬서 카드가 한 줄만 보였다.
       */
-      masterWidthClassName="lg:flex-1"
-      detailWidthClassName="w-[420px] 2xl:w-[520px]"
+      masterWidthClassName="lg:flex-1 lg:max-w-[780px]"
       detail={
         selectedChatRoomId ? (
           // key 로 방마다 새로 마운트한다. ChatRoomView 는 초기 로드 여부를
