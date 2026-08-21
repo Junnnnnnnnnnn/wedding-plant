@@ -550,17 +550,31 @@ export default function HomeDashboard({
             <div className="mt-5 flex items-center gap-3 border-t border-dashed border-[#f2eaee] pt-[18px]">
               <p className="m-0 flex-1 text-[12.5px] leading-relaxed text-[#7a6c74] break-keep">
                 {plannedUseAmount != null ? (
-                  <>
-                    예정된 지출까지 반영하면{" "}
-                    <b className="text-[#1b0d14]">
-                      {Math.max(
-                        0,
-                        remainingBudget - plannedUseAmount,
-                      ).toLocaleString("ko-KR")}
-                      만원
-                    </b>
-                    이 남습니다.
-                  </>
+                  (() => {
+                    // 초과했을 때 0 으로 깎아 버리면 큰 숫자는 -254만원인데
+                    // 여기는 "0만원이 남습니다" 가 되어 서로 어긋난다.
+                    const after = remainingBudget - plannedUseAmount;
+                    if (after < 0) {
+                      return (
+                        <>
+                          예정된 지출까지 반영하면{" "}
+                          <b className="text-[#ee2b8c]">
+                            {Math.abs(after).toLocaleString("ko-KR")}만원
+                          </b>
+                          을 넘어섭니다.
+                        </>
+                      );
+                    }
+                    return (
+                      <>
+                        예정된 지출까지 반영하면{" "}
+                        <b className="text-[#1b0d14]">
+                          {after.toLocaleString("ko-KR")}만원
+                        </b>
+                        이 남습니다.
+                      </>
+                    );
+                  })()
                 ) : (
                   <>
                     전체 예산의{" "}
