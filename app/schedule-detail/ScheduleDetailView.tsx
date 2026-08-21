@@ -7,6 +7,8 @@ import {
   Clock,
   FileText,
   Loader2,
+  Maximize2,
+  Minimize2,
   MapPin,
   Tag,
   X,
@@ -158,6 +160,12 @@ export default function ScheduleDetailView({
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
+  /**
+   * 지도 크게 보기. 지도 DOM 을 옮기면 Kakao 인스턴스가 죽으므로,
+   * 감싼 상자만 fixed 로 키우고 안쪽은 그대로 둔다. 크기가 바뀌면
+   * 아래 ResizeObserver 가 relayout + 재중심을 맡는다.
+   */
+  const [mapExpanded, setMapExpanded] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerRef = useRef<any>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -461,11 +469,29 @@ export default function ScheduleDetailView({
     const el = document.getElementById("schedule-detail-map");
     if (!el || typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(() => {
-      if (mapRef.current?.relayout) mapRef.current.relayout();
+      if (!mapRef.current?.relayout) return;
+      mapRef.current.relayout();
+      // relayout 만 하면 커진 만큼 마커가 한쪽으로 밀린다. 중심을 다시 잡는다.
+      if (mapCoords && window.kakao?.maps) {
+        mapRef.current.setCenter(
+          new window.kakao.maps.LatLng(mapCoords.lat, mapCoords.lng),
+        );
+      }
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, [mapCoords]);
+
+  // 크게 본 지도는 ESC 로 닫는다. 뒷 배경을 어둡게 하지 않으므로
+  // 바깥을 눌러 닫는 방식은 오히려 오조작이 된다.
+  useEffect(() => {
+    if (!mapExpanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMapExpanded(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mapExpanded]);
 
   let content: ReactElement | null = null;
 
@@ -729,10 +755,24 @@ export default function ScheduleDetailView({
                   {detail.location?.trim() || "장소 미정"}
                 </div>
                 {detail.location?.trim() && mapCoords && (
-                  <div className="relative w-full h-[200px]">
+                  <motion.div
+                    /*
+                      layout: 접힘(자리 안) ↔ 펼침(fixed) 사이를 FLIP 으로
+                      잇는다. 지도 DOM 은 이 안에 그대로 있어서 Kakao
+                      인스턴스가 살아 있고, 크기만 바뀌므로 ResizeObserver 가
+                      relayout 해 준다.
+                    */
+                    layout={isInspector}
+                    transition={{ type: "spring", stiffness: 300, damping: 32 }}
+                    className={
+                      mapExpanded
+                        ? "fixed inset-6 z-[300] shadow-2xl xl:inset-12"
+                        : "relative w-full h-[200px]"
+                    }
+                  >
                     <div
                       id="schedule-detail-map"
-                      className={`absolute inset-0 rounded-lg overflow-hidden border border-gray-200 transition-opacity duration-300 ${mapLoaded ? "opacity-100" : "opacity-0"}`}
+                      className={`absolute inset-0 overflow-hidden border border-gray-200 transition-opacity duration-300 ${mapExpanded ? "rounded-2xl bg-white" : "rounded-lg"} ${mapLoaded ? "opacity-100" : "opacity-0"}`}
                     />
                     {!mapLoaded && (
                       <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200">
@@ -744,7 +784,24 @@ export default function ScheduleDetailView({
                         </div>
                       </div>
                     )}
-                  </div>
+                    {isInspector && mapLoaded && (
+                      <button
+                        type="button"
+                        onClick={() => setMapExpanded((v) => !v)}
+                        aria-label={
+                          mapExpanded ? "지도 작게 보기" : "지도 크게 보기"
+                        }
+                        className="absolute right-2 top-2 z-10 inline-flex items-center gap-1.5 rounded-full border border-[#ee2b8c1a] bg-white/95 px-2.5 py-1.5 text-[11.5px] font-bold text-[#6b6570] shadow-sm backdrop-blur-sm transition-colors hover:border-[#ee2b8c55] hover:text-[#ee2b8c]"
+                      >
+                        {mapExpanded ? (
+                          <Minimize2 className="h-3.5 w-3.5" />
+                        ) : (
+                          <Maximize2 className="h-3.5 w-3.5" />
+                        )}
+                        {mapExpanded ? "작게 보기" : "크게 보기"}
+                      </button>
+                    )}
+                  </motion.div>
                 )}
                 {detail.location?.trim() && !mapCoords && hasNonZeroCoords && (
                   <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg flex-1 min-h-[200px] flex items-center justify-center border border-gray-200">

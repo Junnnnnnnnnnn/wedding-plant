@@ -602,6 +602,58 @@ const boxOf = (page, sel) =>
     `드래그 이동 → ${dateWrite ? `PATCH schedule/${dateWrite.id} ${dateWrite.body}` : "요청 없음 (문제)"}`,
   );
 
+  // 인스펙터 지도 "크게 보기" — 자리에서 fixed 로 커졌다 작아지는지
+  await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
+  await page.goto(`${ORIGIN}/calendar`, {
+    waitUntil: "networkidle2",
+    timeout: 60000,
+  });
+  await wait(1800);
+  await page.evaluate(() => {
+    const card = [...document.querySelectorAll("div")].find((d) =>
+      d.className?.includes?.("select-none") && d.innerText.includes("본식 촬영"),
+    );
+    if (card) card.click();
+  });
+  await wait(2600);
+  const before = await page.evaluate(() => {
+    const el = document.getElementById("schedule-detail-map");
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { w: Math.round(r.width), h: Math.round(r.height) };
+  });
+  const zoomed = await page.evaluate(() => {
+    const b = document.querySelector('[aria-label="지도 크게 보기"]');
+    if (!b) return "버튼 없음";
+    b.click();
+    return "clicked";
+  });
+  await wait(1400);
+  const after = await page.evaluate(() => {
+    const el = document.getElementById("schedule-detail-map");
+    const box = el?.parentElement;
+    const r = el?.getBoundingClientRect();
+    return {
+      w: r ? Math.round(r.width) : 0,
+      h: r ? Math.round(r.height) : 0,
+      position: box ? getComputedStyle(box).position : "-",
+      zIndex: box ? getComputedStyle(box).zIndex : "-",
+    };
+  });
+  await page.screenshot({ path: path.join(OUT, "map-expanded-1440.png") });
+  await page.evaluate(() => {
+    document.querySelector('[aria-label="지도 작게 보기"]')?.click?.();
+  });
+  await wait(1400);
+  const back = await page.evaluate(() => {
+    const el = document.getElementById("schedule-detail-map");
+    const r = el?.getBoundingClientRect();
+    return { w: r ? Math.round(r.width) : 0, h: r ? Math.round(r.height) : 0 };
+  });
+  console.log(
+    `지도 크게 보기 ${zoomed} → ${before?.w}x${before?.h} → ${after.w}x${after.h} (${after.position}, z=${after.zIndex}) → ${back.w}x${back.h}`,
+  );
+
   // 폰의 /schedule-detail (page 변형). 인스펙터를 새 UI 로 바꿀 때
   // 여기가 딸려 바뀌지 않았는지 눈으로 확인한다.
   await page.setViewport({ width: 375, height: 900, deviceScaleFactor: 1.5 });
