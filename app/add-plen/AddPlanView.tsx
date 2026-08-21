@@ -1124,7 +1124,13 @@ export default function AddPlanView({
   }
 
   const content = (
-    <div className="relative flex h-full min-h-0 w-full flex-col">
+    // data-plan-pane: pane 으로 붙었을 때 바깥에서 이 영역만 집어내는 표식.
+    // /main 에는 같은 이름의 카테고리 필터 칩이 이미 떠 있어, 문서 전체에서
+    // 버튼을 찾으면 엉뚱한 걸 누른다 (하네스가 실제로 그렇게 눌렀다).
+    <div
+      data-plan-pane={isPane ? "" : undefined}
+      className="relative flex h-full min-h-0 w-full flex-col"
+    >
       {isPane ? (
         /*
             pane 은 폭이 좁고 셸이 이미 화면을 나눠 놨다. 떠 있는
@@ -1768,14 +1774,20 @@ export default function AddPlanView({
             </div>
           )}
       </main>
-      {/* 하단 탭바 — 모바일 전용. ≥768 은 셸의 좌측 레일이 대신한다 */}
-      <div className="md:hidden">
-        <BottomTabBar
-          showLoginButton={false}
-          scrollDirection={scrollDirection}
-          unreadCount={unreadCount}
-        />
-      </div>
+      {/*
+        하단 탭바 — 모바일 전용. ≥768 은 셸의 좌측 레일이 대신한다.
+        pane 에서는 내지 않는다. 셸이 이미 하나 렌더하고 있어서 DOM 에
+        탭바가 둘이 되고, 바깥에서 pane 안을 훑을 때 걸리적거린다.
+      */}
+      {!isPane && (
+        <div className="md:hidden">
+          <BottomTabBar
+            showLoginButton={false}
+            scrollDirection={scrollDirection}
+            unreadCount={unreadCount}
+          />
+        </div>
+      )}
       <LoginRequiredModal
         show={showLoginRequiredModal}
         onClose={() => setShowLoginRequiredModal(false)}

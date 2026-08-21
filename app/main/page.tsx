@@ -1549,6 +1549,9 @@ function MainPageContent() {
             list.map((p) => (p.id === id ? { ...p, status: newStatus } : p));
           setScheduleList((prev) => updateStatus(prev));
           setSharedRoomScheduleList((prev) => updateStatus(prev));
+          // 예산·카테고리·대시보드 목록까지 서버 값으로 맞춘다.
+          // 완료로 바꾸면 "이번 달 지출"과 카테고리 비중이 함께 움직인다.
+          setDashboardRefresh((n) => n + 1);
         } else {
           // 실패 시 카운트 복구
           if (newStatus === "COMPLETED") {
@@ -1634,7 +1637,31 @@ function MainPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [fetchWithAuth, isSharedView, roomIdForDetail]);
+    // dashboardRefresh: 플랜을 추가하거나 완료를 바꾸면 다시 받는다
+  }, [fetchWithAuth, isSharedView, roomIdForDetail, dashboardRefresh]);
+
+  /**
+   * 플랜이 바뀌면 예산 숫자(남은 금액·사용액)도 바로 따라와야 한다.
+   *
+   * 부트스트랩 effect 에 매달면 SSE 재구독·가이드 동기화까지 다시 돌아서,
+   * 예산에 필요한 요청만 따로 받는다. 첫 렌더는 부트스트랩이 이미 받아
+   * 왔으므로 건너뛴다.
+   */
+  const budgetSyncedOnceRef = useRef(false);
+  useEffect(() => {
+    if (!budgetSyncedOnceRef.current) {
+      budgetSyncedOnceRef.current = true;
+      return;
+    }
+    if (!getToken() || isSharedView) return;
+    fetchTotalAmount(handleApiError, roomIdForDetail ?? undefined);
+  }, [
+    dashboardRefresh,
+    fetchTotalAmount,
+    handleApiError,
+    isSharedView,
+    roomIdForDetail,
+  ]);
 
   return (
     <AppShell
@@ -1673,6 +1700,7 @@ function MainPageContent() {
             from="main"
             onClose={() => setIsAddPaneOpen(false)}
             onSaved={() => {
+              // 예산·카테고리는 dashboardRefresh 를 보는 effect 가 맡는다
               setDashboardRefresh((n) => n + 1);
               const status = activeTab === "planned" ? "NORMAL" : "COMPLETED";
               const roomIdParam =
@@ -1681,7 +1709,6 @@ function MainPageContent() {
                   ? String(apiPlanData.roomId)
                   : null);
               fetchScheduleList(roomIdParam ?? undefined, status);
-              fetchTotalAmount(handleApiError, roomIdParam ?? undefined);
             }}
           />
         ) : undefined

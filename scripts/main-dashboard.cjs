@@ -259,6 +259,28 @@ function installMocks(page) {
       p0 === "/plan/user/amount/category-chart" ||
       p0.startsWith("/plan/room/amount/category-chart")
     ) {
+      // 완료된 일정만 합산한다. 실제 API 와 같아야 토글 반영을 검증할 수 있다.
+      const byCat = new Map();
+      SCHEDULES.filter((x) => x.status === "COMPLETED").forEach((x) => {
+        byCat.set(
+          x.categoryName,
+          (byCat.get(x.categoryName) ?? 0) + (x.amount ?? 0),
+        );
+      });
+      if (byCat.size > 0) {
+        req
+          .respond(
+            ok({
+              list: [...byCat.entries()].map(([categoryName, amount]) => ({
+                categoryName,
+                totalAmount: amount,
+                usedAmount: amount,
+              })),
+            }),
+          )
+          .catch(() => {});
+        return;
+      }
       req
         .respond(
           ok({
@@ -294,11 +316,33 @@ function installMocks(page) {
       return;
     }
     if (p0 === "/plan/user/total-amount") {
+      const used = SCHEDULES.filter((x) => x.status === "COMPLETED").reduce(
+        (n, x) => n + (x.amount ?? 0),
+        0,
+      );
       req
         .respond(
-          ok({ totalAmount: 4200, usedAmount: 1340, remainingAmount: 2860 }),
+          ok({
+            totalAmount: 4200,
+            usedAmount: used,
+            remainingAmount: 4200 - used,
+          }),
         )
         .catch(() => {});
+      return;
+    }
+    const statusMatch = /^\/plan\/schedule\/status\/(\d+)$/.exec(p0);
+    if (statusMatch) {
+      const id = Number(statusMatch[1]);
+      let next = null;
+      try {
+        next = JSON.parse(req.postData() || "{}").status;
+      } catch {
+        next = null;
+      }
+      const item = SCHEDULES.find((x) => x.id === id);
+      if (item && next) item.status = next;
+      req.respond(ok({ id, status: next })).catch(() => {});
       return;
     }
     if (p0 === "/plan/schedule/list") {
@@ -393,6 +437,61 @@ function installMocks(page) {
     );
   }
 
+  // 완료 토글이 예산·카테고리에 바로 반영되는지 (새로고침 없이)
+  await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
+  await page.goto(`${ORIGIN}/main`, {
+    waitUntil: "networkidle2",
+    timeout: 60000,
+  });
+  await wait(2200);
+  const readBudget = () =>
+    page.evaluate(() => {
+      const txt = document.body.innerText.replace(/\s+/g, " ");
+      const remain = /([\d,\-]+)만원 (?:4,200만원 중 남음|중 남음)/.exec(txt);
+      const spent = /이번 달 지출 ([\d,\-]+)만원/.exec(txt);
+      const cats = [...document.querySelectorAll("span")]
+        .map((x) => x.innerText.trim())
+        .filter((t) => ["예식장", "스드메", "상견례", "기차"].includes(t));
+      return {
+        남은: remain ? remain[1] : "?",
+        이번달지출: spent ? spent[1] : "?",
+        카테고리수: new Set(cats).size,
+      };
+    });
+  const before = await readBudget();
+  // 토글 뒤에 어떤 요청이 다시 나가는지 본다. 새로고침 없이 예산·카테고리가
+  // 따라오려면 이 요청들이 나가야 한다.
+  const seen = [];
+  const record = (r) => {
+    const u = r.url();
+    if (u.includes("/plan/")) seen.push(`${r.method()} ${new URL(u).pathname}`);
+  };
+  page.on("request", record);
+  const toggled = await page.evaluate(() => {
+    const box = document.querySelector('[aria-label="완료로 표시"]');
+    if (!box) return "체크박스 없음";
+    box.click();
+    return "clicked";
+  });
+  await wait(2500);
+  page.off("request", record);
+  const after = await readBudget();
+  await page.screenshot({ path: path.join(OUT, "main-1440-after-toggle.png") });
+  const want = [
+    "PATCH /plan/schedule/status/",
+    "GET /plan/user/amount/category-chart",
+    "GET /plan/user/amount/detail",
+    "GET /plan/user/total-amount",
+    "GET /plan/schedule/list",
+  ];
+  const missing = want.filter((w) => !seen.some((x) => x.startsWith(w)));
+  console.log(
+    `완료 토글 ${toggled} → 재요청 ${missing.length === 0 ? "모두 나감" : "빠짐: " + missing.join(", ")}`,
+  );
+  console.log(
+    `  남은 ${before.남은}→${after.남은} / 이번달지출 ${before.이번달지출}→${after.이번달지출}`,
+  );
+
   // 이번 달 일정이 하나도 없어도 "이번 달 할 일" 줄은 남아야 한다
   await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
   emptyThisMonth = true;
@@ -452,6 +551,105 @@ function installMocks(page) {
       라우트: location.pathname,
     };
   });
+  // pane 에서 저장하면 예산·카테고리가 새로고침 없이 따라와야 한다.
+  //
+  // /main 에는 같은 이름의 카테고리 필터 칩("스드메" 등)이 이미 떠 있다.
+  // 문서 전체에서 버튼을 찾으면 그쪽이 먼저 걸리므로, 반드시 pane 안에서만
+  // 찾는다.
+  const saveSeen = [];
+  const recordSave = (r) => {
+    const u = r.url();
+    if (u.includes("/plan/"))
+      saveSeen.push(`${r.method()} ${new URL(u).pathname}`);
+  };
+  page.on("request", recordSave);
+  const paneHelpers = `
+    const paneRoot = () => document.querySelector("[data-plan-pane]");
+    const paneBtn = (label) => {
+      const root = paneRoot();
+      if (!root) return null;
+      return [...root.querySelectorAll("button")].find(
+        (x) => x.innerText.replace(/\s+/g, " ").trim() === label,
+      );
+    };
+  `;
+  await page.evaluate(`(() => {
+    ${paneHelpers}
+    const root = paneRoot();
+    const el = root && root.querySelector('input[placeholder="어떤 지출인가요?"]');
+    if (!el) return;
+    const setter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype, "value",
+    ).set;
+    setter.call(el, "본식 리허설");
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  })()`);
+  await wait(1100);
+  await page.evaluate(`(() => {
+    ${paneHelpers}
+    const b = paneBtn("카테고리 선택");
+    if (b) b.click();
+  })()`);
+  await wait(900);
+  // 카테고리 모달은 pane 밖(화면 가운데)에 뜬다. role=dialog 안에서 고른다.
+  await page.evaluate(() => {
+    // 모달은 화면 가운데에 뜨지만 DOM 상으로는 pane 안에 있다.
+    // /main 의 카테고리 필터 칩과 이름이 겹치므로 pane 안에서만 찾는다.
+    const root = document.querySelector("[data-plan-pane]");
+    if (!root) return;
+    const b = [...root.querySelectorAll("button")].find((x) =>
+      ["스드메", "예식장", "예물", "상견례"].includes(x.innerText.trim()),
+    );
+    if (b) b.click();
+  });
+  await wait(900);
+  await page.evaluate(`(() => {
+    ${paneHelpers}
+    const b = paneBtn("카드");
+    if (b) b.click();
+  })()`);
+  await wait(1100);
+  const saved = await page.evaluate(`(() => {
+    ${paneHelpers}
+    const b = paneBtn("플랜 저장하기");
+    if (!b) {
+      const root = paneRoot();
+      return (
+        "저장버튼 없음 · pane버튼=" +
+        (root
+          ? [...root.querySelectorAll("button")]
+              .map((x) => x.innerText.replace(/\s+/g, " ").trim())
+              .filter(Boolean)
+              .join(" | ")
+          : "pane 없음")
+      );
+    }
+    b.click();
+    return "clicked";
+  })()`);
+  await wait(2600);
+  // 저장 뒤 "채팅방에 공유할까요?" 모달에서 "아니요" 를 누르면
+  // onSaved 가 불려 목록·예산이 다시 받아진다.
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll("button")].find(
+      (x) => x.innerText.trim() === "아니요",
+    );
+    if (b) b.click();
+  });
+  await wait(2400);
+  page.off("request", recordSave);
+  const wantSave = [
+    "POST /plan/schedule",
+    "GET /plan/user/amount/category-chart",
+    "GET /plan/user/amount/detail",
+    "GET /plan/user/total-amount",
+  ];
+  const missSave = wantSave.filter(
+    (w) => !saveSeen.some((x) => x.startsWith(w)),
+  );
+  console.log(
+    `등록 pane 저장 ${saved} → 재요청 ${missSave.length === 0 ? "모두 나감" : "빠짐: " + missSave.join(", ")}`,
+  );
   console.log(
     `캡처 main-1440-addpane.png   클릭=${clicked} pane=${pane.열림 ? "열림" : "안열림"} 제목칸=${pane.제목칸 ? "있음" : "없음"} 라우트=${pane.라우트}`,
   );
