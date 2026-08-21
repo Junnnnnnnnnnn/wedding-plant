@@ -47,7 +47,7 @@ const CardHeader: React.FC<CardHeaderProps> = ({ index, ownerName }) => (
           <Heart className="w-3 h-3 fill-current" />
         </span>
       </div>
-      <h3 className="text-2xl font-black text-[#1b0d14]">
+      <h3 className="text-2xl font-black text-[#1b0d14] md:text-[19px] md:font-bold md:tracking-tight">
         {ownerName}의 웨딩 플랜
       </h3>
     </div>
@@ -449,6 +449,12 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
       activeRailView="rooms"
       unreadCount={unreadCount}
       gridBackground
+      /*
+        목록이 남는 폭을 쓰고 대화는 고정 폭을 갖는다. 기본값(372/420px)은
+        목록을 폰 폭에 묶어 둬서, 넓은 화면에서 카드 한 줄만 보였다.
+      */
+      masterWidthClassName="lg:flex-1"
+      detailWidthClassName="w-[420px] 2xl:w-[520px]"
       detail={
         selectedChatRoomId ? (
           // key 로 방마다 새로 마운트한다. ChatRoomView 는 초기 로드 여부를
@@ -478,29 +484,35 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
     >
       <div className="absolute top-[-5%] right-[-10%] w-64 h-64 bg-[#ee2b8c0a] rounded-full blur-3xl pointer-events-none" />
 
-      <header className="pt-12 px-6 mb-10 relative z-10 flex justify-between items-end shrink-0 md:px-8 md:pt-10 md:mb-8 lg:px-5 lg:pt-8 lg:mb-6">
+      {/* >=768 은 대시보드와 같은 머리글 띠. <768 은 지금 그대로다 */}
+      <header className="pt-12 px-6 mb-10 relative z-10 flex justify-between items-end shrink-0 md:mb-0 md:items-center md:border-b md:border-stone-100 md:bg-white md:px-8 md:py-5 lg:mb-0 lg:px-8 lg:py-5">
         <div id="plan-list-header">
-          <h2 className="text-4xl font-black text-[#1b0d14] tracking-tight lg:text-3xl">
+          <h2 className="text-4xl font-black text-[#1b0d14] tracking-tight md:text-[26px] md:font-semibold lg:text-[26px]">
             참여 플랜 리스트
           </h2>
-          <p className="text-gray-400 font-bold text-sm mt-2">
+          <p className="text-gray-400 font-bold text-sm mt-2 md:mt-1.5 md:text-[13px] md:font-normal md:text-[#7a6c74]">
             함께 가꾸는 소중한 결혼 준비 계획들
           </p>
         </div>
         <button
           type="button"
           onClick={() => setShowGuide(true)}
-          className="flex h-12 w-12 shrink-0 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"
+          className="flex h-12 w-12 shrink-0 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors md:h-10 md:w-10"
           aria-label="가이드 보기"
         >
           <CircleHelp className="h-6 w-6" strokeWidth={2} />
         </button>
       </header>
 
-      <div className="flex-1 min-h-0 px-6 pb-24 relative z-10 overflow-y-auto no-scrollbar md:px-8 md:pb-8 lg:px-5">
-        <div className="space-y-6 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 md:content-start lg:block lg:space-y-5">
+      {/*
+        @container: 카드 열 수를 뷰포트가 아니라 목록이 실제로 차지한 폭으로
+        정한다. 오른쪽 대화 pane 이 400~520px 를 가져가므로 뷰포트만 보면
+        늘 한 칸씩 어긋난다.
+      */}
+      <div className="@container flex-1 min-h-0 px-6 pb-24 relative z-10 overflow-y-auto no-scrollbar md:px-8 md:pb-8 md:pt-6 lg:px-8">
+        <div className="space-y-6 md:grid md:grid-cols-1 md:gap-6 md:space-y-0 md:content-start @[680px]:md:grid-cols-2 @[1060px]:md:grid-cols-3">
           {listLoading ? (
-            <div className="space-y-6 md:col-span-2 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 lg:block lg:space-y-5">
+            <div className="space-y-6 md:col-span-full md:grid md:grid-cols-1 md:gap-6 md:space-y-0 @[680px]:md:grid-cols-2 @[1060px]:md:grid-cols-3">
               {/* Skeleton Cards */}
               {[1, 2].map((i) => (
                 <div
@@ -553,7 +565,7 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                   <div
                     id={isFirst ? "plan-card-0" : undefined}
                     onClick={() => handleSelectPlan(plan.roomId)}
-                    className="w-full bg-white rounded-[32px] p-6 border border-[#ee2b8c0a] shadow-sm transition-all transform hover:shadow-xl hover:shadow-[#ee2b8c11] active:scale-[0.98] cursor-pointer group/card relative overflow-hidden"
+                    className="w-full bg-white rounded-[32px] p-6 border border-[#ee2b8c0a] shadow-sm transition-all transform hover:shadow-xl hover:shadow-[#ee2b8c11] active:scale-[0.98] cursor-pointer group/card relative overflow-hidden md:rounded-[28px] md:border-[#ee2b8c0f]"
                   >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#ee2b8c05] to-transparent rounded-bl-full group-hover/card:bg-[#ee2b8c0a] transition-colors" />
 

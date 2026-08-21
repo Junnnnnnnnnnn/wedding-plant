@@ -176,6 +176,24 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 
 백엔드는 `~/DEV/seoul-moment-api`의 `apps/api/src/module/plen/activity/` 입니다.
 
+### 참여 플랜 · 대화 (`app/plan-list/page.tsx`)
+
+`≥768` 은 홈 대시보드와 같은 템플릿을 씁니다 — 머리글 띠(`border-b bg-white px-8 py-5`)
+
+- `px-8 pt-6` 스크롤 영역 + `rounded-[28px] border-[#ee2b8c0f]` 카드. **`<768` 은
+  한 픽셀도 바뀌지 않습니다**(모든 변경이 `md:` 뒤에 있습니다).
+
+* 카드 열 수는 `@container` 로 정합니다(`@[680px]` 2열, `@[1060px]` 3열).
+  오른쪽 대화 pane 이 420~520px 를 가져가므로 뷰포트 기준으로는 늘 어긋납니다.
+* `masterWidthClassName="lg:flex-1"` + `detailWidthClassName="w-[420px] 2xl:w-[520px]"`.
+  기본값(372/420px)은 목록을 폰 폭에 묶어 둬서 넓은 화면에서 카드가 한 줄만 보였습니다.
+* 대화 pane 은 접지 않습니다. 이 화면은 목록과 대화가 대등한 목적이라
+  빈 상태("대화를 선택하세요")가 조작 방법을 알려 주는 역할을 합니다.
+  (플랜 보드는 반대로 접습니다 — 거기는 가로 폭이 곧 기능입니다.)
+* **`GuideOverlay` 앵커(`#plan-list-header`·`#plan-card-0`·`#plan-channels-0`)를
+  건드리지 마세요.** 말풍선 좌표를 이 rect 로 잡습니다.
+  `scripts/plan-list-panes.cjs` 가 폭마다 앵커가 화면 안에 있는지 확인합니다.
+
 ### 셸을 쓰지 않는 화면
 
 - **`/setting`** (온보딩) — 스텝을 한 번에 하나씩 보여주는 흐름이라 레일·탭바가 방해가 됩니다. 중앙 정렬을 유지하고 `lg`에서 컬럼 폭만 600px로 넓혔습니다.

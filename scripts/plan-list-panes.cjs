@@ -353,6 +353,28 @@ const hasToast = (page) =>
     `  다른 방(102) 알림     → 토스트 ${toastForOther ? "뜸 (정상)" : "안 뜸 (문제)"}`,
   );
 
+  // 가이드 말풍선은 타깃 rect 로 좌표를 잡는다. 레이아웃을 바꾸면
+  // 앵커가 화면 밖으로 밀리기 쉬우므로 폭마다 보이는지 확인한다.
+  for (const w of [375, 1024, 1440, 2327]) {
+    await page.setViewport({ width: w, height: 900, deviceScaleFactor: 1 });
+    await page.goto(`${ORIGIN}/plan-list`, {
+      waitUntil: "networkidle2",
+      timeout: 60000,
+    });
+    await wait(1800);
+    const anchors = await page.evaluate(() =>
+      ["plan-list-header", "plan-card-0", "plan-channels-0"].map((id) => {
+        const el = document.getElementById(id);
+        if (!el) return `${id}=없음`;
+        const r = el.getBoundingClientRect();
+        const onScreen =
+          r.width > 0 && r.height > 0 && r.left >= 0 && r.right <= innerWidth;
+        return `${id}=${onScreen ? "정상" : `벗어남(${Math.round(r.left)}~${Math.round(r.right)})`}`;
+      }),
+    );
+    console.log(`  가이드 앵커 ${w}px  ${anchors.join("  ")}`);
+  }
+
   await browser.close();
 
   if (toastForCurrent || !toastForOther) process.exit(1);
