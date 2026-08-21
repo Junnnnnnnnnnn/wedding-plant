@@ -73,6 +73,11 @@ function roomColor(id: number): string {
 }
 
 const STACK_COLORS = ["#ee2b8c", "#ff7ab5", "#ffa8cd", "#ffd0e3"];
+/**
+ * 아직 안 쓴 "사용 예상" 몫. 실제로 나간 돈(분홍 계열)과 섞이면 안 되므로
+ * 색이 아니라 무채색으로 둔다 — 눈에 띄되 지출로는 안 읽히게.
+ */
+const PLANNED_COLOR = "#cdbfc7";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -241,6 +246,8 @@ export default function HomeDashboard({
   );
 
   const pct = (v: number) => (totalBudget > 0 ? (v / totalBudget) * 100 : 0);
+  /** 아직 안 쓴 예정 지출이 있는지. 0 이면 막대·범례에 굳이 넣지 않는다 */
+  const hasPlanned = (plannedUseAmount ?? 0) > 0;
 
   return (
     /*
@@ -455,7 +462,7 @@ export default function HomeDashboard({
             <div
               className="my-[18px] flex h-3 overflow-hidden rounded-full bg-[#f4eff2]"
               role="img"
-              aria-label="카테고리별 지출 비중"
+              aria-label="카테고리별 지출과 사용 예상 비중"
             >
               {topCategories.length > 0 ? (
                 topCategories.map((c, i) => (
@@ -470,13 +477,23 @@ export default function HomeDashboard({
                 ))
               ) : (
                 <i
-                  className="block h-full rounded-full bg-gradient-to-r from-[#ff7ab5] to-[#ee2b8c]"
+                  className="block h-full bg-gradient-to-r from-[#ff7ab5] to-[#ee2b8c]"
                   style={{ width: `${Math.min(100, budgetUsagePercentage)}%` }}
+                />
+              )}
+              {/* 아직 안 쓴 예정 몫. 지출 뒤에 이어 붙여 "여기까지 잡혀 있다"를 보여준다 */}
+              {hasPlanned && (
+                <i
+                  className="block h-full"
+                  style={{
+                    width: `${pct(plannedUseAmount ?? 0)}%`,
+                    background: PLANNED_COLOR,
+                  }}
                 />
               )}
             </div>
 
-            {topCategories.length > 0 ? (
+            {topCategories.length > 0 || hasPlanned ? (
               <div className="grid gap-[11px]">
                 {topCategories.map((c, i) => (
                   <div
@@ -500,6 +517,23 @@ export default function HomeDashboard({
                     </span>
                   </div>
                 ))}
+                {hasPlanned && (
+                  <div className="flex items-center gap-2.5 text-[13px]">
+                    <span
+                      className="h-[9px] w-[9px] shrink-0 rounded-[3px]"
+                      style={{ background: PLANNED_COLOR }}
+                    />
+                    <span className="min-w-0 truncate text-[#7a6c74]">
+                      사용 예상
+                    </span>
+                    <span className="ml-auto font-user-content font-bold tracking-tight text-[#7a6c74]">
+                      {(plannedUseAmount ?? 0).toLocaleString("ko-KR")}만원
+                    </span>
+                    <span className="w-10 text-right text-[12px] text-gray-400">
+                      {pct(plannedUseAmount ?? 0).toFixed(1)}%
+                    </span>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-[12.5px] leading-relaxed text-[#7a6c74]">
