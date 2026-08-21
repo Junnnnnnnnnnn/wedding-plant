@@ -210,9 +210,13 @@ function installMocks(page) {
     }
 
     if (p0 === "/plan/schedule/list") {
-      req
-        .respond(ok({ list: SCHEDULES, total: SCHEDULES.length }))
-        .catch(() => {});
+      // 실제 API 와 같은 필터를 건다. 목이 더 관대하면 "status 없이 부르면
+      // 완료가 빠진다" 같은 버그를 하네스가 못 잡는다 (실제로 못 잡았다).
+      const status = new URL(url).searchParams.get("status");
+      const list = SCHEDULES.filter(
+        (s) => s.status !== "DELETE" && (!status || s.status === status),
+      );
+      req.respond(ok({ list, total: list.length })).catch(() => {});
       return;
     }
     if (p0 === "/plan/schedule/calendar") {

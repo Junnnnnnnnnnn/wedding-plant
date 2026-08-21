@@ -299,10 +299,11 @@ function installMocks(page) {
       return;
     }
     if (p0 === "/plan/schedule/list") {
+      // status 를 안 주면 지운 것 빼고 전부 — 실제 API 와 같게 맞춘다
       const status = new URL(url).searchParams.get("status");
-      const list = status
-        ? SCHEDULES.filter((s) => s.status === status)
-        : SCHEDULES;
+      const list = SCHEDULES.filter(
+        (s) => s.status !== "DELETE" && (!status || s.status === status),
+      );
       req.respond(ok({ list, total: list.length })).catch(() => {});
       return;
     }
