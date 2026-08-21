@@ -363,7 +363,7 @@ function installMocks(page) {
   await page.setRequestInterception(true);
   installMocks(page);
 
-  for (const w of [375, 768, 1024, 1280, 1440]) {
+  for (const w of [375, 768, 1024, 1280, 1440, 2327]) {
     await page.setViewport({ width: w, height: 900, deviceScaleFactor: 1.5 });
     await page.goto(`${ORIGIN}/main`, {
       waitUntil: "networkidle2",

@@ -293,7 +293,7 @@ const hasToast = (page) =>
   installMocks(page);
 
   // ── 1. 폭별 캡처 ─────────────────────────────────────────────
-  for (const w of [375, 768, 1024, 1280, 1440]) {
+  for (const w of [375, 768, 1024, 1280, 1440, 2327]) {
     await page.setViewport({ width: w, height: 900, deviceScaleFactor: 1.5 });
     await page.goto(`${ORIGIN}/plan-list`, {
       waitUntil: "networkidle2",

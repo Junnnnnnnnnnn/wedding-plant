@@ -195,6 +195,9 @@ export default function HomeDashboard({
     () =>
       schedules
         .filter((s) => {
+          // 완료한 건 빼고 "아직 할 일"만. 여기는 남은 일을 보는 자리다 —
+          // 무엇을 언제 얼마에 끝냈는지는 플랜 보드의 완료 묶음에 남는다.
+          if (s.status === "COMPLETED") return false;
           const d = s.startDate ? parseLocalDate(s.startDate) : null;
           return d ? monthKey(d) === thisMonth : false;
         })
@@ -349,11 +352,8 @@ export default function HomeDashboard({
                       key={item.id}
                       type="button"
                       onClick={() => onOpenSchedule(item.id)}
-                      className={`w-[232px] shrink-0 rounded-[20px] border p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#ee2b8c22] ${
-                        item.status === "COMPLETED"
-                          ? "border-[#ee2b8c14] bg-[#faf8f9]"
-                          : "border-[#ee2b8c14] bg-white"
-                      }`}
+                      // 완료한 항목은 목록에서 빠지므로 완료 스타일 분기가 없다
+                      className="w-[232px] shrink-0 rounded-[20px] border border-[#ee2b8c14] bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#ee2b8c22]"
                     >
                       <PlanTaskCardBody
                         item={item}

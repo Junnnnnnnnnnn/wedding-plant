@@ -81,7 +81,12 @@ export default function AppShell({
         unreadCount={unreadCount}
       />
 
-      <div className="flex min-w-0 flex-1 xl:mx-auto xl:max-w-[1440px]">
+      {/*
+        폭 상한을 두지 않는다. 예전에는 1440px 로 묶고 가운데 정렬했는데,
+        넓은 모니터에서 양옆이 크게 비고 보드·대시보드가 쓸 수 있는 폭을
+        스스로 버렸다. 읽는 폭은 각 화면이 카드·컬럼으로 잡는다.
+      */}
+      <div className="flex min-w-0 flex-1">
         <div
           className={cn(
             "relative mx-auto flex w-full min-w-0 max-w-md flex-1 flex-col overflow-hidden bg-white shadow-2xl",
