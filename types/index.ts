@@ -22,6 +22,8 @@ export interface Plan {
   weddingDate: string;
   budget: number;
   remainingBudget: number;
+  /** 아직 안 쓴 예정 지출 (만원). 구버전 응답에는 없다 */
+  plannedUseAmount?: number;
   planCount: number;
   chatRooms: ChatRoom[];
   members: Member[];

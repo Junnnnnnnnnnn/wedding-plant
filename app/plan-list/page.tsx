@@ -41,7 +41,7 @@ const CardHeader: React.FC<CardHeaderProps> = ({ index, ownerName }) => (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
         <span className="bg-[#1b0d14] text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
-          Room #{index + 1}
+          플랜 {index + 1}
         </span>
         <span className="text-[#ee2b8c]">
           <Heart className="w-3 h-3 fill-current" />
@@ -200,31 +200,24 @@ const CardChatRooms: React.FC<CardChatRoomsProps> = ({
 interface CardBudgetProps {
   remainingBudget: number;
   budget: number;
-  progress: number;
+  /** 실제로 나간 몫 (%) */
+  usedPercent: number;
+  /** 아직 안 쓴 예정 몫 (%) */
+  plannedPercent: number;
+  /** 예정 금액 (만원). 0 이면 회색 구간을 그리지 않는다 */
+  plannedUseAmount: number;
 }
 
 const CardBudget: React.FC<CardBudgetProps> = ({
   remainingBudget,
   budget,
-  progress,
+  usedPercent,
+  plannedPercent,
+  plannedUseAmount,
 }) => (
   <div className="space-y-3">
-    {/* <768 은 지금 그대로 */}
-    <div className="flex justify-between items-end md:hidden">
-      <div>
-        <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-1">
-          Remaining Budget
-        </p>
-        <p className="text-xl font-black text-[#1b0d14]">
-          {remainingBudget.toLocaleString("ko-KR")}만 원
-        </p>
-      </div>
-      <p className="text-xs font-bold text-gray-400">
-        / {budget.toLocaleString("ko-KR")}만 원
-      </p>
-    </div>
-    {/* >=768 은 홈 예산 패널과 같은 짜임 — 큰 숫자 + "N만원 중 남음" */}
-    <div className="hidden md:block">
+    {/* 홈 예산 패널과 같은 짜임 — 큰 숫자 + "N만원 중 남음" + 같은 막대 */}
+    <div>
       <div className="font-user-content text-[22px] font-bold leading-none tracking-[-0.03em] text-[#1b0d14]">
         {remainingBudget.toLocaleString("ko-KR")}만원
       </div>
@@ -232,13 +225,32 @@ const CardBudget: React.FC<CardBudgetProps> = ({
         {budget.toLocaleString("ko-KR")}만원 중 남음
       </div>
     </div>
-    {/* 트랙·높이·그러데이션 모두 홈 예산 패널과 같은 값 */}
-    <div className="h-2 w-full overflow-hidden rounded-full bg-[#ee2b8c0a] md:h-3 md:bg-[#f4eff2]">
-      <div
-        className="h-full rounded-full bg-gradient-to-r from-[#ee2b8c] to-[#ff94a1] transition-all duration-1000 md:from-[#ff7ab5] md:to-[#ee2b8c]"
-        style={{ width: `${progress}%` }}
+    {/*
+      홈 예산 패널과 같은 뜻으로 읽히게 한다 — 분홍은 실제로 나간 돈,
+      회색은 아직 안 쓴 예정, 남은 트랙이 여유다. 예전에는 분홍이 "남은
+      비율"이라 아무것도 안 썼을 때 막대가 꽉 차 보였다.
+    */}
+    <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#f4eff2]">
+      <i
+        className="block h-full bg-gradient-to-r from-[#ff7ab5] to-[#ee2b8c] transition-all duration-1000"
+        style={{ width: `${usedPercent}%` }}
       />
+      {plannedUseAmount > 0 && (
+        <i
+          className="block h-full bg-[#cdbfc7] transition-all duration-1000"
+          style={{ width: `${plannedPercent}%` }}
+        />
+      )}
     </div>
+    {plannedUseAmount > 0 && (
+      <p className="flex items-center gap-1.5 text-[12px] text-gray-400">
+        <span
+          className="h-[9px] w-[9px] shrink-0 rounded-[3px]"
+          style={{ background: "#cdbfc7" }}
+        />
+        사용 예상 {plannedUseAmount.toLocaleString("ko-KR")}만원
+      </p>
+    )}
   </div>
 );
 
@@ -561,13 +573,20 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
             plans.map((plan, index) => {
               // 예산 0이면 나눗셈이 Infinity/NaN이 되고, 무효 CSS width는
               // auto로 떨어져 막대가 꽉 찬 것처럼 보인다. 0~100으로 고정한다.
-              const rawProgress =
-                plan.budget > 0
-                  ? (plan.remainingBudget / plan.budget) * 100
+              const pct = (v: number) => {
+                if (!(plan.budget > 0)) return 0;
+                const raw = (v / plan.budget) * 100;
+                return Number.isFinite(raw)
+                  ? Math.min(100, Math.max(0, raw))
                   : 0;
-              const progress = Number.isFinite(rawProgress)
-                ? Math.min(100, Math.max(0, rawProgress))
-                : 0;
+              };
+              const plannedUseAmount = plan.plannedUseAmount ?? 0;
+              // remainingBudget = budget - (예정 + 사용) 이므로
+              // 실제로 나간 돈은 그 차에서 예정을 뺀 값이다.
+              const usedAmount =
+                plan.budget - plan.remainingBudget - plannedUseAmount;
+              const usedPercent = pct(Math.max(0, usedAmount));
+              const plannedPercent = pct(plannedUseAmount);
               const isFirst = index === 0;
 
               return (
@@ -594,7 +613,9 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                     <CardBudget
                       remainingBudget={plan.remainingBudget}
                       budget={plan.budget}
-                      progress={progress}
+                      usedPercent={usedPercent}
+                      plannedPercent={plannedPercent}
+                      plannedUseAmount={plannedUseAmount}
                     />
                   </div>
 

@@ -53,6 +53,9 @@ const PLANS = [
     onwerName: "김지수",
     budget: 4200,
     remainingBudget: 2860,
+    // remainingBudget = budget - (예정 + 사용) 이므로 예정은 1,340 이하여야
+    // 앞뒤가 맞는다. 실제 API 와 같은 관계를 지킨다.
+    plannedUseAmount: 900,
     members: [
       { planUserId: "me-1", name: "김지수", image: null, permission: "OWNER" },
       { planUserId: "u-2", name: "박현우", image: null, permission: "WRITE" },
@@ -72,6 +75,7 @@ const PLANS = [
     onwerName: "박현우",
     budget: 900,
     remainingBudget: 410,
+    plannedUseAmount: 180,
     members: [
       { planUserId: "u-2", name: "박현우", image: null, permission: "OWNER" },
       { planUserId: "me-1", name: "김지수", image: null, permission: "WRITE" },

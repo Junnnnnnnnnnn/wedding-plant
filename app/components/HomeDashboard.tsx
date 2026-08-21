@@ -258,78 +258,84 @@ export default function HomeDashboard({
     */
     <div className="@container hidden min-h-0 flex-1 flex-col bg-[#fcfbfc] md:flex">
       {/* 상단 바 */}
-      <header className="flex shrink-0 items-center gap-5 border-b border-stone-100 bg-white px-8 py-5">
-        {planLoading ? (
-          <>
-            <div className="min-w-0">
+      <header className="shrink-0 border-b border-stone-100 bg-white">
+        <div className="mx-auto flex w-full max-w-[1800px] items-center gap-5 px-8 py-5">
+          {planLoading ? (
+            <>
+              <div className="min-w-0">
+                <span
+                  className="skeleton-shimmer block h-[30px] w-[180px] rounded-lg"
+                  aria-hidden
+                />
+                <span
+                  className="skeleton-shimmer mt-2 block h-3.5 w-[152px] rounded"
+                  aria-hidden
+                />
+              </div>
               <span
-                className="skeleton-shimmer block h-[30px] w-[180px] rounded-lg"
+                className="skeleton-shimmer ml-5 h-9 w-[92px] shrink-0 rounded-lg"
                 aria-hidden
               />
-              <span
-                className="skeleton-shimmer mt-2 block h-3.5 w-[152px] rounded"
-                aria-hidden
-              />
-            </div>
-            <span
-              className="skeleton-shimmer ml-5 h-9 w-[92px] shrink-0 rounded-lg"
-              aria-hidden
-            />
-          </>
-        ) : (
-          <>
-            <div className="min-w-0">
-              <h1 className="font-user-content truncate text-[26px] font-semibold leading-tight tracking-tight text-[#1b0d14]">
-                {coupleName || "이름"}
-              </h1>
-              <p className="mt-1.5 truncate text-[13px] text-[#7a6c74]">
-                {weddingDateText ?? "결혼식 날짜를 설정해 주세요"}
-                {venue?.trim() ? (
+            </>
+          ) : (
+            <>
+              <div className="min-w-0">
+                <h1 className="font-user-content truncate text-[26px] font-semibold leading-tight tracking-tight text-[#1b0d14]">
+                  {coupleName || "이름"}
+                </h1>
+                <p className="mt-1.5 truncate text-[13px] text-[#7a6c74]">
+                  {weddingDateText ?? "결혼식 날짜를 설정해 주세요"}
+                  {venue?.trim() ? (
+                    <>
+                      <span className="mx-1.5 text-[#e0d5db]">·</span>
+                      {venue.trim()}
+                    </>
+                  ) : null}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-baseline gap-1.5 border-l border-stone-100 pl-5">
+                {dDayCount != null && dDayCount > 0 ? (
                   <>
-                    <span className="mx-1.5 text-[#e0d5db]">·</span>
-                    {venue.trim()}
+                    <b className="font-user-content text-[36px] font-bold leading-none tracking-[-0.05em] text-[#ee2b8c]">
+                      {dDayCount}
+                    </b>
+                    <span className="text-[12.5px] text-gray-400">일 남음</span>
                   </>
-                ) : null}
-              </p>
-            </div>
-            <div className="flex shrink-0 items-baseline gap-1.5 border-l border-stone-100 pl-5">
-              {dDayCount != null && dDayCount > 0 ? (
-                <>
-                  <b className="font-user-content text-[36px] font-bold leading-none tracking-[-0.05em] text-[#ee2b8c]">
-                    {dDayCount}
+                ) : (
+                  <b className="font-user-content text-[30px] font-bold leading-none tracking-[-0.05em] text-[#ee2b8c]">
+                    {dDayLabel}
                   </b>
-                  <span className="text-[12.5px] text-gray-400">일 남음</span>
-                </>
-              ) : (
-                <b className="font-user-content text-[30px] font-bold leading-none tracking-[-0.05em] text-[#ee2b8c]">
-                  {dDayLabel}
-                </b>
-              )}
-            </div>
-          </>
-        )}
-        <div className="ml-auto flex shrink-0 items-center gap-2.5">
-          <button
-            type="button"
-            onClick={onOpenBoard}
-            className="h-10 rounded-[13px] border border-[#f0e3ea] bg-white px-3.5 text-[13px] text-[#6b6570] transition-colors hover:border-[#ee2b8c55] hover:text-[#ee2b8c]"
-          >
-            플랜 보드
-          </button>
-          {canEdit && (
+                )}
+              </div>
+            </>
+          )}
+          <div className="ml-auto flex shrink-0 items-center gap-2.5">
             <button
               type="button"
-              onClick={onAddPlan}
-              className="flex h-10 items-center gap-1.5 rounded-[13px] bg-[#ee2b8c] px-4 text-[13.5px] font-bold text-white shadow-[0_8px_20px_-8px_rgba(238,43,140,0.75)] transition-transform hover:-translate-y-px active:scale-95"
+              onClick={onOpenBoard}
+              className="h-10 rounded-[13px] border border-[#f0e3ea] bg-white px-3.5 text-[13px] text-[#6b6570] transition-colors hover:border-[#ee2b8c55] hover:text-[#ee2b8c]"
             >
-              <Plus className="h-4 w-4" strokeWidth={2.5} />
-              플랜 추가
+              플랜 보드
             </button>
-          )}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={onAddPlan}
+                className="flex h-10 items-center gap-1.5 rounded-[13px] bg-[#ee2b8c] px-4 text-[13.5px] font-bold text-white shadow-[0_8px_20px_-8px_rgba(238,43,140,0.75)] transition-transform hover:-translate-y-px active:scale-95"
+              >
+                <Plus className="h-4 w-4" strokeWidth={2.5} />
+                플랜 추가
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-8 pb-8 pt-6">
+      {/*
+        내용 폭에 상한을 둔다. 셸은 화면을 꽉 채우되, 2000px 넘는 모니터에서
+        예산 패널이 700px 로 늘어나면 라벨과 금액 사이가 허옇게 벌어진다.
+      */}
+      <div className="mx-auto min-h-0 w-full max-w-[1800px] flex-1 overflow-y-auto px-8 pb-8 pt-6">
         {/*
           이번 달 할 일 — 보드의 이번 달 컬럼을 잘라 온 자리.
           비어 있어도 접지 않는다. 이 줄이 사라지면 "이번 달에 뭘 넣지"
