@@ -323,78 +323,89 @@ export default function HomeDashboard({
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-8 pb-8 pt-6">
-        {/* 이번 달 할 일 — 보드의 이번 달 컬럼을 잘라 온 자리 */}
-        {(scheduleLoading || thisMonthTasks.length > 0) && (
-          <section className="mb-6">
-            <div className="mb-4 flex items-baseline justify-between gap-3">
-              <h2 className="text-[15px] font-bold tracking-tight text-[#1b0d14]">
-                이번 달 할 일 · {today.getMonth() + 1}월
-              </h2>
+        {/*
+          이번 달 할 일 — 보드의 이번 달 컬럼을 잘라 온 자리.
+          비어 있어도 접지 않는다. 이 줄이 사라지면 "이번 달에 뭘 넣지"
+          라는 자리 자체가 없어져서, 할 일이 없을 때 오히려 더 필요하다.
+        */}
+        <section className="mb-6">
+          <div className="mb-4 flex items-baseline justify-between gap-3">
+            <h2 className="text-[15px] font-bold tracking-tight text-[#1b0d14]">
+              이번 달 할 일 · {today.getMonth() + 1}월
+            </h2>
+            <button
+              type="button"
+              onClick={onOpenBoard}
+              className="text-[12.5px] text-[#ee2b8c] hover:underline"
+            >
+              보드에서 전체 보기
+            </button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+            {scheduleLoading
+              ? [0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="skeleton-shimmer h-[92px] w-[232px] shrink-0 rounded-[20px]"
+                    aria-hidden
+                  />
+                ))
+              : thisMonthTasks.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onOpenSchedule(item.id)}
+                    // 완료한 항목은 목록에서 빠지므로 완료 스타일 분기가 없다
+                    className="w-[232px] shrink-0 rounded-[20px] border border-[#ee2b8c14] bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#ee2b8c22]"
+                  >
+                    <PlanTaskCardBody
+                      item={item}
+                      toggleDisabled={!canEdit}
+                      onToggle={
+                        canEdit
+                          ? () => {
+                              // 낙관적으로 자체 목록도 뒤집는다.
+                              // 실제 요청과 되돌리기는 /main 이 맡는다.
+                              setSchedules((prev) =>
+                                prev.map((x) =>
+                                  x.id === item.id
+                                    ? {
+                                        ...x,
+                                        status:
+                                          x.status === "COMPLETED"
+                                            ? "NORMAL"
+                                            : "COMPLETED",
+                                      }
+                                    : x,
+                                ),
+                              );
+                              onToggle(item.id);
+                            }
+                          : undefined
+                      }
+                    />
+                  </button>
+                ))}
+            {!scheduleLoading && canEdit && (
               <button
                 type="button"
-                onClick={onOpenBoard}
-                className="text-[12.5px] text-[#ee2b8c] hover:underline"
+                onClick={onAddPlan}
+                className="w-[176px] shrink-0 rounded-[20px] border-[1.5px] border-dashed border-[#f0d9e5] p-4 text-left text-[14.5px] font-bold tracking-tight text-[#c9b8c2] transition-colors hover:border-[#ee2b8c66] hover:text-[#ee2b8c]"
               >
-                보드에서 전체 보기
+                + {today.getMonth() + 1}월에 할 일 추가
               </button>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
-              {scheduleLoading
-                ? [0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="skeleton-shimmer h-[92px] w-[232px] shrink-0 rounded-[20px]"
-                      aria-hidden
-                    />
-                  ))
-                : thisMonthTasks.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => onOpenSchedule(item.id)}
-                      // 완료한 항목은 목록에서 빠지므로 완료 스타일 분기가 없다
-                      className="w-[232px] shrink-0 rounded-[20px] border border-[#ee2b8c14] bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#ee2b8c22]"
-                    >
-                      <PlanTaskCardBody
-                        item={item}
-                        toggleDisabled={!canEdit}
-                        onToggle={
-                          canEdit
-                            ? () => {
-                                // 낙관적으로 자체 목록도 뒤집는다.
-                                // 실제 요청과 되돌리기는 /main 이 맡는다.
-                                setSchedules((prev) =>
-                                  prev.map((x) =>
-                                    x.id === item.id
-                                      ? {
-                                          ...x,
-                                          status:
-                                            x.status === "COMPLETED"
-                                              ? "NORMAL"
-                                              : "COMPLETED",
-                                        }
-                                      : x,
-                                  ),
-                                );
-                                onToggle(item.id);
-                              }
-                            : undefined
-                        }
-                      />
-                    </button>
-                  ))}
-              {!scheduleLoading && canEdit && (
-                <button
-                  type="button"
-                  onClick={onAddPlan}
-                  className="w-[176px] shrink-0 rounded-[20px] border-[1.5px] border-dashed border-[#f0d9e5] p-4 text-left text-[14.5px] font-bold tracking-tight text-[#c9b8c2] transition-colors hover:border-[#ee2b8c66] hover:text-[#ee2b8c]"
-                >
-                  + {today.getMonth() + 1}월에 할 일 추가
-                </button>
-              )}
-            </div>
-          </section>
-        )}
+            )}
+            {/*
+                읽기 전용 참여자는 추가 카드가 없다. 그때 비어 있으면 줄이
+                통째로 빈 칸이 되므로 한 줄이라도 남긴다.
+              */}
+            {!scheduleLoading && !canEdit && thisMonthTasks.length === 0 && (
+              <p className="py-4 text-[13px] text-gray-400">
+                이번 달에 할 일이 없어요.
+              </p>
+            )}
+          </div>
+        </section>
 
         {/*
           pane 이 닫혀 있으면 예전 그대로 뷰포트 기준이다. 열려 있을 때만

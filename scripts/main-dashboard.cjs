@@ -20,6 +20,9 @@ const p = require(path.join(__dirname, "..", "node_modules", "puppeteer-core"));
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const API = "https://api.seoulmoment.com.tw";
 const ORIGIN = "http://localhost:3000";
+/** true 면 목이 8월 일정을 빼서 "이번 달 할 일"이 빈 상태를 만든다 */
+let emptyThisMonth = false;
+
 const OUT = process.env.SHOT_DIR || __dirname;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -303,7 +306,7 @@ function installMocks(page) {
       const status = new URL(url).searchParams.get("status");
       const list = SCHEDULES.filter(
         (s) => s.status !== "DELETE" && (!status || s.status === status),
-      );
+      ).filter((s) => !emptyThisMonth || !(s.startDate || "").startsWith("2026-08"));
       req.respond(ok({ list, total: list.length })).catch(() => {});
       return;
     }
@@ -389,6 +392,32 @@ function installMocks(page) {
       }`,
     );
   }
+
+  // 이번 달 일정이 하나도 없어도 "이번 달 할 일" 줄은 남아야 한다
+  await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
+  emptyThisMonth = true;
+  await page.goto(`${ORIGIN}/main`, {
+    waitUntil: "networkidle2",
+    timeout: 60000,
+  });
+  await wait(2200);
+  const emptyState = await page.evaluate(() => {
+    const h = [...document.querySelectorAll("h2")].find((x) =>
+      x.innerText.includes("이번 달 할 일"),
+    );
+    const add = [...document.querySelectorAll("button")].find((b) =>
+      /월에 할 일 추가/.test(b.innerText),
+    );
+    return {
+      제목: h ? h.innerText.replace(/\s+/g, " ").trim() : "없음",
+      추가카드: add ? add.innerText.replace(/\s+/g, " ").trim() : "없음",
+    };
+  });
+  await page.screenshot({ path: path.join(OUT, "main-1440-empty-month.png") });
+  console.log(
+    `캡처 main-1440-empty-month.png   제목=${emptyState.제목} 추가카드=${emptyState.추가카드}`,
+  );
+  emptyThisMonth = false;
 
   // 대시보드의 "+ 플랜 추가" → 우측 등록 pane (>=1024)
   await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
