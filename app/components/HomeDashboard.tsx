@@ -249,6 +249,21 @@ export default function HomeDashboard({
   /** 아직 안 쓴 예정 지출이 있는지. 0 이면 막대·범례에 굳이 넣지 않는다 */
   const hasPlanned = (plannedUseAmount ?? 0) > 0;
 
+  /**
+   * 예산을 넘기면 조각 합이 100% 를 넘어 flex 가 비율대로 줄인다. 그러면
+   * 예정(회색)처럼 작은 몫은 사실상 사라진다. 합이 100 이 되게 직접 눌러
+   * 비율을 지키고, 0 이 아닌 조각은 최소 4px 은 남긴다 — 금액이 있는데
+   * 막대에서 안 보이면 없는 것처럼 읽힌다.
+   */
+  const barScale = (() => {
+    const total =
+      (topCategories.length > 0
+        ? topCategories.reduce((n, c) => n + pct(c.usedAmount), 0)
+        : Math.min(100, budgetUsagePercentage)) + pct(plannedUseAmount ?? 0);
+    return total > 100 ? 100 / total : 1;
+  })();
+  const barWidth = (v: number) => `${pct(v) * barScale}%`;
+
   return (
     /*
       @container: 열 개수를 뷰포트가 아니라 "대시보드가 실제로 차지한 폭"
@@ -474,25 +489,29 @@ export default function HomeDashboard({
                 topCategories.map((c, i) => (
                   <i
                     key={c.categoryName}
-                    className="block h-full"
+                    className="block h-full shrink-0"
                     style={{
-                      width: `${pct(c.usedAmount)}%`,
+                      width: barWidth(c.usedAmount),
+                      minWidth: c.usedAmount > 0 ? 4 : 0,
                       background: STACK_COLORS[i % STACK_COLORS.length],
                     }}
                   />
                 ))
               ) : (
                 <i
-                  className="block h-full bg-gradient-to-r from-[#ff7ab5] to-[#ee2b8c]"
-                  style={{ width: `${Math.min(100, budgetUsagePercentage)}%` }}
+                  className="block h-full shrink-0 bg-gradient-to-r from-[#ff7ab5] to-[#ee2b8c]"
+                  style={{
+                    width: `${Math.min(100, budgetUsagePercentage) * barScale}%`,
+                  }}
                 />
               )}
               {/* 아직 안 쓴 예정 몫. 지출 뒤에 이어 붙여 "여기까지 잡혀 있다"를 보여준다 */}
               {hasPlanned && (
                 <i
-                  className="block h-full"
+                  className="block h-full shrink-0"
                   style={{
-                    width: `${pct(plannedUseAmount ?? 0)}%`,
+                    width: barWidth(plannedUseAmount ?? 0),
+                    minWidth: 4,
                     background: PLANNED_COLOR,
                   }}
                 />

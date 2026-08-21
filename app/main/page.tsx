@@ -129,7 +129,12 @@ interface PlanUserData {
   weddingVenue?: string | null;
   roomId?: number | null;
   members?: PlanUserMember[];
-  chatRooms?: { id: number; name: string }[];
+  chatRooms?: {
+    id: number;
+    name: string;
+    /** 마지막 대화 한 줄. 사진·플랜 공유는 텍스트가 없어 null 이다 */
+    lastMessage?: string | null;
+  }[];
   hasSeenMainGuide?: boolean;
   hasSeenBudgetGuide?: boolean;
 }

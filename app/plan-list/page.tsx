@@ -214,45 +214,54 @@ const CardBudget: React.FC<CardBudgetProps> = ({
   usedPercent,
   plannedPercent,
   plannedUseAmount,
-}) => (
-  <div className="space-y-3">
-    {/* 홈 예산 패널과 같은 짜임 — 큰 숫자 + "N만원 중 남음" + 같은 막대 */}
-    <div>
-      <div className="font-user-content text-[22px] font-bold leading-none tracking-[-0.03em] text-[#1b0d14]">
-        {remainingBudget.toLocaleString("ko-KR")}만원
+}) => {
+  /*
+    예산을 넘기면 조각 합이 100% 를 넘어 flex 가 비율대로 줄인다. 그러면
+    예정(회색)처럼 작은 몫이 사실상 사라진다. 합이 100 이 되게 직접 누르고,
+    예정 조각은 최소 4px 을 남긴다.
+  */
+  const total = usedPercent + plannedPercent;
+  const barScale = total > 100 ? 100 / total : 1;
+  return (
+    <div className="space-y-3">
+      {/* 홈 예산 패널과 같은 짜임 — 큰 숫자 + "N만원 중 남음" + 같은 막대 */}
+      <div>
+        <div className="font-user-content text-[22px] font-bold leading-none tracking-[-0.03em] text-[#1b0d14]">
+          {remainingBudget.toLocaleString("ko-KR")}만원
+        </div>
+        <div className="mt-1.5 text-[12.5px] text-gray-400">
+          {budget.toLocaleString("ko-KR")}만원 중 남음
+        </div>
       </div>
-      <div className="mt-1.5 text-[12.5px] text-gray-400">
-        {budget.toLocaleString("ko-KR")}만원 중 남음
-      </div>
-    </div>
-    {/*
+      {/*
       홈 예산 패널과 같은 뜻으로 읽히게 한다 — 분홍은 실제로 나간 돈,
       회색은 아직 안 쓴 예정, 남은 트랙이 여유다. 예전에는 분홍이 "남은
       비율"이라 아무것도 안 썼을 때 막대가 꽉 차 보였다.
     */}
-    <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#f4eff2]">
-      <i
-        className="block h-full bg-gradient-to-r from-[#ff7ab5] to-[#ee2b8c] transition-all duration-1000"
-        style={{ width: `${usedPercent}%` }}
-      />
-      {plannedUseAmount > 0 && (
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#f4eff2]">
         <i
-          className="block h-full bg-[#cdbfc7] transition-all duration-1000"
-          style={{ width: `${plannedPercent}%` }}
+          className="block h-full shrink-0 bg-gradient-to-r from-[#ff7ab5] to-[#ee2b8c] transition-all duration-1000"
+          style={{ width: `${usedPercent * barScale}%` }}
         />
+        {plannedUseAmount > 0 && (
+          <i
+            className="block h-full shrink-0 bg-[#cdbfc7] transition-all duration-1000"
+            style={{ width: `${plannedPercent * barScale}%`, minWidth: 4 }}
+          />
+        )}
+      </div>
+      {plannedUseAmount > 0 && (
+        <p className="flex items-center gap-1.5 text-[12px] text-gray-400">
+          <span
+            className="h-[9px] w-[9px] shrink-0 rounded-[3px]"
+            style={{ background: "#cdbfc7" }}
+          />
+          사용 예상 {plannedUseAmount.toLocaleString("ko-KR")}만원
+        </p>
       )}
     </div>
-    {plannedUseAmount > 0 && (
-      <p className="flex items-center gap-1.5 text-[12px] text-gray-400">
-        <span
-          className="h-[9px] w-[9px] shrink-0 rounded-[3px]"
-          style={{ background: "#cdbfc7" }}
-        />
-        사용 예상 {plannedUseAmount.toLocaleString("ko-KR")}만원
-      </p>
-    )}
-  </div>
-);
+  );
+};
 
 const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
   const router = useRouter();
