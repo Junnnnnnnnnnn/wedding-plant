@@ -66,6 +66,10 @@ function describe(item: ActivityItem): string {
       return "플랜에 참여했어요";
     case "ROOM_CREATED":
       return "플랜을 함께 쓰기 시작했어요";
+    case "SPOUSE_ASSIGNED":
+      return "신랑·신부를 정했어요";
+    case "SPOUSE_CLEARED":
+      return "신랑·신부 지정을 풀었어요";
     default:
       return "플랜을 업데이트했어요";
   }
