@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { getToken, setShareAfterLogin, clearToken } from "@/lib/api";
 import { useApi } from "@/app/contexts/ApiContext";
 import LoginRequiredModal from "@/app/components/LoginRequiredModal";
@@ -12,6 +12,14 @@ export default function SharePage() {
   const router = useRouter();
   const params = useParams();
   const shareCode = params.shareCode as string;
+  /*
+    초대 링크가 역할을 지닌다(`?as=spouse`). 로그인 전이면 코드와 함께
+    저장해 두었다가 로그인 후 같은 역할로 참여시킨다 — 코드만 저장하면
+    배우자로 초대받고도 함께 보는 사람으로 들어간다.
+  */
+  const searchParams = useSearchParams();
+  const asRole = searchParams.get("as") === "spouse" ? "spouse" : null;
+  const shareKey = asRole ? `${shareCode}?as=${asRole}` : shareCode;
   const { fetchWithAuth } = useApi();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -21,13 +29,13 @@ export default function SharePage() {
 
     const token = getToken();
     if (!token) {
-      setShareAfterLogin(shareCode);
+      setShareAfterLogin(shareKey);
       setShowLoginModal(true);
       return;
     }
 
-    if (joinedCodes.has(shareCode)) return;
-    joinedCodes.add(shareCode);
+    if (joinedCodes.has(shareKey)) return;
+    joinedCodes.add(shareKey);
 
     const joinRoom = async () => {
       try {
@@ -35,15 +43,15 @@ export default function SharePage() {
         // 저장해야(setShareAfterLogin) 재로그인 후 참여가 이어지고,
         // joinedCodes 에서도 빼 줘야 재시도가 가능하다. 공통 처리는
         // 복귀 경로만 저장하므로 이 둘을 대신하지 못한다.
-        const res = await fetchWithAuth(`/plan/room/${shareCode}`, {
-          method: "POST",
-          skipAuthHandling: true,
-        });
+        const res = await fetchWithAuth(
+          `/plan/room/${shareCode}${asRole ? `?as=${asRole}` : ""}`,
+          { method: "POST", skipAuthHandling: true },
+        );
         if (res.status === 401) {
           clearToken();
-          setShareAfterLogin(shareCode);
+          setShareAfterLogin(shareKey);
           setShowLoginModal(true);
-          joinedCodes.delete(shareCode);
+          joinedCodes.delete(shareKey);
           return;
         }
         if (res.ok) {
@@ -52,14 +60,14 @@ export default function SharePage() {
         }
         // 성공이 아니면 반드시 사용자에게 알린다.
         // (else가 없어 잘못된 코드·중복 참여·정원 초과 시 스피너로 멈춰 있었음)
-        joinedCodes.delete(shareCode);
+        joinedCodes.delete(shareKey);
         setJoinError(
           res.status === 404
             ? "존재하지 않는 공유 링크입니다. 링크를 다시 확인해 주세요."
             : "플랜에 참여하지 못했습니다. 잠시 후 다시 시도해 주세요.",
         );
       } catch (err) {
-        joinedCodes.delete(shareCode);
+        joinedCodes.delete(shareKey);
         setJoinError(
           "네트워크 오류로 참여하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.",
         );
@@ -68,7 +76,7 @@ export default function SharePage() {
     };
 
     joinRoom();
-  }, [shareCode, fetchWithAuth, router]);
+  }, [shareCode, shareKey, asRole, fetchWithAuth, router]);
 
   const handleCloseModal = () => {
     setShowLoginModal(false);
@@ -77,7 +85,7 @@ export default function SharePage() {
 
   const handleRetry = () => {
     setJoinError(null);
-    joinedCodes.delete(shareCode);
+    joinedCodes.delete(shareKey);
     router.refresh();
     // effect가 다시 돌도록 코드 재설정 없이 강제 리로드
     window.location.reload();

@@ -36,6 +36,10 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [isOwner, setIsOwner] = useState(false);
   const [spouseSaving, setSpouseSaving] = useState<string | null>(null);
+  /** 배우자가 이미 있으면 배우자 초대 버튼을 막는다 — 한 명뿐이다 */
+  const hasSpouse = members.some(
+    (m) => m.permission?.toUpperCase() === "SPOUSE",
+  );
 
   const loadMembers = React.useCallback(async () => {
     try {
@@ -125,7 +129,11 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
     };
   }, [isOpen, fetchWithAuth, loadMembers]);
 
-  const handleShare = async () => {
+  /**
+   * 역할별 초대. 링크에 `?as=spouse` 를 붙이면 받은 사람이 바로 신랑·신부가
+   * 된다 — 이미 배우자가 있으면 서버가 조용히 "함께 보는 사람"으로 넣는다.
+   */
+  const handleShare = async (role: "spouse" | "viewer" = "viewer") => {
     setShareError(null);
     if (!shareUrl) {
       setShareError(
@@ -134,10 +142,14 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
+    const url = role === "spouse" ? `${shareUrl}?as=spouse` : shareUrl;
     const shareData = {
       title: "웨딩 플랜 공유",
-      text: "함께 웨딩 플랜을 관리해요!",
-      url: shareUrl,
+      text:
+        role === "spouse"
+          ? "우리 결혼 준비, 같이 하자!"
+          : "우리 결혼 준비 같이 봐줘!",
+      url,
     };
 
     if (navigator.share && navigator.canShare?.(shareData)) {
@@ -150,7 +162,7 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
       }
     } else {
       try {
-        await navigator.clipboard.writeText(shareUrl);
+        await navigator.clipboard.writeText(url);
         setShareError("링크가 클립보드에 복사되었습니다.");
       } catch {
         setShareError("이 브라우저에서는 공유 기능을 지원하지 않습니다.");
@@ -289,7 +301,7 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
                       </span>
                     ) : (
                       <span className="shrink-0 text-[11.5px] text-gray-400">
-                        조언자
+                        함께 보는 중
                       </span>
                     )}
                     {isOwner && !isRoomOwner && (
@@ -311,7 +323,7 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
             {isOwner && (
               <p className="mt-3 text-[11.5px] leading-relaxed text-gray-400 break-keep">
                 신랑·신부는 한 명만 정할 수 있어요. 함께 일정과 예산을 고칠 수
-                있고, 나머지 멤버는 대화만 할 수 있어요.
+                있고, 함께 보는 사람은 대화만 할 수 있어요.
               </p>
             )}
           </div>
@@ -333,15 +345,39 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
               </p>
             </div>
           )}
+          {/*
+            역할별 초대. 링크가 역할을 지니므로 누구를 부르는지 버튼에서
+            정한다. 하나의 "공유하기" 로는 상대가 어떤 권한으로 들어올지
+            알 수 없었다.
+          */}
           <button
             type="button"
-            onClick={handleShare}
-            disabled={shareUrlLoading}
+            onClick={() => handleShare("spouse")}
+            disabled={shareUrlLoading || hasSpouse}
             className="w-full h-14 sm:h-16 bg-gradient-to-r from-[#ee2b8c] to-[#ff6b9d] text-white rounded-2xl sm:rounded-3xl flex items-center justify-center gap-3 font-black text-base sm:text-lg shadow-xl shadow-[#ee2b8c33] hover:opacity-95 active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
           >
-            <Share2 className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={3} />
-            <span>{shareUrlLoading ? "준비 중..." : "링크 공유하기"}</span>
+            <Heart className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
+            <span>
+              {shareUrlLoading
+                ? "준비 중..."
+                : hasSpouse
+                  ? "신랑 · 신부는 이미 있어요"
+                  : "신랑 · 신부 초대하기"}
+            </span>
           </button>
+          <button
+            type="button"
+            onClick={() => handleShare("viewer")}
+            disabled={shareUrlLoading}
+            className="w-full h-13 sm:h-14 rounded-2xl sm:rounded-3xl border border-[#f0e3ea] bg-white text-[#6b6570] flex items-center justify-center gap-2.5 font-bold text-sm sm:text-base transition-colors hover:border-[#ee2b8c55] hover:text-[#ee2b8c] disabled:opacity-60 disabled:pointer-events-none"
+          >
+            <Share2 className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+            <span>함께 볼 사람 초대하기</span>
+          </button>
+          <p className="text-center text-[11.5px] leading-relaxed text-gray-400 break-keep">
+            신랑·신부는 일정과 예산을 같이 고칠 수 있어요. 함께 보는 사람은
+            대화만 할 수 있어요.
+          </p>
         </div>
       </div>
     </div>

@@ -578,15 +578,32 @@ function installMocks(page) {
   await page.screenshot({ path: path.join(OUT, "main-share-modal.png") });
   const modal = await page.evaluate(() => {
     const txt = document.body.innerText.replace(/\s+/g, " ");
+    const btn = (label) =>
+      [...document.querySelectorAll("button")].find((b) =>
+        b.innerText.replace(/\s+/g, " ").includes(label),
+      );
+    // 뒤에 깔린 대화 목록에도 "신랑 · 신부" 가 있다. 초대 버튼만 집는다.
+    const spouseBtn = [...document.querySelectorAll("button")].find((b) =>
+      /신랑 · 신부(는 이미 있어요| 초대하기)/.test(
+        b.innerText.replace(/\s+/g, " "),
+      ),
+    );
     return {
       멤버목록: txt.includes("참여 멤버"),
-      배지: txt.includes("신랑 · 신부"),
       지정버튼: txt.includes("배우자로"),
-      조언자: txt.includes("조언자"),
+      함께보는중: txt.includes("함께 보는 중"),
+      // 배우자가 이미 있으면 초대 버튼이 잠긴다
+      배우자초대: spouseBtn
+        ? `${spouseBtn.innerText.replace(/\s+/g, " ").trim()}(disabled=${spouseBtn.disabled})`
+        : "없음",
+      함께볼사람초대: !!btn("함께 볼 사람 초대하기"),
     };
   });
   console.log(
-    `공유 모달 ${openedShare} → 멤버목록=${modal.멤버목록} 배지=${modal.배지} 지정버튼=${modal.지정버튼} 조언자=${modal.조언자}`,
+    `공유 모달 ${openedShare} → 멤버목록=${modal.멤버목록} 지정=${modal.지정버튼} 함께보는중=${modal.함께보는중}`,
+  );
+  console.log(
+    `  초대 버튼 → 배우자=${modal.배우자초대} / 함께볼사람=${modal.함께볼사람초대}`,
   );
 
   // 대시보드에서 일정을 누르면 >=1024 는 옆 인스펙터에서 열려야 한다.
