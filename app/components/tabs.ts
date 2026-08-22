@@ -21,7 +21,7 @@ export type RailViewType = TabType | "board";
 
 export const TAB_ROUTES: Record<TabType, string> = {
   home: "/main",
-  feed: "/main",
+  feed: "/feed",
   rooms: "/plan-list",
   settings: "/user",
 };
@@ -39,6 +39,7 @@ export const RAIL_ROUTES: Record<RailViewType, string> = {
  */
 export function pathnameToTab(pathname: string): TabType {
   if (pathname === "/main" || pathname === "/calendar") return "home";
+  if (pathname === "/feed") return "feed";
   if (pathname === "/plan-list") return "rooms";
   if (pathname === "/user" || pathname === "/setting") return "settings";
   return "home";
@@ -47,6 +48,7 @@ export function pathnameToTab(pathname: string): TabType {
 /** 레일용 경로 → 메뉴 매핑. 보드와 채팅을 별도로 구분한다 */
 export function pathnameToRailView(pathname: string): RailViewType {
   if (pathname === "/calendar") return "board";
+  if (pathname === "/feed") return "feed";
   if (pathname === "/plan-list" || pathname.startsWith("/chat/"))
     return "rooms";
   if (pathname === "/user" || pathname === "/setting") return "settings";
@@ -88,7 +90,7 @@ export const RAIL_GROUPS: Array<{
   {
     label: "둘러보기",
     items: [
-      { id: "feed", label: "피드", icon: Search, soon: true },
+      { id: "feed", label: "피드", icon: Search },
       { id: "settings", label: "Settings", icon: Settings },
     ],
   },

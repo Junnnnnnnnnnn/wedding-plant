@@ -4,12 +4,14 @@ import {
   ArrowLeft,
   Calendar,
   Check,
+  ChevronRight,
   Clock,
   FileText,
   Loader2,
   Maximize2,
   Minimize2,
   MapPin,
+  Star,
   Tag,
   X,
 } from "lucide-react";
@@ -29,6 +31,7 @@ import BottomTabBar from "../components/BottomTabBar";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import CustomAlertModal from "../components/CustomAlertModal";
+import FeedPostModal, { FeedPostTarget } from "../components/FeedPostModal";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { getToken, getPlanUserIdFromToken } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
@@ -145,6 +148,8 @@ export default function ScheduleDetailView({
   const scrollDirection = useScrollDirection(mainScrollRef);
 
   const [detail, setDetail] = useState<ScheduleDetailData | null>(null);
+  /** 후기 올리기 모달 대상. null 이면 닫힘 */
+  const [postTarget, setPostTarget] = useState<FeedPostTarget | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -713,6 +718,46 @@ export default function ScheduleDetailView({
           </motion.div>
         )}
 
+        {/*
+          완료한 일정에서만 뜨는 후기 진입점.
+
+          피드의 생사는 콘텐츠 공급에 달려 있고, 사람들은 "무엇을 올릴 수
+          있는지" 를 모르면 안 올린다. 다 쓰고 난 그 자리에서 묻는 게 가장
+          자연스럽다. 두 변형이 생김새가 다르므로 껍데기만 갈라 쓴다.
+        */}
+        {isCompleted && (
+          <button
+            type="button"
+            onClick={() =>
+              setPostTarget({
+                scheduleId: detail.id,
+                categoryName: detail.categoryName,
+                title: detail.title,
+                amount: detail.amount ?? null,
+                location: detail.location ?? null,
+              })
+            }
+            className={`flex w-full items-center gap-3 bg-white text-left transition-colors ${
+              isInspector
+                ? "rounded-[24px] border border-[#ee2b8c0f] p-4 shadow-sm hover:border-[#ee2b8c33]"
+                : "rounded-2xl p-3 shadow-sm hover:shadow-md"
+            }`}
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#fff2f6] text-[#ee2b8c]">
+              <Star className="h-4 w-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13.5px] font-bold text-[#1b0d14]">
+                피드에 후기 올리기
+              </span>
+              <span className="mt-0.5 block text-[12px] text-gray-400">
+                익명으로 올라가요. 다음 사람이 견적을 가늠할 수 있어요.
+              </span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-[#d6ccd2]" />
+          </button>
+        )}
+
         {/* Location Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1020,6 +1065,10 @@ export default function ScheduleDetailView({
           )}
         </main>
 
+        <FeedPostModal
+          target={postTarget}
+          onClose={() => setPostTarget(null)}
+        />
         <FeedbackModal
           isOpen={showDeleteFeedbackModal}
           onClose={() => {

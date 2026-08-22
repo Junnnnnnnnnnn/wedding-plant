@@ -26,6 +26,26 @@ function AddPlanPageContent() {
     return Number.isNaN(n) ? null : n;
   }, [searchParams]);
 
+  /**
+   * 피드의 "내 플랜에 담기" 가 넘겨 주는 값.
+   * 하나도 없으면 null 을 넘겨 폼이 프리필 로직을 아예 타지 않게 한다.
+   */
+  const prefill = useMemo(() => {
+    const title = searchParams.get("title");
+    const categoryName = searchParams.get("category");
+    const amountRaw = searchParams.get("amount");
+    const location = searchParams.get("location");
+    if (!title && !categoryName && !amountRaw && !location) return null;
+
+    const amount = amountRaw ? Number(amountRaw) : null;
+    return {
+      title,
+      categoryName,
+      amount: amount !== null && Number.isFinite(amount) ? amount : null,
+      location,
+    };
+  }, [searchParams]);
+
   return (
     <AddPlanView
       variant="page"
@@ -33,6 +53,7 @@ function AddPlanPageContent() {
       roomId={roomId}
       initialDate={searchParams.get("date")}
       from={searchParams.get("from")}
+      prefill={prefill}
     />
   );
 }

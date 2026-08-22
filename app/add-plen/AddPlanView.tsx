@@ -117,6 +117,17 @@ export interface AddPlanViewProps {
   roomId?: number | null;
   /** 미리 채울 날짜 "YYYY-MM-DD" */
   initialDate?: string | null;
+  /**
+   * 피드의 후기를 "내 플랜에 담기" 로 옮겨 올 때 미리 채우는 값.
+   * 사용자가 그대로 저장하지 않고 고칠 수 있어야 하므로 **첫 렌더에 한 번만**
+   * 넣는다. 수정 모드(editId)에서는 무시한다 — 서버 값이 이겨야 한다.
+   */
+  prefill?: {
+    title?: string | null;
+    categoryName?: string | null;
+    amount?: number | null;
+    location?: string | null;
+  } | null;
   /** 어디서 왔는지. page 변형에서 뒤로가기 목적지를 정한다 */
   from?: string | null;
   /** pane 변형에서 닫기 */
@@ -130,6 +141,7 @@ export default function AddPlanView({
   editId = null,
   roomId = null,
   initialDate = null,
+  prefill = null,
   from = null,
   onClose,
   onSaved,
@@ -747,6 +759,39 @@ export default function AddPlanView({
 
     loadDetail();
   }, [editId, fetchWithAuth, allCategories]);
+
+  /**
+   * 피드에서 담아 온 값 채우기.
+   *
+   * **카테고리 목록을 기다리지 않는다.** 라벨과 색만 먼저 넣어 두면 아래
+   * 동기화 effect 가 목록이 온 뒤 API 항목으로 바꿔 준다. 목록을 기다리게
+   * 했더니 요청이 늦거나 실패했을 때 제목·금액까지 통째로 안 채워졌다.
+   *
+   * 한 번만 넣는다 — 사용자가 지운 값을 되살리면 안 된다. 수정 모드에서는
+   * 서버 값이 이겨야 하므로 아예 타지 않는다.
+   */
+  const prefillDoneRef = useRef(false);
+  useEffect(() => {
+    if (prefillDoneRef.current || !prefill || editId) return;
+    prefillDoneRef.current = true;
+
+    if (prefill.title?.trim()) setInputValue(prefill.title.trim());
+
+    const catLabel = prefill.categoryName?.trim();
+    if (catLabel) {
+      setSelectedCategory({
+        color: getColorByLabel(catLabel),
+        label: catLabel,
+      });
+    }
+
+    if (typeof prefill.amount === "number" && Number.isFinite(prefill.amount)) {
+      // formatNumber 는 아래에 선언돼 있어 여기서 부르지 않는다
+      setAmount(String(prefill.amount).replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+    }
+
+    if (prefill.location?.trim()) setLocation(prefill.location.trim());
+  }, [prefill, editId]);
 
   /** API 카테고리 로드 후 selectedCategory가 있으면 API 항목으로 동기화 (색상/type 반영) */
   useEffect(() => {
