@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/api";
 import { formatKoreanTime, getKstDate, parseLocalDate } from "@/lib/utils";
@@ -496,12 +496,17 @@ export default function HomeDashboard({
               <h2 className="text-[15px] font-bold tracking-tight text-[#1b0d14]">
                 예산
               </h2>
+              {/*
+                예산 패널에서 더 들어가는 주 통로다. 옆 패널들의 "캘린더"·
+                "전체" 와 같은 맨 텍스트로 두면 묻힌다. 알약으로 무게를 준다.
+              */}
               <button
                 type="button"
                 onClick={onOpenBudgetDetail}
-                className="text-[12.5px] text-[#ee2b8c] hover:underline"
+                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-[#fff2f6] py-1 pl-3 pr-2 text-[12px] font-bold text-[#ee2b8c] transition-colors hover:bg-[#ffe2ee]"
               >
                 상세 분석
+                <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
             </div>
 
