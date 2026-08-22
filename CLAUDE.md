@@ -73,6 +73,28 @@ npm run format:check # Prettier 검사만
 
 게스트 → 로그인 시 데이터 마이그레이션은 `KakaoLoginAlert`의 effect에서 처리됩니다 (250줄짜리 거대 effect). 분기 우선순위: **shareCode → returnPath → 플랜 완성된 기존 사용자 → 참여 방 보유 → 진짜 게스트(`HAS_COMPLETED_GUEST_SETTING_KEY` 플래그) → 신규 사용자(`/setting`)**. `HAS_COMPLETED_GUEST_SETTING_KEY`는 직접 `/main` 진입 차단 판단에도 쓰입니다. 각 분기는 반드시 `return`으로 종료해야 후속 분기가 잘못 트리거되지 않습니다.
 
+### 신랑·신부 정책 (권한)
+
+`PlanUserRoomMemberPermission` = `OWNER | SPOUSE | WRITE | READ`.
+
+|                     | 플랜(일정·예산) 편집 | 채팅 |
+| ------------------- | -------------------- | ---- |
+| `OWNER` 방장        | 가능                 | 가능 |
+| `SPOUSE` 신랑·신부  | 가능                 | 가능 |
+| `WRITE` 예전 기본값 | 가능                 | 가능 |
+| `READ` 조언자       | **불가**             | 가능 |
+
+- **공유 코드로 참여하면 `READ`** 입니다. 방장이 `PATCH /plan/room/spouse` 로 한 명을 배우자로 올립니다. 방마다 한 명뿐이고(부분 유니크 인덱스), 새로 지정하면 이전 사람은 `READ` 로 내려갑니다.
+- `WRITE` 는 정책 이전에 붙은 값입니다. 새로 생기지 않지만 **일괄 강등하지 않았습니다** — 운영 데이터의 권한을 조용히 뺏지 않습니다.
+- 백엔드 게이트는 전부 **"`READ` 면 거절"** 형태라 권한을 추가해도 게이트를 고칠 필요가 없습니다. 새 게이트도 같은 형태로 쓰세요.
+- **조언자도 대화는 합니다.** 채팅 전송에 권한 검사를 넣지 마세요 — 남의 플랜에 조언하러 들어오는 게 이 권한의 목적입니다.
+
+**커플 채팅방은 컬럼이 아니라 멤버 구성으로 판별합니다** — 방장과 배우자 둘만 있는 방(`apps/api/src/module/plen/chat/couple-chat.util.ts`). 배우자를 바꿔도 저절로 따라오고 플래그가 어긋날 일이 없습니다. `isCouple` 이 대화 목록·방 목록·방 정보 세 응답에 실립니다.
+
+프론트는 `app/components/CoupleChatBadge.tsx` 한 곳에서 배지와 정렬(`sortCoupleFirst`)을 내고 홈 대시보드·참여 플랜 카드·채팅방 머리글이 공유합니다. 배우자 지정은 `components/SharePlanModal.tsx` 의 참여 멤버 목록에서 하고 **대시보드 헤더의 `멤버` 버튼**으로 엽니다 — 예전 공유 버튼은 "멤버가 나 혼자일 때"만 떠서 사람이 들어온 뒤에는 열 방법이 없었습니다.
+
+**소켓에 인증이 걸려 있습니다.** `handshake.auth.token` 을 검증하고, payload 의 사용자 id 는 무시하며, 채팅방 멤버인지 확인합니다. 예전에는 방 id 와 아무 사용자 id 만 알면 남의 이름으로 메시지를 넣을 수 있었습니다.
+
 ### 컨텍스트 3종 (layout.tsx에서 항상 적용)
 
 순서: `ApiProvider` → `NotificationProvider` → `WeddingProvider`.
@@ -284,7 +306,7 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 
 - **JWT를 `sessionStorage` + `localStorage` 모두 저장**: 탭 간 공유 의도지만 사실상 localStorage만으로 충분. 단순화 검토 대상.
 - **`PATCH /plan/user`가 약관 날짜 2개를 문자열 필수로 요구**: 마케팅 미동의를 표현할 방법이 없어, 프로필 저장은 `POST /plan/setting`으로 우회해 둔 상태입니다 (`app/user/page.tsx`). 백엔드에서 선택 항목으로 바꾸는 것이 근본 해결입니다.
-- **READ 권한이 도달 불가능**: 읽기 전용 참여자는 기획에 있으나 보류 상태입니다. 공유 코드로 참여하면 백엔드가 항상 `WRITE`를 부여하고 권한 변경 수단이 없습니다. `/main`·`/calendar`의 READ 게이트는 기능이 열릴 때를 대비해 남겨둔 것이니 "죽은 코드"로 보고 지우지 마세요.
+- ~~READ 권한이 도달 불가~~ → 아래 "신랑·신부 정책 (권한)" 으로 열렸습니다.
 
 ### 해결된 항목 (예전 기록이 남아 있을 수 있음)
 
