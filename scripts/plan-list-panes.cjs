@@ -52,6 +52,8 @@ const PLANS = [
   {
     roomId: 1,
     onwerName: "김지수",
+    // 실제 /plan/room/list 는 weddingDate 를 함께 준다 (카드 머리글의 D-day)
+    weddingDate: "2026-12-31",
     budget: 4200,
     remainingBudget: 2860,
     // remainingBudget = budget - (예정 + 사용) 이므로 예정은 1,340 이하여야
@@ -75,6 +77,7 @@ const PLANS = [
   {
     roomId: 2,
     onwerName: "박현우",
+    weddingDate: "2027-03-20",
     budget: 900,
     remainingBudget: 410,
     plannedUseAmount: 180,

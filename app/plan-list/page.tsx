@@ -1,15 +1,10 @@
 "use client";
 
 import React, { Suspense, useEffect, useState, useCallback } from "react";
-import {
-  MessageCircle,
-  ArrowRight,
-  Heart,
-  Crown,
-  CircleHelp,
-} from "lucide-react";
+import { MessageCircle, ArrowRight, Crown, CircleHelp } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plan, ChatRoom, Member } from "@/types";
+import { getDaysUntil, parseLocalDate } from "@/lib/utils";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { getToken } from "@/lib/api";
@@ -34,73 +29,192 @@ const AVATAR_GRADIENTS = [
   "linear-gradient(135deg, #0ea5e9 0%, #7dd3fc 100%)",
 ];
 
-interface CardHeaderProps {
-  index: number;
-  ownerName: string;
-}
+/**
+ * 참여 플랜 카드 — 홈 대시보드와 같은 시각 언어.
+ *
+ * 이름·날짜 → 예산 → 대화 순으로 읽는다. 예전에는 10px 회색 대문자 라벨
+ * (MEMBERS/CHANNELS)과 검정 "플랜 N" 알약이 제목보다 먼저 눈에 들어와
+ * 정작 중요한 남은 예산이 카드 맨 아래에서 묻혔다.
+ */
 
-const CardHeader: React.FC<CardHeaderProps> = ({ index, ownerName }) => (
-  <div className="flex justify-between items-start mb-6">
-    <div className="space-y-1">
-      <div className="flex items-center gap-2">
-        <span className="bg-[#1b0d14] text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
-          플랜 {index + 1}
-        </span>
-        <span className="text-[#ee2b8c]">
-          <Heart className="w-3 h-3 fill-current" />
-        </span>
-      </div>
-      <h3 className="text-2xl font-black text-[#1b0d14] md:text-[19px] md:font-bold md:tracking-tight">
-        {ownerName}의 웨딩 플랜
-      </h3>
-    </div>
-    <div className="w-10 h-10 bg-[#ee2b8c11] rounded-2xl flex items-center justify-center text-[#ee2b8c] group-hover/card:bg-[#ee2b8c] group-hover/card:text-white transition-all">
-      <ArrowRight className="w-5 h-5" />
-    </div>
-  </div>
-);
-
-interface CardMembersProps {
-  members: Member[];
-}
-
-const CardMembers: React.FC<CardMembersProps> = ({ members }) => {
+/** 겹쳐 놓은 참여 멤버 얼굴. 방장에게만 왕관을 얹는다 */
+const MemberAvatars: React.FC<{ members: Member[] }> = ({ members }) => {
   // 같은 파일에서 chatRooms 는 `|| []` 로 방어하면서 members 는 안 하고 있었다.
   // 백엔드가 이 필드를 생략하면 목록 전체가 흰 화면이 된다.
   const list = Array.isArray(members) ? members : [];
   return (
-    <div className="mb-6">
-      <p className="text-[10px] font-extrabold text-gray-300 uppercase tracking-widest mb-3">
-        참여 멤버
-      </p>
-      <div className="flex items-center -space-x-2">
-        {list.map((member, idx) => (
+    <div className="flex items-center -space-x-1.5">
+      {list.slice(0, 4).map((member, idx) => (
+        <div
+          key={member.planUserId}
+          className="relative flex-shrink-0"
+          style={{ zIndex: list.length - idx }}
+        >
+          {String(member.permission ?? "").toUpperCase() === "OWNER" && (
+            <span className="absolute -top-1 left-1/2 z-10 flex h-3.5 w-3.5 -translate-x-1/2 items-center justify-center rounded-full bg-amber-400 text-amber-900 shadow-sm">
+              <Crown className="h-2 w-2" strokeWidth={3} />
+            </span>
+          )}
           <div
-            key={member.planUserId}
-            className="relative flex-shrink-0"
-            style={{ zIndex: list.length - idx }}
+            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-white text-[11px] font-black text-white shadow-sm"
+            style={{
+              background: member.image
+                ? undefined
+                : AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
+            }}
           >
-            {String(member.permission ?? "").toUpperCase() === "OWNER" && (
-              <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm">
-                <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
-              </span>
+            {member.image ? (
+              <img
+                src={member.image}
+                alt={member.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span>{member.name?.trim().charAt(0)?.toUpperCase()}</span>
             )}
-            <div
-              className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
-              style={{
-                background: member.image
-                  ? undefined
-                  : AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
-              }}
-            >
-              {member.image ? (
-                <img
-                  src={member.image}
-                  alt={member.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span>{member.name?.trim().charAt(0)?.toUpperCase()}</span>
+          </div>
+        </div>
+      ))}
+      {list.length > 4 && (
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 border-white bg-stone-100 text-[10px] font-black text-stone-400">
+          +{list.length - 4}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface CardHeaderProps {
+  ownerName: string;
+  /** "YYYY-MM-DD". 없으면 날짜 줄을 내지 않는다 */
+  weddingDate?: string;
+  members: Member[];
+}
+
+const CardHeader: React.FC<CardHeaderProps> = ({
+  ownerName,
+  weddingDate,
+  members,
+}) => {
+  // 홈 대시보드 상단과 같은 문장 — "2026년 12월 31일 · D-131"
+  const dateLine = (() => {
+    const parsed = weddingDate ? parseLocalDate(weddingDate) : null;
+    if (!parsed) return null;
+    const target = {
+      year: parsed.getFullYear(),
+      month: parsed.getMonth() + 1,
+      day: parsed.getDate(),
+    };
+    const days = getDaysUntil(target);
+    const dDay = days > 0 ? `D-${days}` : days === 0 ? "D-Day" : `D+${-days}`;
+    return `${target.year}년 ${target.month}월 ${target.day}일 · ${dDay}`;
+  })();
+
+  return (
+    <div className="mb-5 flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h3 className="break-keep text-[20px] font-black tracking-[-0.02em] text-[#1b0d14] md:text-[19px] md:font-bold">
+          {ownerName}의 웨딩 플랜
+        </h3>
+        {dateLine && (
+          <p className="mt-1 text-[12.5px] text-gray-400">{dateLine}</p>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-2.5">
+        <MemberAvatars members={members} />
+        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#ee2b8c0f] text-[#ee2b8c] transition-all group-hover/card:bg-[#ee2b8c] group-hover/card:text-white">
+          <ArrowRight className="h-[18px] w-[18px]" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface CardChatRoomsProps {
+  chatRooms: ChatRoom[];
+  onChatRoomClick: (chatRoomId: number) => void;
+  getRoomUnreadCount: (roomId: number) => number;
+}
+
+const CardChatRooms: React.FC<CardChatRoomsProps> = ({
+  chatRooms,
+  onChatRoomClick,
+  getRoomUnreadCount,
+}) => {
+  const rooms = sortCoupleFirst(chatRooms ?? []);
+  if (rooms.length === 0) return null;
+  return (
+    <div>
+      <p className="mb-2 text-[12.5px] text-gray-400">대화 {rooms.length}</p>
+      <div className="space-y-2">
+        {rooms.map((chatRoom) => (
+          <div
+            key={chatRoom.id}
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              // 카드 전체가 플랜 상세로 가는 버튼이라 여기서 끊어야 한다
+              e.stopPropagation();
+              onChatRoomClick(chatRoom.id);
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" && e.key !== " ") return;
+              e.preventDefault();
+              e.stopPropagation();
+              onChatRoomClick(chatRoom.id);
+            }}
+            className={`group/chat-item flex cursor-pointer items-center gap-3 rounded-2xl border p-2.5 transition-all hover:border-[#ee2b8c22] hover:bg-white hover:shadow-sm active:scale-[0.99] ${
+              chatRoom.isCouple
+                ? "border-[#ee2b8c22] bg-[#fff7fa]"
+                : "border-transparent bg-[#fcfbfc]"
+            }`}
+          >
+            <div className="relative shrink-0">
+              {getRoomUnreadCount(chatRoom.id) > 0 && (
+                <div className="absolute -top-1 -left-1 z-20 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#ee2b8c]">
+                  <span className="text-[7px] font-black text-white">
+                    {getRoomUnreadCount(chatRoom.id) > 9
+                      ? "9+"
+                      : getRoomUnreadCount(chatRoom.id)}
+                  </span>
+                </div>
+              )}
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#ee2b8c0f] text-[#ee2b8c] transition-all group-hover/chat-item:bg-[#ee2b8c] group-hover/chat-item:text-white">
+                <MessageCircle className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="flex items-center gap-1.5 text-[13.5px] font-bold text-[#1b0d14]">
+                <span className="truncate">{chatRoom.name}</span>
+                {chatRoom.isCouple && <CoupleChatBadge size="sm" />}
+              </h4>
+            </div>
+            <div className="flex shrink-0 items-center -space-x-1.5">
+              {(chatRoom.memberList ?? []).slice(0, 4).map((m, i) => (
+                <div
+                  key={m.planUserId}
+                  className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border border-white text-[7px] font-black text-white shadow-sm"
+                  style={{
+                    background: m.image
+                      ? undefined
+                      : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
+                  }}
+                >
+                  {m.image ? (
+                    <img
+                      src={m.image}
+                      alt={m.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span>{m.name.charAt(0)}</span>
+                  )}
+                </div>
+              ))}
+              {(chatRoom.memberList?.length ?? 0) > 4 && (
+                <div className="flex h-5 w-5 items-center justify-center rounded-full border border-white bg-stone-100 text-[7px] font-black text-stone-400">
+                  +{(chatRoom.memberList?.length ?? 0) - 4}
+                </div>
               )}
             </div>
           </div>
@@ -109,97 +223,6 @@ const CardMembers: React.FC<CardMembersProps> = ({ members }) => {
     </div>
   );
 };
-
-interface CardChatRoomsProps {
-  chatRooms: ChatRoom[];
-  interactive?: boolean;
-  onChatRoomClick: (chatRoomId: number) => void;
-  getRoomUnreadCount: (roomId: number) => number;
-}
-
-const CardChatRooms: React.FC<CardChatRoomsProps> = ({
-  chatRooms,
-  interactive = true,
-  onChatRoomClick,
-  getRoomUnreadCount,
-}) => (
-  <div
-    className={`mt-2 mb-6 space-y-2 ${interactive ? "pointer-events-auto" : ""}`}
-  >
-    <div className="grid grid-cols-1 gap-2">
-      {sortCoupleFirst(chatRooms ?? []).map((chatRoom) => (
-        <div
-          key={chatRoom.id}
-          onClick={
-            interactive
-              ? (e) => {
-                  e.stopPropagation();
-                  onChatRoomClick(chatRoom.id);
-                }
-              : undefined
-          }
-          className={`flex items-center justify-between p-3 rounded-2xl transition-all border ${chatRoom.isCouple ? "bg-[#fff7fa] border-[#ee2b8c22]" : "bg-[#fcfbfc] border-transparent"} ${interactive ? "hover:bg-white hover:border-[#ee2b8c11] hover:shadow-md hover:shadow-[#ee2b8c0a] group/chat-item cursor-pointer active:scale-[0.98]" : ""}`}
-        >
-          <div className="flex items-center gap-3 relative">
-            {getRoomUnreadCount(chatRoom.id) > 0 && (
-              <div className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-[#ee2b8c] rounded-full flex items-center justify-center border-2 border-white z-20">
-                <span className="text-[7px] font-black text-white">
-                  {getRoomUnreadCount(chatRoom.id) > 9
-                    ? "9+"
-                    : getRoomUnreadCount(chatRoom.id)}
-                </span>
-              </div>
-            )}
-            <div
-              className={`w-10 h-10 bg-[#ee2b8c0a] rounded-xl flex items-center justify-center text-[#ee2b8c] ${interactive ? "group-hover/chat-item:bg-[#ee2b8c] group-hover/chat-item:text-white transition-all" : ""}`}
-            >
-              <MessageCircle className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="flex items-center gap-1.5 text-sm font-black text-[#1b0d14]">
-                {chatRoom.name}
-                {chatRoom.isCouple && <CoupleChatBadge size="sm" />}
-              </h4>
-              <div className="flex items-center -space-x-1.5 mt-1">
-                {(chatRoom.memberList ?? []).slice(0, 4).map((m, i) => (
-                  <div
-                    key={m.planUserId}
-                    className="w-5 h-5 rounded-full border border-white flex items-center justify-center text-[7px] font-black text-white overflow-hidden shadow-sm"
-                    style={{
-                      background: m.image
-                        ? undefined
-                        : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
-                    }}
-                  >
-                    {m.image ? (
-                      <img
-                        src={m.image}
-                        alt={m.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span>{m.name.charAt(0)}</span>
-                    )}
-                  </div>
-                ))}
-                {(chatRoom.memberList?.length ?? 0) > 4 && (
-                  <div className="w-5 h-5 rounded-full border border-white bg-stone-100 flex items-center justify-center text-[7px] font-black text-stone-400">
-                    +{(chatRoom.memberList?.length ?? 0) - 4}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-stone-300 ${interactive ? "group-hover/chat-item:text-[#ee2b8c] group-hover/chat-item:bg-[#ee2b8c0a] transition-all" : ""}`}
-          >
-            <ArrowRight className="w-4 h-4" />
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
 
 interface CardBudgetProps {
   remainingBudget: number;
@@ -230,7 +253,7 @@ const CardBudget: React.FC<CardBudgetProps> = ({
     <div className="space-y-3">
       {/* 홈 예산 패널과 같은 짜임 — 큰 숫자 + "N만원 중 남음" + 같은 막대 */}
       <div>
-        <div className="font-user-content text-[22px] font-bold leading-none tracking-[-0.03em] text-[#1b0d14]">
+        <div className="font-user-content text-[26px] font-bold leading-none tracking-[-0.03em] text-[#1b0d14]">
           {remainingBudget.toLocaleString("ko-KR")}만원
         </div>
         <div className="mt-1.5 text-[12.5px] text-gray-400">
@@ -603,48 +626,44 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
               const isFirst = index === 0;
 
               return (
-                <div key={plan.roomId} className="w-full relative">
-                  {/* Scaling Card Layer - Handles card-wide hover, scale, and navigation */}
-                  <div
-                    id={isFirst ? "plan-card-0" : undefined}
-                    onClick={() => handleSelectPlan(plan.roomId)}
-                    className="w-full bg-white rounded-[32px] p-6 border border-[#ee2b8c0a] shadow-sm transition-all transform hover:shadow-xl hover:shadow-[#ee2b8c11] active:scale-[0.98] cursor-pointer group/card relative overflow-hidden md:rounded-[28px] md:border-[#ee2b8c0f]"
-                  >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#ee2b8c05] to-transparent rounded-bl-full group-hover/card:bg-[#ee2b8c0a] transition-colors" />
-
-                    <CardHeader index={index} ownerName={plan.onwerName} />
-                    <CardMembers members={plan.members} />
-                    {/* Placeholder space for chat rooms to preserve layout height */}
-                    <div className="invisible opacity-0 pointer-events-none">
-                      <CardChatRooms
-                        chatRooms={plan.chatRooms || []}
-                        interactive={false}
-                        onChatRoomClick={handleChatRoomClick}
-                        getRoomUnreadCount={getRoomUnreadCount}
-                      />
-                    </div>
-                    <CardBudget
-                      remainingBudget={plan.remainingBudget}
-                      budget={plan.budget}
-                      usedPercent={usedPercent}
-                      plannedPercent={plannedPercent}
-                      plannedUseAmount={plannedUseAmount}
+                <div
+                  key={plan.roomId}
+                  id={isFirst ? "plan-card-0" : undefined}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleSelectPlan(plan.roomId)}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter" && e.key !== " ") return;
+                    e.preventDefault();
+                    handleSelectPlan(plan.roomId);
+                  }}
+                  className="group/card w-full cursor-pointer rounded-[32px] border border-[#ee2b8c0a] bg-white p-6 shadow-sm transition-all hover:shadow-xl hover:shadow-[#ee2b8c11] active:bg-[#fffafc] md:rounded-[28px] md:border-[#ee2b8c0f]"
+                >
+                  <CardHeader
+                    ownerName={plan.onwerName}
+                    weddingDate={plan.weddingDate}
+                    members={plan.members}
+                  />
+                  <CardBudget
+                    remainingBudget={plan.remainingBudget}
+                    budget={plan.budget}
+                    usedPercent={usedPercent}
+                    plannedPercent={plannedPercent}
+                    plannedUseAmount={plannedUseAmount}
+                  />
+                  {/*
+                    가이드 앵커라 방이 없어도 이 div 는 남긴다
+                    (GuideOverlay 가 이 rect 로 말풍선 좌표를 잡는다).
+                  */}
+                  <div id={isFirst ? "plan-channels-0" : undefined}>
+                    {(plan.chatRooms?.length ?? 0) > 0 && (
+                      <hr className="my-5 border-0 border-t border-dashed border-[#f2eaee]" />
+                    )}
+                    <CardChatRooms
+                      chatRooms={plan.chatRooms || []}
+                      onChatRoomClick={handleChatRoomClick}
+                      getRoomUnreadCount={getRoomUnreadCount}
                     />
-                  </div>
-
-                  {/* Interactive Button Layer - Positioned over the card but doesn't trigger card scale */}
-                  <div className="absolute inset-0 p-6 pointer-events-none z-10">
-                    <div className="invisible">
-                      <CardHeader index={index} ownerName={plan.onwerName} />
-                      <CardMembers members={plan.members} />
-                    </div>
-                    <div id={isFirst ? "plan-channels-0" : undefined}>
-                      <CardChatRooms
-                        chatRooms={plan.chatRooms || []}
-                        onChatRoomClick={handleChatRoomClick}
-                        getRoomUnreadCount={getRoomUnreadCount}
-                      />
-                    </div>
                   </div>
                 </div>
               );
