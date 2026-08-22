@@ -1,17 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  X,
-  Calendar,
-  User,
-  Wallet,
-  LogOut,
-  Check,
-  Heart,
-  Sparkles,
-  MapPin,
-} from "lucide-react";
+import { X, Calendar, Wallet, LogOut, Check, MapPin } from "lucide-react";
 import { parseLocalDate, getDaysUntil } from "@/lib/utils";
 import DatePickerModal from "./DatePickerModal";
 
@@ -44,6 +34,47 @@ function formatDate(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+/** "2026-12-31" → "2026년 12월 31일 (목)". 못 읽으면 원문 그대로 */
+function formatKoreanDate(value: string): string {
+  const d = parseLocalDate(value);
+  if (!d) return value || "";
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${
+    WEEKDAYS[d.getDay()]
+  })`;
+}
+
+/** 라벨을 항상 띄우는 입력 상자.
+ *
+ * 예전에는 placeholder 만 있어서 값을 넣는 순간 무슨 칸인지 사라졌다 —
+ * 화면에 `4200`, `2026-11-14` 만 남고 그게 예산인지 날짜인지 알 길이 없었다.
+ */
+const Field: React.FC<{
+  label: string;
+  /** 라벨 옆 회색 보조 문구 ("(선택)" 등) */
+  labelHint?: string;
+  /** 오른쪽 끝 단위·안내 ("만원", "눌러서 바꾸기") */
+  suffix?: string;
+  children: React.ReactNode;
+}> = ({ label, labelHint, suffix, children }) => (
+  <div className="rounded-2xl border border-[#efe7eb] bg-white px-4 py-2.5 transition-all focus-within:border-[#ee2b8c] focus-within:ring-4 focus-within:ring-[#ee2b8c14]">
+    <div className="flex items-baseline justify-between gap-3">
+      <label className="text-[11.5px] text-gray-400">
+        {label}
+        {labelHint && <span className="ml-1 text-gray-300">{labelHint}</span>}
+      </label>
+      {suffix && (
+        <span className="shrink-0 text-[11.5px] text-gray-400">{suffix}</span>
+      )}
+    </div>
+    {children}
+  </div>
+);
+
+const INPUT_CLASS =
+  "w-full bg-transparent text-[15px] font-bold tracking-[-0.01em] text-[#1b0d14] outline-none placeholder:font-normal placeholder:text-[#c8bfc4]";
 
 const SettingsPage: React.FC<SettingsPageProps> = ({
   user,
@@ -114,243 +145,246 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         ? "D-Day"
         : `D+${Math.abs(daysRemaining)}`;
 
-  return (
-    <div className="flex-1 flex flex-col bg-[#fcfbfc] animate-in slide-in-from-right duration-300 relative overflow-hidden">
-      {/* Decorative background elements matching the main theme */}
-      <div className="absolute -top-20 -left-20 w-64 h-64 bg-[#ee2b8c0a] rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 -right-32 w-80 h-80 bg-[#ee2b8c05] rounded-full blur-3xl pointer-events-none" />
+  const avatar = (size: "sm" | "lg") =>
+    user.profileImageUrl ? (
+      <img
+        src={user.profileImageUrl}
+        alt="프로필"
+        className={`shrink-0 rounded-full border-2 border-[#ee2b8c22] object-cover ${
+          size === "lg" ? "h-[68px] w-[68px]" : "h-11 w-11"
+        }`}
+      />
+    ) : (
+      <div
+        className={`flex shrink-0 items-center justify-center rounded-full border-2 border-[#ee2b8c22] bg-gradient-to-br from-[#ee2b8c] to-[#ff7eb3] font-black text-white ${
+          size === "lg" ? "h-[68px] w-[68px] text-[26px]" : "h-11 w-11 text-lg"
+        }`}
+        aria-hidden
+      >
+        {formData.name?.trim().charAt(0)?.toUpperCase() || "?"}
+      </div>
+    );
 
-      {/* 헤더 + 닫기 버튼 */}
-      <header className="px-6 pt-12 pb-6 flex justify-between items-center relative z-10 w-full md:mx-auto md:max-w-[640px] md:px-8 md:pt-10">
-        <div className="flex items-center gap-4">
-          {/* 프로필 사진: 있으면 이미지, 없으면 이름 첫 글자 원형 */}
-          {user.profileImageUrl ? (
-            <img
-              src={user.profileImageUrl}
-              alt="프로필"
-              className="w-14 h-14 rounded-full object-cover border-2 border-[#ee2b8c22] shadow-sm flex-shrink-0"
-            />
-          ) : (
-            <div
-              className="w-14 h-14 rounded-full bg-gradient-to-br from-[#ee2b8c] to-[#ff7eb3] flex items-center justify-center text-white text-xl font-black flex-shrink-0 shadow-sm border-2 border-[#ee2b8c22]"
-              aria-hidden
-            >
-              {user.name?.trim().charAt(0)?.toUpperCase() || "?"}
-            </div>
-          )}
-          <div>
-            <h2 className="text-3xl font-black text-[#1b0d14] tracking-tight">
+  return (
+    <div className="flex flex-1 flex-col overflow-hidden bg-[#fcfbfc]">
+      {/* 다른 화면과 같은 머리글 띠 */}
+      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-stone-100 bg-white px-6 py-4 md:px-8 md:py-5">
+        <div className="flex min-w-0 items-center gap-3">
+          {avatar("sm")}
+          <div className="min-w-0">
+            <h2 className="truncate text-[20px] font-bold leading-tight tracking-[-0.02em] text-[#1b0d14] md:text-[22px]">
               프로필
             </h2>
-            <p className="text-xs font-bold text-[#ee2b8c88] uppercase tracking-widest mt-1">
+            <p className="mt-1 text-[12.5px] text-[#7a6c74]">
               결혼 정보를 관리해요
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm hover:bg-gray-50 transition-all border border-[#ee2b8c11] active:scale-90"
-        >
-          <X className="w-6 h-6 text-gray-400" />
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {/* D-day 는 여기 한 곳에만 둔다. 옆 미리보기 카드에도 넣으면
+              넓은 화면에서 같은 값이 두 번 보인다 */}
+          <span className="rounded-full bg-[#fff2f6] px-3 py-1 text-[12.5px] font-bold text-[#ee2b8c]">
+            {ddayLabel}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-stone-400 transition-colors hover:bg-stone-50 hover:text-stone-600"
+            aria-label="닫기"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
       </header>
 
-      <div className="flex-1 px-6 space-y-8 overflow-y-auto no-scrollbar pb-40 relative z-10 w-full md:mx-auto md:max-w-[640px] md:px-8 md:pb-16">
-        {/* 결혼식 D-day 카드 */}
-        <div className="bg-gradient-to-br from-[#ee2b8c] to-[#ff7eb3] p-6 rounded-[32px] text-white shadow-xl shadow-[#ee2b8c22] relative overflow-hidden">
-          <Heart className="absolute -bottom-4 -right-4 w-32 h-32 opacity-10 rotate-12" />
-          <div className="relative z-10 flex items-center justify-between">
-            <div>
-              <p className="text-white/70 text-[10px] font-extrabold uppercase tracking-widest mb-1">
-                결혼식 날짜
+      {/*
+        @container: 2열 분기를 뷰포트가 아니라 이 영역이 실제로 차지한 폭으로
+        정한다. 셸의 레일이 768/1024 에서 폭을 크게 바꾼다 (budget-detail 과
+        같은 이유).
+      */}
+      <div className="@container no-scrollbar flex-1 overflow-y-auto px-4 py-4 pb-32 md:mx-auto md:w-full md:max-w-[1100px] md:px-8 md:pt-6 md:pb-10">
+        <div className="grid gap-4 @[860px]:grid-cols-[320px_minmax(0,1fr)] @[860px]:items-start @[860px]:gap-5">
+          {/*
+            왼쪽 열. 좁으면 폼 아래로 내려간다(order) — 미리보기는 넓은 화면의
+            덤이고, 폰에서 위에 두면 정작 고치러 온 폼이 화면 밖으로 밀린다.
+            로그아웃도 폰에서는 맨 끝이 제자리다.
+          */}
+          <div className="order-2 grid gap-4 @[860px]:order-1">
+            {/*
+              "저장하면 이렇게 보인다" 미리보기. formData 를 그대로 읽으므로
+              오른쪽에서 고치는 대로 같이 바뀐다 — 저장 전에 결과를 확인하는
+              게 이 카드의 존재 이유라 user 가 아니라 formData 를 쓴다.
+              좁을 때는 바로 위 폼과 같은 값을 두 번 보여줄 뿐이라 감춘다.
+            */}
+            <div className="hidden rounded-[28px] border border-[#ee2b8c0f] bg-white p-6 text-center shadow-sm @[860px]:block">
+              <div className="mx-auto mt-1 mb-4 w-fit">{avatar("lg")}</div>
+              <p className="truncate text-[19px] font-bold tracking-[-0.02em] text-[#1b0d14]">
+                {formData.name.trim() || "이름을 입력해 주세요"}
               </p>
-              <h3 className="text-2xl font-bold">{formData.name}님</h3>
+
+              <dl className="mt-4 text-left text-[12.5px]">
+                <div className="flex items-baseline justify-between gap-3 py-2.5">
+                  <dt className="shrink-0 text-gray-400">결혼식</dt>
+                  <dd className="truncate font-bold text-[#1b0d14]">
+                    {formatKoreanDate(formData.weddingDate) || "미정"}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-3 border-t border-[#f4eff2] py-2.5">
+                  <dt className="shrink-0 text-gray-400">예식장</dt>
+                  <dd
+                    className={`truncate ${
+                      formData.weddingVenue?.trim()
+                        ? "font-bold text-[#1b0d14]"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {formData.weddingVenue?.trim() || "미정"}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-3 border-t border-[#f4eff2] py-2.5">
+                  <dt className="shrink-0 text-gray-400">예산</dt>
+                  <dd className="font-user-content text-[15px] font-bold tracking-[-0.02em] text-[#1b0d14]">
+                    {formData.budget.toLocaleString("ko-KR")}만원
+                  </dd>
+                </div>
+              </dl>
             </div>
-            <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20">
-              <span className="text-xl font-black">{ddayLabel}</span>
+
+            <div className="rounded-[28px] border border-[#ee2b8c0f] bg-white p-5 shadow-sm">
+              {confirmSignOut ? (
+                // 로그아웃은 저장된 플랜 데이터까지 지우므로 한 번 더 확인받는다
+                <div className="space-y-3">
+                  <p className="text-[12.5px] leading-relaxed text-[#8a3236]">
+                    로그아웃하면 이 기기에 저장된 플랜 정보가 지워집니다.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmSignOut(false)}
+                      className="h-11 flex-1 rounded-xl border border-stone-200 bg-white text-[13px] font-bold text-[#1b0d14] transition-colors hover:bg-stone-50"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onSignOut}
+                      className="h-11 flex-1 rounded-xl bg-[#c0203c] text-[13px] font-bold text-white transition-colors hover:bg-[#a51b33]"
+                    >
+                      로그아웃
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmSignOut(true)}
+                  className="flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[#e5484d33] bg-white text-[13px] font-bold text-[#c0203c] transition-colors hover:bg-[#fffafa]"
+                >
+                  <LogOut className="h-4 w-4" />
+                  로그아웃
+                </button>
+              )}
             </div>
           </div>
-        </div>
+          {/* 편집 폼 — 폰에서는 이게 첫 카드다 */}
+          <div className="order-1 rounded-[28px] border border-[#ee2b8c0f] bg-white p-6 shadow-sm @[860px]:order-2">
+            <p className="mb-4 text-[12.5px] text-gray-400">정보 수정</p>
 
-        {/* 폼 섹션 */}
-        <div className="space-y-6">
-          <section className="space-y-4">
-            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
-              <User className="w-3 h-3" /> 기본 정보
-            </h4>
-
-            {/* Name Input */}
-            <div className="group space-y-2">
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#ee2b8c] transition-colors">
-                  <User className="w-5 h-5" />
-                </div>
+            <div className="grid gap-3">
+              <Field label="이름">
                 <input
                   type="text"
-                  placeholder="이름"
+                  placeholder="이름을 입력해 주세요"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full h-16 pl-14 pr-6 bg-white border border-[#ee2b8c0a] rounded-3xl shadow-sm outline-none focus:ring-4 focus:ring-[#ee2b8c0a] focus:border-[#ee2b8c44] font-bold text-lg text-[#1b0d14] transition-all"
+                  className={INPUT_CLASS}
                 />
-              </div>
-            </div>
+              </Field>
 
-            {/* 결혼식 날짜 - DatePickerModal 사용 (add-plen과 동일) */}
-            <div className="group space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1 min-w-0">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#ee2b8c] transition-colors pointer-events-none">
-                    <Calendar className="w-5 h-5" />
-                  </div>
-                  <div
-                    onClick={() => setIsDatePickerOpen(true)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setIsDatePickerOpen(true);
-                      }
-                    }}
-                    className="w-full h-16 pl-14 pr-6 bg-white border border-[#ee2b8c0a] rounded-3xl shadow-sm outline-none focus:ring-4 focus:ring-[#ee2b8c0a] focus:border-[#ee2b8c44] font-bold text-lg text-[#1b0d14] transition-all flex items-center cursor-pointer hover:border-[#ee2b8c44]"
-                  >
-                    {formData.weddingDate || "날짜 선택"}
-                  </div>
-                </div>
+              {/*
+                날짜는 DatePickerModal 로만 고친다 (add-plen 과 같다).
+                예전에는 칸 옆에 보라색 달력 버튼이 따로 있었는데, 칸 자체가
+                이미 눌리므로 하는 일이 같았고 앱에 없는 색이었다.
+              */}
+              <Field label="결혼식 날짜" suffix="눌러서 바꾸기">
                 <button
                   type="button"
                   onClick={() => setIsDatePickerOpen(true)}
-                  className="w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center hover:from-purple-100 hover:to-purple-200 transition-all shadow-sm"
-                  aria-label="날짜 선택"
+                  className="flex w-full items-center gap-2 text-left text-[15px] font-bold tracking-[-0.01em] text-[#1b0d14]"
                 >
-                  <Calendar className="w-6 h-6 text-purple-600" />
+                  <Calendar className="h-4 w-4 shrink-0 text-[#ee2b8c]" />
+                  {formatKoreanDate(formData.weddingDate) || "날짜 선택"}
                 </button>
-              </div>
+              </Field>
+
+              {/*
+                예식장 이름. 비워 둘 수 있다 — 아직 안 정한 사람이 대부분이고,
+                넣어 두면 홈 상단에 결혼식 날짜와 나란히 붙는다.
+              */}
+              <Field label="예식장" labelHint="(선택)">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 shrink-0 text-gray-300" />
+                  <input
+                    type="text"
+                    placeholder="아직 안 정했어요"
+                    value={formData.weddingVenue ?? ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, weddingVenue: e.target.value })
+                    }
+                    className={INPUT_CLASS}
+                  />
+                </div>
+              </Field>
+
+              <Field label="예산" suffix="만원">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4 shrink-0 text-gray-300" />
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={formData.budget}
+                    onChange={(e) => {
+                      // 빈 값은 0으로, 음수는 0으로 막는다 (0은 유효한 예산)
+                      const raw = e.target.value;
+                      const n = raw === "" ? 0 : Number(raw);
+                      setFormData({
+                        ...formData,
+                        budget: Number.isFinite(n) ? Math.max(0, n) : 0,
+                      });
+                    }}
+                    className={`input-no-spinner font-user-content ${INPUT_CLASS}`}
+                  />
+                </div>
+              </Field>
             </div>
 
-            {/*
-              예식장 이름. 비워 둘 수 있다 — 아직 안 정한 사람이 대부분이고,
-              넣어 두면 홈 상단에 결혼식 날짜와 나란히 붙는다.
-            */}
-            <div className="group space-y-2">
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#ee2b8c] transition-colors">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="예식장 (선택)"
-                  value={formData.weddingVenue ?? ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, weddingVenue: e.target.value })
-                  }
-                  className="w-full h-16 pl-14 pr-6 bg-white border border-[#ee2b8c0a] rounded-3xl shadow-sm outline-none focus:ring-4 focus:ring-[#ee2b8c0a] focus:border-[#ee2b8c44] font-bold text-lg text-[#1b0d14] transition-all"
-                />
-              </div>
-            </div>
-          </section>
-
-          <section className="space-y-4">
-            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
-              <Wallet className="w-3 h-3" /> 예산 설정
-            </h4>
-
-            {/* Budget Input */}
-            <div className="group space-y-2">
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#ee2b8c] transition-colors">
-                  <Wallet className="w-5 h-5" />
-                </div>
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="보유 예산 (만 원)"
-                  value={formData.budget}
-                  onChange={(e) => {
-                    // 빈 값은 0으로, 음수는 0으로 막는다 (0은 유효한 예산)
-                    const raw = e.target.value;
-                    const n = raw === "" ? 0 : Number(raw);
-                    setFormData({
-                      ...formData,
-                      budget: Number.isFinite(n) ? Math.max(0, n) : 0,
-                    });
-                  }}
-                  className="input-font-theme input-no-spinner w-full h-16 pl-14 pr-6 bg-white border border-[#ee2b8c0a] rounded-3xl shadow-sm outline-none focus:ring-4 focus:ring-[#ee2b8c0a] focus:border-[#ee2b8c44] font-bold text-lg text-[#1b0d14] transition-all"
-                />
-                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-gray-400">
-                  만원
-                </span>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="space-y-4 pt-4">
-          {saveError && (
-            <p
-              role="alert"
-              className="text-center text-sm font-bold text-[#c0203c] bg-[#c0203c11] rounded-2xl py-3 px-4"
-            >
-              {saveError}
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaved || isSaving}
-            className={`w-full h-16 rounded-[24px] font-black text-lg transition-all transform active:scale-95 shadow-xl flex items-center justify-center gap-3 disabled:cursor-not-allowed ${
-              isSaved
-                ? "bg-green-500 text-white shadow-green-100"
-                : "bg-[#1b0d14] text-white hover:bg-[#3a1c2b] shadow-[#1b0d1422] disabled:opacity-70"
-            }`}
-          >
-            {isSaved ? (
-              <Check className="w-6 h-6 animate-bounce" />
-            ) : (
-              <Sparkles className="w-5 h-5 text-[#ee2b8c]" />
-            )}
-            {isSaved ? "저장되었어요" : isSaving ? "저장 중..." : "프로필 수정"}
-          </button>
-
-          <div className="pt-8">
-            {confirmSignOut ? (
-              // 로그아웃은 저장된 플랜 데이터까지 지우므로 한 번 더 확인받는다
-              <div className="space-y-3 rounded-[20px] border border-[#ee2b8c22] bg-[#ee2b8c08] p-4">
-                <p className="text-center text-sm font-bold text-[#1b0d14]">
-                  로그아웃하면 이 기기에 저장된 플랜 정보가 지워집니다.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmSignOut(false)}
-                    className="flex-1 h-12 rounded-2xl border border-gray-200 bg-white font-bold text-sm text-[#1b0d14] hover:bg-gray-50 transition-all"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onSignOut}
-                    className="flex-1 h-12 rounded-2xl bg-[#ee2b8c] font-bold text-sm text-white hover:bg-[#d4237b] transition-all"
-                  >
-                    로그아웃
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmSignOut(true)}
-                className="w-full h-14 bg-[#ee2b8c08] border border-[#ee2b8c11] rounded-[20px] font-bold text-[#ee2b8cbb] hover:text-[#ee2b8c] hover:bg-[#ee2b8c11] transition-all flex items-center justify-center gap-2 text-sm"
+            {saveError && (
+              <p
+                role="alert"
+                className="mt-4 rounded-2xl bg-[#c0203c11] px-4 py-3 text-center text-[13px] font-bold text-[#c0203c]"
               >
-                <LogOut className="w-4 h-4" />
-                로그아웃
-              </button>
+                {saveError}
+              </p>
             )}
-            <p className="text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest mt-6">
+
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaved || isSaving}
+              className={`mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-[15px] font-bold text-white transition-all active:scale-[0.99] disabled:cursor-not-allowed ${
+                isSaved
+                  ? "bg-green-500"
+                  : "bg-[#ee2b8c] hover:bg-[#d4237b] disabled:opacity-70"
+              }`}
+            >
+              {isSaved && <Check className="h-5 w-5" />}
+              {isSaved ? "저장되었어요" : isSaving ? "저장 중..." : "저장"}
+            </button>
+
+            <p className="mt-4 text-center text-[12px] text-gray-300">
               공지 사항 및 소개
             </p>
           </div>
