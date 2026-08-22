@@ -9,6 +9,7 @@ import {
   CircleHelp,
   CirclePlus,
   Crown,
+  Heart,
   Info,
   LogOut,
   Mail,
@@ -134,6 +135,8 @@ interface PlanUserData {
     name: string;
     /** 마지막 대화 한 줄. 사진·플랜 공유는 텍스트가 없어 null 이다 */
     lastMessage?: string | null;
+    /** 신랑·신부 방. 방장과 배우자 둘만 있는 방이다 */
+    isCouple?: boolean;
   }[];
   hasSeenMainGuide?: boolean;
   hasSeenBudgetGuide?: boolean;
@@ -1875,6 +1878,16 @@ function MainPageContent() {
                             <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
                           </span>
                         )}
+                        {/* 신랑·신부는 하트로 구분한다 */}
+                        {String(member.permission ?? "").toUpperCase() ===
+                          "SPOUSE" && (
+                          <span
+                            className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-[#ee2b8c] text-white shadow-sm"
+                            aria-hidden
+                          >
+                            <Heart className="w-2.5 h-2.5 fill-current" />
+                          </span>
+                        )}
                         {String(member.permission ?? "").toUpperCase() ===
                           "WRITE" &&
                           String(member.permission ?? "").toUpperCase() !==
@@ -1956,6 +1969,16 @@ function MainPageContent() {
                             aria-hidden
                           >
                             <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
+                          </span>
+                        )}
+                        {/* 신랑·신부는 하트로 구분한다 */}
+                        {String(member.permission ?? "").toUpperCase() ===
+                          "SPOUSE" && (
+                          <span
+                            className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-[#ee2b8c] text-white shadow-sm"
+                            aria-hidden
+                          >
+                            <Heart className="w-2.5 h-2.5 fill-current" />
                           </span>
                         )}
                         {String(member.permission ?? "").toUpperCase() ===
@@ -2599,6 +2622,12 @@ function MainPageContent() {
           !isSharedView
         }
         onAddPlan={handleAddPlan}
+        onOpenMembers={() => setShowShareModal(true)}
+        members={
+          apiPlanData && apiPlanData !== "none"
+            ? (apiPlanData.members ?? [])
+            : []
+        }
         refreshToken={dashboardRefresh}
         // 상세 인스펙터도 등록 pane 과 같은 자리를 쓴다. 둘 중 뭐가 열리든
         // 대시보드가 쓸 수 있는 폭은 400px 넘게 줄어든다.

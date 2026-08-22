@@ -8,6 +8,7 @@ import { formatKoreanTime, getKstDate, parseLocalDate } from "@/lib/utils";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import ActivityPanel from "./ActivityPanel";
+import CoupleChatBadge, { sortCoupleFirst } from "./CoupleChatBadge";
 import PlanTaskCardBody, { PlanTaskItem } from "./PlanTaskCard";
 
 /** GET /plan/user/amount/category-chart 항목 */
@@ -42,12 +43,22 @@ interface HomeDashboardProps {
   totalBudget: number;
   remainingBudget: number;
   budgetUsagePercentage: number;
-  chatRooms: { id: number; name: string; lastMessage?: string | null }[];
+  chatRooms: {
+    id: number;
+    name: string;
+    lastMessage?: string | null;
+    /** 신랑·신부 방. 맨 위에 두고 배지를 붙인다 */
+    isCouple?: boolean;
+  }[];
   /** 참여 방. 예산·활동 조회 범위를 정한다 */
   roomId: string | null;
   /** READ 권한이면 추가·완료를 막는다 */
   canEdit: boolean;
   onAddPlan: () => void;
+  /** 참여 멤버 보기 · 신랑·신부 지정. 공유 모달을 연다 */
+  onOpenMembers: () => void;
+  /** 헤더 아바타에 쓸 멤버 목록 */
+  members?: { planUserId: string; name: string; image: string | null }[];
   /**
    * 값이 바뀌면 일정·예산을 다시 받는다. 옆 pane 에서 플랜을 저장한 뒤
    * 부모가 올린다 — 통째로 remount 하면 화면이 한 번 깜빡인다.
@@ -114,6 +125,8 @@ export default function HomeDashboard({
   roomId,
   canEdit,
   onAddPlan,
+  onOpenMembers,
+  members = [],
   refreshToken = 0,
   narrow = false,
   onToggle,
@@ -325,6 +338,36 @@ export default function HomeDashboard({
             </>
           )}
           <div className="ml-auto flex shrink-0 items-center gap-2.5">
+            {/*
+              멤버 보기 진입점. 예전에는 공유 버튼이 "멤버가 나 혼자일 때"만
+              떠서, 사람이 들어온 뒤에는 신랑·신부를 지정할 방법이 없었다.
+            */}
+            <button
+              type="button"
+              onClick={onOpenMembers}
+              aria-label="참여 멤버"
+              className="flex h-10 items-center gap-1.5 rounded-[13px] border border-[#f0e3ea] bg-white pl-2 pr-3 transition-colors hover:border-[#ee2b8c55]"
+            >
+              <span className="flex -space-x-1.5">
+                {members.slice(0, 3).map((m) => (
+                  <span
+                    key={m.planUserId}
+                    className="grid h-6 w-6 place-items-center overflow-hidden rounded-full border-2 border-white bg-[#ee2b8c22] text-[10px] font-bold text-[#ee2b8c]"
+                  >
+                    {m.image ? (
+                      <img
+                        src={m.image}
+                        alt={m.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      (m.name?.trim().charAt(0) ?? "?")
+                    )}
+                  </span>
+                ))}
+              </span>
+              <span className="text-[13px] text-[#6b6570]">멤버</span>
+            </button>
             <button
               type="button"
               onClick={onOpenBoard}
@@ -710,7 +753,7 @@ export default function HomeDashboard({
                   </button>
                 </div>
                 <div className="grid gap-1 [&>*]:min-w-0">
-                  {chatRooms.map((room) => {
+                  {sortCoupleFirst(chatRooms).map((room) => {
                     const unread = getRoomUnreadCount(room.id);
                     return (
                       <button
@@ -728,8 +771,11 @@ export default function HomeDashboard({
                           {room.name?.trim().charAt(0) || "채"}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13.5px] font-bold tracking-tight text-[#1b0d14]">
-                            {room.name}
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <span className="truncate text-[13.5px] font-bold tracking-tight text-[#1b0d14]">
+                              {room.name}
+                            </span>
+                            {room.isCouple && <CoupleChatBadge size="sm" />}
                           </span>
                           {room.lastMessage && (
                             <span className="mt-0.5 block truncate text-[12px] text-gray-400">

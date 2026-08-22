@@ -1,6 +1,8 @@
 export interface ChatRoom {
   id: number;
   name: string;
+  /** 신랑·신부 방. 방장과 배우자 둘만 있는 방이다 */
+  isCouple?: boolean;
   memberList: {
     planUserId: string;
     name: string;

@@ -153,6 +153,10 @@ function installMocks(page) {
         .catch(() => {});
       return;
     }
+    if (p0 === "/plan/room/spouse") {
+      req.respond(ok(null)).catch(() => {});
+      return;
+    }
     if (p0 === "/plan/user") {
       req
         .respond(
@@ -176,7 +180,13 @@ function installMocks(page) {
                 planUserId: "u-2",
                 name: "박현우",
                 image: null,
-                permission: "WRITE",
+                permission: "SPOUSE",
+              },
+              {
+                planUserId: "u-3",
+                name: "엄마",
+                image: null,
+                permission: "READ",
               },
             ],
             chatRooms: [
@@ -187,6 +197,8 @@ function installMocks(page) {
               },
               {
                 id: 102,
+                // 실제 API 는 방장+배우자 둘만 있는 방 하나에만 붙인다
+                isCouple: true,
                 name: "항공 · 숙소",
                 lastMessage: "말레 직항이 40만원 더 비싸긴 한데",
               },
@@ -548,6 +560,34 @@ function installMocks(page) {
     `캡처 main-1440-empty-month.png   제목=${emptyState.제목} 추가카드=${emptyState.추가카드}`,
   );
   emptyThisMonth = false;
+
+  // 공유 모달의 참여 멤버 + 신랑·신부 지정
+  await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
+  await page.goto(`${ORIGIN}/main`, {
+    waitUntil: "networkidle2",
+    timeout: 60000,
+  });
+  await wait(2200);
+  const openedShare = await page.evaluate(() => {
+    const b = document.querySelector('[aria-label="참여 멤버"]');
+    if (!b) return "버튼 없음";
+    b.click();
+    return "clicked";
+  });
+  await wait(1600);
+  await page.screenshot({ path: path.join(OUT, "main-share-modal.png") });
+  const modal = await page.evaluate(() => {
+    const txt = document.body.innerText.replace(/\s+/g, " ");
+    return {
+      멤버목록: txt.includes("참여 멤버"),
+      배지: txt.includes("신랑 · 신부"),
+      지정버튼: txt.includes("배우자로"),
+      조언자: txt.includes("조언자"),
+    };
+  });
+  console.log(
+    `공유 모달 ${openedShare} → 멤버목록=${modal.멤버목록} 배지=${modal.배지} 지정버튼=${modal.지정버튼} 조언자=${modal.조언자}`,
+  );
 
   // 대시보드에서 일정을 누르면 >=1024 는 옆 인스펙터에서 열려야 한다.
   // 예전에는 폭과 관계없이 /schedule-detail 로 나가 448px 폰 띠가 됐다.

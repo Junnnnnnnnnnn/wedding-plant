@@ -14,6 +14,9 @@ import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { getToken } from "@/lib/api";
 import AppShell from "../components/AppShell";
+import CoupleChatBadge, {
+  sortCoupleFirst,
+} from "../components/CoupleChatBadge";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
 import ChatRoomView from "../chat/[chatRoomId]/ChatRoomView";
@@ -124,7 +127,7 @@ const CardChatRooms: React.FC<CardChatRoomsProps> = ({
     className={`mt-2 mb-6 space-y-2 ${interactive ? "pointer-events-auto" : ""}`}
   >
     <div className="grid grid-cols-1 gap-2">
-      {chatRooms?.map((chatRoom) => (
+      {sortCoupleFirst(chatRooms ?? []).map((chatRoom) => (
         <div
           key={chatRoom.id}
           onClick={
@@ -135,7 +138,7 @@ const CardChatRooms: React.FC<CardChatRoomsProps> = ({
                 }
               : undefined
           }
-          className={`flex items-center justify-between p-3 bg-[#fcfbfc] rounded-2xl transition-all border border-transparent ${interactive ? "hover:bg-white hover:border-[#ee2b8c11] hover:shadow-md hover:shadow-[#ee2b8c0a] group/chat-item cursor-pointer active:scale-[0.98]" : ""}`}
+          className={`flex items-center justify-between p-3 rounded-2xl transition-all border ${chatRoom.isCouple ? "bg-[#fff7fa] border-[#ee2b8c22]" : "bg-[#fcfbfc] border-transparent"} ${interactive ? "hover:bg-white hover:border-[#ee2b8c11] hover:shadow-md hover:shadow-[#ee2b8c0a] group/chat-item cursor-pointer active:scale-[0.98]" : ""}`}
         >
           <div className="flex items-center gap-3 relative">
             {getRoomUnreadCount(chatRoom.id) > 0 && (
@@ -153,8 +156,9 @@ const CardChatRooms: React.FC<CardChatRoomsProps> = ({
               <MessageCircle className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-black text-[#1b0d14]">
+              <h4 className="flex items-center gap-1.5 text-sm font-black text-[#1b0d14]">
                 {chatRoom.name}
+                {chatRoom.isCouple && <CoupleChatBadge size="sm" />}
               </h4>
               <div className="flex items-center -space-x-1.5 mt-1">
                 {(chatRoom.memberList ?? []).slice(0, 4).map((m, i) => (

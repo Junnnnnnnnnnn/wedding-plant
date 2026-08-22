@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useApi } from "../../contexts/ApiContext";
 import { useNotification } from "../../contexts/NotificationContext";
+import CoupleChatBadge from "../../components/CoupleChatBadge";
 import CustomAlertModal from "../../components/CustomAlertModal";
 import {
   getToken,
@@ -60,6 +61,8 @@ interface RoomMember {
 interface ChatInfo {
   id: number;
   name: string;
+  /** 신랑·신부 방. 방장과 배우자 둘만 있는 방이다 */
+  isCouple?: boolean;
   memberList: RoomMember[];
 }
 
@@ -512,6 +515,8 @@ export default function ChatRoomView({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [roomName, setRoomName] = useState("플랜톡");
+  /** 신랑·신부 방이면 머리글에 표식을 단다 */
+  const [isCoupleRoom, setIsCoupleRoom] = useState(false);
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
@@ -763,6 +768,7 @@ export default function ChatRoomView({
         const json: ChatInfoResponse = await res.json();
         if (json.result && json.data) {
           setRoomName(json.data.name);
+          setIsCoupleRoom(json.data.isCouple === true);
           const memberList = json.data.memberList ?? [];
           setMembers(memberList);
           membersRef.current = memberList;
@@ -1116,8 +1122,9 @@ export default function ChatRoomView({
                 </button>
               )}
               <div className="min-w-0">
-                <h1 className="text-xl font-normal text-[#1b0d14] max-w-[200px] truncate leading-tight tracking-tight">
-                  {roomName}
+                <h1 className="flex items-center gap-2 text-xl font-normal text-[#1b0d14] max-w-[260px] truncate leading-tight tracking-tight">
+                  <span className="truncate">{roomName}</span>
+                  {isCoupleRoom && <CoupleChatBadge size="sm" />}
                 </h1>
                 <p className="text-[10px] text-stone-400 font-medium mt-1 truncate max-w-[200px]">
                   {members.length > 0

@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Share2, MessageCircle, CalendarRange, Sprout } from "lucide-react";
+import {
+  X,
+  Share2,
+  MessageCircle,
+  CalendarRange,
+  Sprout,
+  Heart,
+} from "lucide-react";
 import { useApi } from "@/app/contexts/ApiContext";
 
 interface SharePlanModalProps {
@@ -9,11 +16,66 @@ interface SharePlanModalProps {
   onClose: () => void;
 }
 
+/** GET /plan/user 의 members 항목 */
+interface RoomMember {
+  planUserId: string;
+  name: string;
+  image: string | null;
+  permission: string;
+}
+
 const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
   const [shareError, setShareError] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareUrlLoading, setShareUrlLoading] = useState(false);
   const { fetchWithAuth } = useApi();
+  /**
+   * 멤버 목록과 배우자 지정. 초대하고 · 누가 들어왔는지 보고 · 신랑·신부를
+   * 정하는 일이 한 흐름이라 공유 모달에 같이 둔다.
+   */
+  const [members, setMembers] = useState<RoomMember[]>([]);
+  const [isOwner, setIsOwner] = useState(false);
+  const [spouseSaving, setSpouseSaving] = useState<string | null>(null);
+
+  const loadMembers = React.useCallback(async () => {
+    try {
+      const res = await fetchWithAuth("/plan/user", { skipLoading: true });
+      const json = (await res.json().catch(() => null)) as {
+        result?: boolean;
+        data?: { id?: string; members?: RoomMember[] };
+      } | null;
+      if (json?.result !== true || !json.data) return;
+
+      const list = json.data.members ?? [];
+      setMembers(list);
+      // 방장만 배우자를 정할 수 있다
+      setIsOwner(
+        list.some(
+          (m) =>
+            m.planUserId === json.data?.id &&
+            m.permission?.toUpperCase() === "OWNER",
+        ),
+      );
+    } catch {
+      // 공유 모달의 부가 정보라 실패해도 링크 공유는 그대로 쓸 수 있다
+    }
+  }, [fetchWithAuth]);
+
+  const setSpouse = async (planUserId: string | null) => {
+    setSpouseSaving(planUserId ?? "clear");
+    try {
+      await fetchWithAuth("/plan/room/spouse", {
+        method: "PATCH",
+        body: JSON.stringify({ planUserId }),
+        skipLoading: true,
+      });
+      await loadMembers();
+    } catch {
+      setShareError("변경에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setSpouseSaving(null);
+    }
+  };
 
   // 모달이 열릴 때 미리 share code 조회
   useEffect(() => {
@@ -25,6 +87,7 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
     let cancelled = false;
     setShareUrlLoading(true);
     setShareError(null);
+    loadMembers();
     (async () => {
       try {
         const res = await fetchWithAuth("/plan/room/share-code", {
@@ -60,7 +123,7 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, fetchWithAuth]);
+  }, [isOpen, fetchWithAuth, loadMembers]);
 
   const handleShare = async () => {
     setShareError(null);
@@ -184,6 +247,75 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
         </div>
+
+        {/* 참여 멤버 + 신랑·신부 지정 */}
+        {members.length > 0 && (
+          <div className="mt-6 flex-shrink-0 rounded-2xl border border-gray-50 bg-[#fcfbfc] p-4">
+            <h4 className="mb-3 text-[13px] font-black text-[#1b0d14]">
+              참여 멤버
+            </h4>
+            <div className="space-y-2">
+              {members.map((m) => {
+                const perm = m.permission?.toUpperCase();
+                const isSpouse = perm === "SPOUSE";
+                const isRoomOwner = perm === "OWNER";
+                return (
+                  <div
+                    key={m.planUserId}
+                    className="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5"
+                  >
+                    <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-[#ee2b8c11] text-[12px] font-black text-[#ee2b8c]">
+                      {m.image ? (
+                        <img
+                          src={m.image}
+                          alt={m.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        (m.name?.trim().charAt(0) ?? "?")
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-bold text-[#1b0d14]">
+                      {m.name}
+                    </span>
+                    {isRoomOwner ? (
+                      <span className="shrink-0 text-[11.5px] text-gray-400">
+                        방장
+                      </span>
+                    ) : isSpouse ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#fff2f6] px-2 py-1 text-[11px] font-bold text-[#ee2b8c]">
+                        <Heart className="h-2.5 w-2.5 fill-current" />
+                        신랑 · 신부
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[11.5px] text-gray-400">
+                        조언자
+                      </span>
+                    )}
+                    {isOwner && !isRoomOwner && (
+                      <button
+                        type="button"
+                        disabled={spouseSaving !== null}
+                        onClick={() =>
+                          setSpouse(isSpouse ? null : m.planUserId)
+                        }
+                        className="shrink-0 rounded-lg border border-[#f0e3ea] bg-white px-2.5 py-1 text-[11.5px] font-bold text-[#6b6570] transition-colors hover:border-[#ee2b8c55] hover:text-[#ee2b8c] disabled:opacity-50"
+                      >
+                        {isSpouse ? "해제" : "배우자로"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {isOwner && (
+              <p className="mt-3 text-[11.5px] leading-relaxed text-gray-400 break-keep">
+                신랑·신부는 한 명만 정할 수 있어요. 함께 일정과 예산을 고칠 수
+                있고, 나머지 멤버는 대화만 할 수 있어요.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Share Button at the bottom */}
         <div className="mt-6 sm:mt-8 space-y-3 flex-shrink-0">

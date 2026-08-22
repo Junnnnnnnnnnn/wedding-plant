@@ -42,7 +42,8 @@ const ok = (d) => ({
 });
 
 const ROOMS = [
-  { id: 101, name: "스드메" },
+  // 실제 API 는 방장+배우자 둘만 있는 방 하나에만 isCouple 을 붙인다
+  { id: 101, name: "스드메", isCouple: true },
   { id: 102, name: "본식 준비" },
   { id: 103, name: "예물 · 예단" },
 ];
@@ -64,6 +65,7 @@ const PLANS = [
     chatRooms: ROOMS.map((r) => ({
       id: r.id,
       name: r.name,
+      isCouple: r.isCouple === true,
       memberList: [
         { planUserId: "me-1", name: "김지수", image: null },
         { planUserId: "u-2", name: "박현우", image: null },
@@ -317,9 +319,12 @@ const hasToast = (page) =>
   await wait(1500);
 
   await page.evaluate(() => {
-    const el = [...document.querySelectorAll("h4")].find(
-      (h) => h.innerText.trim() === "스드메",
+    // 커플 방은 제목 옆에 "신랑 · 신부" 배지가 붙어 innerText 가 길어진다.
+    // 정확히 일치로 찾으면 못 찾는다.
+    const el = [...document.querySelectorAll("h4")].find((h) =>
+      h.innerText.trim().startsWith("스드메"),
     );
+    if (!el) throw new Error("스드메 채팅방을 찾지 못했다");
     el.closest("div[class*='rounded-2xl']").click();
   });
   await wait(2500);
