@@ -23,6 +23,13 @@ const ORIGIN = "http://localhost:3000";
 /** true 면 목이 8월 일정을 빼서 "이번 달 할 일"이 빈 상태를 만든다 */
 let emptyThisMonth = false;
 
+/**
+ * OVER=1 이면 자본을 넘긴 상태로 구동한다.
+ * 도넛은 100% 를 넘길 수 없어 초과 표현이 가장 어려운 경우다 —
+ * 자본 눈금과 빨간 초과 구간이 실제로 나오는지 여기서 본다.
+ */
+const OVER = !!process.env.OVER;
+
 const OUT = process.env.SHOT_DIR || __dirname;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -259,6 +266,21 @@ function installMocks(page) {
       p0 === "/plan/user/amount/category-chart" ||
       p0.startsWith("/plan/room/amount/category-chart")
     ) {
+      if (OVER) {
+        req
+          .respond(
+            ok({
+              list: [
+                { categoryName: "웨딩홀", totalAmount: 1122, usedAmount: 1111 },
+                { categoryName: "상견례", totalAmount: 125, usedAmount: 125 },
+                { categoryName: "기차", totalAmount: 7, usedAmount: 7 },
+                { categoryName: "스드메", totalAmount: 0, usedAmount: 0 },
+              ],
+            }),
+          )
+          .catch(() => {});
+        return;
+      }
       // 완료된 일정만 합산한다. 실제 API 와 같아야 토글 반영을 검증할 수 있다.
       const byCat = new Map();
       SCHEDULES.filter((x) => x.status === "COMPLETED").forEach((x) => {
@@ -305,12 +327,21 @@ function installMocks(page) {
     ) {
       req
         .respond(
-          ok({
-            initialCapital: 4200,
-            totalPlannedAndUsedAmount: 1340,
-            plannedUseAmount: 1850,
-            usedAmount: 1340,
-          }),
+          ok(
+            OVER
+              ? {
+                  initialCapital: 1000,
+                  totalPlannedAndUsedAmount: 1254,
+                  plannedUseAmount: 11,
+                  usedAmount: 1243,
+                }
+              : {
+                  initialCapital: 4200,
+                  totalPlannedAndUsedAmount: 1340,
+                  plannedUseAmount: 1850,
+                  usedAmount: 1340,
+                },
+          ),
         )
         .catch(() => {});
       return;
@@ -350,7 +381,9 @@ function installMocks(page) {
       const status = new URL(url).searchParams.get("status");
       const list = SCHEDULES.filter(
         (s) => s.status !== "DELETE" && (!status || s.status === status),
-      ).filter((s) => !emptyThisMonth || !(s.startDate || "").startsWith("2026-08"));
+      ).filter(
+        (s) => !emptyThisMonth || !(s.startDate || "").startsWith("2026-08"),
+      );
       req.respond(ok({ list, total: list.length })).catch(() => {});
       return;
     }
@@ -375,7 +408,6 @@ function installMocks(page) {
   });
 }
 
-
 (async () => {
   const browser = await p.launch({
     executablePath: CHROME,
@@ -384,7 +416,10 @@ function installMocks(page) {
   });
   const page = await browser.newPage();
   await page.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
-  await page.goto(`${ORIGIN}/`, { waitUntil: "domcontentloaded", timeout: 60000 });
+  await page.goto(`${ORIGIN}/`, {
+    waitUntil: "domcontentloaded",
+    timeout: 60000,
+  });
   await page.evaluateOnNewDocument((host) => {
     const Native = window.WebSocket;
     function Blocked(url, protocols) {
@@ -403,11 +438,22 @@ function installMocks(page) {
 
   for (const w of [375, 768, 1024, 1440, 2327]) {
     await page.setViewport({ width: w, height: 1000, deviceScaleFactor: 1 });
-    await page.goto(`${ORIGIN}/budget-detail`, { waitUntil: "networkidle2", timeout: 60000 });
+    await page.goto(`${ORIGIN}/budget-detail`, {
+      waitUntil: "networkidle2",
+      timeout: 60000,
+    });
     await wait(2400);
-    await page.screenshot({ path: path.join(OUT, `budget-${w}.png`) });
+    await page.screenshot({
+      path: path.join(OUT, `budget-${OVER ? "over-" : ""}${w}.png`),
+    });
     const info = await page.evaluate(() => {
-      const ids = ["budget-stat-grid", "budget-ai-insight", "budget-analysis", "budget-tab", "budget-list"];
+      const ids = [
+        "budget-stat-grid",
+        "budget-ai-insight",
+        "budget-analysis",
+        "budget-tab",
+        "budget-list",
+      ];
       const boxes = ids.map((id) => {
         const el = document.getElementById(id);
         if (!el) return `${id}=없음`;
@@ -415,12 +461,23 @@ function installMocks(page) {
         const on = r.width > 0 && r.left >= 0 && r.right <= innerWidth + 1;
         return `${id}=${on ? Math.round(r.left) + "~" + Math.round(r.right) : "벗어남"}`;
       });
-      const a = document.getElementById("budget-analysis")?.getBoundingClientRect();
-      const t = document.getElementById("budget-tab")?.getBoundingClientRect();
-      const cols = a && t && Math.abs(a.top - t.top) < 40 ? 2 : 1;
+      // 2열은 [도넛 요약 | 카테고리 표] 가 나란한지로 본다.
+      // 표와 항목 목록은 이제 같은 오른쪽 열에 세로로 쌓인다.
+      const s = document
+        .getElementById("budget-stat-grid")
+        ?.getBoundingClientRect();
+      const a = document
+        .getElementById("budget-analysis")
+        ?.getBoundingClientRect();
+      const cols = s && a && Math.abs(s.top - a.top) < 40 ? 2 : 1;
       return { boxes, cols };
     });
-    console.log(`캡처 budget-${w}.png   ${info.cols}열  ${info.boxes.join("  ")}`);
+    console.log(
+      `캡처 budget-${OVER ? "over-" : ""}${w}.png   ${info.cols}열  ${info.boxes.join("  ")}`,
+    );
   }
   await browser.close();
-})().catch((e) => { console.error("ERR", e); process.exit(1); });
+})().catch((e) => {
+  console.error("ERR", e);
+  process.exit(1);
+});

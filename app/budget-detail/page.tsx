@@ -8,7 +8,7 @@ import React, {
   useRef,
   Suspense,
 } from "react";
-import { ArrowLeft, Sparkles, CircleHelp } from "lucide-react";
+import { ArrowLeft, CircleHelp } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import AppShell from "../components/AppShell";
@@ -20,7 +20,7 @@ import { getGuestScheduleList } from "@/lib/guestSchedule";
 import { useWedding } from "../contexts/WeddingContext";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import { Expense, ExpenseStatus, BudgetStats, Category } from "./types";
-import StatCard from "./components/StatCard";
+import BudgetDonut from "./components/BudgetDonut";
 import SpendingAnalysis from "./components/SpendingAnalysis";
 import ExpenseList from "./components/ExpenseList";
 import BottomTabBar from "../components/BottomTabBar";
@@ -519,10 +519,6 @@ function BudgetDetailsPage() {
 
   /* API가 status, categoryName으로 필터링하므로 클라이언트 필터 제거 */
 
-  const remainingAmount = stats
-    ? stats.initialCapital - (stats.plannedTotal + stats.usedTotal)
-    : undefined;
-
   const handleCategoryToggle = (category: Category) => {
     setSelectedCategory((prev) => (prev === category ? null : category));
   };
@@ -640,105 +636,66 @@ function BudgetDetailsPage() {
             </div>
           ) : stats ? (
             <>
-              {/* Prominent Stats Grid */}
               {/*
-                넓어지면 초기 자본·예정·사용을 한 줄로 편다. 세로로 쌓아 두면
-                카드 하나가 1,100px 짜리 빈 상자가 된다. contents 로 안쪽 2열
-                상자를 지워 셋을 같은 격자에 올린다.
+                비율은 도넛이, 정확한 값은 카테고리 표가 맡는다.
+                넓어지면 둘을 나란히 두고(@[980px]) 좁으면 세로로 쌓는다.
+                기준을 뷰포트가 아니라 이 영역의 폭으로 잡는 이유는 위
+                @container 주석과 같다.
+
+                게스트 흐림은 오른쪽 열에만 건다 — 예전에도 요약 카드는
+                흐리지 않았다.
               */}
-              <div
-                id="budget-stat-grid"
-                className="px-4 py-4 space-y-3 md:px-8 md:pt-6 @[980px]:md:grid @[980px]:md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)] @[980px]:md:gap-3 @[980px]:md:space-y-0"
-              >
-                <div className="w-full">
-                  <StatCard
-                    label="초기 자본"
-                    value={stats.initialCapital}
-                    variant="white"
-                    size="large"
-                    remainingAmount={remainingAmount}
+              <div className="px-4 py-4 md:px-8 md:pt-6 @[980px]:md:grid @[980px]:md:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] @[980px]:md:items-start @[980px]:md:gap-5">
+                <div id="budget-stat-grid">
+                  <BudgetDonut
+                    stats={stats}
+                    onAskAI={() => setIsAIModalOpen(true)}
+                    aiAnchorId="budget-ai-insight"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3 @[980px]:md:contents">
-                  <StatCard
-                    label="예정"
-                    value={stats.plannedTotal}
-                    variant="pink-light"
-                  />
-                  <StatCard
-                    label="사용"
-                    value={stats.usedTotal}
-                    variant="pink-solid"
-                  />
-                </div>
-              </div>
 
-              {/* AI Insight Trigger */}
-              <div id="budget-ai-insight" className="px-4 mt-2 md:px-8">
-                <button
-                  type="button"
-                  onClick={() => setIsAIModalOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-purple-500 to-[#ee2b8c] text-white rounded-2xl font-bold shadow-lg shadow-[#ee2b8c22] hover:opacity-95 transition-all transform active:scale-[0.98]"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  AI에게 예산 조언 받기
-                </button>
-              </div>
-
-              {/* Spending Analysis Section */}
-              <div className="relative">
-                <div
-                  className={
-                    isGuest
-                      ? `pointer-events-none select-none ${guestBlurClass}`
-                      : ""
-                  }
-                >
-                  {/*
-                      넓어지면 차트와 목록을 나란히 둔다. 좁을 때는
-                      contents 로 감싼 상자를 지워 예전 세로 흐름 그대로다.
-                    */}
-                  <div className="md:grid md:gap-x-8 md:px-8 @[980px]:md:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] @[980px]:md:items-start">
-                    <div className="contents @[980px]:md:block">
-                      <div id="budget-analysis" className="px-4 mt-8 md:px-0">
-                        <div className="flex justify-between items-center mb-4">
-                          <h2 className="text-xl font-bold text-[#1b0d14]">
-                            지출 분석
-                          </h2>
-                          {selectedCategory && (
-                            <button
-                              type="button"
-                              onClick={() => setSelectedCategory(null)}
-                              className="text-[10px] font-extrabold text-[#ee2b8c] uppercase tracking-widest bg-[#ee2b8c11] px-3 py-1 rounded-full"
-                            >
-                              필터 해제
-                            </button>
-                          )}
-                        </div>
-                        <SpendingAnalysis
-                          stats={stats}
-                          expenses={expensesForAnalysis}
-                          selectedCategory={selectedCategory}
-                          onCategorySelect={handleCategoryToggle}
-                        />
-                      </div>
+                <div className="relative mt-5 @[980px]:md:mt-0">
+                  <div
+                    className={
+                      isGuest
+                        ? `pointer-events-none select-none ${guestBlurClass}`
+                        : ""
+                    }
+                  >
+                    <div id="budget-analysis">
+                      <SpendingAnalysis
+                        expenses={expensesForAnalysis}
+                        selectedCategory={selectedCategory}
+                        onCategorySelect={handleCategoryToggle}
+                        onClearFilter={() => setSelectedCategory(null)}
+                      />
                     </div>
-                    <div className="contents @[980px]:md:block">
-                      {/* Tabs */}
-                      <div
-                        id="budget-tab"
-                        className="px-4 mt-8 md:px-0 @[980px]:md:mt-8"
-                      >
-                        <div className="flex border-b border-gray-100">
+
+                    <div className="mt-5 rounded-[28px] border border-[#ee2b8c0f] bg-white p-6 shadow-sm">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <h2
+                          id="budget-list-title"
+                          className="text-[17px] font-bold tracking-[-0.02em] text-[#1b0d14]"
+                        >
+                          {selectedCategory
+                            ? `${selectedCategory} 항목`
+                            : "항목"}
+                        </h2>
+                        {/* 세그먼트 알약. 밑줄 탭은 카드 안에서 선이 겹쳤다 */}
+                        <div
+                          id="budget-tab"
+                          className="inline-flex shrink-0 gap-0.5 rounded-full bg-[#f4eff2] p-[3px]"
+                        >
                           {(["예정", "사용"] as const).map((tab) => (
                             <button
                               type="button"
                               key={tab}
                               onClick={() => setActiveTab(tab)}
-                              className={`flex-1 py-4 text-sm font-bold transition-all border-b-2 ${
+                              aria-pressed={activeTab === tab}
+                              className={`rounded-full px-4 py-1.5 text-[12.5px] font-bold transition-all ${
                                 activeTab === tab
-                                  ? "text-[#ee2b8c] border-[#ee2b8c]"
-                                  : "text-gray-400 border-transparent hover:text-gray-600"
+                                  ? "bg-white text-[#1b0d14] shadow-sm"
+                                  : "text-[#7a6c74] hover:text-[#1b0d14]"
                               }`}
                             >
                               {tab}
@@ -747,25 +704,25 @@ function BudgetDetailsPage() {
                         </div>
                       </div>
 
-                      {/* Expense List: count=10000으로 전체 한 번에 로드 */}
-                      <div id="budget-list" className="mt-4">
+                      {/* count=10000으로 전체 한 번에 로드 */}
+                      <div id="budget-list">
                         <ExpenseList expenses={listExpenses} />
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {isGuest && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={() => setShowLoginRequiredModal(true)}
-                      className="rounded-2xl bg-white/70 px-6 py-3 text-sm font-bold text-stone-700 shadow-sm backdrop-blur transition-transform hover:scale-[1.01] active:scale-[0.99]"
-                    >
-                      로그인이 필요한 서비스 입니다
-                    </button>
-                  </div>
-                )}
+                  {isGuest && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginRequiredModal(true)}
+                        className="rounded-2xl bg-white/70 px-6 py-3 text-sm font-bold text-stone-700 shadow-sm backdrop-blur transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                      >
+                        로그인이 필요한 서비스 입니다
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           ) : (

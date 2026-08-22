@@ -9,62 +9,71 @@ const STATUS_LABELS: Record<ExpenseStatus, string> = {
   [ExpenseStatus.PLANNED]: "예정",
 };
 
-const StatusBadge: React.FC<{ status: ExpenseStatus }> = ({ status }) => {
-  const styles: Record<ExpenseStatus, string> = {
-    [ExpenseStatus.PAID]: "bg-[#ee2b8c] text-white",
-    [ExpenseStatus.PENDING]: "bg-[#ee2b8c1a] text-[#ee2b8c]",
-    [ExpenseStatus.DEPOSIT_PAID]: "bg-green-100 text-green-600",
-    [ExpenseStatus.PLANNED]: "bg-gray-100 text-gray-500",
-  };
-
-  return (
-    <span
-      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold tracking-tight ${styles[status]}`}
-    >
-      {STATUS_LABELS[status]}
-    </span>
-  );
+const STATUS_STYLES: Record<ExpenseStatus, string> = {
+  [ExpenseStatus.PAID]: "bg-[#fff2f6] text-[#ee2b8c]",
+  [ExpenseStatus.PENDING]: "bg-[#fff2f6] text-[#ee2b8c]",
+  [ExpenseStatus.DEPOSIT_PAID]: "bg-green-50 text-green-600",
+  [ExpenseStatus.PLANNED]: "bg-[#f4eff2] text-[#7a6c74]",
 };
+
+const StatusBadge: React.FC<{ status: ExpenseStatus }> = ({ status }) => (
+  <span
+    className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLES[status]}`}
+  >
+    {STATUS_LABELS[status]}
+  </span>
+);
 
 interface ExpenseListProps {
   expenses: Expense[];
 }
 
+/**
+ * 항목 목록.
+ *
+ * 도넛·표와 같은 카드 언어로 맞춘다 — 흰 줄 + `#f4eff2` 테두리, 금액은
+ * TmoneyRound(`font-user-content`). 예전에는 줄마다 그림자가 붙은 3xl 카드라
+ * 목록이 길어지면 화면이 울퉁불퉁했다.
+ */
 const ExpenseList: React.FC<ExpenseListProps> = ({ expenses }) => {
+  if (expenses.length === 0) {
+    return (
+      <div className="py-10 text-center text-[13px] text-gray-400">
+        이 카테고리에 항목이 없습니다.
+      </div>
+    );
+  }
+
   return (
-    <div className="px-4 space-y-4">
-      {expenses.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 font-medium italic">
-          이 카테고리에 항목이 없습니다.
-        </div>
-      ) : (
-        expenses.map((expense) => (
-          <div
-            key={expense.id}
-            className={`flex items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${expense.status === ExpenseStatus.PLANNED ? "opacity-90" : ""}`}
-          >
-            <div className="w-14 h-14 bg-[#ee2b8c0a] rounded-2xl flex items-center justify-center text-[#ee2b8c] shrink-0">
-              {CATEGORY_ICONS[expense.category] || CATEGORY_ICONS.Others}
-            </div>
+    <div className="space-y-2">
+      {expenses.map((expense) => (
+        <div
+          key={expense.id}
+          className="flex items-center gap-3 rounded-2xl border border-[#f4eff2] bg-white p-3 transition-colors hover:border-[#ee2b8c22]"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ee2b8c0f] text-[#ee2b8c]">
+            {CATEGORY_ICONS[expense.category] || CATEGORY_ICONS.Others}
+          </div>
 
-            <div className="flex-1 min-w-0">
-              <h4 className="font-user-content text-[#1b0d14] font-bold text-lg truncate">
-                {expense.title}
-              </h4>
-              <p className="font-user-content text-gray-400 text-xs font-semibold truncate uppercase tracking-tight">
-                {expense.description}
-              </p>
-            </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="truncate text-[14px] font-bold text-[#1b0d14]">
+              {expense.title}
+            </h4>
+            <p className="truncate text-[12px] text-gray-400">
+              {expense.description}
+            </p>
+          </div>
 
-            <div className="text-right shrink-0">
-              <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
-                {expense.plannedAmount.toLocaleString("ko-KR")}만 원
-              </div>
+          <div className="shrink-0 text-right">
+            <div className="font-user-content text-[15px] font-bold tracking-[-0.02em] text-[#1b0d14]">
+              {expense.plannedAmount.toLocaleString("ko-KR")}만원
+            </div>
+            <div className="mt-1">
               <StatusBadge status={expense.status} />
             </div>
           </div>
-        ))
-      )}
+        </div>
+      ))}
     </div>
   );
 };
