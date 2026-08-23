@@ -21,6 +21,13 @@ import {
 import { getKstDateString } from "@/lib/utils";
 import CountUp from "../../components/CountUp";
 
+/**
+ * 좌측 진행 패널의 단계 목록.
+ * 몇 개나 더 묻는지 처음부터 보여야 온보딩에서 덜 이탈한다.
+ * 축하·환영·출입증(Lanyard)은 전체 화면 연출이라 단계로 세지 않는다.
+ */
+const ONBOARDING_STEPS = ["결혼 날짜", "예산", "이름", "약관 동의"];
+
 // 3D(WebGL)는 클라이언트에서만 로드해 Context Lost·엑스박스 방지
 const Lanyard = dynamic(() => import("../../components/Lanyard"), {
   ssr: false,
@@ -349,6 +356,19 @@ function SettingPageContent() {
     router.push("/main");
   };
 
+  /** 좌측 패널에 표시할 현재 단계(1~4). 0이면 연출 화면이라 패널을 내지 않는다 */
+  const stepIndex = showSecond
+    ? 1
+    : showThird
+      ? 2
+      : showFourth
+        ? 3
+        : showSeventh
+          ? 4
+          : 0;
+  /** lg 이상에서만 좌우 분할. 폰에서는 예전 그대로 한 화면에 하나씩 */
+  const isSplitStep = stepIndex > 0;
+
   const handleBack = () => {
     // 일곱 번째 화면에서 Lanyard로
     if (showSeventh) {
@@ -381,7 +401,11 @@ function SettingPageContent() {
   };
 
   return (
-    <div className="flex h-[100dvh] justify-center bg-[#fcfbfc] px-0 text-stone-900 lg:bg-white lg:px-6 overflow-hidden overscroll-none">
+    <div
+      className={`flex h-[100dvh] justify-center bg-[#fcfbfc] px-0 text-stone-900 overflow-hidden overscroll-none ${
+        isSplitStep ? "lg:px-0" : "lg:bg-white lg:px-6"
+      }`}
+    >
       <KakaoLoginAlert show={showKakaoLogin} />
       <CustomAlertModal
         isOpen={saveError !== null}
@@ -389,7 +413,75 @@ function SettingPageContent() {
         type="error"
         onClose={() => setSaveError(null)}
       />
-      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#fcfbfc] px-4 sm:px-6 py-8 overscroll-none grid-bg lg:max-w-[600px] lg:px-10 lg:py-12">
+      {isSplitStep && (
+        <aside className="hidden w-[340px] flex-none flex-col border-r border-[#f4eff2] bg-white px-7 py-8 lg:flex">
+          <span className="flex items-center gap-2.5 text-sm font-bold text-stone-900">
+            <span className="grid h-[30px] w-[30px] place-items-center rounded-[10px] bg-[#ee2b8c] text-[12px] font-bold text-white">
+              WP
+            </span>
+            웨딩 플랜트
+          </span>
+          <p className="mt-[30px] mb-1.5 text-[19px] font-bold leading-[1.45] tracking-[-0.02em] text-stone-900">
+            결혼 준비를
+            <br />
+            같이 시작해요
+          </p>
+          <p className="mb-[22px] text-[12.5px] leading-relaxed text-[#7a6c74]">
+            세 가지만 알려 주시면 됩니다. 1분이면 끝나요.
+          </p>
+          <ol className="grid gap-0.5" aria-label="온보딩 단계">
+            {ONBOARDING_STEPS.map((label, i) => {
+              const n = i + 1;
+              const isCurrent = n === stepIndex;
+              const isDone = n < stepIndex;
+              return (
+                <li
+                  key={label}
+                  aria-current={isCurrent ? "step" : undefined}
+                  className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13.5px] ${
+                    isCurrent
+                      ? "bg-[#fff2f6] font-bold text-[#ee2b8c]"
+                      : isDone
+                        ? "text-[#7a6c74]"
+                        : "text-gray-400"
+                  }`}
+                >
+                  <span
+                    className={`grid h-5 w-5 flex-none place-items-center rounded-full text-[11px] font-bold ${
+                      isCurrent
+                        ? "bg-[#ee2b8c] text-white"
+                        : isDone
+                          ? "bg-[#ffd9e8] text-[#ee2b8c]"
+                          : "bg-[#f1eaee] text-[#b7abb2]"
+                    }`}
+                  >
+                    {n}
+                  </span>
+                  {label}
+                </li>
+              );
+            })}
+          </ol>
+          <div className="mt-auto">
+            <div className="h-1 overflow-hidden rounded-full bg-[#f1eaee]">
+              <span
+                className="block h-full rounded-full bg-[#ee2b8c] transition-[width] duration-500 ease-out"
+                style={{
+                  width: `${(stepIndex / ONBOARDING_STEPS.length) * 100}%`,
+                }}
+              />
+            </div>
+            <p className="mt-2.5 text-xs text-gray-400">
+              {stepIndex} / {ONBOARDING_STEPS.length} 단계
+            </p>
+          </div>
+        </aside>
+      )}
+      <main
+        className={`relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#fcfbfc] px-4 sm:px-6 py-8 overscroll-none grid-bg lg:px-10 lg:py-12 ${
+          isSplitStep ? "lg:max-w-none lg:flex-1" : "lg:max-w-[600px]"
+        }`}
+      >
         {/* Decorative Blur Elements (match app/page.tsx) */}
         <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none" />
@@ -431,7 +523,7 @@ function SettingPageContent() {
         )}
         {showSecond && (
           <div
-            className={`flex flex-1 flex-col items-center pt-20 pb-12 ${isDatePickerFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+            className={`flex flex-1 flex-col items-center pt-20 pb-12 lg:justify-center lg:pt-0 lg:pb-0 ${isDatePickerFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
           >
             <LandingHero
               title="결혼 날짜가 언제인가요"
@@ -440,7 +532,7 @@ function SettingPageContent() {
               subtitleSize="text-sm sm:text-lg"
               useUserFont={false}
             />
-            <div className="flex flex-1 flex-col items-center justify-center">
+            <div className="flex flex-1 flex-col items-center justify-center lg:my-9 lg:flex-none">
               <DatePickerWheel
                 initialDate={weddingData.date}
                 onDateChange={handleDateChange}
@@ -466,7 +558,7 @@ function SettingPageContent() {
         )}
         {showThird && (
           <div
-            className={`flex flex-1 flex-col items-center pt-20 pb-12 ${isBudgetFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+            className={`flex flex-1 flex-col items-center pt-20 pb-12 lg:justify-center lg:pt-0 lg:pb-0 ${isBudgetFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
           >
             <LandingHero
               title="예산도 살짝 알려주세요!"
@@ -475,8 +567,8 @@ function SettingPageContent() {
               subtitleSize="text-sm sm:text-lg"
               useUserFont={false}
             />
-            <div className="flex flex-1" />
-            <div className="flex flex-col items-center mb-6">
+            <div className="flex flex-1 lg:hidden" />
+            <div className="flex flex-col items-center mb-6 lg:mt-7">
               <div className="flex items-center justify-center gap-4">
                 <div className="flex items-center gap-2">
                   {!isCountUpComplete ? (
@@ -523,7 +615,7 @@ function SettingPageContent() {
         )}
         {showFourth && (
           <div
-            className={`flex flex-1 flex-col items-center pt-20 pb-12 ${isNameFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+            className={`flex flex-1 flex-col items-center pt-20 pb-12 lg:justify-center lg:pt-0 lg:pb-0 ${isNameFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
           >
             <LandingHero
               title="이름도 괜찮을까요?"
@@ -532,8 +624,8 @@ function SettingPageContent() {
               subtitleSize="text-sm sm:text-lg"
               useUserFont={false}
             />
-            <div className="flex flex-1" />
-            <div className="flex flex-col items-center mb-6">
+            <div className="flex flex-1 lg:hidden" />
+            <div className="flex flex-col items-center mb-6 lg:mt-7">
               <p className="text-sm text-stone-500 mb-2">최대 6 글자</p>
               <div className="flex items-center justify-center gap-4">
                 <input
@@ -597,7 +689,7 @@ function SettingPageContent() {
         )}
 
         {showSeventh && (
-          <div className="flex flex-1 flex-col items-center pt-10 pb-12 animate-fade-in overflow-y-auto w-full">
+          <div className="flex flex-1 flex-col items-center pt-10 pb-12 lg:pt-14 animate-fade-in overflow-y-auto w-full">
             <LandingHero
               title="자 이제 시작해볼까요?"
               subtitle="결혼식까지 든든한 플랜을 같이 짜보아요"
