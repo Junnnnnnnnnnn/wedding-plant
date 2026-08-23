@@ -42,8 +42,14 @@ export interface FeedPost {
   /** 실제 지출 (만원). **비공개면 필드 자체가 없다** — `?? 0` 으로 채우지 말 것 */
   amount?: number;
   isAmountPublic: boolean;
-  /** 시/구 까지만 */
+  /** 시/구 까지만. 필터에 쓴다 */
   region: string | null;
+  /** 도로명 주소. 카카오 장소를 고른 후기에만 있다 */
+  address: string | null;
+  /** 카카오 장소 id. 같은 업체 후기를 묶는 열쇠 (2차) */
+  placeId: string | null;
+  lat: number | null;
+  lng: number | null;
   /** 만족도 1~5 */
   rating: number;
   body: string | null;
@@ -72,6 +78,9 @@ export interface PostableSchedule {
   categoryName: string;
   title: string;
   amount: number | null;
+  /** 일정에 적힌 장소. 카카오에서 고른 경우 주소가 아니라 **업체명**이다 */
   location: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
   startDate: string | null;
 }

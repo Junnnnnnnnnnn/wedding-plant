@@ -57,6 +57,8 @@ const CATEGORIES = ["스드메", "웨딩홀", "예물 · 예단", "신혼여행"
  * - 비공개 금액은 **필드 자체가 없다** (null 0 이 아니다).
  *   목을 실제보다 관대하게 만들면 "금액 비공개" 분기를 영영 못 본다.
  * - notHelpfulCount 는 **응답에 없다**. 있으면 화면이 실수로 그린다.
+ * - address/placeId/lat/lng 는 카카오 장소를 고른 후기에만 있다.
+ *   전부 채워 두면 "장소 없는 후기" 분기를 영영 못 본다.
  */
 const POSTS = [
   {
@@ -66,6 +68,10 @@ const POSTS = [
     amount: 1111,
     isAmountPublic: true,
     region: "서울 강남구",
+    address: "서울 강남구 테헤란로 152",
+    placeId: "26338954",
+    lat: 37.5006,
+    lng: 127.0364,
     rating: 4,
     body: "하객 200명 기준 식대 포함. 주차가 넉넉해요.",
     authorDDay: 131,
@@ -81,7 +87,11 @@ const POSTS = [
     title: "아뜰리에 진",
     amount: 385,
     isAmountPublic: true,
-    region: "서울 청담동",
+    region: "서울 강남구",
+    address: "서울 강남구 도산대로 430",
+    placeId: "11223344",
+    lat: 37.5223,
+    lng: 127.0388,
     rating: 5,
     body: "드레스 3벌 + 본식 스냅. 헬퍼비 25만원은 따로였습니다.",
     authorDDay: 88,
@@ -97,7 +107,11 @@ const POSTS = [
     categoryName: "예물 · 예단",
     title: "종로 3가 귀금속",
     isAmountPublic: false,
-    region: "서울 종로구",
+    region: null,
+    address: null,
+    placeId: null,
+    lat: null,
+    lng: null,
     rating: 3,
     body: "가격은 밝히기 어렵지만 세 군데 비교하고 가면 다릅니다.",
     authorDDay: -12,
@@ -115,7 +129,9 @@ const POSTABLE = [
     categoryName: "스드메",
     title: "본식 촬영",
     amount: 185,
-    location: "서울특별시 강남구 청담동 1-2",
+    location: "아뜰리에 진",
+    locationLat: 37.5223,
+    locationLng: 127.0388,
     startDate: "2026-07-01",
   },
 ];
@@ -355,6 +371,20 @@ const cardTexts = (page) =>
     }`,
   );
 
+  const placeInfo = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll("article")];
+    return cards.map((c) => ({
+      addr:
+        c
+          .querySelector("svg.lucide-map-pin")
+          ?.parentElement?.innerText.trim() ?? null,
+      map: [...c.querySelectorAll("a")].some((a) =>
+        a.textContent.includes("카카오맵"),
+      ),
+    }));
+  });
+  console.log(`  장소 줄  ${JSON.stringify(placeInfo)}`);
+
   // ── 3. 카테고리 칩 ───────────────────────────────────────────
   seen.list.length = 0;
   await page.evaluate(() => {
@@ -527,6 +557,13 @@ const cardTexts = (page) =>
   });
   console.log("캡처 feed-post-modal.png");
   console.log(`  후기 올리기 모달  ${flat(modal).slice(0, 120)}`);
+  const placePicker = await page.evaluate(() => {
+    const input = document.querySelector(
+      '[aria-label="후기 올리기"] input[placeholder="업체 이름으로 검색"]',
+    );
+    return input ? input.value : "없음";
+  });
+  console.log(`  업체 검색칸 기본값  "${placePicker}"`);
 
   await browser.close();
 })().catch((e) => {

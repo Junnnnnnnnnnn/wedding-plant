@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Star, X } from "lucide-react";
+import { MapPin, Search, Star, X } from "lucide-react";
 import { useApi } from "../contexts/ApiContext";
+import { PickedPlace, toPickedPlace, useKakaoPlaces } from "./useKakaoPlaces";
 
 export interface FeedPostTarget {
   scheduleId: number;
   categoryName: string;
   title: string;
   amount: number | null;
+  /** 일정에 적힌 장소. 카카오에서 고른 경우 주소가 아니라 **업체명**이다 */
   location: string | null;
 }
 
@@ -51,6 +53,21 @@ const FeedPostModal: React.FC<FeedPostModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /*
+    업체(카카오 장소).
+
+    일정 제목은 자기가 보려고 적은 메모라 "본식 촬영" 같은 값이 많고, 일정의
+    location 은 카카오에서 고르면 주소가 아니라 업체명이다. 그래서 여기서
+    한 번 더 고르게 한다 — place id 가 있어야 나중에 같은 업체 후기를 묶고,
+    도로명 주소가 있어야 지역이 생긴다.
+
+    **필수는 아니다.** 청첩장·예물·신혼여행처럼 지도에 없는 게 정상인
+    카테고리가 있고, 막으면 공급이 죽는다.
+  */
+  const [place, setPlace] = useState<PickedPlace | null>(null);
+  const [keyword, setKeyword] = useState("");
+  const kakao = useKakaoPlaces();
+
   // 다른 일정으로 다시 열면 앞선 입력이 남아 있으면 안 된다
   useEffect(() => {
     if (!target) return;
@@ -58,6 +75,12 @@ const FeedPostModal: React.FC<FeedPostModalProps> = ({
     setBody("");
     setIsAmountPublic(true);
     setError(null);
+    setPlace(null);
+    // 일정에 적힌 장소명을 검색어로 깔아 둔다. 한 번만 누르면 고를 수 있다
+    setKeyword(target.location?.trim() || target.title.trim());
+    kakao.reset();
+    // kakao 는 매 렌더 새 객체라 넣으면 무한 루프다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target]);
 
   useEffect(() => {
@@ -84,6 +107,15 @@ const FeedPostModal: React.FC<FeedPostModalProps> = ({
           body: body.trim() || undefined,
           isAmountPublic,
           authorRole,
+          ...(place
+            ? {
+                placeId: place.placeId,
+                placeName: place.placeName,
+                address: place.address,
+                lat: place.lat,
+                lng: place.lng,
+              }
+            : {}),
         }),
       });
       const json = (await res.json().catch(() => null)) as {
@@ -150,8 +182,107 @@ const FeedPostModal: React.FC<FeedPostModalProps> = ({
           </div>
           <p className="mt-1.5 text-[12px] text-gray-400">
             {target.categoryName}
-            {target.location ? " · 지역은 시/구까지만 올라가요" : ""}
           </p>
+        </div>
+
+        {/*
+          업체 고르기.
+
+          고르면 업체명이 이 이름으로 올라가고(일정 제목은 개인 메모인 경우가
+          많다), 주소에서 시/구를 잘라 지역이 만들어지고, place id 로 나중에
+          같은 업체 후기가 묶인다. 건너뛰어도 올라간다.
+        */}
+        <div className="mt-4">
+          <p className="mb-2 text-[12.5px] text-gray-400">
+            업체 <span className="text-gray-300">(선택)</span>
+          </p>
+
+          {place ? (
+            <div className="flex items-start gap-2.5 rounded-2xl border border-[#ee2b8c33] bg-[#fff7fa] p-3.5">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#ee2b8c]" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14px] font-bold text-[#1b0d14]">
+                  {place.placeName}
+                </span>
+                <span className="mt-0.5 block truncate text-[12px] text-[#7a6c74]">
+                  {place.address}
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setPlace(null)}
+                className="shrink-0 text-[12px] font-bold text-[#7a6c74] underline decoration-[#d6ccd2] underline-offset-2"
+              >
+                다시 고르기
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    e.preventDefault();
+                    kakao.search(keyword);
+                  }}
+                  placeholder="업체 이름으로 검색"
+                  className="min-w-0 flex-1 rounded-2xl border border-[#efe7eb] bg-white px-4 py-3 text-[14px] text-[#1b0d14] outline-none transition-all placeholder:text-[#c8bfc4] focus:border-[#ee2b8c] focus:ring-4 focus:ring-[#ee2b8c14]"
+                />
+                <button
+                  type="button"
+                  onClick={() => kakao.search(keyword)}
+                  disabled={!kakao.ready || !keyword.trim()}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#fff2f6] text-[#ee2b8c] transition-colors hover:bg-[#ffe2ee] disabled:opacity-50"
+                  aria-label="장소 검색"
+                >
+                  <Search className="h-5 w-5" />
+                </button>
+              </div>
+
+              {kakao.failed && (
+                <p className="mt-2 text-[12px] text-[#c0203c]">
+                  지도를 불러오지 못했어요. 업체 없이 올려도 됩니다.
+                </p>
+              )}
+              {kakao.searching && (
+                <p className="mt-2 text-[12px] text-gray-400">찾는 중...</p>
+              )}
+              {!kakao.searching && kakao.results.length > 0 && (
+                <div className="mt-2 max-h-[180px] space-y-1 overflow-y-auto">
+                  {kakao.results.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        const picked = toPickedPlace(item);
+                        if (picked) setPlace(picked);
+                      }}
+                      className="flex w-full items-start gap-2.5 rounded-xl border border-[#f4eff2] bg-white p-3 text-left transition-colors hover:border-[#ee2b8c33]"
+                    >
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-300" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13.5px] font-bold text-[#1b0d14]">
+                          {item.place_name}
+                        </span>
+                        <span className="mt-0.5 block truncate text-[12px] text-gray-400">
+                          {item.road_address_name || item.address_name}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <p className="mt-2 text-[12px] leading-relaxed text-gray-400">
+                고르면 <b className="font-bold text-[#7a6c74]">업체명</b>이 이
+                이름으로 올라가고 지역이 표시돼요. 온라인 주문처럼 장소가 없으면
+                건너뛰어도 됩니다.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="mt-5">

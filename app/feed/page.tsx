@@ -214,7 +214,13 @@ const FeedPageContent: React.FC = () => {
       from: "feed",
     });
     if (post.amount !== undefined) params.set("amount", String(post.amount));
-    if (post.region) params.set("location", post.region);
+    /*
+      장소 칸에는 **업체명**을 넣는다. add-plen 의 location 은 주소가 아니라
+      카카오 검색 결과의 place_name 이 들어가는 자리라, 지역("서울 강남구")을
+      넣으면 그대로 저장돼 엉뚱한 값이 된다. 업체명을 넣어 두면 한 번
+      검색해서 고르는 것으로 좌표까지 붙는다.
+    */
+    params.set("location", post.title);
     router.push(`/add-plen?${params}`);
   };
 
