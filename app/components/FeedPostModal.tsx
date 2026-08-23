@@ -12,6 +12,9 @@ export interface FeedPostTarget {
   amount: number | null;
   /** 일정에 적힌 장소. 카카오에서 고른 경우 주소가 아니라 **업체명**이다 */
   location: string | null;
+  /** 일정에 저장된 좌표. 있으면 장소를 자동으로 잡는다 */
+  locationLat?: number | null;
+  locationLng?: number | null;
 }
 
 interface FeedPostModalProps {
@@ -66,6 +69,8 @@ const FeedPostModal: React.FC<FeedPostModalProps> = ({
   */
   const [place, setPlace] = useState<PickedPlace | null>(null);
   const [keyword, setKeyword] = useState("");
+  /** 좌표로 장소를 자동 판정하는 중 */
+  const [detecting, setDetecting] = useState(false);
   const kakao = useKakaoPlaces();
 
   // 다른 일정으로 다시 열면 앞선 입력이 남아 있으면 안 된다
@@ -82,6 +87,56 @@ const FeedPostModal: React.FC<FeedPostModalProps> = ({
     // kakao 는 매 렌더 새 객체라 넣으면 무한 루프다
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target]);
+
+  /**
+   * 일정에 이미 있는 장소를 자동으로 잡는다.
+   *
+   * 일정을 만들 때 카카오에서 고른 이름과 좌표가 그대로 있는데, 후기에서
+   * 또 찾게 하면 사람들이 그냥 건너뛴다. 그러면 주소도 place id 도 못 얻고
+   * 지역 필터가 빈 채로 남는다 — 실제로 그래서 "장소가 안 잡힌다" 는 말을
+   * 들었다.
+   *
+   * 이름 + 좌표로 같은 곳을 찾으면 place id 까지 얻고, 못 찾으면 좌표를
+   * 주소로 바꿔 **지역만이라도** 살린다.
+   */
+  useEffect(() => {
+    if (!target || !kakao.ready) return;
+    const lat = target.locationLat;
+    const lng = target.locationLng;
+    if (!lat || !lng) return;
+
+    let alive = true;
+    setDetecting(true);
+    (async () => {
+      const name = target.location?.trim() || target.title.trim();
+      const found = await kakao.findNear(name, lat, lng);
+      if (!alive) return;
+
+      if (found) {
+        const picked = toPickedPlace(found);
+        if (picked) {
+          setPlace(picked);
+          setDetecting(false);
+          return;
+        }
+      }
+
+      const address = await kakao.addressOf(lat, lng);
+      if (!alive) return;
+      if (address) {
+        // place id 는 없다. 업체 묶기는 안 되지만 지역·주소는 살아난다
+        setPlace({ placeId: "", placeName: name, address, lat, lng });
+      }
+      setDetecting(false);
+    })();
+
+    return () => {
+      alive = false;
+      setDetecting(false);
+    };
+    // kakao 는 매 렌더 새 객체다. ready 만 본다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, kakao.ready]);
 
   useEffect(() => {
     if (!target) return undefined;
@@ -109,7 +164,9 @@ const FeedPostModal: React.FC<FeedPostModalProps> = ({
           authorRole,
           ...(place
             ? {
-                placeId: place.placeId,
+                // 좌표로만 찾은 경우 place id 가 없다. 빈 문자열을 보내면
+                // 그게 하나의 "업체" 가 되어 서로 다른 곳이 묶인다
+                ...(place.placeId ? { placeId: place.placeId } : {}),
                 placeName: place.placeName,
                 address: place.address,
                 lat: place.lat,
@@ -197,7 +254,11 @@ const FeedPostModal: React.FC<FeedPostModalProps> = ({
             업체 <span className="text-gray-300">(선택)</span>
           </p>
 
-          {place ? (
+          {detecting && !place ? (
+            <div className="rounded-2xl border border-[#f4eff2] bg-[#fcfbfc] p-3.5 text-[12.5px] text-gray-400">
+              일정에 저장된 장소를 찾는 중...
+            </div>
+          ) : place ? (
             <div className="flex items-start gap-2.5 rounded-2xl border border-[#ee2b8c33] bg-[#fff7fa] p-3.5">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#ee2b8c]" />
               <span className="min-w-0 flex-1">

@@ -118,11 +118,108 @@ export function useKakaoPlaces() {
     [ready],
   );
 
+  /**
+   * 좌표 근처에서 이름으로 찾아 **한 곳을 특정**한다.
+   *
+   * 일정에는 이미 카카오에서 고른 장소의 이름과 좌표가 들어 있다. 후기를
+   * 올릴 때 그걸 또 찾게 하면 사람들이 그냥 건너뛰고, 그러면 주소도 place id
+   * 도 영영 못 얻는다. 좌표를 중심으로 다시 찾아 같은 곳이면 자동으로 잡는다.
+   *
+   * 목록 검색과 달리 `results` 를 건드리지 않는다 — 자동 판정은 화면에
+   * 후보를 늘어놓는 일이 아니다.
+   */
+  const findNear = useCallback(
+    (keyword: string, lat: number, lng: number): Promise<KakaoPlace | null> => {
+      const q = keyword.trim();
+      if (!q || !ready) return Promise.resolve(null);
+
+      return new Promise((resolve) => {
+        const places = new window.kakao.maps.services.Places();
+        const done = setTimeout(() => resolve(null), 6000);
+        places.keywordSearch(
+          q,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (data: any, status: any) => {
+            clearTimeout(done);
+            if (
+              status !== window.kakao.maps.services.Status.OK ||
+              !Array.isArray(data) ||
+              data.length === 0
+            ) {
+              resolve(null);
+              return;
+            }
+            // 반경을 200m 로 걸어 두었으니 가장 가까운 것을 고른다.
+            // 같은 이름의 다른 지점이 끼어드는 걸 막는 게 목적이다.
+            const near = data.find((item: KakaoPlace) => {
+              const dy = Math.abs(Number(item.y) - lat);
+              const dx = Math.abs(Number(item.x) - lng);
+              // 위도 0.002 ≈ 220m. 좌표가 이 안이면 같은 곳으로 본다
+              return dy < 0.002 && dx < 0.002;
+            });
+            resolve(near ?? null);
+          },
+          {
+            size: 5,
+            location: new window.kakao.maps.LatLng(lat, lng),
+            radius: 200,
+          },
+        );
+      });
+    },
+    [ready],
+  );
+
+  /**
+   * 좌표 → 주소. 이름으로 못 찾았을 때의 마지막 수단이다.
+   *
+   * place id 는 못 얻지만 **지역만이라도 살린다.** 지역이 비면 필터가
+   * 통째로 죽는다.
+   */
+  const addressOf = useCallback(
+    (lat: number, lng: number): Promise<string | null> => {
+      if (!ready) return Promise.resolve(null);
+      return new Promise((resolve) => {
+        const geocoder = new window.kakao.maps.services.Geocoder();
+        const done = setTimeout(() => resolve(null), 6000);
+        geocoder.coord2Address(
+          lng,
+          lat,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (data: any, status: any) => {
+            clearTimeout(done);
+            if (
+              status !== window.kakao.maps.services.Status.OK ||
+              !Array.isArray(data) ||
+              data.length === 0
+            ) {
+              resolve(null);
+              return;
+            }
+            const road = data[0].road_address?.address_name;
+            const jibun = data[0].address?.address_name;
+            resolve(road || jibun || null);
+          },
+        );
+      });
+    },
+    [ready],
+  );
+
   const reset = useCallback(() => {
     seqRef.current += 1;
     setResults([]);
     setSearching(false);
   }, []);
 
-  return { ready, failed, results, searching, search, reset };
+  return {
+    ready,
+    failed,
+    results,
+    searching,
+    search,
+    findNear,
+    addressOf,
+    reset,
+  };
 }

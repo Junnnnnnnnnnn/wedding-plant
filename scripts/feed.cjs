@@ -129,9 +129,11 @@ const POSTABLE = [
     categoryName: "스드메",
     title: "본식 촬영",
     amount: 185,
-    location: "아뜰리에 진",
-    locationLat: 37.5223,
-    locationLng: 127.0388,
+    // 실제로 존재하는 장소여야 자동 판정(findNear)이 도는지 확인할 수 있다.
+    // 카카오 SDK 는 목으로 막지 않는다 — 여기가 이 하네스의 요점이다.
+    location: "석촌호수 아뜰리에",
+    locationLat: 37.5067875,
+    locationLng: 127.0983742,
     startDate: "2026-07-01",
   },
 ];
@@ -557,13 +559,29 @@ const cardTexts = (page) =>
   });
   console.log("캡처 feed-post-modal.png");
   console.log(`  후기 올리기 모달  ${flat(modal).slice(0, 120)}`);
-  const placePicker = await page.evaluate(() => {
-    const input = document.querySelector(
-      '[aria-label="후기 올리기"] input[placeholder="업체 이름으로 검색"]',
+  // 일정에 좌표가 있으면 모달이 장소를 자동으로 잡아야 한다.
+  // (카카오 SDK 로드 + 검색 + 역지오코딩이 실제로 도는 구간이다)
+  await wait(4000);
+  const picked = await page.evaluate(() => {
+    const dialog = document.querySelector('[aria-label="후기 올리기"]');
+    if (!dialog) return "모달 없음";
+    const again = [...dialog.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("다시 고르기"),
     );
-    return input ? input.value : "없음";
+    if (again) return `자동 선택됨 → ${flatNode(again.parentElement)}`;
+    const input = dialog.querySelector(
+      'input[placeholder="업체 이름으로 검색"]',
+    );
+    return input ? `검색칸만 (기본값 "${input.value}")` : "장소 UI 없음";
+    function flatNode(el) {
+      return el.innerText
+        .split(String.fromCharCode(10))
+        .filter(Boolean)
+        .slice(0, 2)
+        .join(" / ");
+    }
   });
-  console.log(`  업체 검색칸 기본값  "${placePicker}"`);
+  console.log(`  장소 자동 판정  ${picked}`);
 
   await browser.close();
 })().catch((e) => {

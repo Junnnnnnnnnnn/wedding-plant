@@ -735,6 +735,9 @@ export default function ScheduleDetailView({
                 title: detail.title,
                 amount: detail.amount ?? null,
                 location: detail.location ?? null,
+                // 좌표가 있으면 모달이 장소를 자동으로 잡는다
+                locationLat: mapCoords?.lat ?? null,
+                locationLng: mapCoords?.lng ?? null,
               })
             }
             className={`flex w-full items-center gap-3 bg-white text-left transition-colors ${
