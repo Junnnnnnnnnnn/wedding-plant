@@ -240,8 +240,6 @@ export function NotificationProvider({
                   return;
                 }
 
-                console.log(`[SSE Room ${roomId}] 알림 수신:`, res);
-
                 // 토스트 알림 표시
                 if (res.data) {
                   let notificationMessage =
@@ -319,11 +317,6 @@ export function NotificationProvider({
 
         createConnection(id);
       });
-
-      console.log(
-        "[NotificationProvider] Active SSE connections:",
-        Array.from(eventSourcesRef.current.keys()),
-      );
     },
     [showToast],
   );
@@ -348,9 +341,6 @@ export function NotificationProvider({
         if (userJson.result && userJson.data?.chatRooms) {
           const roomIds = userJson.data.chatRooms.map(
             (r: { id: number }) => r.id,
-          );
-          console.log(
-            `[NotificationContext] Initializing subscriptions for rooms: ${roomIds.join(", ")}`,
           );
           subscribeToChatRooms(roomIds);
 

@@ -881,7 +881,6 @@ export default function ChatRoomView({
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("Socket connected, joining chatRoom:", chatRoomId);
       socket.emit("joinRoom", {
         room: Number(chatRoomId),
         userId: myUserIdRef.current,
@@ -889,8 +888,6 @@ export default function ChatRoomView({
     });
 
     socket.on("roomList", (data: unknown) => {
-      console.log("[roomList] 원본 데이터:", data);
-
       const roomArray = Array.isArray(data) ? data : [];
       const currentRoom = roomArray.find(
         (room: { name?: string; count?: number }) =>
@@ -900,11 +897,7 @@ export default function ChatRoomView({
       if (currentRoom) {
         const totalMembers = membersRef.current.length;
         const userCount = currentRoom.count ?? 0;
-        console.log(
-          `[roomList] Room ${currentRoom.name}: ${userCount}/${totalMembers}명 접속`,
-        );
         if (totalMembers > 0 && userCount >= totalMembers) {
-          console.log("[roomList] 모든 멤버 접속 → 전체 읽음 처리");
           setMessages((prev) =>
             prev.map((msg) => ({ ...msg, unreadCount: 0 })),
           );
@@ -914,8 +907,6 @@ export default function ChatRoomView({
     });
 
     socket.on("message", (payload: SocketMessagePayload) => {
-      console.log("Socket message received:", payload);
-
       // 데이터 구조에 따른 필드 추출 (Flat vs Nested 대응)
       const senderId = payload.planUserId || payload.senderId || "";
       const senderName =
@@ -989,10 +980,6 @@ export default function ChatRoomView({
         message,
         type: "error",
       });
-    });
-
-    socket.on("disconnect", (reason) => {
-      console.log("Socket disconnected:", reason);
     });
 
     // 브라우저 닫기/새로고침 시 leaveRoom 전송

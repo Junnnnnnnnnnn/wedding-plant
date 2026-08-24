@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
   // 개발 환경에서만 로그 출력 (디버깅용)
   if (process.env.NODE_ENV === "development") {
     console.log("카카오 인증 Redirect URI:", redirectUri);
-    console.log("카카오 REST API Key:", clientId);
   }
 
   const params = new URLSearchParams({

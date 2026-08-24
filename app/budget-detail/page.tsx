@@ -55,55 +55,6 @@ interface ScheduleListItem {
   status?: string | null;
 }
 
-const AI_PREP_TITLE = "AI 서비스 준비중이예요!";
-const AI_PREP_SUBTITLE = "조금만 기다려 주세요 🙇‍♂️";
-
-function AIInsightsModal({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) {
-  if (!isOpen) return null;
-  const baseBtnClass =
-    "w-full rounded-full text-sm font-semibold h-11 flex items-center justify-center transition-transform hover:scale-[1.01] active:scale-[0.99]";
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      onClick={onClose}
-      onKeyDown={(e) => e.key === "Escape" && onClose()}
-      role="presentation"
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-        role="dialog"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-        tabIndex={-1}
-        aria-modal="true"
-        aria-label={AI_PREP_TITLE}
-      >
-        <h2 className="text-center text-lg font-semibold text-stone-900">
-          {AI_PREP_TITLE}
-        </h2>
-        <p className="mt-3 text-center text-[15px] font-normal leading-relaxed text-stone-700">
-          {AI_PREP_SUBTITLE}
-        </p>
-        <div className="mt-6 flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className={`${baseBtnClass} border-2 border-stone-300 bg-white text-stone-700`}
-          >
-            닫기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function mapCategoryListToExpenses(list: CategoryChartItem[]): Expense[] {
   return list.map((item, index) => ({
     id: String(index + 1),
@@ -162,7 +113,6 @@ function BudgetDetailsPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null,
   );
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
   // Guide State. 로그인 시: GET /plan/user 응답으로만 설정·참조( localStorage 미참조 )
   const [hasSeenBudgetGuide, setHasSeenBudgetGuide] = useState<boolean | null>(
@@ -204,11 +154,6 @@ function BudgetDetailsPage() {
       id: "budget-stat-grid",
       title: "예산 현황",
       description: "초기 자본과 지출 예정/사용 금액을 한눈에 비교해보세요.",
-    },
-    {
-      id: "budget-ai-insight",
-      title: "AI 조언",
-      description: "현재 예산 사용 패턴을 분석해 AI가 조언해드립니다.",
     },
     {
       id: "budget-analysis",
@@ -647,11 +592,7 @@ function BudgetDetailsPage() {
               */}
               <div className="px-4 py-4 md:px-8 md:pt-6 @[980px]:md:grid @[980px]:md:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] @[980px]:md:items-start @[980px]:md:gap-5">
                 <div id="budget-stat-grid">
-                  <BudgetDonut
-                    stats={stats}
-                    onAskAI={() => setIsAIModalOpen(true)}
-                    aiAnchorId="budget-ai-insight"
-                  />
+                  <BudgetDonut stats={stats} />
                 </div>
 
                 <div className="relative mt-5 @[980px]:md:mt-0">
@@ -733,10 +674,6 @@ function BudgetDetailsPage() {
         </div>
       </main>
 
-      <AIInsightsModal
-        isOpen={isAIModalOpen}
-        onClose={() => setIsAIModalOpen(false)}
-      />
       <LoginRequiredModal
         show={showLoginRequiredModal}
         onClose={() => setShowLoginRequiredModal(false)}
