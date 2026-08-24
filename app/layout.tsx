@@ -17,12 +17,12 @@ import AuthRedirectToMain from "./components/AuthRedirectToMain";
 const hakgyoansim = localFont({
   src: [
     {
-      path: "../public/font/Hakgyoansim Dunggeunmiso TTF R.ttf",
+      path: "../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../public/font/Hakgyoansim Dunggeunmiso TTF B.ttf",
+      path: "../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2",
       weight: "700",
       style: "normal",
     },
@@ -34,22 +34,22 @@ const hakgyoansim = localFont({
 const tmoney = localFont({
   src: [
     {
-      path: "../public/font/TmoneyRoundWindRegular.ttf",
+      path: "../public/font/woff2/TmoneyRoundWindRegular.woff2",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../public/font/TmoneyRoundWindRegular.ttf",
+      path: "../public/font/woff2/TmoneyRoundWindRegular.woff2",
       weight: "500",
       style: "normal",
     },
     {
-      path: "../public/font/TmoneyRoundWindExtraBold.ttf",
+      path: "../public/font/woff2/TmoneyRoundWindExtraBold.woff2",
       weight: "700",
       style: "normal",
     },
     {
-      path: "../public/font/TmoneyRoundWindExtraBold.ttf",
+      path: "../public/font/woff2/TmoneyRoundWindExtraBold.woff2",
       weight: "900",
       style: "normal",
     },
@@ -61,27 +61,27 @@ const tmoney = localFont({
 const kakao = localFont({
   src: [
     {
-      path: "../public/font/KakaoSmallSans-Light.ttf",
+      path: "../public/font/woff2/KakaoSmallSans-Light.woff2",
       weight: "300",
       style: "normal",
     },
     {
-      path: "../public/font/KakaoSmallSans-Regular.ttf",
+      path: "../public/font/woff2/KakaoSmallSans-Regular.woff2",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../public/font/KakaoSmallSans-Regular.ttf",
+      path: "../public/font/woff2/KakaoSmallSans-Regular.woff2",
       weight: "500",
       style: "normal",
     },
     {
-      path: "../public/font/KakaoSmallSans-Bold.ttf",
+      path: "../public/font/woff2/KakaoSmallSans-Bold.woff2",
       weight: "700",
       style: "normal",
     },
     {
-      path: "../public/font/KakaoSmallSans-Bold.ttf",
+      path: "../public/font/woff2/KakaoSmallSans-Bold.woff2",
       weight: "900",
       style: "normal",
     },
