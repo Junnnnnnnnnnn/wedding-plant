@@ -472,6 +472,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
               {isSaved && <Check className="h-5 w-5" />}
               {isSaved ? "저장되었어요" : isSaving ? "저장 중..." : "저장"}
             </button>
+
+            {/*
+              예전에 여기 있던 "공지 사항 및 소개" 는 눌리지도 않는 문구였다.
+              방침 링크는 실제로 갈 곳이 있고, 스토어 심사도 앱 안에서 방침에
+              닿을 수 있기를 본다.
+            */}
+            <a
+              href="/privacy"
+              className="mt-4 block rounded text-center text-[12px] text-gray-400 underline underline-offset-2 transition-colors hover:text-[#ee2b8c]"
+            >
+              개인정보처리방침
+            </a>
           </div>
         </div>
       </div>
