@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { useApi } from "@/app/contexts/ApiContext";
 
+import { track } from "@/lib/analytics";
+
 interface SharePlanModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -155,6 +157,9 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
     if (navigator.share && navigator.canShare?.(shareData)) {
       try {
         await navigator.share(shareData);
+        // 공유 시트를 취소하면 AbortError 로 빠져 여기까지 오지 않는다 —
+        // 실제로 보낸 것만 센다.
+        track("invite_send", { role });
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
           setShareError("공유에 실패했습니다.");
@@ -163,6 +168,7 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
     } else {
       try {
         await navigator.clipboard.writeText(url);
+        track("invite_send", { role });
         setShareError("링크가 클립보드에 복사되었습니다.");
       } catch {
         setShareError("이 브라우저에서는 공유 기능을 지원하지 않습니다.");

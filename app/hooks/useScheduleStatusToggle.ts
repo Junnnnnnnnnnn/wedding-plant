@@ -3,6 +3,8 @@
 import { useCallback, useRef, useState } from "react";
 import { useApi } from "../contexts/ApiContext";
 
+import { track } from "@/lib/analytics";
+
 export type ScheduleStatus = "NORMAL" | "COMPLETED";
 
 /**
@@ -38,7 +40,12 @@ export function useScheduleStatusToggle() {
         const json = (await res.json().catch(() => null)) as {
           result?: boolean;
         } | null;
-        return res.ok && json?.result === true;
+        const ok = res.ok && json?.result === true;
+        // 완료로 바꾼 것만 센다. 되돌리기는 계약이 아니다.
+        if (ok && next === "COMPLETED") {
+          track("schedule_complete");
+        }
+        return ok;
       } catch {
         return false;
       } finally {

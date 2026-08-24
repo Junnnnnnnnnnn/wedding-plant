@@ -21,6 +21,7 @@ import {
 import { getKstDateString } from "@/lib/utils";
 import CountUp from "../../components/CountUp";
 
+import { track } from "@/lib/analytics";
 // 3D(WebGL)는 클라이언트에서만 로드해 Context Lost·엑스박스 방지
 const Lanyard = dynamic(() => import("../../components/Lanyard"), {
   ssr: false,
@@ -338,6 +339,8 @@ function SettingPageContent() {
           );
           return;
         }
+
+        track("onboarding_complete");
       } catch (err) {
         console.error("플랜 설정 저장 실패:", err);
         setSaveError(
