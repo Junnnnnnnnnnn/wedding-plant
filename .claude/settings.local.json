@@ -8,7 +8,11 @@
       "Bash(npx jest:*)",
       "Bash(curl -s http://localhost:5433)",
       "Bash(docker-compose -f docker-compose.test.yml down)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(rm app/components/LoggedInModal.tsx app/components/ProfileEditModal.tsx)",
+      "Bash(npm run *)",
+      "Bash(rm -f chat-create.png chat-room.png chat-msg.png)",
+      "Bash(npx tsc *)"
     ]
   },
   "enableAllProjectMcpServers": true,

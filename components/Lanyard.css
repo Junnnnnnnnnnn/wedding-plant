@@ -16,6 +16,20 @@
 .lanyard-wrapper canvas {
   touch-action: none;
 }
+
+/*
+ * 상자 안에 작게 넣는 미리보기(약관 단계).
+ * 위의 min-height:100dvh 를 그대로 두면 200px 상자 안에서도 캔버스가 화면
+ * 높이만큼 커진다. fov 는 세로 기준이라 캔버스가 세로로 길수록 보이는 가로가
+ * 좁아져(8.82 × 가로/세로) 카드(1.8 유닛)의 좌우가 잘려 나갔다.
+ * 캔버스를 상자 크기에 맞춘다.
+ */
+.lanyard-preview .lanyard-wrapper {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+}
 .next-button-container {
   position: absolute;
   bottom: 40px;

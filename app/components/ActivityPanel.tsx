@@ -90,10 +90,12 @@ function relativeTime(iso: string): string {
 }
 
 /**
- * 최근 활동. 넓은 화면(≥768)의 홈 좌측 컬럼에 붙는다.
+ * 최근 활동. 넓은 화면(≥768)의 홈 대시보드 사이드에 붙는다.
  *
- * 기록이 없으면 아무것도 렌더하지 않는다. 활동 로그는 이 기능이 배포된
- * 뒤부터 쌓이므로, 기존 사용자는 한동안 비어 있는 게 정상이다.
+ * 비어 있어도 카드는 그대로 낸다. 예전에는 기록이 없으면 아무것도 렌더하지
+ * 않아서, 활동 로그가 아직 안 쌓인 사용자에게는 사이드 컬럼이 통째로 사라지고
+ * 대시보드에 구멍이 뚫린 것처럼 보였다. "무엇을 하면 여기가 채워지는지"는
+ * 비어 있을 때 오히려 더 알려 줘야 한다.
  */
 export default function ActivityPanel({
   roomId = null,
@@ -138,8 +140,6 @@ export default function ActivityPanel({
     fetchActivities();
   }, [fetchActivities, refreshToken]);
 
-  if (!loaded || items.length === 0) return null;
-
   return (
     <section
       className={
@@ -151,6 +151,34 @@ export default function ActivityPanel({
       <h2 className="mb-3 text-[15px] font-bold tracking-tight text-[#1b0d14]">
         최근 활동
       </h2>
+      {/*
+        아직 못 받았을 때. 빈 상태를 먼저 보여 줬다가 기록이 뜨면 카드 높이가
+        튀므로, 받는 동안은 같은 짜임의 자리만 잡아 둔다.
+      */}
+      {!loaded && (
+        <div className="grid gap-4" aria-hidden>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-start gap-3">
+              <span className="skeleton-shimmer h-7 w-7 shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1">
+                <span
+                  className="skeleton-shimmer block h-[13px] rounded"
+                  style={{ width: `${[88, 72, 80][i]}%` }}
+                />
+                <span className="skeleton-shimmer mt-1.5 block h-[11px] w-14 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {loaded && items.length === 0 && (
+        <p className="text-[13px] leading-relaxed text-[#7a6c74] break-keep">
+          아직 쌓인 기록이 없어요.
+          <br />
+          플랜을 추가하거나 완료하면, 함께 보는 사람들이 무엇을 했는지 여기에
+          남습니다.
+        </p>
+      )}
       <div className="grid gap-4">
         {items.map((item) => (
           <div key={item.id} className="flex items-start gap-3">

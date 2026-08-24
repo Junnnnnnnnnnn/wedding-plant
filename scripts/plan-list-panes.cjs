@@ -387,9 +387,42 @@ const hasToast = (page) =>
     console.log(`  가이드 앵커 ${w}px  ${anchors.join("  ")}`);
   }
 
+  /*
+   * 비로그인으로 들어오면 "로그인이 필요합니다" 모달이 뜬다.
+   * 닫기는 홈(/main)으로 가야 한다 — 예전에는 랜딩("/")으로 보내서
+   * 셸에서 탭을 눌러 들어온 사람이 로그인 전 화면까지 튕겨 나갔다.
+   */
+  await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    // 온보딩을 끝낸 게스트. 이게 없으면 /main 이 자기 게이트로 다시 내보낸다
+    sessionStorage.setItem("plan_has_completed_guest_setting", "1");
+  });
+  await page.goto(`${ORIGIN}/plan-list`, {
+    waitUntil: "networkidle2",
+    timeout: 60000,
+  });
+  await wait(1800);
+  const closed = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('[role="dialog"] button')].find(
+      (b) => b.textContent.trim() === "닫기",
+    );
+    if (!btn) return false;
+    btn.click();
+    return true;
+  });
+  await wait(1500);
+  const afterClose = new URL(page.url()).pathname;
+  console.log(
+    `  비로그인 닫기  버튼=${closed ? "있음" : "없음"}  이동=${afterClose}`,
+  );
+  const closeOk = closed && afterClose === "/main";
+  if (!closeOk) console.log("   - 닫기가 /main 으로 가지 않았다");
+
   await browser.close();
 
-  if (toastForCurrent || !toastForOther) process.exit(1);
+  if (toastForCurrent || !toastForOther || !closeOk) process.exit(1);
 })().catch((e) => {
   console.error("ERR", e);
   process.exit(1);

@@ -64,11 +64,11 @@ export default function GuideOverlay({
   const updateRect = useCallback(() => {
     if (activeStepId) {
       const el = document.getElementById(activeStepId);
-      if (el) {
-        setTargetRect(el.getBoundingClientRect());
-      } else {
-        setTargetRect(null);
-      }
+      const r = el?.getBoundingClientRect();
+      // 숨은 엘리먼트(display:none)도 rect 자체는 돌아온다 — 전부 0 이다.
+      // 그대로 쓰면 스팟라이트가 좌상단 0×0 으로 붕괴하고 말풍선은
+      // maxWidth:0 이 되어 화면만 까맣게 덮인다. 없는 것으로 친다.
+      setTargetRect(r && r.width > 0 && r.height > 0 ? r : null);
     } else {
       setTargetRect(null);
     }
@@ -83,6 +83,23 @@ export default function GuideOverlay({
       window.removeEventListener("scroll", updateRect, true);
     };
   }, [updateRect]);
+
+  /*
+   * 화면 밖에 있는 대상은 끌어온다.
+   * 폭에 따라 열 수가 달라지면(대시보드가 1열로 접히는 768 등) 뒤쪽 스텝이
+   * 스크롤 아래로 내려간다. 그때 스팟라이트만 그리면 아무것도 안 보인다.
+   * 스크롤 이벤트는 위 updateRect 가 캡처로 듣고 있어 좌표는 따라온다.
+   */
+  useEffect(() => {
+    if (!isOpen || !activeStepId) return;
+    const el = document.getElementById(activeStepId);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return;
+    if (r.top < 0 || r.bottom > window.innerHeight) {
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [isOpen, activeStepId]);
 
   const handleOverlayClick = () => {
     // 활성 스텝이 없으면 클릭 무시
@@ -206,9 +223,29 @@ export default function GuideOverlay({
           </>
         )}
 
-        {/* Fallback dark background when target is not yet ready */}
+        {/*
+          앵커를 못 찾았을 때. 예전에는 까만 배경만 깔아 글이 아예 안 보였다.
+          비출 곳이 없을 뿐 할 말은 있으므로 말풍선을 화면 가운데 띄운다.
+        */}
         {activeStepId && !targetRect && (
-          <div className="absolute inset-0 bg-black/60 transition-colors duration-300" />
+          <>
+            <div className="absolute inset-0 bg-black/60 transition-colors duration-300" />
+            <div className="absolute inset-0 z-10 flex items-center justify-center px-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                key={activeStepId}
+                className="bg-white text-gray-900 px-5 py-4 rounded-xl shadow-2xl border border-white/20 max-w-sm w-full"
+              >
+                <div className="font-bold text-lg mb-1 text-[#ee2b8c]">
+                  {activeStep?.title}
+                </div>
+                <div className="text-sm text-gray-600 leading-relaxed font-medium">
+                  {activeStep?.description}
+                </div>
+              </motion.div>
+            </div>
+          </>
         )}
 
         {/* Close Button */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, CircleHelp, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/api";
 import { formatKoreanTime, getKstDate, parseLocalDate } from "@/lib/utils";
@@ -55,6 +55,8 @@ interface HomeDashboardProps {
   /** READ 권한이면 추가·완료를 막는다 */
   canEdit: boolean;
   onAddPlan: () => void;
+  /** 가이드 다시 보기. 폰 트리에는 있던 버튼이 대시보드에는 없었다 */
+  onOpenGuide: () => void;
   /** 참여 멤버 보기 · 신랑·신부 지정. 공유 모달을 연다 */
   onOpenMembers: () => void;
   /** 헤더 아바타에 쓸 멤버 목록 */
@@ -125,6 +127,7 @@ export default function HomeDashboard({
   roomId,
   canEdit,
   onAddPlan,
+  onOpenGuide,
   onOpenMembers,
   members = [],
   refreshToken = 0,
@@ -286,7 +289,10 @@ export default function HomeDashboard({
     */
     <div className="@container hidden min-h-0 flex-1 flex-col bg-[#fcfbfc] md:flex">
       {/* 상단 바 */}
-      <header className="shrink-0 border-b border-stone-100 bg-white">
+      <header
+        id="main-dash-header"
+        className="shrink-0 border-b border-stone-100 bg-white"
+      >
         <div className="mx-auto flex w-full max-w-[1800px] items-center gap-5 px-8 py-5">
           {planLoading ? (
             <>
@@ -370,6 +376,14 @@ export default function HomeDashboard({
             </button>
             <button
               type="button"
+              onClick={onOpenGuide}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-[#9b8f96] transition-colors hover:bg-[#fff2f6] hover:text-[#ee2b8c]"
+              aria-label="가이드 보기"
+            >
+              <CircleHelp className="h-[18px] w-[18px]" strokeWidth={2} />
+            </button>
+            <button
+              type="button"
               onClick={onOpenBoard}
               className="h-10 rounded-[13px] border border-[#f0e3ea] bg-white px-3.5 text-[13px] text-[#6b6570] transition-colors hover:border-[#ee2b8c55] hover:text-[#ee2b8c]"
             >
@@ -399,7 +413,7 @@ export default function HomeDashboard({
           비어 있어도 접지 않는다. 이 줄이 사라지면 "이번 달에 뭘 넣지"
           라는 자리 자체가 없어져서, 할 일이 없을 때 오히려 더 필요하다.
         */}
-        <section className="mb-6">
+        <section id="main-dash-tasks" className="mb-6">
           <div className="mb-4 flex items-baseline justify-between gap-3">
             <h2 className="text-[15px] font-bold tracking-tight text-[#1b0d14]">
               이번 달 할 일 · {today.getMonth() + 1}월
@@ -491,7 +505,10 @@ export default function HomeDashboard({
           }
         >
           {/* 예산 — 가장 넓고 무겁게 */}
-          <section className="rounded-[28px] border border-[#ee2b8c0f] bg-white p-[26px] shadow-sm lg:row-span-2 xl:row-auto">
+          <section
+            id="main-dash-budget"
+            className="rounded-[28px] border border-[#ee2b8c0f] bg-white p-[26px] shadow-sm lg:row-span-2 xl:row-auto"
+          >
             <div className="mb-4 flex items-baseline justify-between gap-3">
               <h2 className="text-[15px] font-bold tracking-tight text-[#1b0d14]">
                 예산
@@ -663,7 +680,10 @@ export default function HomeDashboard({
           </section>
 
           {/* 다가오는 일정 — 카드가 아니라 선 위의 마커 */}
-          <section className="rounded-[28px] border border-[#ee2b8c0f] bg-white p-6 shadow-sm">
+          <section
+            id="main-dash-timeline"
+            className="rounded-[28px] border border-[#ee2b8c0f] bg-white p-6 shadow-sm"
+          >
             <div className="mb-4 flex items-baseline justify-between gap-3">
               <h2 className="text-[15px] font-bold tracking-tight text-[#1b0d14]">
                 다가오는 일정
@@ -736,7 +756,10 @@ export default function HomeDashboard({
           </section>
 
           {/* 사이드 — 활동 + 대화 */}
-          <div className="grid content-start gap-[22px] [&>*]:min-w-0">
+          <div
+            id="main-dash-side"
+            className="grid content-start gap-[22px] [&>*]:min-w-0"
+          >
             <ActivityPanel
               roomId={roomId}
               inDashboard

@@ -59,6 +59,82 @@ import { parseLocalDate, getKstDate, getDaysUntil } from "@/lib/utils";
 import { useIsDesktop } from "../hooks/useMediaQuery";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 
+/** 폰(md 미만) 트리의 가이드. 앵커는 전부 md:hidden 안에 있다 */
+const MOBILE_GUIDE_STEPS: GuideStep[] = [
+  {
+    id: "main-header-info",
+    title: "기본 정보",
+    description:
+      "신랑신부님의 이름과 D-day, 그리고 함께 관리하는 멤버를 확인할 수 있어요.",
+  },
+  {
+    id: "main-budget-card",
+    title: "예산 현황",
+    description: "전체 예산 대비 현재까지의 지출 현황을 한눈에 파악하세요.",
+  },
+  {
+    id: "main-tabs",
+    title: "플랜 탭",
+    description: "계획 중인 플랜과 완료된 플랜을 나누어 볼 수 있어요.",
+    tooltipPosition: "above",
+  },
+  {
+    id: "main-plan-list",
+    title: "플랜 리스트",
+    description:
+      "등록된 스케줄을 확인하고 체크하여 완료 상태로 변경할 수 있어요.",
+    spotlightOffset: { left: 12 },
+    tooltipPosition: "above",
+  },
+  {
+    id: "main-bottom-nav",
+    title: "네비게이션",
+    description: "다른 메뉴로 빠르게 이동할 수 있는 하단 메뉴바입니다.",
+    tooltipAlign: "center",
+  },
+];
+
+/** 넓은 화면(≥768) 대시보드의 가이드. 화면이 다르니 짚는 자리도 다르다 */
+const DESKTOP_GUIDE_STEPS: GuideStep[] = [
+  {
+    id: "main-dash-header",
+    title: "기본 정보",
+    description:
+      "두 분의 이름과 결혼식까지 남은 날, 함께 보는 멤버를 확인할 수 있어요.",
+  },
+  {
+    id: "main-dash-tasks",
+    title: "이번 달 할 일",
+    description:
+      "이번 달에 남은 일만 모아 둡니다. 끝낸 일은 플랜 보드의 완료 묶음에서 볼 수 있어요.",
+  },
+  {
+    id: "main-dash-budget",
+    title: "예산",
+    description:
+      "분홍은 실제로 쓴 돈, 회색은 아직 안 쓴 예정입니다. 자세히 보려면 상세 분석으로 들어가세요.",
+  },
+  {
+    id: "main-dash-timeline",
+    title: "다가오는 일정",
+    description: "오늘 이후로 잡힌 일정을 가까운 순서대로 봅니다.",
+  },
+  {
+    id: "main-dash-side",
+    title: "활동과 대화",
+    description:
+      "함께 보는 사람들이 무엇을 했는지, 나눈 대화를 여기서 확인할 수 있어요.",
+  },
+  {
+    id: "main-side-nav",
+    title: "메뉴",
+    description:
+      "홈·플랜 보드·참여 플랜·피드를 여기서 오갑니다. 화면이 좁아지면 아래 탭바로 바뀌어요.",
+    tooltipPosition: "above",
+    tooltipAlign: "center",
+  },
+];
+
 /** 정렬 옵션 → 버튼 표시용 라벨(가격/날짜/이름) + 방향 */
 function getSortButtonLabel(opt: PlanSortOption): {
   label: string;
@@ -375,6 +451,19 @@ function MainPageContent() {
     null,
   );
   const [showGuide, setShowGuide] = useState(false);
+  /**
+   * 가이드를 연 시점의 폭. useMediaQuery 는 서버 스냅샷이 false 라 하이드레이션
+   * 직후 한 번 false 로 렌더되는데, 그 값으로 스텝 배열을 갈면 가이드가 열린 채
+   * 앵커가 통째로 바뀐다. 여는 순간 matchMedia 를 직접 읽는다.
+   */
+  const [guideWide, setGuideWide] = useState(false);
+  const openGuide = useCallback(() => {
+    setGuideWide(
+      typeof window !== "undefined" &&
+        window.matchMedia("(min-width: 768px)").matches,
+    );
+    setShowGuide(true);
+  }, []);
   const [selectedCategory, setSelectedCategory] = useState("전체");
 
   // Hydration: date-dependent UI only after mount so server and first client render match
@@ -392,9 +481,9 @@ function MainPageContent() {
       if (typeof window === "undefined") return;
       if (localStorage.getItem("hasSeenMainGuide") === "true") return;
     }
-    const timer = setTimeout(() => setShowGuide(true), 1000);
+    const timer = setTimeout(() => openGuide(), 1000);
     return () => clearTimeout(timer);
-  }, [hasSeenMainGuide, tokenChecked]);
+  }, [hasSeenMainGuide, tokenChecked, openGuide]);
 
   const handleCloseGuide = useCallback(async () => {
     setShowGuide(false);
@@ -412,39 +501,12 @@ function MainPageContent() {
       localStorage.setItem("hasSeenMainGuide", "true");
   }, [fetchWithAuth]);
 
-  const guideSteps: GuideStep[] = [
-    {
-      id: "main-header-info",
-      title: "기본 정보",
-      description:
-        "신랑신부님의 이름과 D-day, 그리고 함께 관리하는 멤버를 확인할 수 있어요.",
-    },
-    {
-      id: "main-budget-card",
-      title: "예산 현황",
-      description: "전체 예산 대비 현재까지의 지출 현황을 한눈에 파악하세요.",
-    },
-    {
-      id: "main-tabs",
-      title: "플랜 탭",
-      description: "계획 중인 플랜과 완료된 플랜을 나누어 볼 수 있어요.",
-      tooltipPosition: "above",
-    },
-    {
-      id: "main-plan-list",
-      title: "플랜 리스트",
-      description:
-        "등록된 스케줄을 확인하고 체크하여 완료 상태로 변경할 수 있어요.",
-      spotlightOffset: { left: 12 },
-      tooltipPosition: "above",
-    },
-    {
-      id: "main-bottom-nav",
-      title: "네비게이션",
-      description: "다른 메뉴로 빠르게 이동할 수 있는 하단 메뉴바입니다.",
-      tooltipAlign: "center",
-    },
-  ];
+  /**
+   * 폰 트리(md:hidden)와 대시보드는 앵커가 완전히 다르다. 예전에는 폰 앵커만
+   * 두어 ≥768 에서 다섯 스텝 전부 대상이 없었고, 스팟라이트가 좌상단 0×0 으로
+   * 붕괴해 화면만 까맣게 덮였다.
+   */
+  const guideSteps = guideWide ? DESKTOP_GUIDE_STEPS : MOBILE_GUIDE_STEPS;
 
   // JWT 있고 share 파라미터 있으면 GET /plan/user/{shareCode} + schedule + room/member 호출
   const fetchSharedRoomWithAuth = useCallback(
@@ -2086,7 +2148,7 @@ function MainPageContent() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShowGuide(true)}
+                onClick={openGuide}
                 className="flex h-12 w-12 shrink-0 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"
                 aria-label="가이드 보기"
               >
@@ -2605,6 +2667,7 @@ function MainPageContent() {
 
       {/* 태블릿 이상(≥768) — D 시안의 홈 대시보드 */}
       <HomeDashboard
+        onOpenGuide={openGuide}
         coupleName={displayData.name}
         weddingDateText={weddingDateText}
         venue={displayData.venue}

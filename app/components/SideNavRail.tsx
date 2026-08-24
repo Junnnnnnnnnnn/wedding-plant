@@ -48,7 +48,10 @@ export default function SideNavRail({
   };
 
   return (
-    <aside className="hidden h-full shrink-0 flex-col overflow-hidden border-r border-stone-100 bg-white py-5 md:flex md:w-[76px] lg:w-[236px] lg:px-4 lg:py-6">
+    <aside
+      id="main-side-nav"
+      className="hidden h-full shrink-0 flex-col overflow-hidden border-r border-stone-100 bg-white py-5 md:flex md:w-[76px] lg:w-[236px] lg:px-4 lg:py-6"
+    >
       <div className="flex items-center justify-center gap-2.5 pb-6 lg:justify-start lg:pl-2.5">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-[#ee2b8c] text-sm font-bold text-white shadow-[0_4px_12px_-3px_rgba(238,43,140,0.55)]">
           WP

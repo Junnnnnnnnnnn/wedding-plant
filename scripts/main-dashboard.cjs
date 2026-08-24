@@ -214,6 +214,12 @@ function installMocks(page) {
       return;
     }
     if (p0 === "/plan/activity/list") {
+      // EMPTY_ACTIVITY=1 로 기록이 아직 없는 사용자를 재현한다.
+      // 예전에는 이때 패널이 통째로 사라져 대시보드에 구멍이 뚫렸다.
+      if (process.env.EMPTY_ACTIVITY) {
+        req.respond(ok({ list: [], total: 0 })).catch(() => {});
+        return;
+      }
       req
         .respond(
           ok({
@@ -782,54 +788,117 @@ function installMocks(page) {
   // 가이드 말풍선이 새 레이아웃에서도 대상 위에 붙는지 확인한다.
   // GuideOverlay 는 대상 엘리먼트의 rect 와 window.innerHeight 로 위치를
   // 계산하므로, 레일·2열 도입으로 좌표가 밀리면 여기서 드러난다.
-  for (const w of [375, 1280]) {
+  // 가이드는 폭에 따라 짚는 자리가 다르다 — 폰은 md:hidden 트리, 넓은 화면은
+  // 대시보드다. 예전에는 폰 앵커만 있어 ≥768 에서 다섯 스텝 전부 대상이 없었고,
+  // 이 하네스는 visible:false 를 찍기만 하고 검사하지 않아 그냥 지나갔다.
+  const GUIDE_STEPS = {
+    mobile: [
+      "main-header-info",
+      "main-budget-card",
+      "main-tabs",
+      "main-plan-list",
+      "main-bottom-nav",
+    ],
+    desktop: [
+      "main-dash-header",
+      "main-dash-tasks",
+      "main-dash-budget",
+      "main-dash-timeline",
+      "main-dash-side",
+      "main-side-nav",
+    ],
+  };
+  const guideProblems = [];
+
+  // 768 은 대시보드가 뜨기 시작하는 경계다 (레일은 아직 아이콘만)
+  for (const w of [375, 768, 1280, 2327]) {
     await page.setViewport({ width: w, height: 900, deviceScaleFactor: 1.5 });
     await page.goto(`${ORIGIN}/main`, {
       waitUntil: "networkidle2",
       timeout: 60000,
     });
     await wait(1800);
-    await page.evaluate(() => {
+
+    // 최근 활동은 기록이 없어도 카드를 낸다. 예전에는 통째로 렌더하지 않아
+    // 대시보드 사이드 컬럼에 구멍이 뚫렸다 (EMPTY_ACTIVITY=1 로 재현).
+    if (w >= 768) {
+      const act = await page.evaluate(() => {
+        const h = [...document.querySelectorAll("h2")].find(
+          (x) => x.textContent.trim() === "최근 활동",
+        );
+        const sec = h ? h.closest("section") : null;
+        if (!sec) return null;
+        return {
+          height: Math.round(sec.getBoundingClientRect().height),
+          비었음: sec.innerText.includes("아직 쌓인 기록이 없어요"),
+        };
+      });
+      console.log(`  최근 활동 ${w}px ${JSON.stringify(act)}`);
+      if (!act) guideProblems.push(`${w}: 최근 활동 패널이 렌더되지 않았다`);
+      else if (act.height < 40)
+        guideProblems.push(`${w}: 최근 활동 패널 높이가 ${act.height}px`);
+    }
+
+    const opened = await page.evaluate(() => {
       const btn = [...document.querySelectorAll("button")].find(
         (b) =>
           b.querySelector("svg.lucide-circle-help") ||
           b.getAttribute("aria-label") === "가이드 보기",
       );
-      if (btn) btn.click();
+      if (!btn) return false;
+      btn.click();
+      return true;
     });
+    if (!opened) guideProblems.push(`${w}: "가이드 보기" 버튼이 없다`);
     await wait(1200);
 
-    const steps = [
-      "main-header-info",
-      "main-budget-card",
-      "main-tabs",
-      "main-plan-list",
-    ];
+    const steps = w >= 768 ? GUIDE_STEPS.desktop : GUIDE_STEPS.mobile;
     for (let i = 0; i < steps.length; i += 1) {
       const info = await page.evaluate((id) => {
+        // 스팟라이트 = 오버레이 포털 안에서 거대한 box-shadow 로 나머지를
+        // 덮는 구멍. 문서 전체에서 찾으면 그림자 있는 카드가 먼저 잡힌다.
+        const overlay = document.querySelector("div.fixed.inset-0.touch-none");
+        const spot = overlay
+          ? overlay.querySelector('div[style*="box-shadow"]')
+          : null;
+        const sr = spot ? Math.round(spot.getBoundingClientRect().width) : null;
         const el = document.getElementById(id);
-        if (!el) return { missing: true };
+        if (!el) return { missing: true, spot: sr };
         const r = el.getBoundingClientRect();
         return {
           visible:
             r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight,
           top: Math.round(r.top),
           left: Math.round(r.left),
+          spot: sr,
         };
       }, steps[i]);
       console.log(`  가이드 ${w}px [${steps[i]}] ${JSON.stringify(info)}`);
+      if (info.missing) guideProblems.push(`${w}: ${steps[i]} 앵커가 없다`);
+      else if (!info.visible)
+        guideProblems.push(`${w}: ${steps[i]} 앵커가 안 보인다`);
+      // 0 폭이면 앵커를 못 찾아 좌상단으로 붕괴한 것이다 (화면만 까맣게 덮인다)
+      if (info.spot === 0)
+        guideProblems.push(`${w}: ${steps[i]} 스팟라이트가 0 폭으로 붕괴했다`);
       await page.screenshot({
         path: path.join(OUT, `main-guide-${w}-${i}.png`),
       });
-      // 다음 스텝으로
+      // 다음 스텝으로. GuideOverlay 에는 "다음" 버튼이 없고 오버레이를 누르면
+      // 넘어간다 — 예전에는 없는 버튼을 찾아서 1단계에 머문 채로 돌았다.
       await page.evaluate(() => {
-        const next = [...document.querySelectorAll("button")].find((b) =>
-          /다음|시작하기|확인/.test(b.innerText.trim()),
-        );
-        if (next) next.click();
+        document.querySelector("div.fixed.inset-0.touch-none")?.click();
       });
-      await wait(700);
+      // 대상이 화면 밖이면 오버레이가 smooth 로 끌어온다. 그게 끝난 뒤 재야 한다
+      await wait(1100);
     }
+  }
+
+  if (guideProblems.length) {
+    console.log("가이드 문제:");
+    guideProblems.forEach((x) => console.log(" -", x));
+    process.exitCode = 1;
+  } else {
+    console.log("가이드 이상 없음");
   }
 
   await browser.close();

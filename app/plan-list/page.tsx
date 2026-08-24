@@ -676,7 +676,14 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
         show={showLoginModal}
         onClose={() => {
           setShowLoginModal(false);
-          router.replace("/");
+          /*
+           * 홈으로 돌린다. 예전에는 랜딩("/")으로 보내서, 셸 안에서 탭을
+           * 눌러 들어온 사람이 닫기 한 번에 내비게이션도 없는 로그인 전
+           * 화면까지 튕겨 나갔다.
+           * 온보딩을 안 끝낸 게스트를 어디로 보낼지는 /main 이 자기 게이트에서
+           * 정한다 — 그 규칙을 여기에 또 적으면 두 곳이 어긋난다.
+           */
+          router.replace("/main");
         }}
         title={loginModalTitle}
       />
