@@ -47,6 +47,9 @@ export default function UserPage() {
     adAgreementDate?: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  /* 게스트에게는 지울 계정이 없다. 렌더 중에 getToken() 을 읽으면 서버
+     렌더와 값이 달라 하이드레이션이 어긋나므로 상태로 들고 있는다. */
+  const [isMember, setIsMember] = useState(false);
 
   const fetchUser = useCallback(async () => {
     // 게스트/실패 시 사용할 로컬 기준값 (날짜는 KST 기준)
@@ -64,10 +67,12 @@ export default function UserPage() {
 
     const token = getToken();
     if (!token) {
+      setIsMember(false);
       setUserData(localFallback());
       setLoading(false);
       return;
     }
+    setIsMember(true);
     try {
       const res = await fetchWithAuth("/plan/user");
       const json = (await res.json()) as {
@@ -160,6 +165,31 @@ export default function UserPage() {
     router.replace("/?api_error=0");
   };
 
+  /**
+   * 회원 탈퇴. 서버에서 계정이 지워진 뒤에만 로컬을 비운다 — 순서를 바꾸면
+   * 요청이 실패했을 때 계정은 살아 있는데 이 기기에서만 로그아웃된 상태가
+   * 되고, 사용자는 탈퇴된 줄 안다.
+   */
+  const handleWithdraw = async (): Promise<boolean> => {
+    try {
+      const res = await fetchWithAuth("/plan/user", { method: "DELETE" });
+      if (!res.ok) return false;
+      // 이 엔드포인트는 본문을 내지 않는다. 본문이 있고 result 가 false 일
+      // 때만 실패로 본다.
+      const json = (await res.json().catch(() => null)) as {
+        result?: boolean;
+      } | null;
+      if (json && json.result === false) return false;
+    } catch {
+      return false;
+    }
+
+    clearAllStoredData();
+    resetData();
+    router.replace("/?api_error=0");
+    return true;
+  };
+
   if (loading || !userData) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[#fcfbfc]">
@@ -180,6 +210,7 @@ export default function UserPage() {
         onSave={handleSave}
         onClose={handleClose}
         onSignOut={handleSignOut}
+        onWithdraw={isMember ? handleWithdraw : undefined}
       />
     </AppShell>
   );

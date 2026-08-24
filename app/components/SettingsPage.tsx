@@ -26,6 +26,13 @@ interface SettingsPageProps {
   }) => Promise<boolean> | boolean | void;
   onClose: () => void;
   onSignOut?: () => void;
+  /**
+   * 회원 탈퇴. 성공 여부를 반환한다.
+   *
+   * 게스트에게는 지울 계정이 없으므로 넘기지 않는다 — 없으면 탈퇴 줄 자체를
+   * 내지 않는다.
+   */
+  onWithdraw?: () => Promise<boolean>;
 }
 
 function formatDate(date: Date): string {
@@ -81,12 +88,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   onSave,
   onClose,
   onSignOut,
+  onWithdraw,
 }) => {
   const [formData, setFormData] = useState(user);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const selectedDate = useMemo(() => {
@@ -250,8 +261,73 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
               </dl>
             </div>
 
+            {/*
+              로그아웃과 탈퇴가 한 카드에 산다. 탈퇴를 위해 카드를 하나 더
+              만들면 일 년에 한 번 쓸까 말까 한 동작이 매번 화면 한 칸을
+              차지한다. 대신 구분선 아래 조용한 줄로 둔다 — 위험한 동작일수록
+              눈에 덜 띄어야 실수로 눌리지 않는다.
+
+              한 번에 하나만 묻는다. 로그아웃을 확인하는 중에는 탈퇴 줄이,
+              탈퇴를 확인하는 중에는 로그아웃 버튼이 사라진다.
+            */}
             <div className="rounded-[28px] border border-[#ee2b8c0f] bg-white p-5 shadow-sm">
-              {confirmSignOut ? (
+              {confirmWithdraw ? (
+                /*
+                  탈퇴는 되돌릴 수 없다. "정말요?" 만 묻는 확인은 사용자가
+                  답을 모르는 질문이라, 무엇이 사라지고 무엇이 남는지 먼저
+                  적는다. 후기가 남는 것도 여기서 밝힌다 — 나중에 알게 되면
+                  속았다고 느낀다.
+                */
+                <div className="space-y-3">
+                  <p className="text-[13px] font-bold text-[#1b0d14]">
+                    정말 탈퇴하시겠어요?
+                  </p>
+                  <ul className="space-y-1.5 text-[12.5px] leading-relaxed text-gray-500">
+                    <li>일정과 예산이 사라지고 되돌릴 수 없습니다.</li>
+                    <li>함께 준비하던 사람의 방에서 나가집니다.</li>
+                    <li>올린 견적 후기는 작성자 없이 남습니다.</li>
+                  </ul>
+                  {withdrawError && (
+                    <p className="text-[12.5px] leading-relaxed text-[#c0203c]">
+                      {withdrawError}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={isWithdrawing}
+                      onClick={() => {
+                        setConfirmWithdraw(false);
+                        setWithdrawError(null);
+                      }}
+                      className="h-11 flex-1 rounded-xl border border-stone-200 bg-white text-[13px] font-bold text-[#1b0d14] transition-colors hover:bg-stone-50 disabled:opacity-50"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isWithdrawing}
+                      onClick={async () => {
+                        if (!onWithdraw) return;
+                        setIsWithdrawing(true);
+                        setWithdrawError(null);
+                        const ok = await onWithdraw();
+                        // 성공하면 화면이 통째로 바뀌므로 상태를 되돌릴
+                        // 필요가 없다. 실패했을 때만 다시 누를 수 있게 푼다.
+                        if (!ok) {
+                          setIsWithdrawing(false);
+                          setWithdrawError(
+                            "탈퇴하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+                          );
+                        }
+                      }}
+                      className="h-11 flex-1 rounded-xl bg-[#c0203c] text-[13px] font-bold text-white transition-colors hover:bg-[#a51b33] disabled:opacity-60"
+                    >
+                      {isWithdrawing ? "탈퇴 중..." : "탈퇴하기"}
+                    </button>
+                  </div>
+                </div>
+              ) : confirmSignOut ? (
                 // 로그아웃은 저장된 플랜 데이터까지 지우므로 한 번 더 확인받는다
                 <div className="space-y-3">
                   <p className="text-[12.5px] leading-relaxed text-[#8a3236]">
@@ -275,14 +351,27 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                   </div>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmSignOut(true)}
-                  className="flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[#e5484d33] bg-white text-[13px] font-bold text-[#c0203c] transition-colors hover:bg-[#fffafa]"
-                >
-                  <LogOut className="h-4 w-4" />
-                  로그아웃
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmSignOut(true)}
+                    className="flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[#e5484d33] bg-white text-[13px] font-bold text-[#c0203c] transition-colors hover:bg-[#fffafa]"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    로그아웃
+                  </button>
+                  {onWithdraw && (
+                    <div className="mt-3 border-t border-[#f4eff2] pt-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmWithdraw(true)}
+                        className="rounded text-[12px] text-gray-400 underline underline-offset-2 transition-colors hover:text-[#c0203c] focus-visible:text-[#c0203c]"
+                      >
+                        회원 탈퇴
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -383,10 +472,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
               {isSaved && <Check className="h-5 w-5" />}
               {isSaved ? "저장되었어요" : isSaving ? "저장 중..." : "저장"}
             </button>
-
-            <p className="mt-4 text-center text-[12px] text-gray-300">
-              공지 사항 및 소개
-            </p>
           </div>
         </div>
       </div>
