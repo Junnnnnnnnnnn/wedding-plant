@@ -24,6 +24,8 @@ import { getKstDateString } from "@/lib/utils";
 import NameInputModal from "./NameInputModal";
 import CustomAlertModal from "./CustomAlertModal";
 
+import { track } from "@/lib/analytics";
+
 type KakaoLoginAlertProps = {
   show: boolean;
   /** /main에서 로그인 성공 후 GET /plan/user로 데이터를 불러올 때 호출 */
@@ -142,6 +144,7 @@ export default function KakaoLoginAlert({
         if (token) {
           clearTimeout(timeoutId);
           setToken(token);
+          track("signup");
           const url = new URL(window.location.href);
           url.searchParams.delete("kakao_login");
           url.hash = "";

@@ -4,7 +4,9 @@ import { useKakaoAuth } from "../hooks/useKakaoAuth";
 
 const TITLE = "로그인이 필요해요!";
 const BODY = "회원가입 또는 로그인을 해주세요.";
-const TIP = "아래에서 원하는 방법으로 로그인해 주세요.";
+/* 로그인 수단이 카카오 하나뿐이라 "원하는 방법으로" 라고 쓰지 않는다.
+   네이버·Apple 을 실제로 붙이면 그때 문구를 되돌린다. */
+const TIP = "카카오 계정으로 바로 시작할 수 있어요.";
 
 type LoginRequiredModalProps = {
   show: boolean;
@@ -57,31 +59,11 @@ export default function LoginRequiredModal({
         <div className="mt-6 flex flex-col gap-2.5 sm:gap-3">
           <button
             type="button"
-            disabled
-            className={`${baseBtnClass} flex-col gap-0.5 bg-[#03c75a] text-white`}
-          >
-            <span>네이버로 로그인</span>
-            <span className="text-xs font-normal opacity-90">
-              서비스 준비중
-            </span>
-          </button>
-          <button
-            type="button"
             onClick={handleKakaoAuth}
             disabled={loading}
             className={`${baseBtnClass} bg-[#FEE500] text-[#191919]`}
           >
             {loading ? "확인 중..." : "카카오로 로그인"}
-          </button>
-          <button
-            type="button"
-            disabled
-            className={`${baseBtnClass} flex-col gap-0.5 bg-black text-white`}
-          >
-            <span>Apple로 로그인</span>
-            <span className="text-xs font-normal opacity-90">
-              서비스 준비중
-            </span>
           </button>
           <button
             type="button"

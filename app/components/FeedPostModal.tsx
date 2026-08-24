@@ -5,6 +5,8 @@ import { MapPin, Search, Star, X } from "lucide-react";
 import { useApi } from "../contexts/ApiContext";
 import { PickedPlace, toPickedPlace, useKakaoPlaces } from "./useKakaoPlaces";
 
+import { track } from "@/lib/analytics";
+
 export interface FeedPostTarget {
   scheduleId: number;
   categoryName: string;
@@ -182,6 +184,7 @@ const FeedPostModal: React.FC<FeedPostModalProps> = ({
         setError("올리지 못했습니다. 잠시 후 다시 시도해 주세요.");
         return;
       }
+      track("feed_post");
       onPosted?.();
       onClose();
     } catch {

@@ -9,7 +9,7 @@ const p = require(path.join(__dirname, "..", "node_modules", "puppeteer-core"));
 
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const API = "https://api.seoulmoment.com.tw";
-const ORIGIN = "http://localhost:3000";
+const ORIGIN = process.env.ORIGIN || "http://localhost:3000";
 const OUT = process.env.SHOT_DIR || __dirname;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

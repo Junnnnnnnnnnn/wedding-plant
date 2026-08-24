@@ -31,6 +31,7 @@ import { useNotification } from "../contexts/NotificationContext";
 import CustomAlertModal from "../components/CustomAlertModal";
 import { Plan, ChatRoom } from "@/types";
 
+import { track } from "@/lib/analytics";
 // Kakao Maps API 타입 선언
 declare global {
   interface Window {
@@ -1790,11 +1791,10 @@ export default function AddPlanView({
                         editId || (json.data?.id ? Number(json.data.id) : null);
                       if (scheduleId) {
                         setSavedScheduleId(scheduleId);
-                        console.log(
-                          "Schedule ID for sharing:",
-                          scheduleId,
-                          editId ? "(edit mode)" : "(new)",
-                        );
+                      }
+                      // 수정은 새 일정이 아니다. 등록만 센다.
+                      if (!editId) {
+                        track("schedule_add");
                       }
                       setShowPlanSavedModal(true);
                       return;
@@ -1925,9 +1925,6 @@ export default function AddPlanView({
                       } ${category.label === highlightCategoryLabel ? "ring-2 ring-[#FF8FA3] ring-offset-2" : ""}`}
                     >
                       <span className="font-user-content font-bold text-lg flex items-center gap-2">
-                        {selectedCategory?.label === category.label
-                          ? "✨ "
-                          : ""}
                         {category.label}
                         {userAddedLabels.has(category.label) && (
                           <span

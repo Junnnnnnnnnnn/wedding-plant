@@ -19,7 +19,7 @@ const p = require(path.join(__dirname, "..", "node_modules", "puppeteer-core"));
 
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const API = "https://api.seoulmoment.com.tw";
-const ORIGIN = "http://localhost:3000";
+const ORIGIN = process.env.ORIGIN || "http://localhost:3000";
 /** true 면 목이 8월 일정을 빼서 "이번 달 할 일"이 빈 상태를 만든다 */
 let emptyThisMonth = false;
 
@@ -449,7 +449,6 @@ function installMocks(page) {
     const info = await page.evaluate(() => {
       const ids = [
         "budget-stat-grid",
-        "budget-ai-insight",
         "budget-analysis",
         "budget-tab",
         "budget-list",

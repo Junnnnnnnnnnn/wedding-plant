@@ -1,5 +1,4 @@
 import React from "react";
-import { Sparkles } from "lucide-react";
 import { BudgetStats } from "../types";
 
 const RING = 100; // pathLength 를 100 으로 맞춰 값을 그대로 % 로 쓴다
@@ -13,10 +12,6 @@ interface Seg {
 
 interface BudgetDonutProps {
   stats: BudgetStats;
-  /** AI 조언 모달 열기. 이 카드의 숫자에 대한 조언이라 같이 둔다 */
-  onAskAI: () => void;
-  /** 가이드 앵커(#budget-ai-insight)를 AI 버튼에 붙인다 */
-  aiAnchorId?: string;
 }
 
 /**
@@ -29,11 +24,7 @@ interface BudgetDonutProps {
  *
  * 색의 뜻도 같다 — 분홍=실제로 나간 돈, 회색=아직 안 쓴 예정, 트랙=여유.
  */
-const BudgetDonut: React.FC<BudgetDonutProps> = ({
-  stats,
-  onAskAI,
-  aiAnchorId,
-}) => {
+const BudgetDonut: React.FC<BudgetDonutProps> = ({ stats }) => {
   const capital = stats.initialCapital;
   const used = stats.usedTotal;
   const planned = stats.plannedTotal;
@@ -214,17 +205,6 @@ const BudgetDonut: React.FC<BudgetDonutProps> = ({
           .
         </p>
       )}
-
-      <div id={aiAnchorId} className="mt-4">
-        <button
-          type="button"
-          onClick={onAskAI}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#ee2b8c33] bg-white py-3 text-[13px] font-bold text-[#ee2b8c] transition-colors hover:bg-[#fff2f6] active:bg-[#ffe2ee]"
-        >
-          <Sparkles className="h-4 w-4" />
-          AI에게 예산 조언 받기
-        </button>
-      </div>
     </div>
   );
 };

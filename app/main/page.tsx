@@ -59,6 +59,7 @@ import { parseLocalDate, getKstDate, getDaysUntil } from "@/lib/utils";
 import { useIsDesktop } from "../hooks/useMediaQuery";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 
+import { track } from "@/lib/analytics";
 /** 폰(md 미만) 트리의 가이드. 앵커는 전부 md:hidden 안에 있다 */
 const MOBILE_GUIDE_STEPS: GuideStep[] = [
   {
@@ -1624,6 +1625,11 @@ function MainPageContent() {
         });
         const json = (await res.json()) as { result?: boolean };
         if (res.ok && json.result) {
+          // 보드(useScheduleStatusToggle)와 같은 이벤트를 낸다. 여기 토글은
+          // 애니메이션·카운트 보정이 얽혀 훅을 쓰지 않을 뿐, 세는 일은 같다.
+          if (newStatus === "COMPLETED") {
+            track("schedule_complete");
+          }
           // 완료 탭에 바로 반영되도록 로컬 리스트의 status 갱신
           const updateStatus = (list: ScheduleListItem[]) =>
             list.map((p) => (p.id === id ? { ...p, status: newStatus } : p));
