@@ -60,3 +60,6 @@ next-env.d.ts
 /shot-*.png
 /main-*.png
 /planlist-*.png
+
+# .env 백업본 (시크릿이 담긴다 — 절대 커밋 금지)
+.env.backup*
