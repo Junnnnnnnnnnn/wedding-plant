@@ -1,0 +1,2063 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>랜딩 페이지 · 시안 5</title>
+    <style>
+      /* Hallmark · macrostructure: Long Document · tone: playful-editorial · anchor hue: rose 353
+ * theme: in-project (wedding-plant tokens preserved) · enrichment: none — drawn mockups
+ * note: 시안 문서 표면은 invite-spouse.html 과 같은 읽기 체계를 의도적으로 공유한다
+ *       (나란히 읽는 문서라 서로 달라질 이유가 없다). 다양성은 안쪽 목업 다섯이 낸다.
+ * pre-emit critique: P5 H5 E4 S5 R4 V5
+ */
+
+      @font-face {
+        font-family: "Dunggeunmiso";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Dunggeunmiso";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmoneyRound";
+        src: url("../../public/font/woff2/TmoneyRoundWindRegular.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmoneyRoundEB";
+        src: url("../../public/font/woff2/TmoneyRoundWindExtraBold.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Dunggeunmiso", system-ui, sans-serif;
+        --font-body: "Dunggeunmiso", system-ui, sans-serif;
+        --font-num: "TmoneyRoundEB", "Dunggeunmiso", sans-serif;
+        --font-user: "TmoneyRound", "Dunggeunmiso", sans-serif;
+
+        --color-paper: oklch(98.2% 0.004 340);
+        --color-paper-2: oklch(100% 0 0);
+        --color-paper-3: oklch(97% 0.008 345);
+        --color-ink: oklch(19% 0.045 348);
+        --color-ink-2: oklch(46% 0.018 340);
+        --color-ink-3: oklch(64% 0.012 340);
+        --color-ink-4: oklch(76% 0.01 340);
+        --color-accent: oklch(62.5% 0.243 353);
+        --color-accent-soft: oklch(96.5% 0.022 353);
+        --color-accent-line: oklch(90% 0.045 353);
+        --color-rule: oklch(93.5% 0.01 345);
+        --color-rule-2: oklch(89% 0.016 345);
+        --color-dash: oklch(85% 0.012 345);
+        --color-good: oklch(58% 0.13 160);
+        --color-good-soft: oklch(96% 0.03 160);
+        --color-bad: oklch(58% 0.2 22);
+        --color-bad-soft: oklch(96.5% 0.035 22);
+        --color-kakao: oklch(88% 0.16 96);
+        --color-kakao-ink: oklch(28% 0.05 80);
+        --color-focus: oklch(55% 0.2 353);
+        /* 시안별 목업 안에서만 쓰는 값 */
+        --color-night: oklch(21% 0.035 320);
+        --color-night-2: oklch(28% 0.04 320);
+        --color-groom: oklch(58% 0.13 250);
+        --color-groom-soft: oklch(96% 0.025 250);
+
+        --space-2xs: 4px;
+        --space-xs: 8px;
+        --space-sm: 12px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 36px;
+        --space-2xl: 56px;
+        --space-3xl: 88px;
+
+        --text-display: clamp(2.6rem, 6.2vw, 4.6rem);
+        --text-h2: clamp(1.6rem, 3.2vw, 2.35rem);
+        --text-h3: 1.16rem;
+        --text-body: 1rem;
+        --text-sm: 0.875rem;
+        --text-xs: 0.78rem;
+        --text-2xs: 0.7rem;
+
+        --radius-sm: 8px;
+        --radius-md: 13px;
+        --radius-lg: 20px;
+        --radius-xl: 28px;
+        --rule-hair: 1px;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overflow-x: clip;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-size: var(--text-body);
+        line-height: 1.72;
+        -webkit-font-smoothing: antialiased;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-style: normal;
+        overflow-wrap: anywhere;
+        min-width: 0;
+        line-height: 1.22;
+        margin: 0;
+      }
+      p {
+        margin: 0;
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 3px;
+        border-radius: var(--radius-sm);
+      }
+
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 var(--space-lg);
+      }
+      .rule {
+        height: var(--rule-hair);
+        background: var(--color-rule);
+        border: 0;
+        margin: 0;
+      }
+
+      .masthead {
+        padding: var(--space-2xl) 0 var(--space-xl);
+      }
+      .masthead .kicker {
+        font-size: var(--text-2xs);
+        letter-spacing: 0.16em;
+        color: var(--color-ink-3);
+        text-transform: uppercase;
+        margin-bottom: var(--space-md);
+      }
+      .masthead h1 {
+        font-size: var(--text-display);
+        letter-spacing: -0.035em;
+        max-width: 15ch;
+      }
+      .masthead h1 .hl {
+        color: var(--color-accent);
+      }
+      .masthead .lede {
+        margin-top: var(--space-lg);
+        max-width: 60ch;
+        font-size: 1.06rem;
+        color: var(--color-ink-2);
+      }
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-xs) var(--space-lg);
+        margin-top: var(--space-xl);
+        padding-top: var(--space-md);
+        border-top: var(--rule-hair) solid var(--color-rule);
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+      .meta-row b {
+        color: var(--color-ink-2);
+        font-weight: 700;
+      }
+
+      .section {
+        padding: var(--space-2xl) 0;
+      }
+      .sec-head {
+        margin-bottom: var(--space-xl);
+      }
+      .sec-head h2 {
+        font-size: var(--text-h2);
+        letter-spacing: -0.03em;
+      }
+      .sec-head p {
+        margin-top: var(--space-sm);
+        color: var(--color-ink-2);
+        max-width: 58ch;
+      }
+
+      .findings {
+        display: grid;
+        gap: var(--space-md);
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+      }
+      .finding {
+        background: var(--color-paper-2);
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+      }
+      .finding h3 {
+        font-size: var(--text-h3);
+        letter-spacing: -0.015em;
+      }
+      .finding p {
+        margin-top: var(--space-xs);
+        font-size: var(--text-sm);
+        color: var(--color-ink-2);
+      }
+
+      .thesis {
+        margin-top: var(--space-2xl);
+        padding: var(--space-xl);
+        background: var(--color-ink);
+        color: var(--color-paper);
+        border-radius: var(--radius-xl);
+      }
+      .thesis p {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.3rem, 3vw, 1.9rem);
+        line-height: 1.4;
+        letter-spacing: -0.02em;
+        max-width: 28ch;
+      }
+      .thesis span {
+        color: var(--color-accent-line);
+      }
+      .thesis small {
+        display: block;
+        margin-top: var(--space-md);
+        font-size: var(--text-sm);
+        color: var(--color-ink-4);
+        font-family: var(--font-body);
+        line-height: 1.7;
+        max-width: 54ch;
+      }
+
+      .concept {
+        padding: var(--space-3xl) 0 var(--space-2xl);
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .c-head {
+        display: flex;
+        gap: var(--space-lg);
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .c-mark {
+        flex: 0 0 auto;
+        width: 62px;
+        height: 62px;
+        border-radius: var(--radius-md);
+        display: grid;
+        place-items: center;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.8rem;
+        border: var(--rule-hair) solid var(--color-accent-line);
+      }
+      .c-title {
+        flex: 1 1 320px;
+        min-width: 0;
+      }
+      .c-title h2 {
+        font-size: var(--text-h2);
+        letter-spacing: -0.03em;
+      }
+      .c-title .sub {
+        margin-top: var(--space-xs);
+        color: var(--color-accent);
+        font-size: var(--text-sm);
+        font-weight: 700;
+        font-family: var(--font-display);
+      }
+      .c-title .ref {
+        margin-top: var(--space-2xs);
+        color: var(--color-ink-3);
+        font-size: var(--text-xs);
+      }
+      .c-title .desc {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        max-width: 62ch;
+      }
+
+      .c-body {
+        margin-top: var(--space-xl);
+        display: grid;
+        gap: var(--space-xl);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 1000px) {
+        .c-body {
+          grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+          gap: var(--space-2xl);
+        }
+      }
+
+      figure {
+        margin: 0;
+      }
+      .shots {
+        display: flex;
+        gap: var(--space-md);
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .shot {
+        flex: 1 1 300px;
+        min-width: 0;
+        max-width: 100%;
+      }
+      .shot-cap {
+        font-size: var(--text-2xs);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--color-ink-3);
+        margin-bottom: var(--space-xs);
+      }
+      .screen {
+        background: var(--color-paper-2);
+        border: var(--rule-hair) solid var(--color-rule-2);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        font-size: var(--text-xs);
+        line-height: 1.5;
+      }
+      .screen.wide {
+        width: 100%;
+      }
+      /* 랜딩 목업의 한 "화면"(뷰포트) 경계 */
+      .vp {
+        padding: 20px 18px;
+        border-bottom: var(--rule-hair) dashed var(--color-rule-2);
+        position: relative;
+      }
+      .vp:last-child {
+        border-bottom: 0;
+      }
+      .vp-tag {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        color: var(--color-ink-4);
+        text-transform: uppercase;
+      }
+
+      .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 42px;
+        border-radius: var(--radius-md);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.85rem;
+        letter-spacing: -0.01em;
+      }
+      .btn-kakao {
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+      }
+      .btn-primary {
+        background: var(--color-accent);
+        color: var(--color-paper-2);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--color-ink-2);
+        border: var(--rule-hair) solid var(--color-rule-2);
+      }
+      .btn-sm {
+        height: 30px;
+        font-size: var(--text-2xs);
+        padding: 0 12px;
+        border-radius: 9px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: var(--text-2xs);
+        font-weight: 700;
+        font-family: var(--font-display);
+      }
+      .pill-accent {
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+      }
+      .pill-muted {
+        background: var(--color-paper-3);
+        color: var(--color-ink-3);
+      }
+      .card-in {
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-md);
+        padding: 11px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .stack {
+        display: grid;
+        gap: 9px;
+      }
+      .num {
+        font-family: var(--font-num);
+        letter-spacing: -0.03em;
+      }
+      .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+        font-weight: 700;
+        font-size: var(--text-2xs);
+        border: 2px solid var(--color-paper-2);
+      }
+      .avatar.dash {
+        background: transparent;
+        border: 1.5px dashed var(--color-dash);
+        color: var(--color-ink-4);
+      }
+      .big {
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.15;
+      }
+
+      .notes h3 {
+        font-size: 0.95rem;
+        letter-spacing: -0.01em;
+        margin-bottom: var(--space-xs);
+      }
+      .note-block {
+        margin-bottom: var(--space-lg);
+      }
+      .flow {
+        counter-reset: f;
+        display: grid;
+        gap: var(--space-xs);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .flow li {
+        counter-increment: f;
+        position: relative;
+        padding-left: 30px;
+        font-size: var(--text-sm);
+        color: var(--color-ink-2);
+      }
+      .flow li::before {
+        content: counter(f);
+        position: absolute;
+        left: 0;
+        top: 2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        background: var(--color-ink);
+        color: var(--color-paper);
+        display: grid;
+        place-items: center;
+        font-size: var(--text-2xs);
+        font-family: var(--font-display);
+        font-weight: 700;
+        line-height: 1;
+      }
+      .pro,
+      .con {
+        position: relative;
+        display: block;
+        padding-left: 20px;
+        font-size: var(--text-sm);
+        color: var(--color-ink-2);
+        margin-top: 6px;
+      }
+      .pro::before,
+      .con::before {
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-weight: 700;
+      }
+      .pro::before {
+        content: "＋";
+        color: var(--color-good);
+      }
+      .con::before {
+        content: "−";
+        color: var(--color-bad);
+      }
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: var(--space-xs);
+      }
+      .tag {
+        font-size: var(--text-2xs);
+        padding: 4px 9px;
+        border-radius: 7px;
+        background: var(--color-paper-3);
+        color: var(--color-ink-2);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        overflow-wrap: anywhere;
+      }
+
+      .tablewrap {
+        overflow-x: auto;
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        background: var(--color-paper-2);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 680px;
+        font-size: var(--text-sm);
+      }
+      th,
+      td {
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: var(--rule-hair) solid var(--color-rule);
+        vertical-align: top;
+      }
+      th {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+      .dots {
+        color: var(--color-accent);
+        letter-spacing: 2px;
+        font-size: 0.8rem;
+      }
+      .dots i {
+        color: var(--color-rule-2);
+        font-style: normal;
+      }
+
+      .recommend {
+        margin-top: var(--space-xl);
+        padding: var(--space-xl);
+        border-radius: var(--radius-xl);
+        background: var(--color-accent-soft);
+        border: var(--rule-hair) solid var(--color-accent-line);
+      }
+      .recommend h3 {
+        font-size: var(--text-h3);
+        color: var(--color-ink);
+      }
+      .recommend ol {
+        margin: var(--space-md) 0 0;
+        padding-left: 1.2em;
+        color: var(--color-ink-2);
+        font-size: var(--text-sm);
+      }
+      .recommend li {
+        margin-bottom: 6px;
+      }
+      .recommend li b {
+        color: var(--color-ink);
+      }
+
+      footer {
+        padding: var(--space-2xl) 0 var(--space-3xl);
+        color: var(--color-ink-3);
+        font-size: var(--text-xs);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="masthead">
+        <p class="kicker">Wedding Plant · 랜딩 설계 시안</p>
+        <h1>앱 소개 페이지에<br /><span class="hl">앱이 없다</span></h1>
+        <p class="lede">
+          지금 <code>/</code> 는 아이콘 하나, 이름 한 줄, 카카오 버튼
+          하나입니다. 53줄이고 스크롤이 없습니다. 처음 온 사람은 이게 청첩장
+          서비스인지 예산 앱인지 알 수 없는 채로 로그인을 요구받습니다. 아래
+          다섯 시안은 전부 <b>같은 제약 하나</b>를 지고 짰습니다 — 우리에겐 아직
+          자랑할 숫자가 없습니다.
+        </p>
+        <div class="meta-row">
+          <span
+            ><b>대상</b> 결혼 준비를 막 시작한 예비 부부 · 카톡·인스타 링크로
+            유입</span
+          >
+          <span><b>목표 행동</b> 카카오로 시작하기 / 로그인 없이 둘러보기</span>
+          <span><b>현재</b> app/page.tsx · 53줄 · 1화면</span>
+        </div>
+      </header>
+
+      <hr class="rule" />
+
+      <section class="section">
+        <div class="sec-head">
+          <h2>먼저, 우리에게 없는 것</h2>
+          <p>
+            대기업 앱 소개 페이지를 뜯어 보면 설득의 절반이 <b>숫자</b>에서
+            나옵니다. 우리는 그게 하나도 없습니다. 이걸 인정하고 시작해야 시안이
+            거짓말을 안 합니다.
+          </p>
+        </div>
+
+        <div class="findings">
+          <div class="finding">
+            <h3>없는 것 · 사회적 증거</h3>
+            <p>
+              다운로드 수, 별점, 후기 수, 제휴 업체 로고, "10만 커플이 쓰는".
+              <b>하나도 없습니다.</b> 지어내면 앱 심사(허위 광고)와 첫 사용자의
+              신뢰를 동시에 잃습니다. 다섯 시안 어디에도 이 숫자는 안
+              들어갑니다.
+            </p>
+          </div>
+          <div class="finding">
+            <h3>없는 것 · 앱 스크린샷</h3>
+            <p>
+              실제 앱 화면 이미지가 저장소에 없습니다(<code
+                >public/images/</code
+              >
+              에 아이콘 하나). 스크린샷을 쓰는 시안은
+              <b>캡처 작업이 선행</b>돼야 합니다 — 그리는 게 아니라 찍는 겁니다.
+            </p>
+          </div>
+          <div class="finding">
+            <h3>있는 것 · 3D 출입증</h3>
+            <p>
+              <code>components/Lanyard.tsx</code>. 물리 시뮬레이션으로 흔들리는
+              카드입니다. 온보딩에만 쓰기엔 아까운,
+              <b>이 서비스에만 있는 자산</b>입니다.
+            </p>
+          </div>
+          <div class="finding">
+            <h3>있는 것 · 진짜 차별점</h3>
+            <p>
+              "신랑·신부가 같이." 예산·일정을 둘이 고치고, 둘만의 대화방이
+              열리고, 누가 뭘 바꿨는지 남습니다.
+              <b>경쟁 서비스가 혼자 쓰는 도구인 지점</b>이 여기입니다.
+            </p>
+          </div>
+          <div class="finding">
+            <h3>있는 것 · 견적 후기</h3>
+            <p>
+              완료된 일정이 곧 시세 데이터입니다. "스드메 얼마가 적정인가"는
+              결혼 준비의 1번 질문이고, <b>답을 가진 화면이 이미 있습니다.</b>
+            </p>
+          </div>
+          <div class="finding">
+            <h3>고쳐야 할 것 · 순서</h3>
+            <p>
+              "지금 바로 시작하세요"는
+              <b>이유를 주기 전에 행동을 요구</b>합니다. 로그인 버튼은 스크롤
+              끝에도 한 번 더 있으면 됩니다 — 첫 화면에만 있을 이유가 없습니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="thesis">
+          <p>숫자가 없으면 <span>보여 주는 수밖에</span> 없습니다.</p>
+          <small>
+            그래서 다섯 시안은 전부 "말하지 않고 보여주는" 방식입니다 —
+            <b>A</b> 스크롤에 앱이 반응하고, <b>B</b> 사용자의 질문을 대신
+            말하고, <b>C</b> 화면을 둘로 갈라 구조로 증명하고, <b>D</b> 우리
+            숫자 대신 결혼 준비의 숫자를 쓰고, <b>E</b> 만질 수 있는 물건 하나를
+            내놓습니다.
+          </small>
+        </div>
+      </section>
+
+      <!-- ══════════ A ══════════ -->
+      <section class="concept">
+        <div class="c-head">
+          <div class="c-mark">A</div>
+          <div class="c-title">
+            <h2>스크롤이 곧 준비 기간</h2>
+            <p class="sub">
+              제품이 스스로 움직인다 · 기억에 남음 최상 · 제작비 최상
+            </p>
+            <p class="ref">
+              참고 계열 — Apple 제품 페이지 · 토스 서비스 소개 · Linear 릴리스
+              페이지
+            </p>
+            <p class="desc">
+              스크롤을 내리면 <b>D-day 숫자가 줄고 플랜이 채워집니다.</b> 빈
+              보드에서 시작해 일정 카드가 하나씩 꽂히고, 예산 막대가 차오르고,
+              마지막에 D-0 이 됩니다. 기능을 설명하는 문장이 한 줄도 없습니다 —
+              스크롤하는 동안 <b>준비 과정을 대신 겪게</b> 합니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="c-body">
+          <figure class="shots">
+            <div class="shot" style="flex: 1 1 100%">
+              <p class="shot-cap">스크롤 위치별 상태 — 한 화면이 계속 바뀐다</p>
+              <div class="screen wide">
+                <div class="vp">
+                  <span class="vp-tag">0%</span>
+                  <div style="text-align: center; padding: 14px 0">
+                    <div
+                      class="num"
+                      style="
+                        font-size: 3.2rem;
+                        color: var(--color-accent);
+                        line-height: 1;
+                      "
+                    >
+                      D-312
+                    </div>
+                    <div
+                      class="big"
+                      style="font-size: 1.05rem; margin-top: 10px"
+                    >
+                      아직 아무것도 안 정했어요
+                    </div>
+                    <div
+                      class="s-sub"
+                      style="
+                        color: var(--color-ink-3);
+                        margin-top: 6px;
+                        font-size: var(--text-2xs);
+                      "
+                    >
+                      스크롤해 보세요
+                    </div>
+                    <div
+                      style="
+                        margin-top: 14px;
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 6px;
+                      "
+                    >
+                      <div
+                        style="
+                          height: 34px;
+                          border: 1.5px dashed var(--color-dash);
+                          border-radius: 9px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          height: 34px;
+                          border: 1.5px dashed var(--color-dash);
+                          border-radius: 9px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          height: 34px;
+                          border: 1.5px dashed var(--color-dash);
+                          border-radius: 9px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          height: 34px;
+                          border: 1.5px dashed var(--color-dash);
+                          border-radius: 9px;
+                        "
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="vp">
+                  <span class="vp-tag">40%</span>
+                  <div style="text-align: center; padding: 8px 0">
+                    <div
+                      class="num"
+                      style="
+                        font-size: 2.4rem;
+                        color: var(--color-accent);
+                        line-height: 1;
+                      "
+                    >
+                      D-186
+                    </div>
+                    <div
+                      class="big"
+                      style="font-size: 0.95rem; margin-top: 8px"
+                    >
+                      예식장이 정해졌어요
+                    </div>
+                    <div
+                      style="
+                        margin-top: 12px;
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 6px;
+                      "
+                    >
+                      <div
+                        style="
+                          height: 34px;
+                          border-radius: 9px;
+                          background: var(--color-accent-soft);
+                          border: var(--rule-hair) solid
+                            var(--color-accent-line);
+                          display: grid;
+                          place-items: center;
+                          font-size: 9px;
+                          color: var(--color-accent);
+                          font-weight: 700;
+                        "
+                      >
+                        예식장
+                      </div>
+                      <div
+                        style="
+                          height: 34px;
+                          border-radius: 9px;
+                          background: var(--color-accent-soft);
+                          border: var(--rule-hair) solid
+                            var(--color-accent-line);
+                          display: grid;
+                          place-items: center;
+                          font-size: 9px;
+                          color: var(--color-accent);
+                          font-weight: 700;
+                        "
+                      >
+                        스드메
+                      </div>
+                      <div
+                        style="
+                          height: 34px;
+                          border: 1.5px dashed var(--color-dash);
+                          border-radius: 9px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          height: 34px;
+                          border: 1.5px dashed var(--color-dash);
+                          border-radius: 9px;
+                        "
+                      ></div>
+                    </div>
+                    <div
+                      style="
+                        margin-top: 10px;
+                        height: 8px;
+                        border-radius: 999px;
+                        background: var(--color-paper-3);
+                        overflow: hidden;
+                        display: flex;
+                      "
+                    >
+                      <span
+                        style="width: 38%; background: var(--color-accent)"
+                      ></span>
+                    </div>
+                    <div
+                      style="
+                        font-size: var(--text-2xs);
+                        color: var(--color-ink-3);
+                        margin-top: 5px;
+                      "
+                    >
+                      4,200만원 중 1,600만원
+                    </div>
+                  </div>
+                </div>
+                <div class="vp">
+                  <span class="vp-tag">100%</span>
+                  <div style="text-align: center; padding: 8px 0">
+                    <div
+                      class="num"
+                      style="
+                        font-size: 2.4rem;
+                        color: var(--color-accent);
+                        line-height: 1;
+                      "
+                    >
+                      D-0
+                    </div>
+                    <div
+                      class="big"
+                      style="font-size: 1.05rem; margin-top: 8px"
+                    >
+                      둘이서 다 했어요
+                    </div>
+                    <div
+                      style="
+                        margin-top: 12px;
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 6px;
+                      "
+                    >
+                      <div
+                        style="
+                          height: 34px;
+                          border-radius: 9px;
+                          background: var(--color-accent);
+                          display: grid;
+                          place-items: center;
+                          font-size: 9px;
+                          color: #fff;
+                          font-weight: 700;
+                        "
+                      >
+                        예식장
+                      </div>
+                      <div
+                        style="
+                          height: 34px;
+                          border-radius: 9px;
+                          background: var(--color-accent);
+                          display: grid;
+                          place-items: center;
+                          font-size: 9px;
+                          color: #fff;
+                          font-weight: 700;
+                        "
+                      >
+                        스드메
+                      </div>
+                      <div
+                        style="
+                          height: 34px;
+                          border-radius: 9px;
+                          background: var(--color-accent);
+                          display: grid;
+                          place-items: center;
+                          font-size: 9px;
+                          color: #fff;
+                          font-weight: 700;
+                        "
+                      >
+                        예물
+                      </div>
+                      <div
+                        style="
+                          height: 34px;
+                          border-radius: 9px;
+                          background: var(--color-accent);
+                          display: grid;
+                          place-items: center;
+                          font-size: 9px;
+                          color: #fff;
+                          font-weight: 700;
+                        "
+                      >
+                        신혼여행
+                      </div>
+                    </div>
+                    <div class="btn btn-kakao" style="margin-top: 16px">
+                      카카오로 시작하기
+                    </div>
+                    <div
+                      style="
+                        font-size: var(--text-2xs);
+                        color: var(--color-ink-3);
+                        margin-top: 8px;
+                      "
+                    >
+                      로그인 없이 둘러보기
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </figure>
+
+          <div class="notes">
+            <div class="note-block">
+              <h3>구성</h3>
+              <ol class="flow">
+                <li>히어로 = 빈 플랜 + D-312. 설명 문장 없음</li>
+                <li>스크롤 구간마다 카드가 꽂히고 예산이 찬다</li>
+                <li>중간에 배우자 아바타가 들어와 같이 채우기 시작한다</li>
+                <li>D-0 에서 카카오 버튼이 처음 등장한다</li>
+              </ol>
+            </div>
+            <div class="note-block">
+              <h3>왜 되는가 / 리스크</h3>
+              <p class="pro">
+                기능을 <b>설명하지 않고 겪게</b> 한다 — 요청하신 "대놓고
+                좋습니다" 를 정면으로 피한다.
+              </p>
+              <p class="pro">
+                스크린샷이 필요 없다. 실제 컴포넌트를 재사용해 그린다.
+              </p>
+              <p class="con">
+                <b>제작비가 다섯 중 가장 크다.</b> 스크롤 연동 애니메이션은
+                만들기도 튜닝하기도 오래 걸린다.
+              </p>
+              <p class="con">
+                스크롤을 안 내리는 사람에게는 첫 화면이 "빈 화면 + 숫자" 다.
+                이탈 위험.
+              </p>
+              <p class="con">
+                저사양 폰에서 스크롤이 끊기면 오히려 싸구려로 보인다 — 성능이 곧
+                품질인 안.
+              </p>
+            </div>
+            <div class="note-block">
+              <h3>필요한 것</h3>
+              <div class="tags">
+                <span class="tag">motion (설치돼 있음)</span>
+                <span class="tag">scroll-linked 애니메이션</span>
+                <span class="tag">prefers-reduced-motion 대체 화면</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ B ══════════ -->
+      <section class="concept">
+        <div class="c-head">
+          <div class="c-mark">B</div>
+          <div class="c-title">
+            <h2>사용자의 질문으로 시작</h2>
+            <p class="sub">카피 주도 · 제작비 최소 · 검색 유입에 강함</p>
+            <p class="ref">
+              참고 계열 — 토스 · 뱅크샐러드 · 캐치테이블의 "질문 → 답" 랜딩
+            </p>
+            <p class="desc">
+              첫 화면 전체가 <b>질문 하나</b>입니다. "스드메 700만원, 비싼
+              건가?" 우리 앱 이야기가 아니라
+              <b>지금 그 사람 머릿속에 있는 문장</b>을 크게 씁니다. 스크롤하면
+              그 질문에 대한 답이 나오는데, 답이 카피가 아니라
+              <b>피드의 실제 시세 카드</b>입니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="c-body">
+          <figure class="shots">
+            <div class="shot">
+              <p class="shot-cap">첫 화면 — 질문만</p>
+              <div class="screen">
+                <div
+                  class="vp"
+                  style="
+                    min-height: 250px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                  "
+                >
+                  <div class="big" style="font-size: 1.45rem">
+                    스드메
+                    <span style="color: var(--color-accent)">700만원</span
+                    >,<br />비싼 건가?
+                  </div>
+                  <div
+                    style="
+                      color: var(--color-ink-3);
+                      margin-top: 14px;
+                      font-size: var(--text-xs);
+                      line-height: 1.7;
+                    "
+                  >
+                    결혼 준비를 시작하면 제일 먼저 하는 질문이고,<br />
+                    아무도 정확히 답해 주지 않는 질문입니다.
+                  </div>
+                  <div
+                    style="
+                      margin-top: 20px;
+                      font-size: var(--text-2xs);
+                      color: var(--color-ink-4);
+                    "
+                  >
+                    ↓ 아래에 답이 있어요
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="shot">
+              <p class="shot-cap">다음 화면 — 답이 카피가 아니라 데이터</p>
+              <div class="screen">
+                <div class="vp">
+                  <div
+                    class="s-sub"
+                    style="
+                      font-size: var(--text-2xs);
+                      color: var(--color-ink-3);
+                    "
+                  >
+                    스드메 · 실제 지출 중앙값
+                  </div>
+                  <div class="num" style="font-size: 2rem; margin-top: 2px">
+                    642<span
+                      style="font-size: 0.8rem; color: var(--color-ink-3)"
+                      >만원</span
+                    >
+                  </div>
+                  <div
+                    style="
+                      font-size: var(--text-2xs);
+                      color: var(--color-ink-3);
+                      margin-top: 2px;
+                    "
+                  >
+                    표본이 충분할 때만 보여줍니다
+                  </div>
+                  <div class="stack" style="margin-top: 12px">
+                    <div class="card-in row">
+                      <div class="num" style="font-size: 1rem; flex: 0 0 auto">
+                        580<span style="font-size: 0.7rem">만</span>
+                      </div>
+                      <div style="flex: 1; min-width: 0">
+                        <div
+                          style="
+                            font-family: var(--font-display);
+                            font-weight: 700;
+                            font-size: 0.8rem;
+                          "
+                        >
+                          아모레 스튜디오
+                        </div>
+                        <div style="color: var(--color-ink-3); font-size: 9px">
+                          서울 강남구 · D-131 신부
+                        </div>
+                      </div>
+                      <span class="pill pill-muted">★★★★☆</span>
+                    </div>
+                    <div class="card-in row">
+                      <div class="num" style="font-size: 1rem; flex: 0 0 auto">
+                        710<span style="font-size: 0.7rem">만</span>
+                      </div>
+                      <div style="flex: 1; min-width: 0">
+                        <div
+                          style="
+                            font-family: var(--font-display);
+                            font-weight: 700;
+                            font-size: 0.8rem;
+                          "
+                        >
+                          라비페르 스튜디오
+                        </div>
+                        <div style="color: var(--color-ink-3); font-size: 9px">
+                          서울 서초구 · D-88 신랑
+                        </div>
+                      </div>
+                      <span class="pill pill-muted">★★★★★</span>
+                    </div>
+                  </div>
+                  <div class="btn btn-kakao" style="margin-top: 14px">
+                    더 보려면 카카오로 시작
+                  </div>
+                </div>
+              </div>
+            </div>
+          </figure>
+
+          <div class="notes">
+            <div class="note-block">
+              <h3>구성</h3>
+              <ol class="flow">
+                <li>질문 1 — 얼마가 적정인가 → 피드 시세</li>
+                <li>질문 2 — 둘이 따로 알아보다 겹치지 않나 → 공유 플랜</li>
+                <li>질문 3 — 뭘 언제까지 해야 하나 → 플랜 보드</li>
+                <li>마지막에 카카오 버튼 하나</li>
+              </ol>
+            </div>
+            <div class="note-block">
+              <h3>왜 되는가 / 리스크</h3>
+              <p class="pro">
+                <b>제작비가 가장 싸다.</b> 타이포와 실제 카드 몇 개면 끝난다.
+              </p>
+              <p class="pro">
+                질문이 검색어와 같아서
+                <b>"스드메 가격" 유입에 그대로 걸린다.</b>
+              </p>
+              <p class="pro">앱 스크린샷이 없어도 성립한다.</p>
+              <p class="con">
+                <b>시세 숫자는 실제 데이터가 쌓여야 쓸 수 있다.</b> 지금은
+                표본이 없어 이 화면이 비어 있다 — 지어내면 안 된다.
+              </p>
+              <p class="con">
+                질문 하나를 잘못 고르면 랜딩 전체가 빗나간다. 카피 의존도가 가장
+                높다.
+              </p>
+            </div>
+            <div class="note-block">
+              <h3>필요한 것</h3>
+              <div class="tags">
+                <span class="tag">피드 표본 (중앙값 노출 기준 충족)</span>
+                <span class="tag">카피 확정 · 질문 3개</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ C ══════════ -->
+      <section class="concept">
+        <div class="c-head">
+          <div class="c-mark">C</div>
+          <div class="c-title">
+            <h2>둘로 갈린 화면</h2>
+            <p class="sub">
+              차별점을 구조로 증명 · 제작비 중 · 이 제품에만 가능
+            </p>
+            <p class="ref">
+              참고 계열 — 비트윈 · Figma "multiplayer" 섹션 · Notion 협업 페이지
+            </p>
+            <p class="desc">
+              화면을 세로로 반 갈라
+              <b>왼쪽은 신부 화면, 오른쪽은 신랑 화면</b>입니다. 왼쪽에서 예산을
+              고치면 오른쪽이 따라 바뀌고, 오른쪽에서 일정을 완료하면 왼쪽에
+              알림이 뜹니다.
+              <b>"둘이 같이"라고 쓰지 않고 둘이 같이 있는 걸 보여줍니다.</b>
+              경쟁 서비스가 이 화면을 만들 수 없다는 게 이 안의 요점입니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="c-body">
+          <figure class="shots">
+            <div class="shot" style="flex: 1 1 100%">
+              <p class="shot-cap">히어로 — 한 화면 안의 두 사람</p>
+              <div class="screen wide">
+                <div class="vp">
+                  <div
+                    class="big"
+                    style="
+                      font-size: 1.3rem;
+                      text-align: center;
+                      margin-bottom: 6px;
+                    "
+                  >
+                    지금 상대는 뭘 보고 있을까
+                  </div>
+                  <div
+                    style="
+                      text-align: center;
+                      color: var(--color-ink-3);
+                      font-size: var(--text-2xs);
+                      margin-bottom: 14px;
+                    "
+                  >
+                    같은 플랜, 두 사람의 화면
+                  </div>
+                  <div
+                    style="
+                      display: grid;
+                      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                      gap: 0;
+                      border: var(--rule-hair) solid var(--color-rule-2);
+                      border-radius: var(--radius-md);
+                      overflow: hidden;
+                    "
+                  >
+                    <div
+                      style="
+                        padding: 12px;
+                        border-right: var(--rule-hair) solid var(--color-rule-2);
+                        background: var(--color-paper-3);
+                      "
+                    >
+                      <div class="row" style="margin-bottom: 9px">
+                        <span class="avatar">지</span>
+                        <span
+                          style="
+                            font-size: var(--text-2xs);
+                            color: var(--color-ink-3);
+                          "
+                          >지현 · 지금 편집 중</span
+                        >
+                      </div>
+                      <div
+                        class="card-in"
+                        style="background: var(--color-paper-2)"
+                      >
+                        <div style="font-size: 9px; color: var(--color-ink-3)">
+                          전체 예산
+                        </div>
+                        <div
+                          class="num"
+                          style="font-size: 1.25rem; color: var(--color-accent)"
+                        >
+                          4,200<span style="font-size: 0.65rem">만원</span>
+                        </div>
+                        <div
+                          style="
+                            height: 7px;
+                            border-radius: 999px;
+                            background: var(--color-paper-3);
+                            margin-top: 7px;
+                            overflow: hidden;
+                            display: flex;
+                          "
+                        >
+                          <span
+                            style="width: 38%; background: var(--color-accent)"
+                          ></span>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      style="padding: 12px; background: var(--color-groom-soft)"
+                    >
+                      <div class="row" style="margin-bottom: 9px">
+                        <span
+                          class="avatar"
+                          style="background: var(--color-groom); color: #fff"
+                          >민</span
+                        >
+                        <span
+                          style="
+                            font-size: var(--text-2xs);
+                            color: var(--color-ink-3);
+                          "
+                          >민수 · 방금 받음</span
+                        >
+                      </div>
+                      <div
+                        class="card-in"
+                        style="
+                          background: var(--color-paper-2);
+                          border-color: var(--color-groom);
+                        "
+                      >
+                        <div style="font-size: 9px; color: var(--color-ink-3)">
+                          전체 예산
+                        </div>
+                        <div
+                          class="num"
+                          style="font-size: 1.25rem; color: var(--color-accent)"
+                        >
+                          4,200<span style="font-size: 0.65rem">만원</span>
+                        </div>
+                        <div
+                          style="
+                            font-size: 9px;
+                            color: var(--color-groom);
+                            margin-top: 5px;
+                            font-weight: 700;
+                          "
+                        >
+                          지현님이 방금 바꿨어요
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      display: grid;
+                      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                      gap: 10px;
+                      margin-top: 10px;
+                    "
+                  >
+                    <div
+                      class="card-in"
+                      style="font-size: 9px; color: var(--color-ink-3)"
+                    >
+                      본식 촬영 · 9월 12일<br /><span
+                        style="color: var(--color-ink-4)"
+                        >아직 안 정함</span
+                      >
+                    </div>
+                    <div
+                      class="card-in"
+                      style="
+                        border-color: var(--color-good);
+                        background: var(--color-good-soft);
+                        font-size: 9px;
+                        color: var(--color-ink-2);
+                      "
+                    >
+                      본식 촬영 · 9월 12일<br /><b
+                        style="color: var(--color-good)"
+                        >✓ 민수님이 완료</b
+                      >
+                    </div>
+                  </div>
+                  <div class="btn btn-kakao" style="margin-top: 14px">
+                    우리도 같이 준비하기
+                  </div>
+                </div>
+              </div>
+            </div>
+          </figure>
+
+          <div class="notes">
+            <div class="note-block">
+              <h3>구성</h3>
+              <ol class="flow">
+                <li>
+                  히어로 = 좌우 분할. 3초 루프로 한쪽이 바뀌면 반대쪽이 따라간다
+                </li>
+                <li>
+                  아래로 내려가며 분할이 유지된 채 장면만 바뀐다 (예산 → 일정 →
+                  대화)
+                </li>
+                <li>마지막 장면에서 두 화면이 하나로 합쳐지고 CTA</li>
+                <li>폰에서는 좌우가 아니라 위아래로 쌓인다</li>
+              </ol>
+            </div>
+            <div class="note-block">
+              <h3>왜 되는가 / 리스크</h3>
+              <p class="pro">
+                <b>이 앱의 유일한 차별점을 한 화면으로 증명한다.</b> 다른 안은
+                다 흉내낼 수 있지만 이건 못 한다.
+              </p>
+              <p class="pro">
+                "신랑·신부 초대" 를 랜딩에서부터 기대하게 만들어 온보딩 5단계와
+                이어진다.
+              </p>
+              <p class="con">
+                폰에서 좌우 분할이 죽는다.
+                <b>모바일 유입이 대부분인데 거기서 가장 약하다</b> — 위아래로
+                쌓으면 "동시성" 이 안 느껴진다.
+              </p>
+              <p class="con">
+                혼자 준비하는 사람에게는 "나는 대상이 아니구나" 로 읽힐 수 있다.
+              </p>
+            </div>
+            <div class="note-block">
+              <h3>필요한 것</h3>
+              <div class="tags">
+                <span class="tag">좌우 동기 루프 애니메이션</span>
+                <span class="tag">모바일 대체 연출 (겹침·전환)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ D ══════════ -->
+      <section class="concept">
+        <div class="c-head">
+          <div class="c-mark">D</div>
+          <div class="c-title">
+            <h2>우리 숫자 대신 결혼의 숫자</h2>
+            <p class="sub">
+              숫자로 설득하되 거짓말은 안 함 · 제작비 소 · 출처가 생명
+            </p>
+            <p class="ref">
+              참고 계열 — 당근 사업소개 · 토스 데이터 페이지 · 뱅크샐러드 리포트
+            </p>
+            <p class="desc">
+              대기업 랜딩의 큰 숫자를 쓰되,
+              <b>우리 사용자 수가 아니라 결혼 준비 자체의 숫자</b>를 씁니다.
+              평균 예식 비용, 준비 기간, 챙겨야 할 항목 수. "결혼 준비가 이만큼
+              큰 일이다"를 먼저 세우고 그 위에 앱을 얹습니다.
+              <b>모든 숫자에 출처를 붙입니다</b> — 출처를 못 붙이는 숫자는 그
+              자리를 비웁니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="c-body">
+          <figure class="shots">
+            <div class="shot" style="flex: 1 1 100%">
+              <p class="shot-cap">숫자판 — 출처가 없으면 자리를 비운다</p>
+              <div class="screen wide">
+                <div class="vp">
+                  <div
+                    class="big"
+                    style="font-size: 1.2rem; margin-bottom: 14px"
+                  >
+                    결혼 준비는 이만큼 큰 일입니다
+                  </div>
+                  <div
+                    style="
+                      display: grid;
+                      grid-template-columns: repeat(
+                        auto-fit,
+                        minmax(min(100%, 150px), 1fr)
+                      );
+                      gap: 10px;
+                    "
+                  >
+                    <div class="card-in">
+                      <div
+                        class="num"
+                        style="font-size: 1.8rem; color: var(--color-accent)"
+                      >
+                        6,300<span
+                          style="font-size: 0.7rem; color: var(--color-ink-3)"
+                          >만원</span
+                        >
+                      </div>
+                      <div
+                        style="
+                          font-size: 9px;
+                          color: var(--color-ink-2);
+                          margin-top: 3px;
+                        "
+                      >
+                        신혼부부 평균 결혼 비용
+                      </div>
+                      <div
+                        style="
+                          font-size: 9px;
+                          color: var(--color-ink-4);
+                          margin-top: 5px;
+                          text-decoration: underline;
+                        "
+                      >
+                        출처 · 통계 인용 필요
+                      </div>
+                    </div>
+                    <div class="card-in">
+                      <div
+                        class="num"
+                        style="font-size: 1.8rem; color: var(--color-accent)"
+                      >
+                        11<span
+                          style="font-size: 0.7rem; color: var(--color-ink-3)"
+                          >개월</span
+                        >
+                      </div>
+                      <div
+                        style="
+                          font-size: 9px;
+                          color: var(--color-ink-2);
+                          margin-top: 3px;
+                        "
+                      >
+                        평균 준비 기간
+                      </div>
+                      <div
+                        style="
+                          font-size: 9px;
+                          color: var(--color-ink-4);
+                          margin-top: 5px;
+                          text-decoration: underline;
+                        "
+                      >
+                        출처 · 통계 인용 필요
+                      </div>
+                    </div>
+                    <div
+                      class="card-in"
+                      style="
+                        border-style: dashed;
+                        background: var(--color-paper-3);
+                      "
+                    >
+                      <div
+                        class="num"
+                        style="font-size: 1.8rem; color: var(--color-ink-4)"
+                      >
+                        —
+                      </div>
+                      <div
+                        style="
+                          font-size: 9px;
+                          color: var(--color-ink-3);
+                          margin-top: 3px;
+                        "
+                      >
+                        챙겨야 할 항목 수
+                      </div>
+                      <div
+                        style="
+                          font-size: 9px;
+                          color: var(--color-bad);
+                          margin-top: 5px;
+                        "
+                      >
+                        출처 미확보 · 비워 둠
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      margin-top: 14px;
+                      padding: 12px;
+                      border-radius: var(--radius-md);
+                      background: var(--color-accent-soft);
+                      border: var(--rule-hair) solid var(--color-accent-line);
+                    "
+                  >
+                    <div
+                      style="
+                        font-family: var(--font-display);
+                        font-weight: 700;
+                        font-size: 0.9rem;
+                      "
+                    >
+                      그걸 카톡이랑 메모장으로 하고 있습니다
+                    </div>
+                    <div
+                      style="
+                        font-size: var(--text-2xs);
+                        color: var(--color-ink-2);
+                        margin-top: 5px;
+                      "
+                    >
+                      웨딩 플랜트는 예산·일정·대화를 한 곳에 둡니다. 둘이
+                      같이요.
+                    </div>
+                    <div
+                      class="btn btn-kakao btn-sm"
+                      style="
+                        margin-top: 10px;
+                        width: fit-content;
+                        padding: 0 14px;
+                      "
+                    >
+                      카카오로 시작하기
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </figure>
+
+          <div class="notes">
+            <div class="note-block">
+              <h3>구성</h3>
+              <ol class="flow">
+                <li>큰 숫자 3개 + 각 숫자 아래 출처 링크</li>
+                <li>"그걸 카톡이랑 메모장으로 하고 있습니다" 로 전환</li>
+                <li>앱 화면 3개를 문제-해결 짝으로 붙인다</li>
+                <li>CTA</li>
+              </ol>
+            </div>
+            <div class="note-block">
+              <h3>왜 되는가 / 리스크</h3>
+              <p class="pro">큰 숫자의 설득력을 <b>거짓말 없이</b> 빌린다.</p>
+              <p class="pro">
+                "왜 앱이 필요한가" 를 서비스 자랑 없이 세운다 — 요청하신 방향에
+                가장 곧게 맞는다.
+              </p>
+              <p class="con">
+                <b>출처가 생명이다.</b> 통계청·웨딩 업계 리포트를 실제로
+                인용해야 하고, 인용할 수 없으면 그 칸은 비워야 한다. 목업의 점선
+                칸이 그 규칙이다.
+              </p>
+              <p class="con">
+                다섯 중 <b>가장 흔한 형태</b>다. 트렌디함으로는 A·E에 밀린다.
+              </p>
+              <p class="con">
+                숫자가 겁을 주는 방향이라 톤 조절을 잘못하면 불안 마케팅이 된다.
+              </p>
+            </div>
+            <div class="note-block">
+              <h3>필요한 것</h3>
+              <div class="tags">
+                <span class="tag">인용 가능한 통계 2~3건</span>
+                <span class="tag">앱 스크린샷 3장</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ E ══════════ -->
+      <section class="concept">
+        <div class="c-head">
+          <div class="c-mark">E</div>
+          <div class="c-title">
+            <h2>만질 수 있는 출입증</h2>
+            <p class="sub">
+              브랜드 자산 활용 · 이미 만들어져 있음 · 설명은 전부 아래로
+            </p>
+            <p class="ref">
+              참고 계열 — Stripe 카드 히어로 · Apple AirTag 페이지 · Vercel
+              히어로 오브젝트
+            </p>
+            <p class="desc">
+              이미 있는 3D 출입증(<code>Lanyard</code>)을 첫 화면 전부로 씁니다.
+              <b>마우스로 끌면 흔들리고, 폰에서는 기울이면 흔들립니다.</b>
+              카드에는 방문자가 아직 안 정한 빈 이름과 D-day 자리가 있습니다 —
+              "이게 네 것이 될 자리"라는 뜻입니다. 기능 설명은 스크롤 한 화면
+              아래로 완전히 밀어냅니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="c-body">
+          <figure class="shots">
+            <div class="shot">
+              <p class="shot-cap">첫 화면 — 물건 하나</p>
+              <div class="screen">
+                <div
+                  class="vp"
+                  style="
+                    background: var(--color-night);
+                    min-height: 250px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                >
+                  <div
+                    style="
+                      width: 2px;
+                      height: 34px;
+                      background: var(--color-night-2);
+                    "
+                  ></div>
+                  <div
+                    style="
+                      width: 96px;
+                      height: 136px;
+                      border-radius: 10px;
+                      background: var(--color-paper-2);
+                      box-shadow: 0 20px 40px -20px oklch(0% 0 0 / 0.7);
+                      transform: rotate(-5deg);
+                      display: flex;
+                      flex-direction: column;
+                      align-items: center;
+                      justify-content: center;
+                      gap: 6px;
+                      padding: 10px;
+                    "
+                  >
+                    <div
+                      style="
+                        width: 26px;
+                        height: 26px;
+                        border-radius: 7px;
+                        background: var(--color-accent);
+                      "
+                    ></div>
+                    <div
+                      style="
+                        font-size: 8px;
+                        letter-spacing: 0.12em;
+                        color: var(--color-ink-3);
+                      "
+                    >
+                      WEDDING PLANT
+                    </div>
+                    <div
+                      style="
+                        width: 52px;
+                        height: 1px;
+                        background: var(--color-rule);
+                      "
+                    ></div>
+                    <div
+                      style="
+                        font-family: var(--font-user);
+                        font-size: 11px;
+                        color: var(--color-ink-4);
+                      "
+                    >
+                      이름
+                    </div>
+                    <div
+                      class="num"
+                      style="font-size: 15px; color: var(--color-accent)"
+                    >
+                      D-???
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      color: var(--color-paper);
+                      font-family: var(--font-display);
+                      font-weight: 700;
+                      font-size: 0.85rem;
+                      margin-top: 18px;
+                    "
+                  >
+                    끌어서 흔들어 보세요
+                  </div>
+                  <div
+                    style="
+                      color: var(--color-ink-4);
+                      font-size: 9px;
+                      margin-top: 5px;
+                    "
+                  >
+                    당신의 출입증은 아직 비어 있어요
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="shot">
+              <p class="shot-cap">한 화면 아래 — 그제서야 설명</p>
+              <div class="screen">
+                <div class="vp">
+                  <div class="big" style="font-size: 1.05rem">
+                    채우면 이렇게 됩니다
+                  </div>
+                  <div class="stack" style="margin-top: 12px">
+                    <div class="card-in row">
+                      <span class="avatar">지</span
+                      ><span class="avatar" style="margin-left: -14px">민</span>
+                      <div style="flex: 1; min-width: 0; margin-left: 4px">
+                        <div
+                          style="
+                            font-family: var(--font-display);
+                            font-weight: 700;
+                            font-size: 0.8rem;
+                          "
+                        >
+                          지현 · 민수
+                        </div>
+                        <div style="color: var(--color-ink-3); font-size: 9px">
+                          2026년 12월 31일 · 아모르하우스
+                        </div>
+                      </div>
+                      <div
+                        class="num"
+                        style="font-size: 1.15rem; color: var(--color-accent)"
+                      >
+                        D-129
+                      </div>
+                    </div>
+                    <div class="card-in">
+                      <div style="font-size: 9px; color: var(--color-ink-3)">
+                        남은 예산
+                      </div>
+                      <div class="num" style="font-size: 1.15rem">
+                        1,400<span style="font-size: 0.65rem">만원</span>
+                      </div>
+                      <div
+                        style="
+                          height: 7px;
+                          border-radius: 999px;
+                          background: var(--color-paper-3);
+                          margin-top: 7px;
+                          overflow: hidden;
+                          display: flex;
+                        "
+                      >
+                        <span
+                          style="width: 38%; background: var(--color-accent)"
+                        ></span>
+                      </div>
+                    </div>
+                    <div class="card-in row">
+                      <span class="pill pill-accent">♥ 신랑 · 신부</span>
+                      <span style="font-size: 9px; color: var(--color-ink-3)"
+                        >둘만의 대화방 · 5</span
+                      >
+                    </div>
+                  </div>
+                  <div class="btn btn-kakao" style="margin-top: 14px">
+                    내 출입증 만들기
+                  </div>
+                </div>
+              </div>
+            </div>
+          </figure>
+
+          <div class="notes">
+            <div class="note-block">
+              <h3>구성</h3>
+              <ol class="flow">
+                <li>첫 화면 = 출입증 하나. 어두운 배경, 문장 두 줄</li>
+                <li>스크롤하면 카드가 채워지며 앱 화면으로 전환</li>
+                <li>기능 3개를 카드 언어로 짧게</li>
+                <li>CTA 문구가 "가입"이 아니라 <b>"내 출입증 만들기"</b></li>
+              </ol>
+            </div>
+            <div class="note-block">
+              <h3>왜 되는가 / 리스크</h3>
+              <p class="pro">
+                <b>이미 만들어져 있다.</b> 다섯 중 유일하게 핵심 자산이 완성
+                상태다.
+              </p>
+              <p class="pro">
+                기억에 남는다. 흔드는 카드는 스크린샷 나열이 못 하는 일을 한다.
+              </p>
+              <p class="pro">
+                온보딩 끝의 출입증 발급과 <b>수미상관</b>이 된다.
+              </p>
+              <p class="con">
+                <b>WebGL 이 첫 화면에 온다.</b> 지금 온보딩에서는 뒤쪽이라 늦게
+                떠도 됐지만, 랜딩 첫 화면이면 로딩·저사양·크래시가 곧 이탈이다.
+                폴백 이미지가 필수.
+              </p>
+              <p class="con">
+                CLAUDE.md 에 <b>"Lanyard 자체는 건드리지 말 것"</b> 이라 적혀
+                있다. 랜딩용 변형이 필요하면 별도 래퍼로 감싸야 한다.
+              </p>
+              <p class="con">
+                예쁘지만 <b>무슨 앱인지는 여전히 안 알려준다.</b> 두 번째 화면이
+                그 몫을 다 져야 한다.
+              </p>
+            </div>
+            <div class="note-block">
+              <h3>필요한 것</h3>
+              <div class="tags">
+                <span class="tag">Lanyard 랜딩 래퍼 (원본 불변)</span>
+                <span class="tag">WebGL 폴백 정지 이미지</span>
+                <span class="tag">dynamic import + 로딩 상태</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 비교 ══════════ -->
+      <section
+        class="section"
+        style="border-top: var(--rule-hair) solid var(--color-rule)"
+      >
+        <div class="sec-head">
+          <h2>다섯을 나란히</h2>
+          <p>
+            "지금 만들 수 있나"는 데이터·자산이 이미 있는지, "모바일"은 유입의
+            대부분인 폰에서 온전한지를 봅니다.
+          </p>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>시안</th>
+                <th>설득 방식</th>
+                <th>트렌디함</th>
+                <th>모바일</th>
+                <th>제작비</th>
+                <th>지금 만들 수 있나</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>A</b> 스크롤 = 준비 기간</td>
+                <td>겪게 한다</td>
+                <td><span class="dots">●●●●●</span></td>
+                <td>
+                  <span class="dots">●●●●<i>●</i></span>
+                </td>
+                <td>대</td>
+                <td>가능 — 자산 불필요</td>
+              </tr>
+              <tr>
+                <td><b>B</b> 질문으로 시작</td>
+                <td>대신 말해 준다</td>
+                <td>
+                  <span class="dots">●●●<i>●●</i></span>
+                </td>
+                <td><span class="dots">●●●●●</span></td>
+                <td>소</td>
+                <td><b>아직</b> — 시세 표본 필요</td>
+              </tr>
+              <tr>
+                <td><b>C</b> 둘로 갈린 화면</td>
+                <td>구조로 증명</td>
+                <td>
+                  <span class="dots">●●●●<i>●</i></span>
+                </td>
+                <td>
+                  <span class="dots">●●<i>●●●</i></span>
+                </td>
+                <td>중</td>
+                <td>가능 — 자산 불필요</td>
+              </tr>
+              <tr>
+                <td><b>D</b> 결혼의 숫자</td>
+                <td>판을 먼저 세운다</td>
+                <td>
+                  <span class="dots">●●<i>●●●</i></span>
+                </td>
+                <td><span class="dots">●●●●●</span></td>
+                <td>소</td>
+                <td>조건부 — 인용 출처 필요</td>
+              </tr>
+              <tr>
+                <td><b>E</b> 만질 수 있는 출입증</td>
+                <td>물건을 준다</td>
+                <td><span class="dots">●●●●●</span></td>
+                <td>
+                  <span class="dots">●●●<i>●●</i></span>
+                </td>
+                <td>중</td>
+                <td><b>가장 빠름</b> — 이미 있음</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="recommend">
+          <h3>고를 때 기준이 되는 세 가지</h3>
+          <ol>
+            <li>
+              <b>모바일이 거의 전부입니다.</b> 카톡·인스타 링크로 들어옵니다. C
+              는 폰에서 가장 약하고, B·D 는 폰에서 가장 강합니다. 이게 첫 번째
+              필터입니다.
+            </li>
+            <li>
+              <b>B 는 지금 못 만듭니다.</b> 시세 숫자가 이 안의 전부인데 표본이
+              아직 없습니다. 피드에 후기가 쌓인 뒤에 꺼내는 카드입니다 — 지금
+              만들면 빈 화면이거나 거짓말입니다.
+            </li>
+            <li>
+              <b>A 와 E 는 성능이 곧 품질입니다.</b> 스크롤이 끊기거나 WebGL 이
+              늦게 뜨면, 공들인 만큼 정확히 반대로 보입니다. 둘 중 하나를
+              고른다면 폴백을 같이 설계해야 합니다.
+            </li>
+          </ol>
+          <p
+            style="
+              margin-top: var(--space-md);
+              font-size: var(--text-sm);
+              color: var(--color-ink-2);
+            "
+          >
+            하나를 고르지 않아도 됩니다 —
+            <b>첫 화면만 다르고 아래는 공유</b>하는 조합도 가능합니다. 예:
+            히어로는 E(출입증), 그 아래 설명 구간은 C(둘로 갈린 화면), 마지막은
+            D(숫자 → CTA).
+          </p>
+        </div>
+      </section>
+
+      <footer>
+        시안 문서 · 코드는 아직 수정하지 않았습니다. 방향을 고르면 그 시안만
+        구현합니다.
+      </footer>
+    </div>
+  </body>
+</html>

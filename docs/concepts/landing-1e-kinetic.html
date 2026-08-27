@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>웨딩 플랜트 — 1E · 글자만으로</title>
+    <style>
+      /* Hallmark · macrostructure: Kinetic Type · tone: austere-editorial · anchor hue: rose 353
+ * nav: N4 hidden (스크롤 후 등장) · footer: Ft5 statement · enrichment: none — 타이포 only
+ * 고도화 지점: UI 목업을 거의 버리고 한글 타이포 하나로 민다. 문장이 스크롤에 따라
+ * 잉크로 물들고(background-clip:text), 숫자만 색을 갖는다. 밀리 계열에 가장 가깝다.
+ * pre-emit critique: P5 H5 E5 S5 R5 V5
+ */
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmnEB";
+        src: url("../../public/font/woff2/TmoneyRoundWindExtraBold.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Dgm", system-ui, sans-serif;
+        --font-body: "Dgm", system-ui, sans-serif;
+        --font-num: "TmnEB", "Dgm", sans-serif;
+
+        --color-paper: oklch(97.8% 0.002 340);
+        --color-ink: oklch(14% 0.012 340);
+        --color-ink-2: oklch(45% 0.012 340);
+        --color-ink-3: oklch(66% 0.01 340);
+        --color-faint: oklch(88% 0.008 340); /* 아직 안 읽힌 글자 */
+        --color-accent: oklch(62.5% 0.243 353);
+        --color-accent-soft: oklch(96.6% 0.024 353);
+        --color-rule: oklch(91% 0.006 340);
+        --color-kakao: oklch(88% 0.16 96);
+        --color-kakao-ink: oklch(28% 0.05 80);
+        --color-focus: oklch(55% 0.2 353);
+
+        --space-2xs: 4px;
+        --space-xs: 8px;
+        --space-sm: 12px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 40px;
+        --space-2xl: 80px;
+        --space-3xl: 128px;
+
+        --text-say: clamp(2.1rem, 7.4vw, 5.6rem);
+        --text-dd: clamp(3rem, 11vw, 7.5rem);
+        --text-lead: clamp(0.98rem, 1.7vw, 1.15rem);
+        --text-sm: 0.875rem;
+        --text-xs: 0.79rem;
+        --text-2xs: 0.71rem;
+
+        --rule-hair: 1px;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --dur-mid: 420ms;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overflow-x: clip;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-size: 1rem;
+        line-height: 1.76;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-style: normal;
+        margin: 0;
+        line-height: 1.2;
+        letter-spacing: -0.045em;
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      p {
+        margin: 0;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 4px;
+        border-radius: 10px;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 var(--space-lg);
+      }
+
+      /* ── N4 hidden nav — 처음엔 없다가 스크롤하면 나타난다 ── */
+      .nav {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 7px 7px 7px 16px;
+        border-radius: 999px;
+        background: oklch(97.8% 0.002 340 / 0.86);
+        backdrop-filter: blur(14px);
+        border: var(--rule-hair) solid var(--color-rule);
+        opacity: 0;
+        pointer-events: none;
+        max-width: calc(100vw - 24px);
+      }
+      .nav b {
+        font-family: var(--font-display);
+        font-size: var(--text-xs);
+        letter-spacing: -0.03em;
+        white-space: nowrap;
+      }
+      .nav a {
+        display: flex;
+        align-items: center;
+        height: 31px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-2xs);
+        white-space: nowrap;
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .nav a:hover {
+        transform: translateY(-1px);
+      }
+      .nav a:active {
+        transform: scale(0.97);
+      }
+      @supports (animation-timeline: scroll()) {
+        .nav {
+          animation: navin linear both;
+          animation-timeline: scroll(root);
+          animation-range: 4% 9%;
+        }
+      }
+      @keyframes navin {
+        to {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
+      @supports not (animation-timeline: scroll()) {
+        .nav {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
+
+      /* ── 문장 ── */
+      .say {
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: var(--space-3xl) 0;
+      }
+      .say h1,
+      .say h2 {
+        font-size: var(--text-say);
+        max-width: 14ch;
+      }
+      /* 아직 안 읽힌 글자는 흐리고, 스크롤이 잉크를 채운다 */
+      .ink {
+        background-image: linear-gradient(
+          90deg,
+          var(--color-ink) 50%,
+          var(--color-faint) 50%
+        );
+        background-size: 220% 100%;
+        background-position: 100% 0;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        padding-bottom: 0.12em;
+      }
+      @supports (animation-timeline: view()) {
+        .ink {
+          animation: soak linear both;
+          animation-timeline: view();
+          animation-range: entry 18% cover 52%;
+        }
+      }
+      @keyframes soak {
+        to {
+          background-position: 0% 0;
+        }
+      }
+      /* clip:text 를 못 쓰면 그냥 잉크색으로 */
+      @supports not (
+        (-webkit-background-clip: text) or (background-clip: text)
+      ) {
+        .ink {
+          background: none;
+          color: var(--color-ink);
+        }
+      }
+      .hot {
+        color: var(--color-accent);
+        -webkit-text-fill-color: var(--color-accent);
+      }
+      .say .lead {
+        margin-top: var(--space-xl);
+        font-size: var(--text-lead);
+        color: var(--color-ink-2);
+        max-width: 36ch;
+      }
+
+      /* 도구 이름만 줄 세운다 — 이 시안은 카드도 표도 쓰지 않는다 */
+      .names {
+        margin-top: var(--space-xl);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 14px;
+      }
+      .names span {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1rem, 2.4vw, 1.4rem);
+        letter-spacing: -0.03em;
+        color: var(--color-faint);
+      }
+      .names span.last {
+        color: var(--color-accent);
+      }
+      .aside {
+        margin-top: var(--space-xl);
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+        line-height: 1.8;
+        max-width: 46ch;
+      }
+
+      /* 숫자만 크게 — 유일한 "이미지" */
+      .figure {
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: var(--space-3xl) 0;
+        background: var(--color-accent-soft);
+      }
+      .figure .dd {
+        font-family: var(--font-num);
+        font-size: var(--text-dd);
+        line-height: 0.86;
+        letter-spacing: -0.06em;
+        color: var(--color-accent);
+      }
+      .figure .cap {
+        margin-top: var(--space-lg);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.1rem, 2.8vw, 1.8rem);
+        letter-spacing: -0.03em;
+        max-width: 18ch;
+      }
+      .figure .sub {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        font-size: var(--text-sm);
+        max-width: 32ch;
+      }
+
+      /* 세 줄 목록 — 유일한 "기능 설명", 문장으로 */
+      .list {
+        padding: var(--space-3xl) 0;
+      }
+      .list li {
+        list-style: none;
+        padding: var(--space-lg) 0;
+        border-top: var(--rule-hair) solid var(--color-rule);
+        display: grid;
+        gap: 6px;
+      }
+      .list ul {
+        margin: 0;
+        padding: 0;
+      }
+      .list li:last-child {
+        border-bottom: var(--rule-hair) solid var(--color-rule);
+      }
+      .list .k {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.15rem, 3vw, 1.7rem);
+        letter-spacing: -0.035em;
+      }
+      .list .v {
+        color: var(--color-ink-2);
+        font-size: var(--text-sm);
+        max-width: 44ch;
+      }
+      @supports (animation-timeline: view()) {
+        .list li {
+          opacity: 0;
+          transform: translateY(14px);
+          animation: rise linear both;
+          animation-timeline: view();
+          animation-range: entry 10% cover 34%;
+        }
+      }
+      @keyframes rise {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* 마무리 */
+      .end {
+        min-height: 88svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: var(--space-3xl) 0;
+      }
+      .end h2 {
+        font-size: clamp(1.8rem, 5.4vw, 3.4rem);
+        max-width: 14ch;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 58px;
+        padding: 0 36px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.05rem;
+        margin-top: var(--space-xl);
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .cta:hover {
+        transform: translateY(-2px);
+      }
+      .cta:active {
+        transform: scale(0.98);
+      }
+      .sub-cta {
+        display: block;
+        margin-top: var(--space-md);
+        font-size: var(--text-sm);
+        color: var(--color-ink-3);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      footer {
+        padding: var(--space-2xl) 0;
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      footer .big {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.25rem, 3.2vw, 1.9rem);
+        letter-spacing: -0.035em;
+        max-width: 20ch;
+        line-height: 1.28;
+      }
+      footer .meta {
+        margin-top: var(--space-xl);
+        padding-top: var(--space-md);
+        border-top: var(--rule-hair) solid var(--color-rule);
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-xs) var(--space-lg);
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+      footer .meta a {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation: none !important;
+          transition-duration: 0.01ms !important;
+        }
+        .ink {
+          background: none;
+          color: var(--color-ink);
+        }
+        .hot {
+          color: var(--color-accent);
+        }
+        .list li {
+          opacity: 1;
+          transform: none;
+        }
+        .nav {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <b>웨딩 플랜트</b>
+      <a href="#start">시작하기</a>
+    </nav>
+
+    <main>
+      <section class="say">
+        <div class="wrap">
+          <h1 class="ink">
+            결혼 준비에<br /><span class="hot">312일</span>이<br />남았습니다.
+          </h1>
+          <p class="lead">
+            그동안 두 사람은 스물네 번쯤 결정을 합니다. 대부분 카카오톡 대화방과
+            메모장에서요.
+          </p>
+        </div>
+      </section>
+
+      <section class="say">
+        <div class="wrap">
+          <h2 class="ink">그중 절반은<br />혼자 결정합니다.</h2>
+          <p class="lead">
+            상대가 모르는 계약, 서로 다르게 기억하는 예산. 이건 게으름이 아니라
+            도구의 문제입니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="say">
+        <div class="wrap">
+          <h2 class="ink">
+            노션에도, 엑셀에도,<br />카톡에도
+            <span class="hot">있었습니다</span>.
+          </h2>
+          <p class="lead">
+            어디에 뭐가 있는지만 몰랐을 뿐입니다. 표를 짜고 수식을 넣는 시간도
+            결혼 준비에 들어갑니다.
+          </p>
+          <p class="names" aria-label="지금 쓰는 도구들">
+            <span>노션</span><span>엑셀</span><span>카카오톡</span
+            ><span>메모장</span> <span>캡처 앨범</span><span>다이어리</span
+            ><span class="last">→ 웨딩 플랜트</span>
+          </p>
+          <p class="aside">
+            노션이 나쁘다는 얘기가 아닙니다. 노션은 무엇이든 만들 수 있고,
+            그래서 만들어야 합니다. 여기서는 월별 칸이 이미 있고, 남은 금액이
+            수식 없이 나오고, 둘만의 대화방이 따로 열립니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="figure">
+        <div class="wrap">
+          <p class="dd">
+            4,200<span
+              style="
+                font-size: 0.24em;
+                font-family: var(--font-body);
+                color: var(--color-ink-2);
+              "
+              >만원</span
+            >
+          </p>
+          <p class="cap">한 사람이 정하기엔<br />너무 큰 숫자입니다</p>
+          <p class="sub">
+            쓴 돈과 쓸 돈이 섞여 있으면 얼마 남았는지 아무도 모릅니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="say">
+        <div class="wrap">
+          <h2 class="ink">
+            그래서 <span class="hot">둘이</span><br />같은 화면을 봅니다.
+          </h2>
+          <p class="lead">
+            신랑·신부는 일정과 예산을 함께 고칩니다. 누가 무엇을 언제 바꿨는지
+            그대로 남고, 둘만 있는 대화방이 따로 열립니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="list">
+        <div class="wrap">
+          <ul>
+            <li>
+              <span class="k">월별로 세워 두고 끌어서 옮깁니다</span>
+              <span class="v"
+                >날짜가 아직 없는 일도 자리를 차지합니다. 정해지면 그 달로
+                옮기면 됩니다.</span
+              >
+            </li>
+            <li>
+              <span class="k">쓴 돈과 쓸 돈을 갈라 놓습니다</span>
+              <span class="v"
+                >남은 금액이 한 줄로 나옵니다. 암산할 일이 없습니다.</span
+              >
+            </li>
+            <li>
+              <span class="k">끝난 일정이 다음 사람의 답이 됩니다</span>
+              <span class="v"
+                >업체명과 실제 지출이 그대로 남습니다. 평균이 아니라 중앙값으로,
+                표본이 충분할 때만 냅니다.</span
+              >
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="say">
+        <div class="wrap">
+          <h2 class="ink">
+            남은 날은<br /><span class="hot">0</span>이 됩니다.
+          </h2>
+          <p class="lead">
+            그날 남는 건 사진과 기록입니다. 둘 다 둘이 만든 것이어야 합니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="end" id="start">
+        <div class="wrap">
+          <h2>같이 시작해요</h2>
+          <a class="cta" href="#start">카카오로 시작하기</a>
+          <a class="sub-cta" href="#start">로그인 없이 둘러보기</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p class="big">화면을 자랑하지 않았습니다.<br />직접 보시면 됩니다.</p>
+        <div class="meta">
+          <span>웨딩 플랜트</span>
+          <a href="/privacy">개인정보처리방침</a>
+          <span>seoulmomenttw@gmail.com</span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

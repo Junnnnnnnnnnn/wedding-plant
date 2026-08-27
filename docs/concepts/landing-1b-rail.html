@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>웨딩 플랜트 — 1B · 가로로 흐르는 레일</title>
+    <style>
+      /* Hallmark · macrostructure: Horizontal Rail · tone: utilitarian-warm · anchor hue: rose 353
+ * nav: N13 inline pill · footer: Ft1 minimal · enrichment: Tier-A CSS 레일
+ * 고도화 지점: 세로 스크롤이 가로 이동으로 바뀐다. 준비 기간이 "길다"는 걸
+ * 글로 말하지 않고 손가락으로 겪게 한다. sticky + scroll() 로 JS 없이.
+ * pre-emit critique: P5 H5 E5 S5 R5 V5
+ */
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmnEB";
+        src: url("../../public/font/woff2/TmoneyRoundWindExtraBold.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Dgm", system-ui, sans-serif;
+        --font-body: "Dgm", system-ui, sans-serif;
+        --font-num: "TmnEB", "Dgm", sans-serif;
+
+        --color-paper: oklch(97.6% 0.008 80); /* 살짝 따뜻한 종이 */
+        --color-card: oklch(100% 0 0);
+        --color-tint: oklch(96.4% 0.016 353);
+        --color-ink: oklch(18% 0.03 350);
+        --color-ink-2: oklch(47% 0.016 345);
+        --color-ink-3: oklch(66% 0.012 345);
+        --color-ink-4: oklch(81% 0.01 345);
+        --color-accent: oklch(62.5% 0.243 353);
+        --color-accent-soft: oklch(96.2% 0.026 353);
+        --color-accent-line: oklch(88% 0.052 353);
+        --color-rule: oklch(92% 0.01 80);
+        --color-rule-2: oklch(86% 0.014 80);
+        --color-dash: oklch(84% 0.014 80);
+        --color-plan: oklch(83% 0.012 345);
+        --color-kakao: oklch(88% 0.16 96);
+        --color-kakao-ink: oklch(28% 0.05 80);
+        --color-focus: oklch(55% 0.2 353);
+        --color-shade: oklch(18% 0.03 350 / 0.1);
+
+        --space-2xs: 4px;
+        --space-xs: 8px;
+        --space-sm: 12px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 40px;
+        --space-2xl: 72px;
+        --space-3xl: 112px;
+
+        --text-hero: clamp(2rem, 6vw, 4.2rem);
+        --text-h2: clamp(1.5rem, 3.4vw, 2.3rem);
+        --text-lead: clamp(0.96rem, 1.6vw, 1.12rem);
+        --text-sm: 0.875rem;
+        --text-xs: 0.79rem;
+        --text-2xs: 0.71rem;
+
+        --radius-md: 16px;
+        --radius-lg: 22px;
+        --radius-xl: 28px;
+        --rule-hair: 1px;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --dur-mid: 420ms;
+
+        --stop-w: clamp(240px, 74vw, 340px);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overflow-x: clip;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-size: 1rem;
+        line-height: 1.74;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-style: normal;
+        margin: 0;
+        line-height: 1.16;
+        letter-spacing: -0.04em;
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      p {
+        margin: 0;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 3px;
+        border-radius: 12px;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 var(--space-lg);
+      }
+
+      /* ── N13 inline pill nav ── */
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        padding: 12px var(--space-lg);
+        background: oklch(97.6% 0.008 80 / 0.86);
+        backdrop-filter: blur(14px);
+        border-bottom: var(--rule-hair) solid var(--color-rule);
+      }
+      .nav b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.03em;
+      }
+      .nav .pill {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 34px;
+        padding: 0 6px 0 14px;
+        border-radius: 999px;
+        border: var(--rule-hair) solid var(--color-rule-2);
+        background: var(--color-card);
+      }
+      .nav .pill span {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+        white-space: nowrap;
+      }
+      .nav .pill a {
+        display: flex;
+        align-items: center;
+        height: 24px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-2xs);
+        white-space: nowrap;
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .nav .pill a:hover {
+        transform: translateY(-1px);
+      }
+      .nav .pill a:active {
+        transform: scale(0.97);
+      }
+
+      /* ── 히어로 ── */
+      .hero {
+        padding: var(--space-3xl) 0 var(--space-2xl);
+      }
+      .hero h1 {
+        font-size: var(--text-hero);
+        max-width: 15ch;
+      }
+      .hero h1 em {
+        font-style: normal;
+        color: var(--color-accent);
+      }
+      .hero p {
+        margin-top: var(--space-lg);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 38ch;
+      }
+      .hero .go-hint {
+        margin-top: var(--space-xl);
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: var(--text-2xs);
+        letter-spacing: 0.14em;
+        color: var(--color-ink-4);
+      }
+      .hero .go-hint i {
+        display: block;
+        width: 52px;
+        height: 1px;
+        background: var(--color-ink-4);
+      }
+
+      /* ══ 가로 레일 ══
+   .track 이 5화면 높이. 그 안의 .viewport 가 sticky 로 박히고,
+   .rail 이 스크롤 진행에 맞춰 translateX 된다. */
+      .track {
+        position: relative;
+        height: 480svh;
+      }
+      .viewport {
+        position: sticky;
+        top: 0;
+        height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .rail {
+        display: flex;
+        align-items: stretch;
+        gap: var(--space-lg);
+        padding-inline: max(var(--space-lg), calc(50vw - var(--stop-w) / 2));
+        will-change: transform;
+      }
+      @supports (animation-timeline: scroll()) {
+        .rail {
+          animation: slide linear both;
+          animation-timeline: scroll(root);
+          animation-range: 6% 88%;
+        }
+      }
+      @keyframes slide {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(calc(-4 * (var(--stop-w) + var(--space-lg))));
+        }
+      }
+      /* 스크롤 구동이 없으면 그냥 손으로 미는 가로 스크롤로 떨어진다 */
+      @supports not (animation-timeline: scroll()) {
+        .track {
+          height: auto;
+        }
+        .viewport {
+          position: static;
+          height: auto;
+          padding: var(--space-2xl) 0;
+        }
+        .rail {
+          overflow-x: auto;
+          scroll-snap-type: x mandatory;
+          padding-bottom: var(--space-md);
+        }
+        .stop {
+          scroll-snap-align: center;
+        }
+      }
+
+      .stop {
+        flex: 0 0 var(--stop-w);
+        width: var(--stop-w);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+        padding: var(--space-lg);
+        border-radius: var(--radius-xl);
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-rule);
+        box-shadow: 0 26px 54px -46px var(--color-shade);
+      }
+      .stop .dd {
+        font-family: var(--font-num);
+        font-size: clamp(2.4rem, 6vw, 3.4rem);
+        line-height: 0.9;
+        letter-spacing: -0.055em;
+        color: var(--color-accent);
+      }
+      .stop h2 {
+        font-size: 1.15rem;
+        letter-spacing: -0.03em;
+      }
+      .stop p {
+        color: var(--color-ink-2);
+        font-size: var(--text-sm);
+      }
+      .stop .foot {
+        margin-top: auto;
+        padding-top: var(--space-md);
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .stop.last {
+        background: var(--color-accent-soft);
+        border-color: var(--color-accent-line);
+      }
+
+      .mini {
+        display: grid;
+        gap: 8px;
+      }
+      .mini-row {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 10px;
+        border-radius: 12px;
+        border: var(--rule-hair) solid var(--color-rule);
+      }
+      .mini-row.dash {
+        border-style: dashed;
+        border-color: var(--color-dash);
+        color: var(--color-ink-4);
+      }
+      .mini-row .t {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.84rem;
+      }
+      .mini-row .s {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+        margin-left: auto;
+        white-space: nowrap;
+      }
+      .mini-row .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex: none;
+        background: var(--color-accent);
+      }
+      .mini-row.dash .dot {
+        background: var(--color-dash);
+      }
+      .bar {
+        height: 9px;
+        border-radius: 999px;
+        background: var(--color-tint);
+        overflow: hidden;
+        display: flex;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+      }
+      .lbl {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .money {
+        font-family: var(--font-num);
+        font-size: 1.5rem;
+        letter-spacing: -0.05em;
+      }
+      .money small {
+        font-size: 0.44em;
+        color: var(--color-ink-3);
+        font-family: var(--font-body);
+      }
+
+      /* 레일 아래 눈금 — 지금 어디쯤인지 */
+      .ruler {
+        margin-top: var(--space-xl);
+        height: 2px;
+        background: var(--color-rule-2);
+        position: relative;
+      }
+      .ruler i {
+        position: absolute;
+        inset: 0 auto 0 0;
+        background: var(--color-accent);
+        transform-origin: 0 50%;
+        transform: scaleX(0.06);
+        width: 100%;
+      }
+      @supports (animation-timeline: scroll()) {
+        .ruler i {
+          animation: rulergrow linear both;
+          animation-timeline: scroll(root);
+          animation-range: 6% 88%;
+        }
+      }
+      @keyframes rulergrow {
+        from {
+          transform: scaleX(0.06);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+      .ruler-cap {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+        letter-spacing: 0.1em;
+      }
+
+      /* ── 흩어진 도구 → 한 줄 ── (레일 언어에 맞춰 가로로 늘어놓는다) */
+      .tools {
+        padding: var(--space-2xl) 0;
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .tools h2 {
+        font-size: var(--text-h2);
+        max-width: 18ch;
+      }
+      .tools .lead {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 42ch;
+      }
+      .strip {
+        margin-top: var(--space-xl);
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: var(--space-sm);
+        scroll-snap-type: x proximity;
+      }
+      .strip::-webkit-scrollbar {
+        height: 6px;
+      }
+      .strip::-webkit-scrollbar-thumb {
+        background: var(--color-rule-2);
+        border-radius: 999px;
+      }
+      .tcard {
+        flex: 0 0 clamp(200px, 58vw, 248px);
+        scroll-snap-align: start;
+        border-radius: var(--radius-lg);
+        border: 1.5px dashed var(--color-dash);
+        padding: var(--space-md);
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        background: transparent;
+      }
+      .tcard .n {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--color-ink-3);
+      }
+      .tcard .w {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .tcard.mine {
+        border: var(--rule-hair) solid var(--color-accent-line);
+        background: var(--color-accent-soft);
+        flex: 0 0 clamp(240px, 66vw, 300px);
+      }
+      .tcard.mine .n {
+        color: var(--color-accent);
+      }
+      .tcard.mine .w {
+        color: var(--color-ink-2);
+      }
+      .tcard .badge {
+        margin-top: auto;
+        font-size: var(--text-2xs);
+        letter-spacing: 0.12em;
+        color: var(--color-ink-4);
+        text-transform: uppercase;
+      }
+      .tcard.mine .badge {
+        color: var(--color-accent);
+      }
+      .tools .note {
+        margin-top: var(--space-lg);
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+        line-height: 1.7;
+        max-width: 52ch;
+      }
+
+      /* ── 레일 이후 ── */
+      .after {
+        padding: var(--space-3xl) 0;
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .after h2 {
+        font-size: var(--text-h2);
+        max-width: 17ch;
+      }
+      .after .lead {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 40ch;
+      }
+      .pairs {
+        margin-top: var(--space-2xl);
+        display: grid;
+        gap: var(--space-lg);
+      }
+      .pair {
+        display: grid;
+        gap: var(--space-md);
+        grid-template-columns: minmax(0, 1fr);
+        padding-top: var(--space-lg);
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      @media (min-width: 820px) {
+        .pair {
+          grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+          gap: var(--space-2xl);
+          align-items: center;
+        }
+      }
+      .pair h3 {
+        font-size: 1.15rem;
+      }
+      .pair p {
+        margin-top: 8px;
+        color: var(--color-ink-2);
+        font-size: var(--text-sm);
+      }
+      .surface {
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        display: grid;
+        gap: 11px;
+      }
+
+      .finale {
+        padding: var(--space-3xl) 0;
+        text-align: center;
+        background: var(--color-tint);
+      }
+      .finale h2 {
+        font-size: var(--text-h2);
+        max-width: 15ch;
+        margin-inline: auto;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+        padding: 0 34px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.02rem;
+        margin-top: var(--space-xl);
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .cta:hover {
+        transform: translateY(-2px);
+      }
+      .cta:active {
+        transform: scale(0.98);
+      }
+      .sub-cta {
+        display: block;
+        margin-top: var(--space-md);
+        font-size: var(--text-sm);
+        color: var(--color-ink-3);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      footer {
+        padding: var(--space-xl) 0 var(--space-2xl);
+        border-top: var(--rule-hair) solid var(--color-rule);
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-xs) var(--space-lg);
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+      footer a {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation: none !important;
+          transition-duration: 0.01ms !important;
+        }
+        .track {
+          height: auto;
+        }
+        .viewport {
+          position: static;
+          height: auto;
+          padding: var(--space-2xl) 0;
+        }
+        .rail {
+          overflow-x: auto;
+          transform: none;
+        }
+        .ruler i {
+          transform: scaleX(1);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <b>웨딩 플랜트</b>
+      <span class="pill"
+        ><span>준비 기간 10개월</span><a href="#start">시작하기</a></span
+      >
+    </nav>
+
+    <main>
+      <section class="hero">
+        <div class="wrap">
+          <h1>결혼 준비는<br /><em>길고 옆으로</em> 갑니다</h1>
+          <p>
+            한 화면에 다 안 들어옵니다. 그래서 이 페이지도 옆으로 흐릅니다 —
+            아래로 내려 보세요.
+          </p>
+          <p class="go-hint"><i aria-hidden="true"></i>D-312 에서 D-0 까지</p>
+        </div>
+      </section>
+
+      <section class="track" aria-label="준비 과정 레일">
+        <div class="viewport">
+          <div class="rail">
+            <article class="stop">
+              <p class="dd">D-312</p>
+              <h2>아무것도 안 정했어요</h2>
+              <p>날짜도 예산도 비어 있습니다. 여기서 시작합니다.</p>
+              <div class="foot mini">
+                <span class="mini-row dash"
+                  ><i class="dot" aria-hidden="true"></i
+                  ><span class="t">예식장</span
+                  ><span class="s">미정</span></span
+                >
+                <span class="mini-row dash"
+                  ><i class="dot" aria-hidden="true"></i
+                  ><span class="t">스드메</span
+                  ><span class="s">미정</span></span
+                >
+              </div>
+            </article>
+
+            <article class="stop">
+              <p class="dd">D-274</p>
+              <h2>예식장이 정해졌어요</h2>
+              <p>날짜가 생기면 나머지 전부가 그 날짜를 기준으로 움직입니다.</p>
+              <div class="foot mini">
+                <span class="mini-row"
+                  ><i class="dot" aria-hidden="true"></i
+                  ><span class="t">아모르하우스</span
+                  ><span class="s">6월 12일</span></span
+                >
+                <span class="mini-row dash"
+                  ><i class="dot" aria-hidden="true"></i
+                  ><span class="t">스드메</span
+                  ><span class="s">미정</span></span
+                >
+              </div>
+            </article>
+
+            <article class="stop">
+              <p class="dd">D-186</p>
+              <h2>돈이 실제로 나가요</h2>
+              <p>쓴 돈과 쓸 돈이 갈려 있어야 남은 돈이 보입니다.</p>
+              <div class="foot">
+                <span class="lbl">4,200만원 중</span>
+                <div class="money">1,400<small>만원 남음</small></div>
+                <div class="bar" aria-hidden="true">
+                  <i style="width: 38%; background: var(--color-accent)"></i
+                  ><i style="width: 28.6%; background: var(--color-plan)"></i>
+                </div>
+              </div>
+            </article>
+
+            <article class="stop">
+              <p class="dd">D-92</p>
+              <h2>둘이 같이 고쳐요</h2>
+              <p>누가 무엇을 언제 바꿨는지 그대로 남습니다.</p>
+              <div class="foot mini">
+                <span class="mini-row"
+                  ><i class="dot" aria-hidden="true"></i
+                  ><span class="t">민수님이 예산 수정</span
+                  ><span class="s">2시간 전</span></span
+                >
+                <span class="mini-row"
+                  ><i class="dot" aria-hidden="true"></i
+                  ><span class="t">지현님이 일정 추가</span
+                  ><span class="s">어제</span></span
+                >
+              </div>
+            </article>
+
+            <article class="stop last">
+              <p class="dd">D-0</p>
+              <h2>둘이서 다 했어요</h2>
+              <p>
+                끝난 일정은 지우지 않습니다. 언제 얼마를 왜 썼는지가 남습니다.
+              </p>
+              <div class="foot mini">
+                <span class="mini-row"
+                  ><i class="dot" aria-hidden="true"></i
+                  ><span class="t">완료 24건</span
+                  ><span class="s">3,240만원</span></span
+                >
+              </div>
+            </article>
+          </div>
+
+          <div class="wrap">
+            <div class="ruler" aria-hidden="true"><i></i></div>
+            <p class="ruler-cap"><span>D-312</span><span>D-0</span></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="tools">
+        <div class="wrap">
+          <h2>지금은 네 군데에<br />나눠 적고 있습니다</h2>
+          <p class="lead">
+            어딘가에는 다 있습니다. 어디에 뭐가 있는지만 모를 뿐입니다 — 이것도
+            옆으로 밀어 보세요.
+          </p>
+
+          <div class="strip">
+            <article class="tcard">
+              <span class="n">노션</span>
+              <span class="w"
+                >표를 짜고 수식을 넣는 시간이 먼저 듭니다. 빈 페이지부터
+                시작합니다.</span
+              >
+              <span class="badge">도구를 만들어야 함</span>
+            </article>
+            <article class="tcard">
+              <span class="n">엑셀</span>
+              <span class="w"
+                >폰에서 열면 가로로 스크롤합니다. 합계는 맞는데 남은 돈은
+                암산입니다.</span
+              >
+              <span class="badge">폰에서 안 읽힘</span>
+            </article>
+            <article class="tcard">
+              <span class="n">카카오톡</span>
+              <span class="w"
+                >정한 게 대화에 묻힙니다. 위로 올리다 포기합니다.</span
+              >
+              <span class="badge">기록이 안 남음</span>
+            </article>
+            <article class="tcard">
+              <span class="n">메모장</span>
+              <span class="w">상대가 못 봅니다. 둘이 다르게 기억합니다.</span>
+              <span class="badge">혼자만 봄</span>
+            </article>
+            <article class="tcard mine">
+              <span class="n">웨딩 플랜트</span>
+              <span class="w"
+                >월별 칸이 이미 있고, 남은 금액이 수식 없이 나오고, 둘만의
+                대화방이 따로 열립니다.</span
+              >
+              <span class="badge">만들 필요 없음</span>
+            </article>
+          </div>
+
+          <p class="note">
+            노션이 나쁘다는 얘기가 아닙니다. 노션은 무엇이든 만들 수 있고,
+            그래서 만들어야 합니다. 결혼 준비에 쓸 시간을 도구 만드는 데 쓰지
+            않아도 된다는 뜻입니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="after">
+        <div class="wrap">
+          <h2>레일이 끝나면<br />기록이 남습니다</h2>
+          <p class="lead">
+            완료한 일정은 업체명과 실제 지출을 그대로 갖고 있습니다. 거기에 한
+            줄만 얹으면 다음 사람의 견적 후기가 됩니다.
+          </p>
+
+          <div class="pairs">
+            <div class="pair">
+              <div>
+                <h3>얼마 남았는지 한 줄로</h3>
+                <p>
+                  쓴 돈은 분홍, 쓸 돈은 회색, 남은 건 빈 트랙. 색이 곧 뜻입니다.
+                </p>
+              </div>
+              <div class="surface">
+                <span class="lbl">남은 예산</span>
+                <div class="money" style="font-size: 1.9rem">
+                  1,400<small>만원</small>
+                </div>
+                <div class="bar" aria-hidden="true">
+                  <i style="width: 38%; background: var(--color-accent)"></i
+                  ><i style="width: 28.6%; background: var(--color-plan)"></i>
+                </div>
+              </div>
+            </div>
+            <div class="pair">
+              <div>
+                <h3>이게 비싼 건지 알 방법</h3>
+                <p>
+                  먼저 끝낸 사람들의 실제 지출. 평균이 아니라 중앙값으로, 표본이
+                  충분할 때만 냅니다.
+                </p>
+              </div>
+              <div class="surface">
+                <span class="mini-row"
+                  ><span class="money" style="font-size: 1.15rem"
+                    >580<small>만</small></span
+                  ><span class="t">아모레 스튜디오</span
+                  ><span class="s">D-131 신부</span></span
+                >
+                <span class="mini-row"
+                  ><span class="money" style="font-size: 1.15rem"
+                    >710<small>만</small></span
+                  ><span class="t">라비페르 스튜디오</span
+                  ><span class="s">D-88 신랑</span></span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="finale" id="start">
+        <div class="wrap">
+          <h2>10개월을<br />같이 걸어요</h2>
+          <a class="cta" href="#start">카카오로 시작하기</a>
+          <a class="sub-cta" href="#start">로그인 없이 둘러보기</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      <span>웨딩 플랜트</span>
+      <a href="/privacy">개인정보처리방침</a>
+      <span>seoulmomenttw@gmail.com</span>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,4801 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>웨딩 플랜트 — A · 스크롤이 곧 준비 기간</title>
+    <style>
+      /* Hallmark · macrostructure: Pinned Stage + Device Demo · tone: playful · anchor hue: rose 353
+ * nav: N10 scroll-morph · footer: Ft5 statement
+ * enrichment: Tier-B 인라인 SVG 아이콘 + Tier-A 기기 목업
+ *
+ * **첫 화면(.stage)은 시안 A 원본 그대로다. 손대지 말 것.**
+ *
+ * 폰 안의 화면은 지어낸 것이 아니라 실제 앱 코드에서 읽은 값이다 —
+ *   예산 카드  linear-gradient(135deg,#ee2b8c,#ff5c95) · rounded-[24px] · p-6
+ *              "남은 예산" → 큰 숫자 "만 원" → "N만 원 지출/예정" → h-2 흰 막대 + N%
+ *   일정 카드  rounded-3xl · border #ee2b8c0a · 좌측 w-14 h-14 파스텔 타일 + 24px 원형 체크
+ *   파스텔     #FFE4E9 #E8DDF5 #D5F0E5 #FFF0D6 #D4EBF7 #FFE5D9 (getCategoryColor)
+ *   탭바       홈·피드·참여 플랜·Settings / 활성 #ffaab8 · 비활성 #99a1af
+ *   빈 상태    "텅~"
+ * 값을 바꾸려면 app/main/page.tsx 를 먼저 보고 맞추세요.
+ *
+ * 규칙 예외: Hallmark 은 가짜 폰 프레임을 금지하지만, 실제 안드로이드 앱이 있고
+ *   앱 소개 랜딩의 기기 목업은 관례라 브리프를 우선한다.
+ * 밀리 참고: 브랜드 페이지가 SPA 셸이라 3회 시도에도 CSS·폰트를 읽지 못했다.
+ *   제3자 문서로 확인된 것 하나 — 스크롤에 따라 **행 단위**로 아이템이 움직이고
+ *   같은 행은 같은 속도를 쓴다. .drift 가 그것이다.
+ * 인터랙션: 엑셀↔앱 토글 · 웹↔폰 동기화 (둘 다 라디오 + :has, JS 0줄)
+ * pre-emit critique: P5 H5 E5 S5 R4 V5
+ */
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmnEB";
+        src: url("../../public/font/woff2/TmoneyRoundWindExtraBold.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Dgm", system-ui, sans-serif;
+        --font-body: "Dgm", system-ui, sans-serif;
+        --font-num: "TmnEB", "Dgm", sans-serif;
+
+        --color-paper: oklch(98.7% 0.003 340);
+        --color-card: oklch(100% 0 0);
+        --color-tint: oklch(97.2% 0.014 353);
+        --color-ink: oklch(18% 0.042 348);
+        --color-ink-2: oklch(48% 0.02 340);
+        --color-ink-3: oklch(66% 0.014 340);
+        --color-ink-4: oklch(81% 0.01 340);
+        --color-accent: oklch(62.5% 0.243 353);
+        --color-accent-soft: oklch(96.5% 0.024 353);
+        --color-accent-line: oklch(89% 0.05 353);
+        --color-rule: oklch(93.5% 0.01 345);
+        --color-rule-2: oklch(88% 0.016 345);
+        --color-dash: oklch(85% 0.014 345);
+        --color-plan: oklch(83% 0.012 345);
+        --color-good: oklch(58% 0.13 160);
+        --color-good-soft: oklch(96% 0.032 160);
+        --color-kakao: oklch(88% 0.16 96);
+        --color-kakao-ink: oklch(28% 0.05 80);
+        --color-focus: oklch(55% 0.2 353);
+        --color-shade: oklch(18% 0.042 348 / 0.1);
+
+        /* 앱에서 그대로 가져온 값 */
+        --app-grad: linear-gradient(135deg, #ee2b8c 0%, #ff5c95 100%);
+        --app-card-line: #ee2b8c0a;
+        --nav-on: #ffaab8;
+        --nav-off: #99a1af;
+        --cat-1: #ffe4e9;
+        --cat-2: #e8ddf5;
+        --cat-3: #d5f0e5;
+        --cat-4: #fff0d6;
+        --cat-5: #d4ebf7;
+        --cat-6: #ffe5d9;
+        --device: oklch(24% 0.02 330);
+        /* 엑셀 재현용 */
+        --xl-line: oklch(88% 0.004 150);
+        --xl-head: oklch(94% 0.008 150);
+        --xl-green: oklch(52% 0.11 150);
+
+        --space-2xs: 4px;
+        --space-xs: 8px;
+        --space-sm: 12px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 40px;
+        --space-2xl: 72px;
+        --space-3xl: 112px;
+
+        --text-odo: clamp(3.6rem, 12.5vw, 10.5rem);
+        --text-h2: clamp(1.6rem, 4vw, 2.7rem);
+        --text-lead: clamp(0.96rem, 1.6vw, 1.12rem);
+        --text-sm: 0.875rem;
+        --text-xs: 0.79rem;
+        --text-2xs: 0.71rem;
+
+        --radius-md: 16px;
+        --radius-lg: 22px;
+        --radius-xl: 30px;
+        --rule-hair: 1px;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --dur-mid: 420ms;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overflow-x: clip;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-size: 1rem;
+        line-height: 1.74;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-style: normal;
+        margin: 0;
+        line-height: 1.16;
+        letter-spacing: -0.04em;
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      p {
+        margin: 0;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 3px;
+        border-radius: 12px;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 var(--space-lg);
+      }
+      .ic {
+        width: 1em;
+        height: 1em;
+        flex: none;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      /* ── nav ── */
+      .nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        padding: 12px var(--space-lg);
+        background: oklch(98.7% 0.003 340 / 0.8);
+        backdrop-filter: blur(14px);
+        border-bottom: var(--rule-hair) solid var(--color-rule);
+      }
+      .nav b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.03em;
+      }
+      .nav .go {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        height: 34px;
+        padding: 0 16px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-xs);
+        white-space: nowrap;
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .nav .go:hover {
+        transform: translateY(-1px);
+      }
+      .nav .go:active {
+        transform: scale(0.97);
+      }
+      .progress {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 2px;
+        background: var(--color-accent);
+        transform-origin: 0 50%;
+        transform: scaleX(0);
+      }
+      @supports (animation-timeline: scroll()) {
+        .progress {
+          animation: grow linear both;
+          animation-timeline: scroll(root);
+        }
+      }
+      @keyframes grow {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+
+      /* ══════════ 첫 화면 — 시안 A 원본. 바꾸지 말 것 ══════════ */
+      /* **히어로 안무는 이 무대의 진행도에 묶는다.**
+   예전에는 scroll(root) — 문서 전체 스크롤의 6~37% 였는데, 뒤에 섹션을 더할
+   때마다 문서가 길어져 같은 % 가 무대 밖으로 밀렸다. 실제로 네 번째 타일
+   (신혼여행)이 채워지기 전에 무대가 지나가 버렸다. */
+      .stage {
+        position: relative;
+        height: 520svh;
+        view-timeline-name: --hero;
+        view-timeline-axis: block;
+      }
+      .pin {
+        position: sticky;
+        top: 0;
+        height: 100svh;
+        display: grid;
+        align-content: center;
+        overflow: hidden;
+        padding: var(--space-2xl) 0;
+      }
+      .pin-grid {
+        display: grid;
+        gap: var(--space-lg);
+        grid-template-columns: minmax(0, 1fr);
+        align-items: center;
+      }
+      @media (min-width: 900px) {
+        .pin-grid {
+          grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+          gap: var(--space-2xl);
+        }
+      }
+      .odo-wrap {
+        text-align: center;
+      }
+      @media (min-width: 900px) {
+        .odo-wrap {
+          text-align: left;
+        }
+      }
+      .odo-label {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.4rem, 4.4vw, 3.1rem);
+        letter-spacing: -0.035em;
+        line-height: 1.08;
+        color: var(--color-ink);
+        text-transform: none;
+      }
+      .odo {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0.06em;
+        min-width: 0;
+        font-family: var(--font-num);
+        font-size: var(--text-odo);
+        line-height: 0.84;
+        letter-spacing: -0.06em;
+        color: var(--color-accent);
+        margin-top: 0.04em;
+      }
+      @media (min-width: 900px) {
+        .odo {
+          justify-content: flex-start;
+        }
+      }
+      .odo-mask {
+        height: 1.12em;
+        overflow: hidden;
+      }
+      .odo-track {
+        display: block;
+      }
+      .odo-track b {
+        display: flex;
+        align-items: center;
+        height: 1.12em;
+        font-weight: 400;
+        line-height: 1;
+      }
+      @supports (animation-timeline: scroll()) {
+        .odo-track {
+          animation: roll linear both;
+          animation-timeline: --hero;
+          animation-range: contain 2% contain 55%;
+          animation-timing-function: steps(5, jump-none);
+        }
+      }
+      @keyframes roll {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(-80%);
+        }
+      }
+      .odo-cap {
+        margin-top: var(--space-md);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.1rem, 2.6vw, 1.7rem);
+        letter-spacing: -0.03em;
+      }
+      .odo-sub {
+        margin-top: var(--space-xs);
+        color: var(--color-ink-3);
+        font-size: var(--text-sm);
+      }
+      .tiles {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .tile {
+        border-radius: var(--radius-md);
+        border: 1.5px dashed var(--color-dash);
+        min-height: 82px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        background: transparent;
+      }
+      .tile .t {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--color-ink-4);
+      }
+      .tile .s {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+      }
+      .tile.fill {
+        border-style: solid;
+        border-color: transparent;
+        background: var(--color-card);
+        box-shadow: 0 14px 34px -28px var(--color-shade);
+      }
+      .tile.fill .t {
+        color: var(--color-ink);
+      }
+      .tile.fill .s {
+        color: var(--color-accent);
+      }
+      @supports (animation-timeline: scroll()) {
+        .tile.fill {
+          border-style: dashed;
+          border-color: var(--color-dash);
+          background: transparent;
+          box-shadow: none;
+          animation: fillTile linear both;
+          animation-timeline: --hero;
+        }
+        .tile.fill .t {
+          color: var(--color-ink-4);
+          animation: inkin linear both;
+          animation-timeline: --hero;
+        }
+        .tile.fill .s {
+          opacity: 0;
+          animation: detailin linear both;
+          animation-timeline: --hero;
+        }
+        .tile.fill:nth-of-type(1),
+        .tile.fill:nth-of-type(1) .t,
+        .tile.fill:nth-of-type(1) .s {
+          animation-range: contain 12% contain 24%;
+        }
+        .tile.fill:nth-of-type(2),
+        .tile.fill:nth-of-type(2) .t,
+        .tile.fill:nth-of-type(2) .s {
+          animation-range: contain 26% contain 38%;
+        }
+        .tile.fill:nth-of-type(3),
+        .tile.fill:nth-of-type(3) .t,
+        .tile.fill:nth-of-type(3) .s {
+          animation-range: contain 40% contain 52%;
+        }
+        .tile.fill:nth-of-type(4),
+        .tile.fill:nth-of-type(4) .t,
+        .tile.fill:nth-of-type(4) .s {
+          animation-range: contain 54% contain 66%;
+        }
+      }
+      @keyframes fillTile {
+        to {
+          border-style: solid;
+          border-color: transparent;
+          background: var(--color-card);
+          box-shadow: 0 14px 34px -28px var(--color-shade);
+        }
+      }
+      @keyframes inkin {
+        to {
+          color: var(--color-ink);
+        }
+      }
+      @keyframes detailin {
+        to {
+          opacity: 1;
+        }
+      }
+      .money-strip {
+        margin-top: 12px;
+        background: var(--color-card);
+        border-radius: var(--radius-md);
+        padding: 14px;
+        border: var(--rule-hair) solid var(--color-rule);
+      }
+      .money-strip .lbl {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .money-strip .val {
+        font-family: var(--font-num);
+        font-size: clamp(1.4rem, 3.4vw, 1.9rem);
+        letter-spacing: -0.05em;
+      }
+      .money-strip .val small {
+        font-size: 0.44em;
+        color: var(--color-ink-3);
+        font-family: var(--font-body);
+      }
+      .mbar {
+        height: 10px;
+        border-radius: 999px;
+        background: var(--color-tint);
+        overflow: hidden;
+        display: flex;
+        margin-top: 10px;
+      }
+      .mbar i {
+        display: block;
+        height: 100%;
+        transform-origin: 0 50%;
+      }
+      @supports (animation-timeline: scroll()) {
+        .mbar i {
+          transform: scaleX(0);
+          animation: fillx linear both;
+          animation-timeline: --hero;
+        }
+        .mbar .used {
+          animation-range: contain 16% contain 68%;
+        }
+        .mbar .plan {
+          animation-range: contain 34% contain 72%;
+        }
+      }
+      @keyframes fillx {
+        to {
+          transform: scaleX(1);
+        }
+      }
+      .hintdown {
+        position: absolute;
+        left: 50%;
+        bottom: 26px;
+        transform: translateX(-50%);
+        font-size: var(--text-2xs);
+        letter-spacing: 0.18em;
+        color: var(--color-ink-4);
+      }
+      @supports (animation-timeline: scroll()) {
+        .hintdown {
+          animation: fadeout linear both;
+          animation-timeline: --hero;
+          animation-range: contain 0% contain 8%;
+        }
+      }
+      @keyframes fadeout {
+        to {
+          opacity: 0;
+        }
+      }
+      /* ══════════ 여기까지 원본 ══════════ */
+
+      /* ══ 핀 무대 (첫 화면과 같은 방식) ══
+   섹션이 여러 화면 높이를 차지하고, 안의 .pin2 가 sticky 로 박힌다.
+   화면은 하나뿐이고 그 안의 내용만 스크롤 진행도에 따라 바뀐다.
+   진행도는 스크립트가 라디오로 옮겨 주고, 나머지는 기존 :has() 규칙이 그대로 받는다
+   — CSS 를 두 벌로 만들지 않으려고 상태를 라디오 한 곳에 모았다. */
+      .stage2 {
+        padding: 0;
+        height: 300svh;
+        view-timeline-name: --st;
+        view-timeline-axis: block;
+      }
+      /* **딱 한 화면이어야 한다.** min-height 로 두면 내용이 뷰포트보다 커질 때
+   무대 끝에서 핀이 미끄러진다(실제로 129px 밀렸다). height 로 고정하고,
+   폰 크기를 뷰포트 **높이**에도 묶어 짧은 화면에서 넘치지 않게 한다. */
+      .pin2 {
+        position: sticky;
+        top: 0;
+        height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        /* 내용이 무대보다 크면 가운데 정렬이 위로 밀어내 제목이 고정 내비에 잘린다.
+     safe 를 붙이면 넘칠 때만 위쪽 정렬로 떨어진다 (실제로 3px 잘렸다) */
+        justify-content: safe center;
+        overflow: hidden;
+        /* 상단 고정 내비(약 57px) 아래로 제목이 들어가지 않게 위 여백을 확보한다 */
+        padding: 84px 0 var(--space-xl);
+      }
+      .stage2 .device {
+        width: clamp(186px, min(72vw, 26vh), 290px);
+      }
+
+      @keyframes riseIn {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes deviceIn {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes fromLeft {
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      @keyframes fromRight {
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .pin2 > .wrap {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* 무대 타임라인에 건다. 핀된 요소는 화면에 박혀 있어 view() 가 안 움직인다 —
+   반드시 조상 무대의 이름 있는 타임라인(--st)을 써야 한다. */
+      @supports (animation-timeline: view()) {
+        .stage2 h2,
+        .stage2 .lead,
+        .stage2 .hint,
+        .stage2 .toggle {
+          opacity: 0;
+          transform: translateY(18px);
+          animation: riseIn linear both;
+          animation-timeline: --st;
+          animation-range: contain 0% contain 10%;
+        }
+        .stage2 .lead {
+          animation-range: contain 2% contain 12%;
+        }
+        .stage2 .toggle {
+          animation-range: contain 4% contain 14%;
+        }
+        .stage2 .hint {
+          animation-range: contain 6% contain 16%;
+        }
+
+        .sec.vs .device {
+          opacity: 0;
+          transform: translateY(40px);
+          animation: deviceIn linear both;
+          animation-timeline: --st;
+          animation-range: contain 0% contain 14%;
+        }
+
+        /* 웹과 폰이 양쪽에서 모인다 — 좌우 여백이 생기는 폭에서만 */
+        .sec.sync .web,
+        .sec.sync .device {
+          opacity: 0;
+          transform: translateY(22px);
+          animation: riseIn linear both;
+          animation-timeline: --st;
+          animation-range: contain 0% contain 14%;
+        }
+        @media (min-width: 1240px) {
+          .sec.sync .device {
+            transform: translateX(-28px);
+            animation-name: fromLeft;
+          }
+          .sec.sync .web {
+            transform: translateX(28px);
+            animation-name: fromRight;
+          }
+        }
+        /* 노션 대조 — sync 와 같은 안무. 두 창이 좌우에서 들어오고 줄이 차례로 뜬다 */
+        .sec.cmp .win2,
+        .sec.cmp .dev2 {
+          opacity: 0;
+          transform: translateY(22px);
+          animation: riseIn linear both;
+          animation-timeline: --st;
+          animation-range: contain 0% contain 14%;
+        }
+        @media (min-width: 1240px) {
+          .sec.cmp .nwin,
+          .sec.cmp .kdev {
+            transform: translateX(-28px);
+            animation-name: fromLeft;
+          }
+          .sec.cmp .pwin,
+          .sec.cmp .pdev {
+            transform: translateX(28px);
+            animation-name: fromRight;
+          }
+        }
+        .sec.cmp .toggle,
+        .sec.cmp .cmpcap {
+          opacity: 0;
+          animation: glIn linear both;
+          animation-timeline: --st;
+          animation-range: contain 4% contain 18%;
+        }
+
+        .sec.sync .wcard {
+          opacity: 0;
+          transform: translateY(12px);
+          animation: riseIn linear both;
+          animation-timeline: --st;
+          animation-range: contain 4% contain 18%;
+        }
+        .sec.sync .wcard:nth-of-type(2) {
+          animation-range: contain 6% contain 20%;
+        }
+        .sec.sync .wcard:nth-of-type(3) {
+          animation-range: contain 8% contain 22%;
+        }
+        .sec.sync .wcard:nth-of-type(4) {
+          animation-range: contain 10% contain 24%;
+        }
+
+        /* 장면별 불릿을 순차로. 예전에는 세 줄이 한꺼번에 미리 나와 있어
+     이 섹션만 스크롤텔링이 아니었다.
+     ※ .say 는 활성 장면에서만 display 되므로 각 구간 **안쪽**에 범위를 둔다.
+        구간이 끝나기 전에 다 나타나야 빈 채로 멈춰 보이지 않는다. */
+        .sec.vs .say .li {
+          opacity: 0;
+          transform: translateY(10px);
+          animation: riseIn linear both;
+          animation-timeline: --st;
+        }
+        .sec.vs .say[data-f="xl"] .li:nth-of-type(1) {
+          animation-range: contain 12% contain 20%;
+        }
+        .sec.vs .say[data-f="xl"] .li:nth-of-type(2) {
+          animation-range: contain 19% contain 27%;
+        }
+        .sec.vs .say[data-f="xl"] .li:nth-of-type(3) {
+          animation-range: contain 26% contain 34%;
+        }
+        .sec.vs .say[data-f="app"] .li:nth-of-type(1) {
+          animation-range: contain 53% contain 61%;
+        }
+        .sec.vs .say[data-f="app"] .li:nth-of-type(2) {
+          animation-range: contain 60% contain 68%;
+        }
+        .sec.vs .say[data-f="app"] .li:nth-of-type(3) {
+          animation-range: contain 67% contain 75%;
+        }
+
+        /* **셰이더는 UI 뒤에 켠다.** 캔버스가 먼저 뜨면 아직 비어 있는 무대 위에
+     분홍 빛만 떠 있어 어색하다. 등장 안무가 끝나는 지점부터 올린다. */
+        .sec.vs .gl {
+          opacity: 0;
+          animation: glIn linear both;
+          animation-timeline: --st;
+          animation-range: contain 8% contain 22%;
+        }
+        .sec.sync .gl {
+          opacity: 0;
+          animation: glIn linear both;
+          animation-timeline: --st;
+          animation-range: contain 18% contain 34%;
+        }
+      }
+      @keyframes glIn {
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* 핀 진행 표시 — 지금 몇 번째 장면인지 */
+      .beats {
+        position: absolute;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+        z-index: 2;
+        display: flex;
+        gap: 7px;
+        align-items: center;
+      }
+      .beats i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--color-rule-2);
+        transition:
+          background var(--dur-mid) var(--ease-out),
+          transform var(--dur-mid) var(--ease-out);
+      }
+      .vs:has(#m-xl:checked) .beats i:nth-child(1),
+      .vs:has(#m-app:checked) .beats i:nth-child(2),
+      .sync:has(#k-hall:checked) .beats i:nth-child(1),
+      .sync:has(#k-sdm:checked) .beats i:nth-child(2),
+      .sync:has(#k-ring:checked) .beats i:nth-child(3),
+      .sync:has(#k-trip:checked) .beats i:nth-child(4),
+      .cmp:has(#c-1:checked) .beats i:nth-child(1),
+      .cmp:has(#c-2:checked) .beats i:nth-child(2),
+      .cmp:has(#c-3:checked) .beats i:nth-child(3),
+      .cmp:has(#c-4:checked) .beats i:nth-child(4) {
+        background: var(--color-accent);
+        transform: scale(1.5);
+      }
+
+      /* ══ WebGL 배경 ══
+   장식이 아니라 그 섹션이 말하는 걸 그린다.
+   .vs  → 촘촘한 각진 격자(엑셀)가 성긴 둥근 카드(앱)로 모핑. 토글에 반응.
+   .sync → 웹과 폰 사이를 오가는 흐름. 카드를 고르면 한 번 밀려간다.
+   **글자 위에 노이즈를 얹지 않는다** — 폰 위치에서 멀어지면 셰이더가 사라진다.
+   WebGL 이 없거나 reduced-motion 이면 캔버스를 아예 만들지 않는다. */
+      .sec {
+        position: relative;
+        isolation: isolate;
+        overflow-x: clip;
+      }
+      .sec > .wrap {
+        position: relative;
+        z-index: 1;
+      }
+      .gl {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* ── 공통 섹션 ── */
+      .sec {
+        padding: var(--space-3xl) 0;
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .sec h2 {
+        font-size: var(--text-h2);
+        max-width: 18ch;
+      }
+      .sec .lead {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 42ch;
+      }
+      .hint {
+        margin-top: var(--space-lg);
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 15px;
+        border-radius: 999px;
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-accent-line);
+        font-size: var(--text-xs);
+        font-family: var(--font-display);
+        font-weight: 700;
+      }
+      .hint .ic {
+        font-size: 17px;
+        color: var(--color-accent);
+      }
+
+      /* ── 기기 ── */
+      .device {
+        position: relative;
+        width: clamp(244px, 74vw, 290px);
+        flex: none;
+        margin-inline: auto;
+        border-radius: 34px;
+        background: var(--device);
+        padding: 9px;
+        box-shadow: 0 44px 84px -52px oklch(0% 0 0 / 0.72);
+      }
+      .screen {
+        border-radius: 26px;
+        background: var(--color-card);
+        overflow: hidden;
+        aspect-ratio: 0.482;
+        display: flex;
+        flex-direction: column;
+      }
+      .sbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px 3px;
+        font-size: 9px;
+        color: var(--color-ink-3);
+        font-family: var(--font-num);
+      }
+      .sbar i {
+        display: inline-block;
+        width: 16px;
+        height: 5px;
+        border-radius: 2px;
+        background: var(--color-ink-4);
+        font-style: normal;
+      }
+      .sbody {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        padding: 10px 12px;
+        display: grid;
+        gap: 9px;
+        align-content: start;
+      }
+
+      /* 앱 헤더 (실제 /main 상단) */
+      .apphead {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .apphead .nm {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.88rem;
+        letter-spacing: -0.03em;
+      }
+      .apphead .dday {
+        margin-left: auto;
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: var(--color-accent);
+        color: var(--color-card);
+        font-family: var(--font-num);
+        font-size: 10px;
+        letter-spacing: -0.02em;
+      }
+      .apphead .av {
+        width: 19px;
+        height: 19px;
+        border-radius: 50%;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+        display: grid;
+        place-items: center;
+        font-size: 8px;
+        font-weight: 700;
+        border: 1.5px solid var(--color-card);
+      }
+      .appdate {
+        font-size: 9px;
+        color: var(--color-ink-3);
+      }
+
+      /* 앱 예산 카드 — 실제 값 그대로 */
+      .appbudget {
+        border-radius: 20px;
+        padding: 14px;
+        background: var(--app-grad);
+        color: #fff;
+      }
+      .appbudget .top {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+      }
+      .appbudget .coin {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #ffffff4d;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .appbudget .coin .ic {
+        font-size: 15px;
+        color: #fff;
+      }
+      .appbudget .k {
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .appbudget .v {
+        font-family: var(--font-num);
+        font-size: 1.45rem;
+        letter-spacing: -0.05em;
+        margin: 5px 0;
+        line-height: 1;
+      }
+      .appbudget .u {
+        padding-left: 37px;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .appbudget .track {
+        margin-top: 11px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .appbudget .track .t {
+        height: 6px;
+        flex: 1;
+        border-radius: 999px;
+        background: #ffffff4d;
+        overflow: hidden;
+      }
+      .appbudget .track .t i {
+        display: block;
+        height: 100%;
+        background: #fff;
+        border-radius: 999px;
+      }
+      .appbudget .track .p {
+        font-size: 10px;
+      }
+
+      /* 앱 탭(계획 중 / 완료) */
+      .apptabs {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 14px;
+        background: oklch(96% 0.002 340);
+        border: var(--rule-hair) solid oklch(94% 0.002 340);
+      }
+      .apptabs span {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 7px 0;
+        border-radius: 10px;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 10px;
+        color: var(--color-ink-4);
+      }
+      .apptabs span.on {
+        background: var(--color-card);
+        color: var(--color-accent);
+        box-shadow: 0 1px 2px oklch(0% 0 0 / 0.06);
+      }
+      .apptabs em {
+        font-style: normal;
+        padding: 1px 5px;
+        border-radius: 5px;
+        font-size: 8.5px;
+        background: oklch(93% 0.002 340);
+        color: var(--color-ink-3);
+      }
+      .apptabs span.on em {
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+      }
+
+      /* 앱 일정 카드 — 실제 마크업 그대로 */
+      .appcard {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--color-card);
+        padding: 10px;
+        border-radius: 19px;
+        border: var(--rule-hair) solid var(--app-card-line);
+        box-shadow: 0 1px 3px oklch(0% 0 0 / 0.05);
+        min-width: 0;
+      }
+      .appcard .tile2 {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        flex: none;
+        display: grid;
+        place-items: center;
+      }
+      .appcard .ck {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid var(--color-accent);
+        background: #ffffffcc;
+        display: grid;
+        place-items: center;
+      }
+      .appcard.done .ck {
+        background: var(--color-accent);
+        border-color: var(--color-accent);
+        color: #fff;
+      }
+      .appcard .ck .ic {
+        font-size: 9px;
+        stroke-width: 3.4;
+      }
+      .appcard .mid {
+        min-width: 0;
+        flex: 1;
+      }
+      .appcard .t {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.73rem;
+        letter-spacing: -0.02em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .appcard .c {
+        font-size: 8.5px;
+        color: var(--color-ink-3);
+      }
+      .appcard .d {
+        font-size: 8.5px;
+        color: var(--color-ink-3);
+      }
+      .appcard .right {
+        text-align: right;
+        flex: none;
+      }
+      .appcard .m {
+        font-family: var(--font-num);
+        font-size: 0.8rem;
+        letter-spacing: -0.03em;
+      }
+      .appcard .st {
+        margin-top: 3px;
+        display: inline-block;
+        padding: 1.5px 6px;
+        border-radius: 6px;
+        font-size: 8px;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+      .appcard.done {
+        opacity: 0.75;
+      }
+      .appcard.done .t {
+        text-decoration: line-through;
+        text-decoration-color: var(--color-ink-4);
+      }
+
+      /* 앱 하단 탭바 — 실제 4탭 */
+      .appnav {
+        margin-top: auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        padding: 7px 14px 9px;
+        background: var(--color-card);
+        border-top: var(--rule-hair) solid oklch(95% 0.002 340);
+      }
+      .appnav span {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        font-size: 7.5px;
+        color: var(--nav-off);
+      }
+      .appnav span .ic {
+        font-size: 15px;
+      }
+      .appnav span.on {
+        color: var(--nav-on);
+      }
+
+      /* ══ 엑셀 재현 ══ */
+      .xl {
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .xl .rib {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        background: var(--xl-green);
+        color: #fff;
+        font-size: 9px;
+      }
+      .xl .rib b {
+        font-family: var(--font-display);
+        font-size: 9.5px;
+      }
+      .xl .grid {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        font-size: 7px;
+        color: oklch(30% 0.004 150);
+      }
+      .xl .r {
+        display: flex;
+        border-bottom: 1px solid var(--xl-line);
+      }
+      .xl .r > * {
+        border-right: 1px solid var(--xl-line);
+        padding: 4px 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .xl .r .rn {
+        flex: 0 0 16px;
+        background: var(--xl-head);
+        text-align: center;
+        color: oklch(50% 0.004 150);
+      }
+      .xl .r .c1 {
+        flex: 0 0 62px;
+      }
+      .xl .r .c2 {
+        flex: 0 0 44px;
+        text-align: right;
+      }
+      .xl .r .c3 {
+        flex: 0 0 46px;
+      }
+      .xl .r .c4 {
+        flex: 0 0 40px;
+      }
+      .xl .r .c5 {
+        flex: 0 0 52px;
+      }
+      .xl .r.head > * {
+        background: var(--xl-head);
+        text-align: center;
+        font-weight: 700;
+        color: oklch(45% 0.004 150);
+      }
+      .xl .hscroll {
+        height: 7px;
+        background: var(--xl-head);
+        border-top: 1px solid var(--xl-line);
+        display: flex;
+        align-items: center;
+        padding: 0 3px;
+      }
+      .xl .hscroll i {
+        display: block;
+        height: 4px;
+        width: 34%;
+        border-radius: 999px;
+        background: oklch(72% 0.004 150);
+      }
+      .xl .foot {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 8px;
+        background: var(--xl-head);
+        border-top: 1px solid var(--xl-line);
+        font-size: 7.5px;
+        color: oklch(45% 0.004 150);
+      }
+      .xl .foot .sheet {
+        padding: 2px 7px;
+        background: #fff;
+        border: 1px solid var(--xl-line);
+        border-bottom: 0;
+        font-weight: 700;
+      }
+      .xl .pinch {
+        margin-top: auto;
+        padding: 7px 9px;
+        background: oklch(97% 0.004 150);
+        border-top: 1px solid var(--xl-line);
+        font-size: 8px;
+        color: oklch(48% 0.004 150);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .xl .pinch .ic {
+        font-size: 12px;
+      }
+
+      /* 토글 (엑셀 ↔ 앱) */
+      .pick {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+        width: 0;
+        height: 0;
+      }
+      .toggle {
+        display: flex;
+        gap: 5px;
+        padding: 5px;
+        border-radius: 999px;
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-rule);
+        width: fit-content;
+        max-width: 100%;
+        box-shadow: 0 10px 26px -22px var(--color-shade);
+        margin-bottom: var(--space-md);
+      }
+      .toggle label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 36px;
+        padding: 0 16px;
+        border-radius: 999px;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          background var(--dur-mid) var(--ease-out),
+          color var(--dur-mid) var(--ease-out);
+      }
+      .toggle label:hover {
+        background: var(--color-tint);
+        color: var(--color-ink);
+      }
+      .toggle label .ic {
+        font-size: 15px;
+      }
+      .vs:has(#m-xl:checked) label[for="m-xl"] {
+        background: var(--xl-green);
+        color: #fff;
+      }
+      .vs:has(#m-app:checked) label[for="m-app"] {
+        background: var(--color-accent);
+        color: var(--color-card);
+      }
+      .pick:focus-visible + label {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+      }
+      .face {
+        display: none;
+      }
+      .vs:has(#m-xl:checked) .face[data-f="xl"],
+      .vs:has(#m-app:checked) .face[data-f="app"] {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .vs:has(#m-xl:checked) .say[data-f="xl"],
+      .vs:has(#m-app:checked) .say[data-f="app"] {
+        display: grid;
+      }
+      .say {
+        display: none;
+        gap: 10px;
+        margin-top: var(--space-lg);
+      }
+      .say .li {
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        font-size: var(--text-sm);
+        color: var(--color-ink-2);
+      }
+      /* .li 는 flex 라 텍스트와 <b> 가 각각 별도 아이템이 된다 — 반드시 .w 로 묶는다.
+   안 묶으면 모바일에서 문장이 조각나 순서가 뒤섞인다(실제로 그랬다). */
+      .say .li .w {
+        min-width: 0;
+      }
+      .say .li .dot {
+        width: 22px;
+        height: 22px;
+        border-radius: 8px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        background: var(--color-tint);
+        color: var(--color-ink-3);
+      }
+      .say .li .dot .ic {
+        font-size: 13px;
+      }
+      .say[data-f="app"] .li .dot {
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+      }
+      @supports not selector(:has(*)) {
+        .toggle {
+          display: none;
+        }
+        .face[data-f="app"] {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+        .say[data-f="app"] {
+          display: grid;
+        }
+      }
+
+      .vsgrid {
+        margin-top: var(--space-xl);
+        display: grid;
+        gap: var(--space-xl);
+        grid-template-columns: minmax(0, 1fr);
+        align-items: center;
+      }
+      /* 폰이 세로로 길어서 align-items:center 면 리드문과 토글 사이가 200px 넘게 벌어진다.
+   글 쪽은 위에서 시작하고, 폰만 아래로 흐르게 둔다. */
+      @media (min-width: 940px) {
+        .vsgrid {
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: var(--space-2xl);
+          align-items: start;
+        }
+      }
+
+      /* ══ 웹 연동 ══ */
+      .syncgrid {
+        margin-top: var(--space-xl);
+        display: grid;
+        gap: var(--space-lg);
+        grid-template-columns: minmax(0, 1fr);
+        align-items: center;
+        justify-items: center;
+      }
+      @media (min-width: 1020px) {
+        .syncgrid {
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: var(--space-2xl);
+          justify-items: stretch;
+          align-items: start;
+        }
+      }
+      .web {
+        width: 100%;
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-xl);
+        padding: var(--space-lg);
+        box-shadow: 0 28px 60px -50px var(--color-shade);
+      }
+      .web-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: var(--space-md);
+        border-bottom: var(--rule-hair) solid var(--color-rule);
+        margin-bottom: var(--space-md);
+      }
+      .web-top i {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        background: var(--color-accent);
+        flex: none;
+      }
+      .web-top b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.03em;
+      }
+      .web-top .tag {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .web-top .tag .ic {
+        font-size: 14px;
+      }
+      .wcards {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      @media (min-width: 660px) {
+        .wcards {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+      .wcard {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 13px;
+        border-radius: var(--radius-md);
+        border: 1.5px solid var(--color-rule);
+        cursor: pointer;
+        min-width: 0;
+        transition:
+          border-color var(--dur-mid) var(--ease-out),
+          background var(--dur-mid) var(--ease-out),
+          transform var(--dur-mid) var(--ease-out);
+      }
+      .wcard:hover {
+        border-color: var(--color-accent-line);
+        transform: translateY(-2px);
+      }
+      .wcard .badge {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+      }
+      .wcard .badge .ic {
+        font-size: 17px;
+        color: var(--color-ink-2);
+      }
+      .wcard .n {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: -0.02em;
+      }
+      .wcard .m {
+        font-family: var(--font-num);
+        font-size: 1.05rem;
+        letter-spacing: -0.04em;
+      }
+      .wcard .s {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .sync:has(#k-hall:checked) label[for="k-hall"],
+      .sync:has(#k-sdm:checked) label[for="k-sdm"],
+      .sync:has(#k-ring:checked) label[for="k-ring"],
+      .sync:has(#k-trip:checked) label[for="k-trip"] {
+        border-color: var(--color-accent);
+        background: var(--color-accent-soft);
+      }
+      .web-foot {
+        margin-top: var(--space-md);
+        padding-top: var(--space-md);
+        border-top: var(--rule-hair) solid var(--color-rule);
+        display: grid;
+        gap: 8px;
+      }
+      .web-foot .lbl {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .web-foot .v {
+        font-family: var(--font-num);
+        font-size: clamp(1.5rem, 3.4vw, 2rem);
+        letter-spacing: -0.05em;
+      }
+      .web-foot .v small {
+        font-size: 0.42em;
+        color: var(--color-ink-3);
+        font-family: var(--font-body);
+      }
+      .web-foot .bar {
+        height: 10px;
+        border-radius: 999px;
+        background: var(--color-tint);
+        overflow: hidden;
+        display: flex;
+      }
+      .web-foot .bar i {
+        display: block;
+        height: 100%;
+      }
+      /* 웹에서 고른 항목이 폰 카드에서도 켜진다 */
+      .sync:has(#k-hall:checked) .appcard[data-k="hall"],
+      .sync:has(#k-sdm:checked) .appcard[data-k="sdm"],
+      .sync:has(#k-ring:checked) .appcard[data-k="ring"],
+      .sync:has(#k-trip:checked) .appcard[data-k="trip"] {
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 2px var(--color-accent-soft);
+      }
+      .push {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px;
+        border-radius: 13px;
+        background: var(--color-accent-soft);
+        border: var(--rule-hair) solid var(--color-accent-line);
+      }
+      .push .ic {
+        font-size: 13px;
+        color: var(--color-accent);
+        flex: none;
+      }
+      .push .t {
+        font-size: 9px;
+        color: var(--color-ink-2);
+        min-width: 0;
+      }
+      .push .t b {
+        font-family: var(--font-display);
+      }
+      .push .nm {
+        display: none;
+      }
+      .sync:has(#k-hall:checked) .push .nm[data-k="hall"],
+      .sync:has(#k-sdm:checked) .push .nm[data-k="sdm"],
+      .sync:has(#k-ring:checked) .push .nm[data-k="ring"],
+      .sync:has(#k-trip:checked) .push .nm[data-k="trip"] {
+        display: inline;
+      }
+      @supports not selector(:has(*)) {
+        .wcard {
+          cursor: default;
+        }
+        .sync .hint {
+          display: none;
+        }
+        label[for="k-hall"] {
+          border-color: var(--color-accent);
+          background: var(--color-accent-soft);
+        }
+        .appcard[data-k="hall"] {
+          border-color: var(--color-accent);
+        }
+        .push .nm[data-k="hall"] {
+          display: inline;
+        }
+      }
+
+      /* ══ 노션 대조 ══
+   위 두 섹션과 같은 짜임 — 핀 + 라디오 하나로 상태를 두고, 고르면 오른쪽이 바뀐다.
+   **왼쪽은 늘 같은 빈 노션 표**다. 그게 이 섹션의 논지 — 무엇을 하려 해도
+   노션은 매번 빈 페이지에서 시작한다. 오른쪽만 네 화면으로 바뀐다.
+   셰이더는 두지 않는다: 창 안의 화면이 주인공이라 배경이 움직이면 방해가 된다. */
+      .cmpgrid {
+        margin-top: var(--space-lg);
+        display: grid;
+        gap: var(--space-lg);
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        --cw-h: clamp(240px, 45vh, 470px);
+      }
+      @media (min-width: 1020px) {
+        .cmpgrid {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: var(--space-2xl);
+        }
+      }
+      .cmpcol {
+        min-width: 0;
+      }
+      .cmpcap {
+        margin-top: 11px;
+        font-size: var(--text-sm);
+        color: var(--color-ink-3);
+        min-width: 0;
+      }
+      .cmpcol.app .cmpcap {
+        font-family: var(--font-display);
+        font-weight: 700;
+        color: var(--color-ink);
+      }
+      .cmpcap .s {
+        display: none;
+      }
+      .cmp:has(#c-1:checked) .cmpcap .s[data-c="1"],
+      .cmp:has(#c-2:checked) .cmpcap .s[data-c="2"],
+      .cmp:has(#c-3:checked) .cmpcap .s[data-c="3"],
+      .cmp:has(#c-4:checked) .cmpcap .s[data-c="4"] {
+        display: block;
+      }
+
+      /* 고르는 알약 (.toggle 과 같은 언어, 네 칸) */
+      .cmphead {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        flex-wrap: wrap;
+        margin-top: var(--space-lg);
+      }
+      .cmp .toggle {
+        flex-wrap: wrap;
+        margin-bottom: 0;
+      }
+      .cmp .hint {
+        margin-top: 0;
+      }
+      .cmp .toggle label {
+        padding: 0 14px;
+        height: 34px;
+      }
+      .cmp:has(#c-1:checked) label[for="c-1"],
+      .cmp:has(#c-2:checked) label[for="c-2"],
+      .cmp:has(#c-3:checked) label[for="c-3"],
+      .cmp:has(#c-4:checked) label[for="c-4"] {
+        background: var(--color-accent);
+        color: var(--color-card);
+      }
+
+      /* ── 창 공통 ── */
+      .win2 {
+        height: var(--cw-h);
+        border-radius: var(--radius-xl);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: var(--color-card);
+        box-shadow: 0 28px 60px -50px var(--color-shade);
+      }
+      .win2 .body {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+      }
+
+      /* 노션 — 흰 배경, 검정 글씨, 아주 얇은 회색 선. 로고는 검은 네모의 N */
+      .nwin {
+        --nt-ink: #37352f;
+        --nt-mute: #9b9a97;
+        --nt-line: #e9e9e7;
+        --nt-side: #f7f6f3;
+        border: 1px solid var(--nt-line);
+        color: var(--nt-ink);
+      }
+      .nwin .chrome {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 13px;
+        flex: none;
+        background: #fff;
+        border-bottom: 1px solid var(--nt-line);
+      }
+      .nwin .chrome i {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #e3e2e0;
+        flex: none;
+      }
+      .nwin .chrome .logo {
+        margin-left: 8px;
+        width: 17px;
+        height: 17px;
+        border-radius: 4px;
+        flex: none;
+        background: #000;
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 11px;
+        line-height: 1;
+      }
+      .nwin .chrome b {
+        font-family: var(--font-display);
+        font-size: var(--text-2xs);
+        letter-spacing: -0.02em;
+        color: var(--nt-ink);
+      }
+      .nwin .chrome .tag {
+        margin-left: auto;
+        font-size: var(--text-2xs);
+        color: var(--nt-mute);
+      }
+      .nwin .side-nav {
+        width: 27%;
+        max-width: 150px;
+        flex: none;
+        padding: 12px 11px;
+        background: var(--nt-side);
+        border-right: 1px solid var(--nt-line);
+        font-size: 11.5px;
+        color: var(--nt-mute);
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .nwin .side-nav b {
+        color: var(--nt-ink);
+        font-weight: 600;
+        font-size: 11.5px;
+      }
+      .nwin .side-nav span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .nwin .side-nav .on {
+        color: var(--nt-ink);
+        font-weight: 600;
+      }
+      .nwin .doc {
+        flex: 1;
+        min-width: 0;
+        padding: 14px 15px 0;
+        overflow: hidden;
+      }
+      .nwin .doc .ttl {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin-bottom: 11px;
+      }
+      .nwin .nrow {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 0.9fr 72px;
+        border-bottom: 1px solid var(--nt-line);
+      }
+      .nwin .nrow > span {
+        padding: 6px 9px;
+        font-size: 11.5px;
+        border-right: 1px solid var(--nt-line);
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      .nwin .nrow > span:last-child {
+        border-right: 0;
+      }
+      .nwin .nhead {
+        border-top: 1px solid var(--nt-line);
+      }
+      .nwin .nhead > span {
+        color: var(--nt-mute);
+        font-size: 11px;
+      }
+      .nwin .dash {
+        border: 1px dashed #d3d1cb;
+        border-radius: 3px;
+        padding: 0 6px;
+        font-size: 10px;
+        color: var(--nt-mute);
+      }
+      .nwin .empty {
+        color: #c8c6c1;
+        font-size: 11px;
+      }
+      .nwin .add {
+        padding: 7px 9px;
+        color: var(--nt-mute);
+        font-size: 11px;
+      }
+
+      /* 웨딩 플랜트 — 실제 앱 화면 (HomeDashboard · PlanBoard · PlanTaskCard ·
+   ScheduleDetailView 의 인스펙터 변형 · ActivityPanel 에서 그대로 가져왔다) */
+      .pwin {
+        border: var(--rule-hair) solid var(--color-accent-line);
+      }
+      .pwin .chrome {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 13px;
+        flex: none;
+        background: var(--color-accent-soft);
+        border-bottom: var(--rule-hair) solid var(--color-accent-line);
+      }
+      .pwin .chrome i {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #f4d3e3;
+        flex: none;
+      }
+      .pwin .chrome .logo {
+        margin-left: 8px;
+        width: 17px;
+        height: 17px;
+        border-radius: 50%;
+        flex: none;
+        background: var(--color-accent);
+      }
+      .pwin .chrome b {
+        font-family: var(--font-display);
+        font-size: var(--text-2xs);
+        letter-spacing: -0.02em;
+        color: var(--color-ink);
+      }
+      .pwin .chrome .tag {
+        margin-left: auto;
+        font-size: var(--text-2xs);
+        color: var(--color-accent);
+      }
+      .pwin .body {
+        padding: 17px 19px;
+        display: block;
+        overflow: hidden;
+        background: #fff;
+      }
+      .pane {
+        display: none;
+      }
+      .cmp:has(#c-1:checked) .pane[data-c="1"],
+      .cmp:has(#c-2:checked) .pane[data-c="2"],
+      .cmp:has(#c-3:checked) .pane[data-c="3"],
+      .cmp:has(#c-4:checked) .pane[data-c="4"] {
+        display: block;
+      }
+
+      /* 1 · 플랜 보드 컬럼 */
+      .bh {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .bh b {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #1b0d14;
+        font-family: var(--font-display);
+      }
+      .bh .cnt {
+        border-radius: 99px;
+        background: #f4eff2;
+        padding: 1px 8px;
+        font-size: 11px;
+        color: #9ca3af;
+      }
+      .bh .sum {
+        margin-left: auto;
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #7a6c74;
+      }
+      .brule {
+        height: 3px;
+        border-radius: 99px;
+        background: #ffd0e3;
+        margin: 8px 0 10px;
+      }
+      .bc {
+        border-radius: 20px;
+        border: 1px solid #ee2b8c14;
+        background: #fff;
+        padding: 12px;
+        box-shadow: 0 1px 2px rgba(27, 13, 20, 0.05);
+        margin-bottom: 8px;
+      }
+      .bc .l1 {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .bc .box {
+        margin-top: 2px;
+        width: 19px;
+        height: 19px;
+        flex: none;
+        border-radius: 7px;
+        border: 2px solid #e6dbe2;
+        background: #fff;
+        display: grid;
+        place-items: center;
+      }
+      .bc .box .ic {
+        font-size: 11px;
+        color: #fff;
+        opacity: 0;
+      }
+      .bc .t {
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.35;
+        letter-spacing: -0.02em;
+        color: #1b0d14;
+        font-family: var(--font-display);
+      }
+      .bc .l2 {
+        margin-top: 7px;
+        padding-left: 29px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #7a6c74;
+      }
+      .bc .cat {
+        border-radius: 99px;
+        background: #fff2f6;
+        color: #ee2b8c;
+        padding: 1px 8px;
+        font-size: 11px;
+      }
+      .bc .amt {
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #1b0d14;
+      }
+      .bc.done {
+        background: #f8f6f7;
+        border-color: #ece5e9;
+        box-shadow: none;
+      }
+      .bc.done .box {
+        border-color: #ffaab8;
+        background: #ffaab8;
+      }
+      .bc.done .box .ic {
+        opacity: 1;
+      }
+      .bc.done .t {
+        color: #a79ba3;
+        text-decoration: line-through;
+        text-decoration-color: #d9cdd4;
+      }
+      .bc.done .cat {
+        background: #f2eef0;
+        color: #a79ba3;
+      }
+      .bc.done .amt {
+        color: #a79ba3;
+      }
+      .bsep {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 11px 0 8px;
+      }
+      .bsep b {
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #a79ba3;
+      }
+      .bsep i {
+        flex: 1;
+        height: 1px;
+        background: #efe8ec;
+      }
+      .bsep .s {
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #7a6c74;
+      }
+
+      /* 2 · 예산 패널 */
+      .bud .top {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .bud .big {
+        display: block;
+        font-family: var(--font-num);
+        font-size: 33px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.045em;
+        color: #1b0d14;
+      }
+      .bud .sub {
+        display: block;
+        margin-top: 8px;
+        font-size: 13px;
+        color: #9ca3af;
+      }
+      .bud .mo {
+        flex: none;
+        text-align: right;
+        font-size: 13px;
+        color: #9ca3af;
+        line-height: 1.5;
+      }
+      .bud .mo b {
+        display: block;
+        font-family: var(--font-num);
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #1b0d14;
+      }
+      .bud .track {
+        margin: 16px 0;
+        display: flex;
+        height: 12px;
+        border-radius: 99px;
+        overflow: hidden;
+        background: #f4eff2;
+      }
+      .bud .track i {
+        display: block;
+        height: 100%;
+        flex: none;
+      }
+      .bud .legend {
+        display: grid;
+        gap: 11px;
+      }
+      .bud .legend p {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+      }
+      .bud .legend .sw {
+        width: 9px;
+        height: 9px;
+        flex: none;
+        border-radius: 3px;
+      }
+      .bud .legend .nm {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #4a3f45;
+      }
+      .bud .legend .v {
+        margin-left: auto;
+        font-family: var(--font-num);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #1b0d14;
+      }
+      .bud .legend .pc {
+        width: 40px;
+        text-align: right;
+        font-size: 12px;
+        color: #9ca3af;
+      }
+      .bud .legend .muted .nm,
+      .bud .legend .muted .v {
+        color: #7a6c74;
+      }
+
+      /* 3 · 일정 상세 (인스펙터 변형 — 흰 카드 + 칩 + 알약 + 큰 금액) */
+      .insp .chip {
+        display: inline-block;
+        border-radius: 99px;
+        background: #fff2f6;
+        color: #ee2b8c;
+        padding: 3px 10px;
+        font-size: 11.5px;
+        font-family: var(--font-display);
+      }
+      .insp .pill {
+        display: inline-block;
+        margin-left: 6px;
+        border-radius: 99px;
+        border: var(--rule-hair) solid #e6dbe2;
+        padding: 3px 10px;
+        font-size: 11.5px;
+        color: #7a6c74;
+      }
+      .insp .ttl {
+        margin-top: 11px;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 18px;
+        letter-spacing: -0.03em;
+        color: #1b0d14;
+      }
+      .insp .meta {
+        margin-top: 6px;
+        font-size: 12.5px;
+        color: #7a6c74;
+      }
+      .insp .foot {
+        margin-top: 15px;
+        padding-top: 15px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+        border-top: 1px dashed #f2eaee;
+      }
+      .insp .k {
+        display: block;
+        font-size: 12.5px;
+        color: #9ca3af;
+      }
+      .insp .amt {
+        display: block;
+        margin-top: 5px;
+        font-family: var(--font-num);
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        color: #1b0d14;
+      }
+      .insp .pay {
+        flex: none;
+        text-align: right;
+      }
+      .insp .pay b {
+        display: block;
+        margin-top: 5px;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #4a3f45;
+        font-family: var(--font-display);
+      }
+
+      /* 4 · 최근 활동 */
+      .act .h {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #1b0d14;
+        font-family: var(--font-display);
+        margin-bottom: 14px;
+      }
+      .act .it {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .act .it:last-child {
+        margin-bottom: 0;
+      }
+      .act .av {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        flex: none;
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: #fff;
+        font-family: var(--font-display);
+      }
+      .act .a1 {
+        background: #ee2b8c;
+      }
+      .act .a2 {
+        background: #7c6cf0;
+      }
+      .act .tx {
+        display: block;
+        min-width: 0;
+      }
+      .act .ln {
+        display: block;
+        font-size: 13px;
+        line-height: 1.55;
+        color: #4a3f45;
+      }
+      .act .ln b {
+        font-weight: 700;
+        color: #1b0d14;
+        font-family: var(--font-display);
+      }
+      .act time {
+        display: block;
+        margin-top: 2px;
+        font-size: 11.5px;
+        color: #9ca3af;
+      }
+
+      @supports not selector(:has(*)) {
+        .cmp .toggle {
+          display: none;
+        }
+        .cmp .hint {
+          display: none;
+        }
+        .pane[data-c="1"] {
+          display: block;
+        }
+        .cmpcap .s[data-c="1"] {
+          display: block;
+        }
+      }
+
+      /* ══ 카카오톡 대조 ══
+   노션 섹션과 같은 짜임 — 왼쪽은 늘 같은 카톡 방, 오른쪽만 네 화면으로 바뀐다.
+   요지: **채팅과 플랜이 한 몸이라** 대화에서 정한 게 그대로 플랜에 남는다.
+   둘 다 폰 앱이라 브라우저 창이 아니라 폰 프레임에 넣는다.
+   오른쪽은 app/chat/[chatRoomId]/ChatRoomView.tsx 의 실제 화면이고,
+   폰 폭(약 240px)에 맞춰 글자와 여백만 한 단계 줄였다. */
+      .kchat .cmpgrid {
+        --dev2-h: clamp(322px, 49vh, 470px);
+        --phw2: calc(var(--dev2-h) * 0.55);
+      }
+      .kchat:has(#g-1:checked) label[for="g-1"],
+      .kchat:has(#g-2:checked) label[for="g-2"],
+      .kchat:has(#g-3:checked) label[for="g-3"],
+      .kchat:has(#g-4:checked) label[for="g-4"] {
+        background: var(--color-accent);
+        color: var(--color-card);
+      }
+      .kchat:has(#g-1:checked) .beats i:nth-child(1),
+      .kchat:has(#g-2:checked) .beats i:nth-child(2),
+      .kchat:has(#g-3:checked) .beats i:nth-child(3),
+      .kchat:has(#g-4:checked) .beats i:nth-child(4) {
+        background: var(--color-accent);
+        transform: scale(1.5);
+      }
+      .kchat:has(#g-1:checked) .cmpcap .s[data-c="1"],
+      .kchat:has(#g-2:checked) .cmpcap .s[data-c="2"],
+      .kchat:has(#g-3:checked) .cmpcap .s[data-c="3"],
+      .kchat:has(#g-4:checked) .cmpcap .s[data-c="4"],
+      .kchat:has(#g-1:checked) .pane[data-c="1"],
+      .kchat:has(#g-2:checked) .pane[data-c="2"],
+      .kchat:has(#g-3:checked) .pane[data-c="3"],
+      .kchat:has(#g-4:checked) .pane[data-c="4"] {
+        display: block;
+      }
+
+      /* ── 폰 프레임 ── */
+      .dev2 {
+        height: var(--dev2-h);
+        width: min(var(--phw2), 100%);
+        margin: 0 auto;
+        padding: 8px;
+        border-radius: 34px;
+        background: var(--color-ink);
+        box-shadow: 0 28px 54px -34px var(--color-shade);
+        display: flex;
+        flex-direction: column;
+      }
+      .dev2 .scr {
+        flex: 1;
+        min-height: 0;
+        position: relative;
+        border-radius: 27px;
+        overflow: hidden;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+      }
+      .dev2 .notch {
+        position: absolute;
+        left: 50%;
+        top: 6px;
+        transform: translateX(-50%);
+        z-index: 3;
+        width: 44px;
+        height: 12px;
+        border-radius: 99px;
+        background: var(--color-ink);
+      }
+      .dev2 .stat {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex: none;
+        padding: 8px 14px 5px;
+        font-size: 9px;
+        color: #a8a29e;
+        font-family: var(--font-display);
+      }
+      .dev2 .sig {
+        display: flex;
+        gap: 2px;
+        align-items: flex-end;
+        height: 8px;
+      }
+      .dev2 .sig i {
+        width: 3px;
+        border-radius: 1px;
+        background: #d6d3d1;
+      }
+      .dev2 .sig i:nth-child(1) {
+        height: 3px;
+      }
+      .dev2 .sig i:nth-child(2) {
+        height: 5px;
+      }
+      .dev2 .sig i:nth-child(3) {
+        height: 7px;
+      }
+      .dev2 .sig i:nth-child(4) {
+        height: 8px;
+        background: #e7e5e4;
+      }
+      .dev2 .home {
+        flex: none;
+        height: 14px;
+        display: grid;
+        place-items: center;
+      }
+      .dev2 .home::after {
+        content: "";
+        width: 74px;
+        height: 3.5px;
+        border-radius: 99px;
+        background: #e7e5e4;
+      }
+
+      /* 넓은 폭에서는 두 폰을 가운데로 붙이고, 설명 글은 320px 덩어리로 둔다 */
+      @media (min-width: 1020px) {
+        .kchat .cmpcol {
+          display: flex;
+          flex-direction: column;
+        }
+        .kchat .cmpcol:not(.app) > * {
+          width: min(320px, 100%);
+          margin-left: auto;
+          margin-right: 0;
+        }
+        .kchat .cmpcol.app > * {
+          width: min(320px, 100%);
+          margin-right: auto;
+          margin-left: 0;
+        }
+        .kchat .cmpcol:not(.app) > .dev2 {
+          width: var(--phw2);
+          margin-right: calc((320px - var(--phw2)) / 2);
+        }
+        .kchat .cmpcol.app > .dev2 {
+          width: var(--phw2);
+          margin-left: calc((320px - var(--phw2)) / 2);
+        }
+      }
+
+      /* ── 카카오톡 ── */
+      .kdev {
+        --kk-bg: #b2c7d9;
+        --kk-y: #fee500;
+      }
+      .khead {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: none;
+        padding: 6px 13px 9px;
+        border-bottom: 1px solid #ececec;
+      }
+      .khead .bk {
+        color: #8b8b8b;
+        font-size: 13px;
+        flex: none;
+      }
+      .khead b {
+        font-family: var(--font-display);
+        font-size: 12.5px;
+        letter-spacing: -0.02em;
+        color: #1b1b1b;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .khead .n {
+        color: #9aa5b1;
+        font-size: 11px;
+        flex: none;
+      }
+      .khead .more {
+        margin-left: auto;
+        color: #c8c8c8;
+        font-size: 13px;
+        flex: none;
+      }
+      .kbody {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        background: var(--kk-bg);
+        padding: 11px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        justify-content: flex-end;
+        -webkit-mask-image: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.14),
+          #000 24%
+        );
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.14), #000 24%);
+      }
+      .kbody .kb {
+        max-width: 80%;
+        padding: 6px 10px;
+        border-radius: 11px;
+        font-size: 11px;
+        line-height: 1.5;
+        color: #1b1b1b;
+        background: #fff;
+        align-self: flex-start;
+        overflow-wrap: anywhere;
+      }
+      .kbody .kb.me {
+        background: var(--kk-y);
+        align-self: flex-end;
+      }
+      .kbody .kb.key {
+        outline: 1.5px solid var(--color-accent);
+        outline-offset: 1px;
+      }
+      .kbody .kwho {
+        font-size: 9.5px;
+        color: #5a6b7a;
+        margin: 2px 0 -3px;
+      }
+
+      /* ── 웨딩 플랜트 채팅 (실제 화면) ── */
+      .pbody {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        background: #fff;
+      }
+      .chead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex: none;
+        padding: 5px 12px 8px;
+        border-bottom: 1px solid #f3f4f6;
+      }
+      .chead .nm {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #1b0d14;
+        letter-spacing: -0.02em;
+        min-width: 0;
+        font-family: var(--font-display);
+      }
+      .chead .mem {
+        display: block;
+        margin-top: 2px;
+        font-size: 9px;
+        color: #a8a29e;
+      }
+      .cbadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        border-radius: 99px;
+        background: #fff2f6;
+        color: #ee2b8c;
+        padding: 1px 6px;
+        font-size: 9px;
+        font-weight: 700;
+        flex: none;
+        font-family: var(--font-display);
+      }
+      .cbadge .ic {
+        font-size: 9px;
+      }
+      .chead .dots {
+        color: #d6d3d1;
+        font-size: 13px;
+        flex: none;
+      }
+      .cbody {
+        padding: 11px;
+        display: grid;
+        gap: 8px;
+      }
+      .cb {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-self: start;
+        max-width: 80%;
+      }
+      .cb.me {
+        justify-self: end;
+        align-items: flex-end;
+      }
+      .cb .who {
+        display: block;
+        font-size: 9px;
+        font-weight: 700;
+        color: #9ca3af;
+        margin: 0 0 3px 3px;
+      }
+      .cb .t {
+        display: block;
+        padding: 6px 10px;
+        border-radius: 15px;
+        font-size: 11px;
+        line-height: 1.5;
+        background: #fff;
+        color: #292524;
+        border: 1px solid #f3f4f6;
+        border-top-left-radius: 2px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+      .cb.me .t {
+        background: #ee2b8c;
+        color: #fff;
+        border-color: transparent;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 2px;
+      }
+
+      /* 대화에 뜨는 일정 카드 — 이 섹션의 요지 */
+      .schcard {
+        justify-self: end;
+        width: min(190px, 100%);
+        border-radius: 13px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #fafafa, #f3f4f6);
+        box-shadow:
+          inset 0 0 1px #fff,
+          0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+      .schcard .hd,
+      .schcard .in {
+        display: block;
+      }
+      .schcard .cg,
+      .schcard .dt {
+        display: block;
+      }
+      .schcard .hd {
+        padding: 7px 11px 6px;
+        background: linear-gradient(90deg, #ee2b8c, #ff6b9d);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 11px;
+        color: #fff;
+        line-height: 1.35;
+      }
+      .schcard .in {
+        padding: 8px 11px 9px;
+      }
+      .schcard .cg {
+        font-size: 9.5px;
+        color: #6b7280;
+        margin-bottom: 4px;
+      }
+      .schcard .dt {
+        font-size: 10px;
+        color: #6b7280;
+      }
+      .schcard .cost {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 7px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+      }
+      .schcard .cost span {
+        font-size: 9.5px;
+        color: #9ca3af;
+        font-weight: 500;
+      }
+      .schcard .cost b {
+        font-family: var(--font-num);
+        font-size: 13px;
+        color: #ee2b8c;
+        letter-spacing: -0.02em;
+      }
+      .schcard .go {
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: 5px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid #e5e7eb;
+        font-size: 10px;
+        font-weight: 700;
+        color: #4b5563;
+        font-family: var(--font-display);
+      }
+
+      /* 일정 상세 — 폰 폭에 맞춰 한 단계 줄인다 */
+      .kchat .insp {
+        padding: 12px;
+      }
+      .kchat .insp .chip,
+      .kchat .insp .pill {
+        padding: 2px 8px;
+        font-size: 9.5px;
+      }
+      .kchat .insp .ttl {
+        margin-top: 9px;
+        font-size: 14px;
+      }
+      .kchat .insp .meta {
+        margin-top: 5px;
+        font-size: 10px;
+      }
+      .kchat .insp .foot {
+        margin-top: 11px;
+        padding-top: 11px;
+        display: block;
+      }
+      .kchat .insp .k {
+        font-size: 10px;
+      }
+      .kchat .insp .amt {
+        margin-top: 3px;
+        font-size: 20px;
+      }
+      .kchat .insp .pay {
+        margin-top: 9px;
+        text-align: left;
+      }
+      .kchat .insp .pay b {
+        margin-top: 3px;
+        font-size: 11.5px;
+      }
+
+      /* 대화 목록 — 커플 방이 맨 위 */
+      .rooms {
+        padding: 11px;
+        display: grid;
+        gap: 8px;
+      }
+      .rooms .h {
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #1b0d14;
+        font-family: var(--font-display);
+      }
+      .room {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 9px;
+        border-radius: 13px;
+        border: 1px solid #ee2b8c14;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(27, 13, 20, 0.05);
+      }
+      .room.on {
+        border-color: var(--color-accent-line);
+        background: #fffafc;
+      }
+      .room .av {
+        width: 27px;
+        height: 27px;
+        border-radius: 9px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        background: #fff2f6;
+        color: #ee2b8c;
+        font-size: 9.5px;
+        font-weight: 700;
+        font-family: var(--font-display);
+      }
+      .room .tx {
+        min-width: 0;
+        flex: 1;
+      }
+      .room .l1 {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+      }
+      .room .l1 b {
+        font-family: var(--font-display);
+        font-size: 11px;
+        letter-spacing: -0.02em;
+        color: #1b0d14;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .room .l2 {
+        display: block;
+        margin-top: 2px;
+        font-size: 9.5px;
+        color: #7a6c74;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .room .rt {
+        flex: none;
+        text-align: right;
+      }
+      .room .rt time {
+        display: block;
+        font-size: 9px;
+        color: #a8a29e;
+      }
+      .room .rt .un {
+        display: inline-block;
+        margin-top: 3px;
+        min-width: 15px;
+        padding: 0 5px;
+        border-radius: 99px;
+        background: #ee2b8c;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        font-family: var(--font-display);
+      }
+
+      @supports not selector(:has(*)) {
+        .kchat .pane[data-c="1"] {
+          display: block;
+        }
+        .kchat .cmpcap .s[data-c="1"] {
+          display: block;
+        }
+      }
+
+      /* 밀리 참고 — 행 단위 표류 */
+      .drift {
+        display: flex;
+        gap: 9px;
+        margin-top: var(--space-xl);
+      }
+      .drift + .drift {
+        margin-top: 9px;
+      }
+      .dchip {
+        flex: none;
+        padding: 7px 13px;
+        border-radius: 999px;
+        font-size: var(--text-2xs);
+        border: var(--rule-hair) solid var(--color-rule-2);
+        color: var(--color-ink-3);
+        background: var(--color-card);
+        white-space: nowrap;
+      }
+      @supports (animation-timeline: view()) {
+        .drift {
+          animation: driftL linear both;
+          animation-timeline: view();
+          animation-range: cover 0% cover 100%;
+        }
+        .drift.r {
+          animation-name: driftR;
+        }
+      }
+      @keyframes driftL {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-84px);
+        }
+      }
+      @keyframes driftR {
+        from {
+          transform: translateX(-84px);
+        }
+        to {
+          transform: translateX(0);
+        }
+      }
+
+      /* ── 도구 대조 ── */
+      .swap-grid {
+        margin-top: var(--space-2xl);
+        display: grid;
+        gap: var(--space-lg);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 880px) {
+        .swap-grid {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: var(--space-xl);
+          align-items: start;
+        }
+      }
+      .col-cap {
+        font-size: var(--text-2xs);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--color-ink-4);
+        margin-bottom: var(--space-sm);
+      }
+      .tool {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px;
+        border-radius: var(--radius-md);
+        border: 1.5px dashed var(--color-dash);
+        min-width: 0;
+      }
+      .tool + .tool {
+        margin-top: 9px;
+      }
+      .tool .badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        flex: none;
+        background: var(--color-tint);
+        color: var(--color-ink-3);
+      }
+      .tool .badge .ic {
+        font-size: 19px;
+      }
+      .tool .n {
+        display: block;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--color-ink-2);
+      }
+      .tool .w {
+        display: block;
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+        line-height: 1.6;
+      }
+      .one {
+        border-radius: var(--radius-lg);
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-accent-line);
+        padding: var(--space-lg);
+        box-shadow: 0 20px 44px -36px var(--color-shade);
+      }
+      .one .brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: var(--space-sm);
+      }
+      .one .brand i {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        background: var(--color-accent);
+        flex: none;
+      }
+      .one .brand b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.03em;
+      }
+      .one .r {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 13px 0;
+        min-width: 0;
+      }
+      .one .r + .r {
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .one .r .badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        flex: none;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+      }
+      .one .r .badge .ic {
+        font-size: 19px;
+      }
+      .one .r .n {
+        display: block;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .one .r .w {
+        display: block;
+        font-size: var(--text-2xs);
+        color: var(--color-ink-2);
+        line-height: 1.6;
+      }
+      .note {
+        margin-top: var(--space-lg);
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+        line-height: 1.7;
+        max-width: 52ch;
+      }
+      .plats {
+        margin-top: var(--space-xl);
+        display: flex;
+        gap: var(--space-sm);
+        flex-wrap: wrap;
+      }
+      .plat {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 17px;
+        border-radius: 999px;
+        border: var(--rule-hair) solid var(--color-rule-2);
+        background: var(--color-card);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-sm);
+      }
+      .plat .ic {
+        font-size: 18px;
+        color: var(--color-accent);
+      }
+
+      .finale {
+        padding: var(--space-3xl) 0;
+        text-align: center;
+        background: var(--color-tint);
+      }
+      .finale .z {
+        font-family: var(--font-num);
+        font-size: clamp(3.4rem, 12vw, 8.5rem);
+        line-height: 0.86;
+        letter-spacing: -0.06em;
+        color: var(--color-accent);
+      }
+      .finale h2 {
+        margin-top: var(--space-lg);
+        font-size: var(--text-h2);
+        /* 14ch 는 예전 문구("둘이서 다 했어요")에 맞춘 값이라 새 문구가 넘쳤다.
+           이모지는 &nbsp; 로 묶어 혼자 다음 줄로 떨어지지 않게 했다. */
+        max-width: 20ch;
+        margin-inline: auto;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+        padding: 0 34px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.02rem;
+        margin-top: var(--space-xl);
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .cta:hover {
+        transform: translateY(-2px);
+      }
+      .cta:active {
+        transform: scale(0.98);
+      }
+      .sub-cta {
+        display: block;
+        margin-top: var(--space-md);
+        font-size: var(--text-sm);
+        color: var(--color-ink-3);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      footer {
+        padding: var(--space-2xl) 0;
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      footer .big {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.25rem, 3.2vw, 1.9rem);
+        letter-spacing: -0.035em;
+        max-width: 20ch;
+        line-height: 1.28;
+      }
+      footer .meta {
+        margin-top: var(--space-xl);
+        padding-top: var(--space-md);
+        border-top: var(--rule-hair) solid var(--color-rule);
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-xs) var(--space-lg);
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+      footer .meta a {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      @supports not (animation-timeline: scroll()) {
+        .stage {
+          height: auto;
+        }
+        .pin {
+          position: static;
+          height: auto;
+          padding: var(--space-3xl) 0;
+        }
+        .odo-mask {
+          height: auto;
+        }
+        .odo-track b:not(:last-child) {
+          display: none;
+        }
+        .hintdown {
+          display: none;
+        }
+      }
+      /* **핀은 2열이 되는 폭에서만.** 좁으면 내용이 세로로 쌓여 한 화면보다 커지고,
+   핀 + overflow:hidden 이 위아래를 잘라 먹는다(실제로 잘렸다).
+   그 아래에서는 평범하게 흐르고, 장면은 눌러서 고른다. */
+      @media (max-width: 1019px) {
+        .stage2 {
+          height: auto;
+          padding: var(--space-3xl) 0;
+        }
+        .pin2 {
+          position: static;
+          height: auto;
+          padding: 0;
+          overflow: visible;
+        }
+        .stage2 .device {
+          width: clamp(244px, 74vw, 290px);
+        }
+        .beats {
+          display: none;
+        }
+        /* 무대 타임라인이 안 도는 폭이라 시작 상태(opacity:0)에 갇히지 않게 되돌린다 */
+        .stage2 h2,.stage2 .lead,.stage2 .hint,.stage2 .toggle,
+  .sec.vs .device,.sec.sync .web,.sec.sync .device,.sec.sync .wcard,
+  /* 핀이 안 도는 폭에서는 창 높이를 고정하지 않는다 — 글이 길어지면 잘린다 */
+  .cmpgrid .win2 {
+          height: auto;
+          min-height: var(--cw-h);
+        }
+        /* 폰은 비율이 곧 정체성이라 높이를 그대로 둔다 */
+        .sec.cmp .win2,
+        .sec.cmp .dev2,
+        .sec.cmp .toggle,
+        .sec.cmp .cmpcap,
+        .sec.vs .say .li,
+        .stage2 .gl {
+          opacity: 1;
+          transform: none;
+          animation: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation: none !important;
+          transition-duration: 0.01ms !important;
+        }
+        /* 스크롤 안무를 끄면 opacity:0/transform 초기값이 그대로 남는다 — 되돌린다 */
+        .sec.vs h2,
+        .sec.vs .lead,
+        .sec.vs .toggle,
+        .sec.vs .hint,
+        .sec.vs .device,
+        .sec.sync h2,
+        .sec.sync .lead,
+        .sec.sync .hint,
+        .sec.sync .web,
+        .sec.sync .device,
+        .sec.sync .wcard,
+        .sec.cmp h2,
+        .sec.cmp .lead,
+        .sec.cmp .hint,
+        .sec.cmp .win2,
+        .sec.cmp .dev2,
+        .sec.cmp .toggle,
+        .sec.cmp .cmpcap,
+        .sec.vs .say .li,
+        .stage2 .gl {
+          opacity: 1;
+          transform: none;
+        }
+        .stage {
+          height: auto;
+        }
+        .pin {
+          position: static;
+          height: auto;
+          padding: var(--space-3xl) 0;
+        }
+        .odo-mask {
+          height: auto;
+        }
+        .odo-track b:not(:last-child) {
+          display: none;
+        }
+        .tile.fill {
+          border-style: solid;
+          border-color: transparent;
+          background: var(--color-card);
+        }
+        .tile.fill .t {
+          color: var(--color-ink);
+        }
+        .tile.fill .s {
+          opacity: 1;
+        }
+        .mbar i {
+          transform: none;
+        }
+        .drift {
+          transform: none;
+        }
+        .hintdown {
+          display: none;
+        }
+        .wcard:hover {
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      width="0"
+      height="0"
+      style="position: absolute"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <symbol id="i-doc" viewBox="0 0 24 24">
+          <path
+            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"
+          />
+          <path d="M14 2v6h6" />
+        </symbol>
+        <symbol id="i-sheet" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M3 15h18M9 9v12M15 9v12" />
+        </symbol>
+        <symbol id="i-chat" viewBox="0 0 24 24">
+          <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+        </symbol>
+        <symbol id="i-note" viewBox="0 0 24 24">
+          <path
+            d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11l5-5V5a2 2 0 0 0-2-2Z"
+          />
+          <path d="M15 21v-4a2 2 0 0 1 2-2h4" />
+        </symbol>
+        <symbol id="i-cal" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <path d="M16 2v4M8 2v4M3 10h18M7 14h.01M11 14h6M7 18h.01M11 18h4" />
+        </symbol>
+        <symbol id="i-coin" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+          <path d="M12 6v2m0 8v2" />
+        </symbol>
+        <symbol id="i-msgs" viewBox="0 0 24 24">
+          <path
+            d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2Z"
+          />
+          <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1" />
+        </symbol>
+        <symbol id="i-trend" viewBox="0 0 24 24">
+          <path d="M22 7 13.5 15.5 8.5 10.5 2 17" />
+          <path d="M16 7h6v6" />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path d="M20 6 9 17l-5-5" />
+        </symbol>
+        <symbol id="i-home" viewBox="0 0 24 24">
+          <path d="M3 10.5 12 3l9 7.5" />
+          <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m21 21-4.3-4.3" />
+        </symbol>
+        <symbol id="i-grid" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </symbol>
+        <symbol id="i-gear" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"
+          />
+        </symbol>
+        <symbol id="i-hall" viewBox="0 0 24 24">
+          <path d="M3 21h18" />
+          <path d="M5 21V8l7-5 7 5v13" />
+          <path d="M10 21v-6h4v6" />
+        </symbol>
+        <symbol id="i-cam" viewBox="0 0 24 24">
+          <path
+            d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3Z"
+          />
+          <circle cx="12" cy="13" r="3.2" />
+        </symbol>
+        <symbol id="i-ring" viewBox="0 0 24 24">
+          <circle cx="12" cy="14.5" r="6" />
+          <path d="m9 5 3-3 3 3-3 3.5Z" />
+        </symbol>
+        <symbol id="i-plane" viewBox="0 0 24 24">
+          <path
+            d="M17.8 19.2 16 11l3.5-3.5a2.5 2.5 0 0 0-3.5-3.5L12.5 7.5 4.3 5.7a1 1 0 0 0-1 1.6L8 11l-3 3H3l-.7 2.1 3.6 1.5L7.4 21l2.1-.7v-2l3-3 3.7 4.7a1 1 0 0 0 1.6-.8Z"
+          />
+        </symbol>
+        <symbol id="i-bell" viewBox="0 0 24 24">
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8" />
+          <path d="M10.3 21a2 2 0 0 0 3.4 0" />
+        </symbol>
+        <symbol id="i-globe" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20" />
+        </symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24">
+          <rect x="6" y="2" width="12" height="20" rx="2.5" />
+          <path d="M11 19h2" />
+        </symbol>
+        <symbol id="i-tap" viewBox="0 0 24 24">
+          <path d="M12 11V6.5a1.5 1.5 0 0 1 3 0V13" />
+          <path d="M15 11.5a1.5 1.5 0 0 1 3 0V14" />
+          <path
+            d="M18 12.5a1.5 1.5 0 0 1 3 0V17a5 5 0 0 1-5 5h-2.2a5 5 0 0 1-3.9-1.9L7 16.5s-1-1.4 0-2.2c1-.7 2 .3 2 .3l1 1.2V9.5a1.5 1.5 0 0 1 3 0"
+          />
+        </symbol>
+        <symbol id="i-zoom" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m21 21-4.3-4.3M8 11h6M11 8v6" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <nav class="nav">
+      <b>웨딩 플랜트</b>
+      <a class="go" href="#start">시작하기</a>
+      <span class="progress" aria-hidden="true"></span>
+    </nav>
+
+    <main>
+      <!-- ══════════ 첫 화면 — 시안 A 원본 (변경 금지) ══════════ -->
+      <section class="stage" aria-label="준비 과정">
+        <div class="pin">
+          <div class="wrap pin-grid">
+            <div class="odo-wrap">
+              <p class="odo-label">결혼식까지</p>
+              <p
+                class="odo"
+                aria-label="결혼식까지 남은 날이 스크롤에 따라 줄어듭니다"
+              >
+                <span class="d">D-</span>
+                <span class="odo-mask">
+                  <span class="odo-track">
+                    <b>312</b><b>274</b><b>186</b><b>92</b><b>0</b>
+                  </span>
+                </span>
+              </p>
+              <p class="odo-cap">뭐부터 해야 할지<br />몰라도 괜찮아요</p>
+              <p class="odo-sub">예식장부터 신혼여행까지, 순서대로</p>
+            </div>
+
+            <div>
+              <div class="tiles">
+                <span class="tile fill"
+                  ><span class="t">예식장</span
+                  ><span class="s">6월 12일 확정</span></span
+                >
+                <span class="tile fill"
+                  ><span class="t">스드메</span
+                  ><span class="s">642만원</span></span
+                >
+                <span class="tile fill"
+                  ><span class="t">예물</span
+                  ><span class="s">9월 27일</span></span
+                >
+                <span class="tile fill"
+                  ><span class="t">신혼여행</span
+                  ><span class="s">발리 6박</span></span
+                >
+              </div>
+              <div class="money-strip">
+                <span class="lbl">전체 예산 4,200만원</span>
+                <div class="val">1,400<small>만원 남음</small></div>
+                <div class="mbar" aria-hidden="true">
+                  <i
+                    class="used"
+                    style="width: 38.1%; background: var(--color-accent)"
+                  ></i>
+                  <i
+                    class="plan"
+                    style="width: 28.6%; background: var(--color-plan)"
+                  ></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="hintdown" aria-hidden="true">스크롤</p>
+        </div>
+      </section>
+
+      <!-- ══ 폰에서 엑셀 vs 폰에서 앱 ══ -->
+      <section class="sec stage2 vs">
+        <div class="pin2">
+          <canvas class="gl" data-gl="grid" aria-hidden="true"></canvas>
+          <p class="beats" aria-hidden="true"><i></i><i></i></p>
+          <div class="wrap">
+            <input class="pick" type="radio" name="m" id="m-xl" checked />
+            <input class="pick" type="radio" name="m" id="m-app" />
+
+            <h2>같은 결혼 준비를<br />같은 폰에서 열면</h2>
+            <p class="lead">
+              엑셀이 나쁜 게 아닙니다. 큰 화면에서 만든 표를 작은 화면에서 읽는
+              게 문제입니다.
+            </p>
+
+            <div class="vsgrid">
+              <div>
+                <div class="toggle" role="radiogroup" aria-label="폰에서 열 것">
+                  <label for="m-xl"
+                    ><svg class="ic"><use href="#i-sheet" /></svg>엑셀</label
+                  >
+                  <label for="m-app"
+                    ><svg class="ic"><use href="#i-phone" /></svg>웨딩
+                    플랜트</label
+                  >
+                </div>
+
+                <div class="say" data-f="xl">
+                  <p class="li">
+                    <span class="dot"
+                      ><svg class="ic"><use href="#i-zoom" /></svg
+                    ></span>
+                    <span class="w"
+                      >글자가 7px입니다. 확대하면 옆 칸이 사라지고, 줄이면 못
+                      읽습니다.</span
+                    >
+                  </p>
+                  <p class="li">
+                    <span class="dot"
+                      ><svg class="ic"><use href="#i-sheet" /></svg
+                    ></span>
+                    <span class="w"
+                      >합계는 맞는데 <b>얼마 남았는지</b>는 어느 셀에도
+                      없습니다. 수식을 또 짜야 합니다.</span
+                    >
+                  </p>
+                  <p class="li">
+                    <span class="dot"
+                      ><svg class="ic"><use href="#i-chat" /></svg
+                    ></span>
+                    <span class="w"
+                      >상대가 고친 걸 알 방법이 없습니다. 파일을 다시 받아야
+                      압니다.</span
+                    >
+                  </p>
+                </div>
+                <div class="say" data-f="app">
+                  <p class="li">
+                    <span class="dot"
+                      ><svg class="ic"><use href="#i-coin" /></svg
+                    ></span>
+                    <span class="w"
+                      ><b>남은 예산이 맨 위에 한 줄로</b> 나옵니다. 확대할 일이
+                      없습니다.</span
+                    >
+                  </p>
+                  <p class="li">
+                    <span class="dot"
+                      ><svg class="ic"><use href="#i-cal" /></svg
+                    ></span>
+                    <span class="w"
+                      >일정 하나가 카드 하나입니다. 눌러서 완료하면 예산이 그
+                      자리에서 따라옵니다.</span
+                    >
+                  </p>
+                  <p class="li">
+                    <span class="dot"
+                      ><svg class="ic"><use href="#i-msgs" /></svg
+                    ></span>
+                    <span class="w"
+                      >상대가 바꾸면 알림이 옵니다. 파일을 주고받지
+                      않습니다.</span
+                    >
+                  </p>
+                </div>
+              </div>
+
+              <div class="device">
+                <div class="screen">
+                  <!-- 엑셀 -->
+                  <div class="face" data-f="xl">
+                    <div class="xl">
+                      <p class="rib">
+                        <svg class="ic" style="font-size: 12px">
+                          <use href="#i-sheet" /></svg
+                        ><b>결혼준비_최종_v7.xlsx</b>
+                      </p>
+                      <div class="grid">
+                        <div class="r head">
+                          <span class="rn"></span><span class="c1">A</span
+                          ><span class="c2">B</span><span class="c3">C</span
+                          ><span class="c4">D</span><span class="c5">E</span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">1</span><span class="c1">항목</span
+                          ><span class="c2">예산</span
+                          ><span class="c3">업체</span
+                          ><span class="c4">날짜</span
+                          ><span class="c5">비고</span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">2</span><span class="c1">예식장</span
+                          ><span class="c2">12,000,000</span
+                          ><span class="c3">아모르하우스</span
+                          ><span class="c4">6/12</span
+                          ><span class="c5">계약금 완료</span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">3</span><span class="c1">스드메</span
+                          ><span class="c2">5,800,000</span
+                          ><span class="c3">아모레스튜디오</span
+                          ><span class="c4">9/12</span
+                          ><span class="c5">2차 미팅</span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">4</span><span class="c1">예물</span
+                          ><span class="c2">3,400,000</span
+                          ><span class="c3">종로귀금속</span
+                          ><span class="c4">9/27</span
+                          ><span class="c5">상담예정</span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">5</span
+                          ><span class="c1">신혼여행</span
+                          ><span class="c2">4,800,000</span
+                          ><span class="c3">발리6박</span
+                          ><span class="c4">11/3</span
+                          ><span class="c5">항공별도</span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">6</span><span class="c1">청첩장</span
+                          ><span class="c2">620,000</span
+                          ><span class="c3">-</span><span class="c4">10/10</span
+                          ><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">7</span><span class="c1">한복</span
+                          ><span class="c2">-</span><span class="c3">-</span
+                          ><span class="c4">-</span><span class="c5">미정</span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">8</span><span class="c1">합계</span
+                          ><span class="c2">=SUM(B2:B7)</span
+                          ><span class="c3"></span><span class="c4"></span
+                          ><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">9</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">10</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">11</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">12</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">13</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">14</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">15</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">16</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">17</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">18</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">19</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">20</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">21</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">22</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">23</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                        <div class="r">
+                          <span class="rn">24</span><span class="c1"></span
+                          ><span class="c2"></span><span class="c3"></span
+                          ><span class="c4"></span><span class="c5"></span>
+                        </div>
+                      </div>
+                      <p class="hscroll" aria-hidden="true"><i></i></p>
+                      <p class="foot">
+                        <span class="sheet">Sheet1</span><span>Sheet2</span
+                        ><span>+</span>
+                      </p>
+                      <p class="pinch">
+                        <svg class="ic"><use href="#i-zoom" /></svg>확대해야
+                        읽힙니다
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- 앱 (실제 화면) -->
+                  <div class="face" data-f="app">
+                    <p class="sbar">
+                      <span>9:41</span><i aria-hidden="true"></i>
+                    </p>
+                    <div class="sbody">
+                      <p class="apphead">
+                        <span class="nm">지현 · 민수</span>
+                        <span class="av">지</span
+                        ><span class="av" style="margin-left: -6px">민</span>
+                        <span class="dday">D-129</span>
+                      </p>
+                      <p class="appdate">결혼식: 2026년 12월 31일 (목)</p>
+
+                      <div class="appbudget">
+                        <span class="top">
+                          <span class="coin"
+                            ><svg class="ic"><use href="#i-coin" /></svg
+                          ></span>
+                          <span>
+                            <span class="k">남은 예산</span>
+                            <span class="v" style="display: block"
+                              >1,400만 원</span
+                            >
+                          </span>
+                        </span>
+                        <span class="u" style="display: block"
+                          >2,800만 원 지출/예정</span
+                        >
+                        <span class="track">
+                          <span class="t"><i style="width: 67%"></i></span>
+                          <span class="p">67%</span>
+                        </span>
+                      </div>
+
+                      <p class="apptabs">
+                        <span class="on">계획 중 <em>5</em></span>
+                        <span>완료 <em>1</em></span>
+                      </p>
+
+                      <span class="appcard">
+                        <span class="tile2" style="background: var(--cat-1)"
+                          ><span class="ck"></span
+                        ></span>
+                        <span class="mid">
+                          <span class="t" style="display: block"
+                            >청첩장 발송</span
+                          >
+                          <span class="c" style="display: block">청첩장</span>
+                          <span class="d">2026년 10월 10일 (토)</span>
+                        </span>
+                        <span class="right"
+                          ><span class="m" style="display: block">미정</span
+                          ><span class="st">예정</span></span
+                        >
+                      </span>
+
+                      <span class="appcard">
+                        <span class="tile2" style="background: var(--cat-2)"
+                          ><span class="ck"></span
+                        ></span>
+                        <span class="mid">
+                          <span class="t" style="display: block"
+                            >예물 상담</span
+                          >
+                          <span class="c" style="display: block">예물</span>
+                          <span class="d">2026년 9월 27일 (일)</span>
+                        </span>
+                        <span class="right"
+                          ><span class="m" style="display: block">340만 원</span
+                          ><span class="st">예정</span></span
+                        >
+                      </span>
+
+                      <span class="appcard done">
+                        <span class="tile2" style="background: var(--cat-3)"
+                          ><span class="ck"
+                            ><svg class="ic"><use href="#i-check" /></svg></span
+                        ></span>
+                        <span class="mid">
+                          <span class="t" style="display: block">상견례</span>
+                          <span class="c" style="display: block">상견례</span>
+                          <span class="d">2026년 7월 4일 (토)</span>
+                        </span>
+                        <span class="right"
+                          ><span class="m" style="display: block"
+                            >62만 원</span
+                          ></span
+                        >
+                      </span>
+                    </div>
+                    <p class="appnav">
+                      <span class="on"
+                        ><svg class="ic"><use href="#i-home" /></svg>홈</span
+                      >
+                      <span
+                        ><svg class="ic"><use href="#i-search" /></svg
+                        >피드</span
+                      >
+                      <span
+                        ><svg class="ic"><use href="#i-grid" /></svg>참여
+                        플랜</span
+                      >
+                      <span
+                        ><svg class="ic"><use href="#i-gear" /></svg
+                        >Settings</span
+                      >
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="drift" aria-hidden="true">
+              <span class="dchip">예식장</span><span class="dchip">스드메</span
+              ><span class="dchip">예물</span>
+              <span class="dchip">신혼여행</span
+              ><span class="dchip">청첩장</span><span class="dchip">한복</span>
+            </div>
+            <div class="drift r" aria-hidden="true">
+              <span class="dchip">상견례</span
+              ><span class="dchip">본식 촬영</span
+              ><span class="dchip">부케</span> <span class="dchip">답례품</span
+              ><span class="dchip">신혼집</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 웹 연동 ══ -->
+      <section class="sec stage2 sync">
+        <div class="pin2">
+          <canvas class="gl" data-gl="flow" aria-hidden="true"></canvas>
+          <p class="beats" aria-hidden="true"><i></i><i></i><i></i><i></i></p>
+          <div class="wrap">
+            <input class="pick" type="radio" name="k" id="k-hall" checked />
+            <input class="pick" type="radio" name="k" id="k-sdm" />
+            <input class="pick" type="radio" name="k" id="k-ring" />
+            <input class="pick" type="radio" name="k" id="k-trip" />
+
+            <h2>밖에서는 폰으로,<br />집에서는 큰 화면으로</h2>
+            <p class="lead">
+              같은 플랜입니다. 상담장에서 폰으로 적은 금액이 집에 오면 웹에
+              그대로 있습니다.
+            </p>
+
+            <div class="syncgrid">
+              <div class="device">
+                <div class="screen">
+                  <p class="sbar">
+                    <span>9:41</span><i aria-hidden="true"></i>
+                  </p>
+                  <div class="sbody">
+                    <p class="apphead">
+                      <span class="nm">지현 · 민수</span>
+                      <span class="dday">D-129</span>
+                    </p>
+                    <span class="appcard" data-k="hall">
+                      <span class="tile2" style="background: var(--cat-1)"
+                        ><span class="ck"></span
+                      ></span>
+                      <span class="mid"
+                        ><span class="t" style="display: block">예식장</span
+                        ><span class="c">아모르하우스</span></span
+                      >
+                      <span class="right"
+                        ><span class="m">1,200만 원</span></span
+                      >
+                    </span>
+                    <span class="appcard" data-k="sdm">
+                      <span class="tile2" style="background: var(--cat-2)"
+                        ><span class="ck"></span
+                      ></span>
+                      <span class="mid"
+                        ><span class="t" style="display: block">스드메</span
+                        ><span class="c">아모레 스튜디오</span></span
+                      >
+                      <span class="right"><span class="m">580만 원</span></span>
+                    </span>
+                    <span class="appcard" data-k="ring">
+                      <span class="tile2" style="background: var(--cat-4)"
+                        ><span class="ck"></span
+                      ></span>
+                      <span class="mid"
+                        ><span class="t" style="display: block">예물</span
+                        ><span class="c">종로 귀금속</span></span
+                      >
+                      <span class="right"><span class="m">340만 원</span></span>
+                    </span>
+                    <span class="appcard" data-k="trip">
+                      <span class="tile2" style="background: var(--cat-5)"
+                        ><span class="ck"></span
+                      ></span>
+                      <span class="mid"
+                        ><span class="t" style="display: block">신혼여행</span
+                        ><span class="c">발리 6박</span></span
+                      >
+                      <span class="right"><span class="m">480만 원</span></span>
+                    </span>
+                    <p class="push">
+                      <svg class="ic"><use href="#i-bell" /></svg>
+                      <span class="t"
+                        >웹에서 <b class="nm" data-k="hall">예식장</b
+                        ><b class="nm" data-k="sdm">스드메</b
+                        ><b class="nm" data-k="ring">예물</b
+                        ><b class="nm" data-k="trip">신혼여행</b> 을 보고
+                        있어요</span
+                      >
+                    </p>
+                  </div>
+                  <p class="appnav">
+                    <span class="on"
+                      ><svg class="ic"><use href="#i-home" /></svg>홈</span
+                    >
+                    <span
+                      ><svg class="ic"><use href="#i-search" /></svg>피드</span
+                    >
+                    <span
+                      ><svg class="ic"><use href="#i-grid" /></svg>참여
+                      플랜</span
+                    >
+                    <span
+                      ><svg class="ic"><use href="#i-gear" /></svg
+                      >Settings</span
+                    >
+                  </p>
+                </div>
+              </div>
+
+              <div class="web">
+                <p class="web-top">
+                  <i aria-hidden="true"></i><b>웨딩 플랜트</b>
+                  <span class="tag"
+                    ><svg class="ic"><use href="#i-globe" /></svg>웹 · 큰
+                    화면</span
+                  >
+                </p>
+                <div class="wcards">
+                  <label class="wcard" for="k-hall">
+                    <span class="badge" style="background: var(--cat-1)"
+                      ><svg class="ic"><use href="#i-hall" /></svg
+                    ></span>
+                    <span class="n">예식장</span
+                    ><span class="m"
+                      >1,200<span style="font-size: 0.5em">만</span></span
+                    >
+                    <span class="s">6월 12일 확정</span>
+                  </label>
+                  <label class="wcard" for="k-sdm">
+                    <span class="badge" style="background: var(--cat-2)"
+                      ><svg class="ic"><use href="#i-cam" /></svg
+                    ></span>
+                    <span class="n">스드메</span
+                    ><span class="m"
+                      >580<span style="font-size: 0.5em">만</span></span
+                    >
+                    <span class="s">아모레 스튜디오</span>
+                  </label>
+                  <label class="wcard" for="k-ring">
+                    <span class="badge" style="background: var(--cat-4)"
+                      ><svg class="ic"><use href="#i-ring" /></svg
+                    ></span>
+                    <span class="n">예물</span
+                    ><span class="m"
+                      >340<span style="font-size: 0.5em">만</span></span
+                    >
+                    <span class="s">9월 27일 상담</span>
+                  </label>
+                  <label class="wcard" for="k-trip">
+                    <span class="badge" style="background: var(--cat-5)"
+                      ><svg class="ic"><use href="#i-plane" /></svg
+                    ></span>
+                    <span class="n">신혼여행</span
+                    ><span class="m"
+                      >480<span style="font-size: 0.5em">만</span></span
+                    >
+                    <span class="s">발리 6박</span>
+                  </label>
+                </div>
+                <div class="web-foot">
+                  <span class="lbl">4,200만원 중 남음</span>
+                  <span class="v">1,400<small>만원</small></span>
+                  <span class="bar" aria-hidden="true">
+                    <i
+                      style="width: 38.1%; background: var(--color-accent)"
+                    ></i>
+                    <i style="width: 28.6%; background: var(--color-plan)"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="plats">
+              <span class="plat"
+                ><svg class="ic"><use href="#i-phone" /></svg>안드로이드
+                앱</span
+              >
+              <span class="plat"
+                ><svg class="ic"><use href="#i-globe" /></svg>웹</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 노션 대조 ══ -->
+      <section class="sec stage2 cmp">
+        <div class="pin2">
+          <p class="beats" aria-hidden="true"><i></i><i></i><i></i><i></i></p>
+          <div class="wrap">
+            <input class="pick" type="radio" name="c" id="c-1" checked />
+            <input class="pick" type="radio" name="c" id="c-2" />
+            <input class="pick" type="radio" name="c" id="c-3" />
+            <input class="pick" type="radio" name="c" id="c-4" />
+
+            <h2>템플릿을 살 필요도,<br />만들 필요도 없어요</h2>
+            <p class="lead">
+              노션은 무엇을 하려 해도 빈 페이지에서 시작해요. 여기는 열면 이미
+              짜여 있어요.
+            </p>
+
+            <div class="cmphead">
+              <p class="toggle">
+                <label for="c-1"
+                  ><svg class="ic"><use href="#i-cal" /></svg>플랜 보드</label
+                >
+                <label for="c-2"
+                  ><svg class="ic"><use href="#i-coin" /></svg>예산</label
+                >
+                <label for="c-3"
+                  ><svg class="ic"><use href="#i-doc" /></svg>일정 상세</label
+                >
+                <label for="c-4"
+                  ><svg class="ic"><use href="#i-bell" /></svg>함께 보기</label
+                >
+              </p>
+            </div>
+
+            <div class="cmpgrid">
+              <div class="cmpcol">
+                <div class="win2 nwin">
+                  <p class="chrome">
+                    <i></i><i></i><i></i> <span class="logo">N</span
+                    ><b>결혼 준비</b>
+                    <span class="tag">노션 · 직접 만들어야 함</span>
+                  </p>
+                  <div class="body">
+                    <div class="side-nav">
+                      <b>내 워크스페이스</b>
+                      <span>＋ 새 페이지</span>
+                      <span class="on">결혼 준비</span>
+                      <span>업체 후보</span>
+                      <span>＋ 페이지 추가</span>
+                    </div>
+                    <div class="doc">
+                      <p class="ttl">결혼 준비</p>
+                      <p class="nrow nhead">
+                        <span>이름</span><span>날짜</span><span>금액</span
+                        ><span><span class="dash">＋ 속성</span></span>
+                      </p>
+                      <p class="nrow">
+                        <span>예식장</span><span class="empty">비어 있음</span
+                        ><span class="empty">비어 있음</span><span></span>
+                      </p>
+                      <p class="nrow">
+                        <span>스드메</span><span class="empty">비어 있음</span
+                        ><span class="empty">비어 있음</span><span></span>
+                      </p>
+                      <p class="nrow">
+                        <span class="empty">제목 없음</span
+                        ><span class="empty">비어 있음</span
+                        ><span class="empty">비어 있음</span><span></span>
+                      </p>
+                      <p class="add">＋ 새로 만들기</p>
+                    </div>
+                  </div>
+                </div>
+                <p class="cmpcap">
+                  <span class="s" data-c="1"
+                    >월별 칸과 상태 속성부터 직접 만들어야 해요.</span
+                  >
+                  <span class="s" data-c="2"
+                    >예산 표를 따로 만들고 남은 돈은 수식을 짜야 해요.</span
+                  >
+                  <span class="s" data-c="3"
+                    >일정 하나에 붙일 속성을 여섯 개쯤 정해야 해요.</span
+                  >
+                  <span class="s" data-c="4"
+                    >링크를 보내고 어디를 고쳤는지 말로 알려야 해요.</span
+                  >
+                </p>
+              </div>
+
+              <div class="cmpcol app">
+                <div class="win2 pwin">
+                  <p class="chrome">
+                    <i></i><i></i><i></i> <span class="logo"></span
+                    ><b>웨딩 플랜트</b> <span class="tag">열면 이미 있음</span>
+                  </p>
+                  <div class="body">
+                    <div class="pane" data-c="1">
+                      <p class="bh">
+                        <b>2026년 3월</b><span class="cnt">2</span
+                        ><span class="sum">3,180만 원</span>
+                      </p>
+                      <p class="brule" aria-hidden="true"></p>
+                      <div class="bc">
+                        <p class="l1">
+                          <span class="box"
+                            ><svg class="ic"><use href="#i-check" /></svg></span
+                          ><span class="t">예식장 계약</span>
+                        </p>
+                        <p class="l2">
+                          <span class="cat">예식장</span><span>3월 4일</span
+                          ><span class="amt">3,000만 원</span>
+                        </p>
+                      </div>
+                      <div class="bc">
+                        <p class="l1">
+                          <span class="box"
+                            ><svg class="ic"><use href="#i-check" /></svg></span
+                          ><span class="t">A스튜디오 본식 촬영</span>
+                        </p>
+                        <p class="l2">
+                          <span class="cat">스튜디오</span
+                          ><span>3월 14일 · 오전 11:00</span
+                          ><span class="amt">180만 원</span>
+                        </p>
+                      </div>
+                      <p class="bsep">
+                        <b>완료 1</b><i></i><span class="s">300만 원 씀</span>
+                      </p>
+                      <div class="bc done">
+                        <p class="l1">
+                          <span class="box"
+                            ><svg class="ic"><use href="#i-check" /></svg></span
+                          ><span class="t">상견례</span>
+                        </p>
+                        <p class="l2">
+                          <span class="cat">기타</span><span>3월 1일</span
+                          ><span class="amt">300만 원</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="pane bud" data-c="2">
+                      <p class="top">
+                        <span>
+                          <span class="big">1,400만원</span>
+                          <span class="sub">4,200만원 중 남음</span>
+                        </span>
+                        <span class="mo">이번 달 지출<b>480만원</b></span>
+                      </p>
+                      <p class="track">
+                        <i style="width: 26.2%; background: #ee2b8c"></i>
+                        <i style="width: 7.1%; background: #ff7ab5"></i>
+                        <i style="width: 4.8%; background: #ffa8cd"></i>
+                        <i style="width: 28.6%; background: #cdbfc7"></i>
+                      </p>
+                      <div class="legend">
+                        <p>
+                          <span class="sw" style="background: #ee2b8c"></span
+                          ><span class="nm">예식장</span
+                          ><span class="v">1,100만원</span
+                          ><span class="pc">26.2%</span>
+                        </p>
+                        <p>
+                          <span class="sw" style="background: #ff7ab5"></span
+                          ><span class="nm">스튜디오</span
+                          ><span class="v">300만원</span
+                          ><span class="pc">7.1%</span>
+                        </p>
+                        <p>
+                          <span class="sw" style="background: #ffa8cd"></span
+                          ><span class="nm">예물</span
+                          ><span class="v">200만원</span
+                          ><span class="pc">4.8%</span>
+                        </p>
+                        <p class="muted">
+                          <span class="sw" style="background: #cdbfc7"></span
+                          ><span class="nm">사용 예상</span
+                          ><span class="v">1,200만원</span
+                          ><span class="pc">28.6%</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="pane insp" data-c="3">
+                      <p>
+                        <span class="chip">스튜디오</span
+                        ><span class="pill">예정</span>
+                      </p>
+                      <p class="ttl">A스튜디오 본식 촬영</p>
+                      <p class="meta">
+                        2026년 3월 14일 · 오전 11:00 · 서울 강남구
+                      </p>
+                      <p class="foot">
+                        <span
+                          ><span class="k">지출 금액</span
+                          ><span class="amt">180만 원</span></span
+                        >
+                        <span class="pay"
+                          ><span class="k">결제 방식</span><b>계좌이체</b></span
+                        >
+                      </p>
+                    </div>
+
+                    <div class="pane act" data-c="4">
+                      <p class="h">최근 활동</p>
+                      <p class="it">
+                        <span class="av a1">진</span
+                        ><span class="tx">
+                          <span class="ln"
+                            ><b>현진</b>님이 예산을 4,200만원으로 바꿨어요</span
+                          >
+                          <time>방금</time></span
+                        >
+                      </p>
+                      <p class="it">
+                        <span class="av a2">주</span
+                        ><span class="tx">
+                          <span class="ln"
+                            ><b>미주</b>님이 드레스 투어를 3월 21일로
+                            옮겼어요</span
+                          >
+                          <time>1시간 전</time></span
+                        >
+                      </p>
+                      <p class="it">
+                        <span class="av a1">진</span
+                        ><span class="tx">
+                          <span class="ln"
+                            ><b>현진</b>님이 예식장 계약을 완료했어요</span
+                          >
+                          <time>어제</time></span
+                        >
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <p class="cmpcap">
+                  <span class="s" data-c="1"
+                    >열면 월별 칸에 항목이 놓여 있어요.</span
+                  >
+                  <span class="s" data-c="2"
+                    >수식 없이 남은 금액이 맨 위에 나와요.</span
+                  >
+                  <span class="s" data-c="3"
+                    >필요한 칸이 이미 정해져 있어요.</span
+                  >
+                  <span class="s" data-c="4"
+                    >바꾸면 상대 화면에도 그대로 떠요.</span
+                  >
+                </p>
+              </div>
+            </div>
+
+            <p class="note">
+              노션이 나쁘다는 얘기가 아니에요. 결혼 준비에 쓸 시간을 도구 만드는
+              데 쓰지 않아도 된다는 뜻이에요.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 카카오톡 대조 ══ -->
+      <section class="sec stage2 cmp kchat">
+        <div class="pin2">
+          <p class="beats" aria-hidden="true"><i></i><i></i><i></i><i></i></p>
+          <div class="wrap">
+            <input class="pick" type="radio" name="g" id="g-1" checked />
+            <input class="pick" type="radio" name="g" id="g-2" />
+            <input class="pick" type="radio" name="g" id="g-3" />
+            <input class="pick" type="radio" name="g" id="g-4" />
+
+            <h2>정한 건 대화에<br />묻히지 않아요</h2>
+            <p class="lead">
+              채팅과 플랜이 한 몸이라, 대화에서 정한 게 그대로 플랜에 남아요.
+            </p>
+
+            <div class="cmphead">
+              <p class="toggle">
+                <label for="g-1"
+                  ><svg class="ic"><use href="#i-msgs" /></svg>일정 카드</label
+                >
+                <label for="g-2"
+                  ><svg class="ic"><use href="#i-doc" /></svg>바로
+                  플랜으로</label
+                >
+                <label for="g-3"
+                  ><svg class="ic"><use href="#i-ring" /></svg>둘만의 방</label
+                >
+                <label for="g-4"
+                  ><svg class="ic"><use href="#i-grid" /></svg>플랜마다
+                  대화</label
+                >
+              </p>
+            </div>
+
+            <div class="cmpgrid">
+              <div class="cmpcol">
+                <div class="dev2 kdev">
+                  <div class="scr">
+                    <p class="notch" aria-hidden="true"></p>
+                    <p class="stat">
+                      <b>11:00</b
+                      ><span class="sig"><i></i><i></i><i></i><i></i></span>
+                    </p>
+                    <p class="khead">
+                      <span class="bk" aria-hidden="true">‹</span>
+                      <b>우리 결혼 준비</b><span class="n">5</span>
+                      <span class="more" aria-hidden="true">☰</span>
+                    </p>
+                    <div class="kbody">
+                      <p class="kwho">미주</p>
+                      <p class="kb key">A스튜디오 3/14 11시로 잡았어 180만원</p>
+                      <p class="kb me">오케이 그걸로 하자</p>
+                      <p class="kwho">어머니</p>
+                      <p class="kb">상견례 날짜는 언제로 하니</p>
+                      <p class="kb me">담주에 다시 얘기할게요</p>
+                      <p class="kwho">미주</p>
+                      <p class="kb">청첩장 시안 봤어? 200장이면 되려나</p>
+                      <p class="kb me">오늘 볼게</p>
+                    </div>
+                    <p class="home" aria-hidden="true"></p>
+                  </div>
+                </div>
+                <p class="cmpcap">
+                  <span class="s" data-c="1"
+                    >정한 건 그냥 글자예요. 카드도 링크도 없어요.</span
+                  >
+                  <span class="s" data-c="2"
+                    >다시 보려면 대화를 한참 거슬러 올라가야 해요.</span
+                  >
+                  <span class="s" data-c="3"
+                    >양가 부모님과 친구들이 한 방에 섞여 있어요.</span
+                  >
+                  <span class="s" data-c="4"
+                    >어느 방에서 뭘 정했는지는 기억해야 해요.</span
+                  >
+                </p>
+              </div>
+
+              <div class="cmpcol app">
+                <div class="dev2 pdev">
+                  <div class="scr">
+                    <p class="notch" aria-hidden="true"></p>
+                    <p class="stat">
+                      <b>11:00</b
+                      ><span class="sig"><i></i><i></i><i></i><i></i></span>
+                    </p>
+                    <div class="pbody">
+                      <div class="pane" data-c="1">
+                        <p class="chead">
+                          <span
+                            ><span class="nm"
+                              >우리 플랜
+                              <span class="cbadge"
+                                ><svg class="ic"><use href="#i-ring" /></svg
+                                >신랑 · 신부</span
+                              ></span
+                            >
+                            <span class="mem">현진, 미주</span></span
+                          >
+                          <span class="dots" aria-hidden="true">⋮</span>
+                        </p>
+                        <div class="cbody">
+                          <span class="cb"
+                            ><span class="who">미주</span>
+                            <span class="t">스드메 A스튜디오로 하자</span></span
+                          >
+                          <span class="cb me"
+                            ><span class="t">좋아, 일정에 넣을게</span></span
+                          >
+                          <span class="schcard">
+                            <span class="hd">A스튜디오 본식 촬영</span>
+                            <span class="in">
+                              <span class="cg">스튜디오</span>
+                              <span class="dt">2026년 3월 14일</span>
+                              <span class="cost"
+                                ><span>비용</span><b>180만원</b></span
+                              >
+                              <span class="go">상세보기 ›</span>
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="pane" data-c="2">
+                        <p class="chead">
+                          <span
+                            ><span class="nm">플랜 상세</span>
+                            <span class="mem">대화에서 열었어요</span></span
+                          >
+                          <span class="dots" aria-hidden="true">✕</span>
+                        </p>
+                        <div class="insp">
+                          <p>
+                            <span class="chip">스튜디오</span
+                            ><span class="pill">예정</span>
+                          </p>
+                          <p class="ttl">A스튜디오 본식 촬영</p>
+                          <p class="meta">
+                            2026년 3월 14일 · 오전 11:00<br />A스튜디오 강남점
+                          </p>
+                          <p class="foot">
+                            <span
+                              ><span class="k">지출 금액</span
+                              ><span class="amt">180만 원</span></span
+                            >
+                            <span class="pay"
+                              ><span class="k">결제 방식</span
+                              ><b>계좌이체</b></span
+                            >
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="pane" data-c="3">
+                        <p class="chead">
+                          <span
+                            ><span class="nm"
+                              >우리 플랜
+                              <span class="cbadge"
+                                ><svg class="ic"><use href="#i-ring" /></svg
+                                >신랑 · 신부</span
+                              ></span
+                            >
+                            <span class="mem"
+                              >현진, 미주 — 둘뿐이에요</span
+                            ></span
+                          >
+                          <span class="dots" aria-hidden="true">⋮</span>
+                        </p>
+                        <div class="cbody">
+                          <span class="cb"
+                            ><span class="who">미주</span>
+                            <span class="t"
+                              >예식장 계약금 3,000 나갔어</span
+                            ></span
+                          >
+                          <span class="cb me"
+                            ><span class="t"
+                              >확인했어. 예산에 잡아 뒀어</span
+                            ></span
+                          >
+                          <span class="cb"
+                            ><span class="who">미주</span>
+                            <span class="t"
+                              >부모님한테는 한 번에 말하자</span
+                            ></span
+                          >
+                          <span class="cb me"
+                            ><span class="t">그러자</span></span
+                          >
+                        </div>
+                      </div>
+
+                      <div class="pane" data-c="4">
+                        <div class="rooms">
+                          <p class="h">대화</p>
+                          <p class="room on">
+                            <span class="av">우리</span>
+                            <span class="tx">
+                              <span class="l1"
+                                ><b>우리 플랜</b>
+                                <span class="cbadge"
+                                  ><svg class="ic"><use href="#i-ring" /></svg
+                                  >신랑 · 신부</span
+                                ></span
+                              >
+                              <span class="l2">확인했어. 예산에 잡아 뒀어</span>
+                            </span>
+                            <span class="rt"
+                              ><time>방금</time><span class="un">2</span></span
+                            >
+                          </p>
+                          <p class="room">
+                            <span class="av">양가</span>
+                            <span class="tx">
+                              <span class="l1"><b>양가 상견례</b></span>
+                              <span class="l2">상견례 날짜는 언제로 하니</span>
+                            </span>
+                            <span class="rt"><time>어제</time></span>
+                          </p>
+                          <p class="room">
+                            <span class="av">친구</span>
+                            <span class="tx">
+                              <span class="l1"><b>신부 들러리</b></span>
+                              <span class="l2">드레스 투어 같이 갈게</span>
+                            </span>
+                            <span class="rt"><time>3일 전</time></span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <p class="home" aria-hidden="true"></p>
+                  </div>
+                </div>
+                <p class="cmpcap">
+                  <span class="s" data-c="1"
+                    >일정이 카드로 떠요. 금액까지 같이요.</span
+                  >
+                  <span class="s" data-c="2"
+                    >상세보기를 누르면 그 일정이 바로 열려요.</span
+                  >
+                  <span class="s" data-c="3">둘만의 방이 따로 있어요.</span>
+                  <span class="s" data-c="4">플랜마다 대화가 붙어 있어요.</span>
+                </p>
+              </div>
+            </div>
+
+            <p class="note">
+              대화를 옮겨 오라는 얘기가 아니에요. 정한 것만 플랜에 남으면 되고,
+              그 일을 채팅에서 바로 할 수 있다는 뜻이에요.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="finale" id="start">
+        <div class="wrap">
+          <p class="z">D-0</p>
+          <h2>🎉&nbsp;결혼 축하드립니다&nbsp;🎉</h2>
+          <a class="cta" href="#start">카카오로 시작하기</a>
+          <a class="sub-cta" href="#start">로그인 없이 둘러보기</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p class="big">
+          결혼 준비는 둘이 하는 일입니다.<br />도구도 그래야 합니다.
+        </p>
+        <div class="meta">
+          <span>웨딩 플랜트</span>
+          <a href="/privacy">개인정보처리방침</a>
+          <span>seoulmomenttw@gmail.com</span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      /*
+  손으로 쓴 WebGL. 라이브러리 없음(CDN 도 안 쓴다 — 이 파일은 file:// 로도 열린다).
+
+  왜 WebGL 인가: 두 섹션이 말하려는 게 "모양이 바뀐다"와 "사이를 오간다"인데,
+  둘 다 픽셀 단위 연속 변형이라 DOM 으로는 셀 수백 개를 만들어야 한다.
+
+  안전장치
+   - prefers-reduced-motion 이면 캔버스를 지운다 (CSS 만으로 완성돼 있다)
+   - getContext 가 null 이거나 컴파일이 실패하면 캔버스를 지우고 조용히 끝낸다
+   - 화면 밖이면 rAF 를 멈춘다 (IntersectionObserver)
+   - DPR 1.5 상한 — 2327px 모니터에서 픽셀을 4배로 칠하지 않는다
+   - webglcontextlost 를 잡아 루프를 세운다
+*/
+      (function () {
+        // 초기화만 건너뛰면 빈 캔버스가 DOM 에 남는다. 실제로 지운다.
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          document.querySelectorAll("canvas.gl").forEach(function (c) {
+            c.remove();
+          });
+          return;
+        }
+
+        var VERT = "attribute vec2 a;void main(){gl_Position=vec4(a,0.0,1.0);}";
+
+        /* 격자(엑셀) ↔ 카드(앱) 모핑 */
+        var FRAG_GRID = [
+          "precision mediump float;",
+          "uniform vec2 u_res;uniform float u_time;uniform float u_scroll;",
+          "uniform float u_mode;uniform float u_focus;",
+          "float box(vec2 p,vec2 b,float r){vec2 d=abs(p)-b+r;",
+          "return length(max(d,0.0))+min(max(d.x,d.y),0.0)-r;}",
+          "void main(){",
+          "  vec2 uv=gl_FragCoord.xy/u_res;",
+          "  float asp=u_res.x/u_res.y;",
+          "  vec2 p=uv; p.y+=u_scroll*0.30;",
+          "  float dens=mix(26.0,11.0,u_mode);",
+          "  vec2 g=vec2(p.x*asp,p.y)*dens;",
+          "  vec2 id=floor(g); vec2 f=fract(g)-0.5;",
+          "  float ph=fract(sin(dot(id,vec2(12.9898,78.233)))*43758.5453);",
+          "  float br=0.5+0.5*sin(u_time*0.55+ph*6.2831);",
+          "  float r=mix(0.02,0.30,u_mode);",
+          "  float hw=mix(0.46,0.33,u_mode)*(0.86+0.14*br);",
+          "  float wv=1.0-smoothstep(0.0,0.24,abs(uv.y-(1.3-u_scroll*1.6)));",
+          "  hw*=1.0+0.38*wv;",
+          "  float d=box(f,vec2(hw),r);",
+          "  float shape=smoothstep(0.035,0.0,d);",
+          "  float dd=distance(uv*vec2(asp,1.0),vec2(u_focus*asp,0.5));",
+          "  float fall=smoothstep(0.42,0.02,dd);",
+          "  float a=shape*fall*mix(0.13,0.17,u_mode)*(0.72+0.62*wv);",
+          "  vec3 cold=vec3(0.32,0.46,0.38);",
+          "  vec3 warm=vec3(0.93,0.17,0.55);",
+          "  vec3 col=mix(cold,warm,u_mode);",
+          "  gl_FragColor=vec4(col*a,a);",
+          "}",
+        ].join("\n");
+
+        /* 웹 ↔ 폰 흐름 */
+        var FRAG_FLOW = [
+          "precision mediump float;",
+          "uniform vec2 u_res;uniform float u_time;uniform float u_scroll;",
+          "uniform float u_a;uniform float u_b;uniform float u_pulse;",
+          "void main(){",
+          "  vec2 uv=gl_FragCoord.xy/u_res;",
+          "  float asp=u_res.x/u_res.y;",
+          "  vec2 A=vec2(u_a,0.5),B=vec2(u_b,0.5);",
+          "  vec2 pa=uv-A,ba=B-A;",
+          "  float den=max(dot(ba,ba),1e-5);",
+          "  float h=clamp(dot(pa,ba)/den,0.0,1.0);",
+          "  vec2 pr=A+ba*h;",
+          "  float dist=length((uv-pr)*vec2(asp,1.0));",
+          "  float wob=sin(h*9.0+u_time*0.9)*0.012;",
+          "  float band=smoothstep(0.085,0.0,abs(dist+wob));",
+          "  float reach=clamp((u_scroll-0.22)*1.9,0.0,1.0);",
+          "  band*=smoothstep(reach+0.02,reach-0.20,h);",
+          "  float t=u_time*0.26+u_scroll*1.3;",
+          "  float acc=0.0;",
+          "  for(int i=0;i<3;i++){",
+          "    float o=float(i)*0.333;",
+          "    float fl=fract(h*1.6-t+o);",
+          "    acc+=smoothstep(0.0,0.10,fl)*smoothstep(0.30,0.10,fl);",
+          "  }",
+          "  float ends=smoothstep(0.34,0.0,length((uv-A)*vec2(asp,1.0)))",
+          "            +smoothstep(0.34,0.0,length((uv-B)*vec2(asp,1.0)))*smoothstep(0.86,1.0,reach);",
+          "  float a=band*acc*(0.20+0.22*u_pulse)+ends*0.05;",
+          "  vec3 col=vec3(0.93,0.17,0.55);",
+          "  gl_FragColor=vec4(col*a,a);",
+          "}",
+        ].join("\n");
+
+        function compile(gl, type, src) {
+          var sh = gl.createShader(type);
+          gl.shaderSource(sh, src);
+          gl.compileShader(sh);
+          if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) return null;
+          return sh;
+        }
+
+        function build(canvas, frag) {
+          var gl = canvas.getContext("webgl", {
+            alpha: true,
+            antialias: false,
+            depth: false,
+            stencil: false,
+            premultipliedAlpha: true,
+          });
+          if (!gl) return null;
+          var vs = compile(gl, gl.VERTEX_SHADER, VERT);
+          var fs = compile(gl, gl.FRAGMENT_SHADER, frag);
+          if (!vs || !fs) return null;
+          var pr = gl.createProgram();
+          gl.attachShader(pr, vs);
+          gl.attachShader(pr, fs);
+          gl.linkProgram(pr);
+          if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) return null;
+          gl.useProgram(pr);
+          var buf = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+          gl.bufferData(
+            gl.ARRAY_BUFFER,
+            new Float32Array([-1, -1, 3, -1, -1, 3]),
+            gl.STATIC_DRAW,
+          );
+          var loc = gl.getAttribLocation(pr, "a");
+          gl.enableVertexAttribArray(loc);
+          gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+          return { gl: gl, pr: pr };
+        }
+
+        /** 요소 중심의 x 를 섹션 기준 0~1 로 */
+        function centerX(sec, el) {
+          if (!el) return 0.5;
+          var s = sec.getBoundingClientRect(),
+            r = el.getBoundingClientRect();
+          if (s.width <= 0) return 0.5;
+          return Math.min(
+            1,
+            Math.max(0, (r.left + r.width / 2 - s.left) / s.width),
+          );
+        }
+
+        document.querySelectorAll("canvas.gl").forEach(function (canvas) {
+          var kind = canvas.dataset.gl;
+          var sec = canvas.closest(".sec");
+          var ctx = build(canvas, kind === "grid" ? FRAG_GRID : FRAG_FLOW);
+          if (!ctx) {
+            canvas.remove();
+            return;
+          } // 조용히 물러난다
+          var gl = ctx.gl,
+            pr = ctx.pr;
+          var U = {};
+          [
+            "u_res",
+            "u_time",
+            "u_scroll",
+            "u_mode",
+            "u_focus",
+            "u_a",
+            "u_b",
+            "u_pulse",
+          ].forEach(function (n) {
+            U[n] = gl.getUniformLocation(pr, n);
+          });
+
+          var running = false,
+            raf = null,
+            t0 = performance.now();
+          var mode = 0,
+            pulse = 0.35;
+
+          function size() {
+            var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            var w = Math.max(1, Math.round(canvas.clientWidth * dpr));
+            var h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+            if (canvas.width !== w || canvas.height !== h) {
+              canvas.width = w;
+              canvas.height = h;
+              gl.viewport(0, 0, w, h);
+            }
+          }
+
+          var pin = sec.querySelector(".pin2");
+
+          /*
+      **핀이 걸려 있는 동안**의 진행도. 섹션이 화면에 들어오는 것만으로 올라가면
+      UI 가 아직 나타나기도 전에 셰이더가 먼저 그려져 어색하다(실제로 그랬다).
+      핀이 아닌 폭(좁은 화면)에서는 예전처럼 섹션 통과 기준으로 돌린다.
+    */
+          function progress() {
+            var r = sec.getBoundingClientRect(),
+              vh = window.innerHeight || 1;
+            if (pin && getComputedStyle(pin).position === "sticky") {
+              var travel = sec.offsetHeight - vh;
+              if (travel > 0) return Math.min(1, Math.max(0, -r.top / travel));
+            }
+            return Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height)));
+          }
+
+          function frame() {
+            raf = null;
+            if (!running) return;
+            size();
+            var t = (performance.now() - t0) / 1000;
+            gl.uniform2f(U.u_res, canvas.width, canvas.height);
+            gl.uniform1f(U.u_time, t);
+            gl.uniform1f(U.u_scroll, progress());
+
+            if (kind === "grid") {
+              var want =
+                sec.querySelector("#m-app") &&
+                sec.querySelector("#m-app").checked
+                  ? 1
+                  : 0;
+              mode += (want - mode) * 0.08; // 토글을 부드럽게 따라간다
+              gl.uniform1f(U.u_mode, mode);
+              gl.uniform1f(
+                U.u_focus,
+                centerX(sec, sec.querySelector(".device")),
+              );
+            } else {
+              pulse += (0.35 - pulse) * 0.03; // 고른 뒤 서서히 가라앉는다
+              gl.uniform1f(U.u_pulse, pulse);
+              gl.uniform1f(U.u_a, centerX(sec, sec.querySelector(".web")));
+              gl.uniform1f(U.u_b, centerX(sec, sec.querySelector(".device")));
+            }
+
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            raf = requestAnimationFrame(frame);
+          }
+
+          function start() {
+            if (!running) {
+              running = true;
+              if (!raf) raf = requestAnimationFrame(frame);
+            }
+          }
+          function stop() {
+            running = false;
+            if (raf) {
+              cancelAnimationFrame(raf);
+              raf = null;
+            }
+          }
+
+          // 화면 밖이면 돌리지 않는다
+          if ("IntersectionObserver" in window) {
+            new IntersectionObserver(
+              function (es) {
+                es[0].isIntersecting ? start() : stop();
+              },
+              { rootMargin: "120px" },
+            ).observe(sec);
+          } else {
+            start();
+          }
+
+          document.addEventListener("visibilitychange", function () {
+            document.hidden ? stop() : start();
+          });
+          canvas.addEventListener("webglcontextlost", function (e) {
+            e.preventDefault();
+            stop();
+            canvas.remove();
+          });
+          // 카드를 고르면 흐름이 한 번 밀려간다
+          sec.addEventListener("change", function () {
+            pulse = 1.0;
+          });
+        });
+      })();
+    </script>
+
+    <script>
+      /*
+  핀 무대의 진행도를 라디오로 옮긴다.
+
+  왜 라디오냐 — 화면 상태(엑셀/앱, 어느 항목)를 이미 :has() 규칙이 전부 받고 있다.
+  스크롤용 CSS 를 따로 만들면 같은 상태를 두 곳에서 관리하게 되고 반드시 어긋난다.
+  상태는 라디오 한 곳에만 두고, 스크롤은 그 라디오를 바꾼다.
+
+  클릭도 그대로 산다 — 사용자가 점/토글을 누르면 그 장면의 스크롤 위치로 데려간다.
+  (안 그러면 눌러서 바꿔 놔도 다음 스크롤에 도로 밀린다)
+*/
+      (function () {
+        var STAGES = [
+          { sel: ".sec.vs", ids: ["m-xl", "m-app"] },
+          { sel: ".sec.sync", ids: ["k-hall", "k-sdm", "k-ring", "k-trip"] },
+          { sel: ".sec.cmp:not(.kchat)", ids: ["c-1", "c-2", "c-3", "c-4"] },
+          { sel: ".sec.kchat", ids: ["g-1", "g-2", "g-3", "g-4"] },
+        ];
+
+        /** 핀이 붙어 있는 동안의 진행도 0~1 */
+        function pinProgress(sec) {
+          var r = sec.getBoundingClientRect();
+          var travel = sec.offsetHeight - window.innerHeight;
+          if (travel <= 0) return 0;
+          return Math.min(1, Math.max(0, -r.top / travel));
+        }
+
+        STAGES.forEach(function (st) {
+          var sec = document.querySelector(st.sel);
+          if (!sec) return;
+          var radios = st.ids.map(function (id) {
+            return document.getElementById(id);
+          });
+          if (
+            radios.some(function (r) {
+              return !r;
+            })
+          )
+            return;
+          var n = radios.length,
+            self = false,
+            raf = null;
+
+          var pin = sec.querySelector(".pin2");
+
+          function apply() {
+            raf = null;
+            // 좁은 폭에서는 핀이 아니라 그냥 흐른다 — 스크롤이 장면을 밀면 안 된다
+            if (!pin || getComputedStyle(pin).position !== "sticky") return;
+            // 장면을 n 등분하되 앞뒤 8% 는 여유로 둔다 (막 들어오거나 나가는 구간)
+            var p = (pinProgress(sec) - 0.08) / 0.84;
+            var i = Math.min(n - 1, Math.max(0, Math.floor(p * n)));
+            if (!radios[i].checked) {
+              self = true;
+              radios[i].checked = true;
+              radios[i].dispatchEvent(new Event("change", { bubbles: true }));
+              self = false;
+            }
+          }
+          function onScroll() {
+            if (!raf) raf = requestAnimationFrame(apply);
+          }
+
+          window.addEventListener("scroll", onScroll, { passive: true });
+          window.addEventListener("resize", onScroll);
+          apply();
+
+          // 눌러서 고르면 그 장면으로 데려간다
+          sec.addEventListener("change", function (e) {
+            if (self) return;
+            var i = radios.indexOf(e.target);
+            if (i < 0) return;
+            if (!pin || getComputedStyle(pin).position !== "sticky") return;
+            var travel = sec.offsetHeight - window.innerHeight;
+            if (travel <= 0) return;
+            var mid = 0.08 + ((i + 0.5) / n) * 0.84;
+            window.scrollTo({
+              top: sec.offsetTop + travel * mid,
+              behavior: "auto",
+            });
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

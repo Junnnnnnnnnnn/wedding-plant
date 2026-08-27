@@ -1,53 +1,18 @@
 import { Suspense } from "react";
-import Image from "next/image";
-import AuthButtons from "./components/AuthButtons";
 import HomeKakaoLoginHandler from "./components/HomeKakaoLoginHandler";
+import Landing from "./components/Landing";
 import LoginErrorModal from "./components/LoginErrorModal";
 
 export default function Home() {
   return (
-    <div className="min-h-screen w-full bg-[#fcfbfc] relative overflow-hidden flex flex-col items-center justify-center px-8 py-20 grid-bg">
+    <>
       <Suspense fallback={null}>
         <LoginErrorModal />
       </Suspense>
       <Suspense fallback={null}>
         <HomeKakaoLoginHandler />
       </Suspense>
-
-      {/* Decorative Blur Elements */}
-      <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none" />
-
-      {/* Main Branding Section */}
-      <div className="w-full max-w-md space-y-4 text-center z-10 md:max-w-[560px]">
-        <div className="inline-flex items-center justify-center p-4 bg-white rounded-[32px] shadow-xl shadow-[#ee2b8c11] border border-[#ee2b8c0a] mb-6">
-          <Image
-            src="/images/icon.png"
-            alt="웨딩 플랜트"
-            width={128}
-            height={128}
-            quality={100}
-            className="rounded-[16px] object-contain w-16 h-16"
-          />
-        </div>
-        <h1 className="text-5xl font-black text-[#1b0d14] tracking-tight md:text-6xl">
-          웨딩 플랜트
-        </h1>
-        <p className="text-gray-400 font-bold text-lg leading-snug">
-          우리만의 특별한 웨딩 플랜,
-          <br />
-          <span className="text-[#ee2b8c]">지금 바로 시작하세요.</span>
-        </p>
-      </div>
-
-      {/* Login Options Section */}
-      <div className="w-full max-w-md mt-24 z-10 flex flex-col items-center md:mt-20">
-        <div className="w-full flex justify-center">
-          <AuthButtons />
-        </div>
-      </div>
-
-      {/* Footer removed */}
-    </div>
+      <Landing />
+    </>
   );
 }

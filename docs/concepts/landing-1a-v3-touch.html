@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>웨딩 플랜트 — A3 · 만져 보는 폰</title>
+    <style>
+      /* Hallmark · macrostructure: Object Demo (Experience) · tone: playful-tactile · anchor hue: rose 353
+ * nav: N5 floating pill · footer: Ft2 two-line
+ * enrichment: Tier-B 인라인 SVG 아이콘 + Tier-A 기기 목업
+ * 규칙 예외: 가짜 폰 프레임 금지 규칙을 브리프가 이긴다 (실제 안드로이드 앱 보유).
+ * 밀리 참고: 행 단위 표류(같은 행 = 같은 속도).
+ * 인터랙션: **폰 안을 실제로 조작한다.** 할 일을 체크하면 남은 예산·막대·완료 수가
+ *   그 자리에서 바뀐다. 설명 문장 대신 손으로 확인하게 하는 시안.
+ * pre-emit critique: P5 H5 E5 S5 R4 V5
+ */
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmnEB";
+        src: url("../../public/font/woff2/TmoneyRoundWindExtraBold.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Dgm", system-ui, sans-serif;
+        --font-body: "Dgm", system-ui, sans-serif;
+        --font-num: "TmnEB", "Dgm", sans-serif;
+
+        --color-paper: oklch(97.4% 0.01 353);
+        --color-card: oklch(100% 0 0);
+        --color-tint: oklch(96.6% 0.02 353);
+        --color-ink: oklch(18% 0.042 348);
+        --color-ink-2: oklch(48% 0.02 340);
+        --color-ink-3: oklch(66% 0.014 340);
+        --color-ink-4: oklch(81% 0.01 340);
+        --color-accent: oklch(62.5% 0.243 353);
+        --color-accent-soft: oklch(96.5% 0.024 353);
+        --color-accent-line: oklch(88% 0.052 353);
+        --color-rule: oklch(93% 0.01 350);
+        --color-rule-2: oklch(88% 0.014 350);
+        --color-dash: oklch(85% 0.014 350);
+        --color-plan: oklch(83% 0.012 345);
+        --color-good: oklch(58% 0.13 160);
+        --color-good-soft: oklch(96% 0.032 160);
+        --device: oklch(23% 0.024 335);
+        --color-kakao: oklch(88% 0.16 96);
+        --color-kakao-ink: oklch(28% 0.05 80);
+        --color-focus: oklch(55% 0.2 353);
+        --color-shade: oklch(18% 0.042 348 / 0.14);
+
+        --space-2xs: 4px;
+        --space-xs: 8px;
+        --space-sm: 12px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 40px;
+        --space-2xl: 72px;
+        --space-3xl: 112px;
+
+        --text-hero: clamp(1.9rem, 5.2vw, 3.6rem);
+        --text-h2: clamp(1.5rem, 3.6vw, 2.4rem);
+        --text-lead: clamp(0.96rem, 1.6vw, 1.12rem);
+        --text-sm: 0.875rem;
+        --text-xs: 0.79rem;
+        --text-2xs: 0.71rem;
+
+        --radius-md: 15px;
+        --radius-lg: 21px;
+        --radius-xl: 30px;
+        --rule-hair: 1px;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --dur-mid: 360ms;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overflow-x: clip;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-size: 1rem;
+        line-height: 1.74;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-style: normal;
+        margin: 0;
+        line-height: 1.16;
+        letter-spacing: -0.04em;
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      p {
+        margin: 0;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 3px;
+        border-radius: 12px;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 0 var(--space-lg);
+      }
+      .ic {
+        width: 1em;
+        height: 1em;
+        flex: none;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      /* ── N5 floating pill ── */
+      .nav {
+        position: fixed;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        padding: 7px 7px 7px 17px;
+        border-radius: 999px;
+        background: oklch(100% 0 0 / 0.84);
+        backdrop-filter: blur(14px);
+        border: var(--rule-hair) solid var(--color-rule);
+        box-shadow: 0 12px 30px -22px var(--color-shade);
+        max-width: calc(100vw - 24px);
+      }
+      .nav b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.03em;
+        white-space: nowrap;
+      }
+      .nav a {
+        display: flex;
+        align-items: center;
+        height: 33px;
+        padding: 0 15px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-xs);
+        white-space: nowrap;
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .nav a:hover {
+        transform: translateY(-1px);
+      }
+      .nav a:active {
+        transform: scale(0.97);
+      }
+
+      /* ── 히어로 = 만지는 폰 ── */
+      .hero {
+        padding: var(--space-3xl) 0 var(--space-2xl);
+      }
+      .hero-grid {
+        display: grid;
+        gap: var(--space-xl);
+        grid-template-columns: minmax(0, 1fr);
+        align-items: center;
+        justify-items: center;
+      }
+      @media (min-width: 940px) {
+        .hero-grid {
+          grid-template-columns: minmax(0, 1fr) auto;
+          justify-items: start;
+          gap: var(--space-2xl);
+        }
+      }
+      .hero h1 {
+        font-size: var(--text-hero);
+        max-width: 14ch;
+      }
+      .hero h1 em {
+        font-style: normal;
+        color: var(--color-accent);
+      }
+      .hero .lead {
+        margin-top: var(--space-lg);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 34ch;
+      }
+      .tapnote {
+        margin-top: var(--space-xl);
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 15px;
+        border-radius: 999px;
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-accent-line);
+        font-size: var(--text-xs);
+        font-family: var(--font-display);
+        font-weight: 700;
+      }
+      .tapnote .ic {
+        font-size: 17px;
+        color: var(--color-accent);
+        animation: nudge 2.6s var(--ease-out) infinite;
+      }
+      @keyframes nudge {
+        0%,
+        72%,
+        100% {
+          transform: translate(0, 0);
+        }
+        82% {
+          transform: translate(2px, 3px);
+        }
+      }
+
+      /* 결과 요약 — 폰을 만지면 여기도 바뀐다 */
+      .live {
+        margin-top: var(--space-xl);
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 420px;
+        width: 100%;
+      }
+      .livecard {
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-md);
+        padding: 13px;
+      }
+      .livecard .k {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .livecard .v {
+        font-family: var(--font-num);
+        font-size: 1.5rem;
+        letter-spacing: -0.05em;
+        color: var(--color-accent);
+      }
+      .livecard .v small {
+        font-size: 0.42em;
+        color: var(--color-ink-3);
+        font-family: var(--font-body);
+      }
+
+      /* ── 기기 ── */
+      .device {
+        position: relative;
+        width: clamp(250px, 76vw, 300px);
+        flex: none;
+        border-radius: 36px;
+        background: var(--device);
+        padding: 9px;
+        box-shadow: 0 46px 88px -54px oklch(0% 0 0 / 0.74);
+      }
+      .screen {
+        border-radius: 28px;
+        background: var(--color-card);
+        overflow: hidden;
+        aspect-ratio: 0.482;
+        display: flex;
+        flex-direction: column;
+      }
+      .sbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px 4px;
+        font-size: 9.5px;
+        color: var(--color-ink-3);
+        font-family: var(--font-num);
+      }
+      .sbar i {
+        display: inline-block;
+        width: 17px;
+        height: 5px;
+        border-radius: 2px;
+        background: var(--color-ink-4);
+        font-style: normal;
+      }
+      .shead {
+        padding: 6px 15px 11px;
+        border-bottom: var(--rule-hair) solid var(--color-rule);
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+      }
+      .shead .cn {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.92rem;
+        letter-spacing: -0.03em;
+      }
+      .shead .dd {
+        font-size: 9px;
+        color: var(--color-ink-3);
+      }
+      .shead .dnum {
+        margin-left: auto;
+        font-family: var(--font-num);
+        font-size: 1.25rem;
+        letter-spacing: -0.05em;
+        color: var(--color-accent);
+        line-height: 1;
+      }
+      .sbody {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        padding: 12px 13px;
+        display: grid;
+        gap: 9px;
+        align-content: start;
+      }
+      .mono {
+        font-size: 9px;
+        color: var(--color-ink-4);
+        letter-spacing: 0.08em;
+      }
+
+      .budget {
+        border-radius: 13px;
+        background: var(--color-accent-soft);
+        border: var(--rule-hair) solid var(--color-accent-line);
+        padding: 12px;
+        display: grid;
+        gap: 7px;
+      }
+      .budget .k {
+        font-size: 9px;
+        color: var(--color-ink-3);
+      }
+      .budget .v {
+        font-family: var(--font-num);
+        font-size: 1.6rem;
+        letter-spacing: -0.05em;
+      }
+      .budget .v small {
+        font-size: 0.4em;
+        color: var(--color-ink-3);
+        font-family: var(--font-body);
+      }
+      .bar {
+        height: 9px;
+        border-radius: 999px;
+        background: var(--color-card);
+        overflow: hidden;
+        display: flex;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        transition: width var(--dur-mid) var(--ease-out);
+      }
+      .budget .sub {
+        font-size: 9px;
+        color: var(--color-ink-3);
+        display: flex;
+        justify-content: space-between;
+      }
+
+      /* 체크 가능한 할 일 */
+      .task {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px;
+        border-radius: 13px;
+        border: var(--rule-hair) solid var(--color-rule);
+        cursor: pointer;
+        min-width: 0;
+        transition:
+          background var(--dur-mid) var(--ease-out),
+          border-color var(--dur-mid) var(--ease-out);
+      }
+      .task:hover {
+        border-color: var(--color-accent-line);
+      }
+      .task input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+      }
+      .task .box {
+        width: 19px;
+        height: 19px;
+        border-radius: 6px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--color-rule-2);
+        color: transparent;
+        transition:
+          background var(--dur-mid) var(--ease-out),
+          border-color var(--dur-mid) var(--ease-out),
+          color var(--dur-mid) var(--ease-out);
+      }
+      .task .box .ic {
+        font-size: 12px;
+        stroke-width: 3.2;
+      }
+      .task .t {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.76rem;
+        letter-spacing: -0.02em;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .task .s {
+        font-size: 9px;
+        color: var(--color-ink-3);
+        margin-left: auto;
+        white-space: nowrap;
+        flex: none;
+      }
+      .task:has(input:checked) {
+        background: var(--color-good-soft);
+        border-color: transparent;
+      }
+      .task:has(input:checked) .box {
+        background: var(--color-good);
+        border-color: var(--color-good);
+        color: var(--color-card);
+      }
+      .task:has(input:checked) .t {
+        color: var(--color-ink-2);
+        text-decoration: line-through;
+        text-decoration-color: var(--color-ink-4);
+      }
+      .task:has(input:focus-visible) {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+      }
+      /* :has 가 없어도 체크 자체는 되고 색만 안 바뀐다 — 기능이 죽지는 않는다 */
+
+      .undo {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 11px;
+        border-radius: 12px;
+        background: var(--color-tint);
+        font-size: 9.5px;
+        color: var(--color-ink-2);
+        margin-top: auto;
+      }
+      .undo .ic {
+        font-size: 13px;
+        color: var(--color-accent);
+      }
+      .undo button {
+        margin-left: auto;
+        border: 0;
+        background: none;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 9.5px;
+        color: var(--color-accent);
+        cursor: pointer;
+        padding: 3px 6px;
+        border-radius: 7px;
+      }
+      .undo button:hover {
+        background: var(--color-accent-soft);
+      }
+
+      /* 밀리 참고 — 행 표류 */
+      .drift {
+        display: flex;
+        gap: 9px;
+        margin-top: var(--space-2xl);
+      }
+      .drift + .drift {
+        margin-top: 9px;
+      }
+      .dchip {
+        flex: none;
+        padding: 7px 13px;
+        border-radius: 999px;
+        font-size: var(--text-2xs);
+        border: var(--rule-hair) solid var(--color-rule-2);
+        color: var(--color-ink-3);
+        background: var(--color-card);
+        white-space: nowrap;
+      }
+      @supports (animation-timeline: scroll()) {
+        .drift {
+          animation: driftL linear both;
+          animation-timeline: scroll(root);
+          animation-range: 0% 46%;
+        }
+        .drift.r {
+          animation-name: driftR;
+        }
+      }
+      @keyframes driftL {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-84px);
+        }
+      }
+      @keyframes driftR {
+        from {
+          transform: translateX(-84px);
+        }
+        to {
+          transform: translateX(0);
+        }
+      }
+
+      /* ── 이후 ── */
+      .sec {
+        padding: var(--space-3xl) 0;
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .sec h2 {
+        font-size: var(--text-h2);
+        max-width: 18ch;
+      }
+      .sec .lead {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 42ch;
+      }
+      .swap-grid {
+        margin-top: var(--space-2xl);
+        display: grid;
+        gap: var(--space-lg);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 880px) {
+        .swap-grid {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: var(--space-xl);
+          align-items: start;
+        }
+      }
+      .col-cap {
+        font-size: var(--text-2xs);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--color-ink-4);
+        margin-bottom: var(--space-sm);
+      }
+      .tool {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px;
+        border-radius: var(--radius-md);
+        border: 1.5px dashed var(--color-dash);
+        min-width: 0;
+      }
+      .tool + .tool {
+        margin-top: 9px;
+      }
+      .tool .badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        flex: none;
+        background: var(--color-tint);
+        color: var(--color-ink-3);
+      }
+      .tool .badge .ic {
+        font-size: 19px;
+      }
+      .tool .n {
+        display: block;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--color-ink-2);
+      }
+      .tool .w {
+        display: block;
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+        line-height: 1.6;
+      }
+      .one {
+        border-radius: var(--radius-lg);
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-accent-line);
+        padding: var(--space-lg);
+        box-shadow: 0 20px 44px -36px var(--color-shade);
+      }
+      .one .brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: var(--space-sm);
+      }
+      .one .brand i {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        background: var(--color-accent);
+        flex: none;
+      }
+      .one .brand b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.03em;
+      }
+      .one .r {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 13px 0;
+        min-width: 0;
+      }
+      .one .r + .r {
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .one .r .badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        flex: none;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+      }
+      .one .r .badge .ic {
+        font-size: 19px;
+      }
+      .one .r .n {
+        display: block;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .one .r .w {
+        display: block;
+        font-size: var(--text-2xs);
+        color: var(--color-ink-2);
+        line-height: 1.6;
+      }
+      .note {
+        margin-top: var(--space-lg);
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+        line-height: 1.7;
+        max-width: 52ch;
+      }
+
+      .plats {
+        margin-top: var(--space-xl);
+        display: flex;
+        gap: var(--space-sm);
+        flex-wrap: wrap;
+      }
+      .plat {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 17px;
+        border-radius: 999px;
+        border: var(--rule-hair) solid var(--color-rule-2);
+        background: var(--color-card);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-sm);
+      }
+      .plat .ic {
+        font-size: 18px;
+        color: var(--color-accent);
+      }
+
+      .finale {
+        padding: var(--space-3xl) 0;
+        text-align: center;
+        background: var(--color-tint);
+      }
+      .finale h2 {
+        font-size: var(--text-h2);
+        max-width: 15ch;
+        margin-inline: auto;
+      }
+      .finale p {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        max-width: 32ch;
+        margin-inline: auto;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+        padding: 0 34px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.02rem;
+        margin-top: var(--space-xl);
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .cta:hover {
+        transform: translateY(-2px);
+      }
+      .cta:active {
+        transform: scale(0.98);
+      }
+      .sub-cta {
+        display: block;
+        margin-top: var(--space-md);
+        font-size: var(--text-sm);
+        color: var(--color-ink-3);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      footer {
+        background: var(--device);
+        color: oklch(76% 0.014 330);
+        padding: var(--space-2xl) 0;
+      }
+      footer .line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-sm) var(--space-lg);
+        font-size: var(--text-xs);
+      }
+      footer .line b {
+        font-family: var(--font-display);
+        color: oklch(97% 0.006 330);
+        font-size: var(--text-sm);
+      }
+      footer .line a {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      footer .line + .line {
+        margin-top: var(--space-md);
+        padding-top: var(--space-md);
+        border-top: var(--rule-hair) solid oklch(31% 0.024 335);
+        color: oklch(58% 0.018 330);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation: none !important;
+        }
+        .drift {
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      width="0"
+      height="0"
+      style="position: absolute"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <symbol id="i-table" viewBox="0 0 24 24">
+          <path
+            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"
+          />
+          <path d="M14 2v6h6" />
+        </symbol>
+        <symbol id="i-sheet" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M3 15h18M9 9v12M15 9v12" />
+        </symbol>
+        <symbol id="i-chat" viewBox="0 0 24 24">
+          <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+        </symbol>
+        <symbol id="i-note" viewBox="0 0 24 24">
+          <path
+            d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11l5-5V5a2 2 0 0 0-2-2Z"
+          />
+          <path d="M15 21v-4a2 2 0 0 1 2-2h4" />
+        </symbol>
+        <symbol id="i-cal" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <path d="M16 2v4M8 2v4M3 10h18M7 14h.01M11 14h6M7 18h.01M11 18h4" />
+        </symbol>
+        <symbol id="i-wallet" viewBox="0 0 24 24">
+          <path
+            d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2"
+          />
+          <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
+        </symbol>
+        <symbol id="i-msgs" viewBox="0 0 24 24">
+          <path
+            d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2Z"
+          />
+          <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1" />
+        </symbol>
+        <symbol id="i-trend" viewBox="0 0 24 24">
+          <path d="M22 7 13.5 15.5 8.5 10.5 2 17" />
+          <path d="M16 7h6v6" />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path d="M20 6 9 17l-5-5" />
+        </symbol>
+        <symbol id="i-undo" viewBox="0 0 24 24">
+          <path d="M3 7v6h6" />
+          <path d="M3.5 13a9 9 0 1 0 2.1-9.4L3 7" />
+        </symbol>
+        <symbol id="i-tap" viewBox="0 0 24 24">
+          <path d="M12 11V6.5a1.5 1.5 0 0 1 3 0V13" />
+          <path d="M15 11.5a1.5 1.5 0 0 1 3 0V14" />
+          <path
+            d="M18 12.5a1.5 1.5 0 0 1 3 0V17a5 5 0 0 1-5 5h-2.2a5 5 0 0 1-3.9-1.9L7 16.5s-1-1.4 0-2.2c1-.7 2 .3 2 .3l1 1.2V9.5a1.5 1.5 0 0 1 3 0"
+          />
+        </symbol>
+        <symbol id="i-globe" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20" />
+        </symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24">
+          <rect x="6" y="2" width="12" height="20" rx="2.5" />
+          <path d="M11 19h2" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <nav class="nav">
+      <b>웨딩 플랜트</b>
+      <a href="#start">시작하기</a>
+    </nav>
+
+    <main>
+      <section class="hero">
+        <div class="wrap hero-grid">
+          <div style="min-width: 0; width: 100%">
+            <h1>설명 대신,<br /><em>눌러 보세요</em></h1>
+            <p class="lead">
+              오른쪽은 그림이 아닙니다. 할 일을 체크하면 남은 예산과 막대가 그
+              자리에서 바뀝니다.
+            </p>
+            <p class="tapnote">
+              <svg class="ic"><use href="#i-tap" /></svg>폰 안의 할 일을 눌러
+              보세요
+            </p>
+            <p
+              style="
+                margin-top: var(--space-md);
+                font-size: var(--text-2xs);
+                color: var(--color-ink-3);
+                line-height: 1.7;
+                max-width: 36ch;
+              "
+            >
+              체크는 <b>예정을 사용으로 옮기는 것</b>이라 남은 예산
+              <b><span data-out="remain">1,400</span>만원</b>은 그대로입니다.
+              막대에서 회색이 분홍으로 넘어갑니다 — 앱의 실제 계산과 같습니다.
+            </p>
+
+            <div class="live">
+              <div class="livecard">
+                <p class="k">지금까지 썼어요</p>
+                <p class="v">
+                  <span data-out="used">1,600</span><small>만원</small>
+                </p>
+              </div>
+              <div class="livecard">
+                <p class="k">완료한 일정</p>
+                <p class="v"><span data-out="done">0</span><small>건</small></p>
+              </div>
+            </div>
+
+            <div class="drift" aria-hidden="true">
+              <span class="dchip">예식장</span><span class="dchip">스드메</span>
+              <span class="dchip">예물</span><span class="dchip">신혼여행</span
+              ><span class="dchip">청첩장</span>
+            </div>
+            <div class="drift r" aria-hidden="true">
+              <span class="dchip">상견례</span
+              ><span class="dchip">본식 촬영</span>
+              <span class="dchip">부케</span><span class="dchip">한복</span
+              ><span class="dchip">답례품</span>
+            </div>
+          </div>
+
+          <div class="device" id="demo">
+            <div class="screen">
+              <p class="sbar"><span>9:41</span><i aria-hidden="true"></i></p>
+              <div class="shead">
+                <span>
+                  <span class="cn">지현 · 민수</span>
+                  <span class="dd" style="display: block"
+                    >2026년 12월 31일</span
+                  >
+                </span>
+                <span class="dnum">D-129</span>
+              </div>
+              <div class="sbody">
+                <div class="budget">
+                  <span class="k">4,200만원 중 남음</span>
+                  <span class="v"
+                    ><span data-out="remain">1,400</span
+                    ><small>만원</small></span
+                  >
+                  <span class="bar" aria-hidden="true">
+                    <i
+                      data-bar="used"
+                      style="width: 38%; background: var(--color-accent)"
+                    ></i>
+                    <i
+                      data-bar="plan"
+                      style="width: 28.6%; background: var(--color-plan)"
+                    ></i>
+                  </span>
+                  <span class="sub"
+                    ><span>썼어요 <span data-out="used">1,600</span>만원</span
+                    ><span
+                      >쓸 예정 <span data-out="plan">1,200</span>만원</span
+                    ></span
+                  >
+                </div>
+
+                <p class="mono">이번 달 할 일</p>
+
+                <label class="task">
+                  <input type="checkbox" data-cost="180" />
+                  <span class="box"
+                    ><svg class="ic"><use href="#i-check" /></svg
+                  ></span>
+                  <span class="t">드레스 투어</span
+                  ><span class="s">180만원</span>
+                </label>
+                <label class="task">
+                  <input type="checkbox" data-cost="320" />
+                  <span class="box"
+                    ><svg class="ic"><use href="#i-check" /></svg
+                  ></span>
+                  <span class="t">예식장 2차 미팅</span
+                  ><span class="s">320만원</span>
+                </label>
+                <label class="task">
+                  <input type="checkbox" data-cost="185" />
+                  <span class="box"
+                    ><svg class="ic"><use href="#i-check" /></svg
+                  ></span>
+                  <span class="t">본식 촬영</span><span class="s">185만원</span>
+                </label>
+                <label class="task">
+                  <input type="checkbox" data-cost="62" />
+                  <span class="box"
+                    ><svg class="ic"><use href="#i-check" /></svg
+                  ></span>
+                  <span class="t">청첩장 발송</span
+                  ><span class="s">62만원</span>
+                </label>
+
+                <p class="undo">
+                  <svg class="ic"><use href="#i-undo" /></svg>
+                  <span>체크하면 예산이 바로 반영됩니다</span>
+                  <button type="button" data-reset>되돌리기</button>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="wrap">
+          <h2>노션에 표를 만드는 것도<br />결혼 준비입니다</h2>
+          <p class="lead">
+            방금 체크 한 번에 바뀐 그 숫자를, 노션에서는 수식으로 만들어야
+            합니다.
+          </p>
+
+          <div class="swap-grid">
+            <div>
+              <p class="col-cap">지금 쓰는 것</p>
+              <div class="tool">
+                <span class="badge"
+                  ><svg class="ic"><use href="#i-table" /></svg
+                ></span>
+                <span
+                  ><span class="n">노션</span
+                  ><span class="w"
+                    >표를 짜고 수식을 넣는 시간이 먼저 듭니다. 빈 페이지부터
+                    시작합니다.</span
+                  ></span
+                >
+              </div>
+              <div class="tool">
+                <span class="badge"
+                  ><svg class="ic"><use href="#i-sheet" /></svg
+                ></span>
+                <span
+                  ><span class="n">엑셀</span
+                  ><span class="w"
+                    >폰에서 열면 가로로 스크롤합니다. 합계는 맞는데 남은 돈은
+                    암산입니다.</span
+                  ></span
+                >
+              </div>
+              <div class="tool">
+                <span class="badge"
+                  ><svg class="ic"><use href="#i-chat" /></svg
+                ></span>
+                <span
+                  ><span class="n">카카오톡</span
+                  ><span class="w"
+                    >정한 게 대화에 묻힙니다. 위로 올리다 포기합니다.</span
+                  ></span
+                >
+              </div>
+              <div class="tool">
+                <span class="badge"
+                  ><svg class="ic"><use href="#i-note" /></svg
+                ></span>
+                <span
+                  ><span class="n">메모장</span
+                  ><span class="w"
+                    >상대가 못 봅니다. 둘이 다르게 기억합니다.</span
+                  ></span
+                >
+              </div>
+            </div>
+            <div>
+              <p class="col-cap">여기서 쓰는 것</p>
+              <div class="one">
+                <p class="brand">
+                  <i aria-hidden="true"></i><b>웨딩 플랜트</b>
+                </p>
+                <p class="r">
+                  <span class="badge"
+                    ><svg class="ic"><use href="#i-cal" /></svg
+                  ></span>
+                  <span
+                    ><span class="n">일정</span
+                    ><span class="w"
+                      >월별 칸이 이미 있습니다. 날짜가 없는 일도 자리를
+                      차지합니다.</span
+                    ></span
+                  >
+                </p>
+                <p class="r">
+                  <span class="badge"
+                    ><svg class="ic"><use href="#i-wallet" /></svg
+                  ></span>
+                  <span
+                    ><span class="n">예산</span
+                    ><span class="w"
+                      >쓴 돈과 쓸 돈이 갈려 있어 남은 금액이 수식 없이
+                      나옵니다.</span
+                    ></span
+                  >
+                </p>
+                <p class="r">
+                  <span class="badge"
+                    ><svg class="ic"><use href="#i-msgs" /></svg
+                  ></span>
+                  <span
+                    ><span class="n">대화</span
+                    ><span class="w"
+                      >둘만의 방이 따로 열려서, 정한 건 카드로 남습니다.</span
+                    ></span
+                  >
+                </p>
+                <p class="r">
+                  <span class="badge"
+                    ><svg class="ic"><use href="#i-trend" /></svg
+                  ></span>
+                  <span
+                    ><span class="n">시세</span
+                    ><span class="w"
+                      >먼저 끝낸 사람들의 실제 지출. 표를 만들 필요가
+                      없습니다.</span
+                    ></span
+                  >
+                </p>
+              </div>
+            </div>
+          </div>
+          <p class="note">
+            노션이 나쁘다는 얘기가 아닙니다. 노션은 무엇이든 만들 수 있고,
+            그래서 만들어야 합니다. 결혼 준비에 쓸 시간을 도구 만드는 데 쓰지
+            않아도 된다는 뜻입니다.
+          </p>
+
+          <div class="plats">
+            <span class="plat"
+              ><svg class="ic"><use href="#i-phone" /></svg>안드로이드 앱</span
+            >
+            <span class="plat"
+              ><svg class="ic"><use href="#i-globe" /></svg>웹</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="finale" id="start">
+        <div class="wrap">
+          <h2>방금 만진 게<br />실제 화면입니다</h2>
+          <p>이름 · 날짜 · 예산 세 가지만 물어봅니다.</p>
+          <a class="cta" href="#start">카카오로 시작하기</a>
+          <a class="sub-cta" href="#start">로그인 없이 둘러보기</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p class="line">
+          <b>웨딩 플랜트</b>
+          <a href="/privacy">개인정보처리방침</a>
+          <span>seoulmomenttw@gmail.com</span>
+        </p>
+        <p class="line">예산 · 일정 · 대화 · 시세를 한 곳에. 둘이 같이요.</p>
+      </div>
+    </footer>
+
+    <script>
+      /*
+  체크 → 숫자 반영. 이 시안의 요점이라 JS 를 쓴다(다른 시안은 0줄).
+  규칙: 체크는 "예정 → 사용" 으로 옮기는 것이다. 남은 예산(자본 - 예정 - 사용)은
+  그대로고, 막대에서 회색(예정)이 분홍(사용)으로 넘어간다 — 앱의 실제 계산과 같다.
+  스크립트가 없어도 체크박스는 동작하고 화면은 초기값으로 읽힌다.
+*/
+      (function () {
+        var root = document.getElementById("demo");
+        if (!root) return;
+        var TOTAL = 4200,
+          USED0 = 1600,
+          PLAN0 = 1200;
+        var boxes = [].slice.call(
+          root.querySelectorAll('input[type="checkbox"]'),
+        );
+        var fmt = function (n) {
+          return n.toLocaleString("ko-KR");
+        };
+
+        function render() {
+          var moved = boxes.reduce(function (s, b) {
+            return s + (b.checked ? Number(b.dataset.cost || 0) : 0);
+          }, 0);
+          var used = USED0 + moved;
+          var plan = Math.max(0, PLAN0 - moved);
+          var remain = TOTAL - used - plan;
+          var done = boxes.filter(function (b) {
+            return b.checked;
+          }).length;
+
+          document
+            .querySelectorAll('[data-out="remain"]')
+            .forEach(function (el) {
+              el.textContent = fmt(remain);
+            });
+          document.querySelectorAll('[data-out="used"]').forEach(function (el) {
+            el.textContent = fmt(used);
+          });
+          document.querySelectorAll('[data-out="plan"]').forEach(function (el) {
+            el.textContent = fmt(plan);
+          });
+          document.querySelectorAll('[data-out="done"]').forEach(function (el) {
+            el.textContent = done;
+          });
+
+          var u = root.querySelector('[data-bar="used"]');
+          var p = root.querySelector('[data-bar="plan"]');
+          if (u) u.style.width = ((used / TOTAL) * 100).toFixed(1) + "%";
+          if (p) p.style.width = ((plan / TOTAL) * 100).toFixed(1) + "%";
+        }
+
+        boxes.forEach(function (b) {
+          b.addEventListener("change", render);
+        });
+        var reset = root.querySelector("[data-reset]");
+        if (reset)
+          reset.addEventListener("click", function () {
+            boxes.forEach(function (b) {
+              b.checked = false;
+            });
+            render();
+          });
+        render();
+      })();
+    </script>
+  </body>
+</html>

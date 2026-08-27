@@ -1,0 +1,2062 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>배우자 초대 · UX 시안 5</title>
+    <style>
+      /* Hallmark · macrostructure: Long Document · tone: playful-editorial · anchor hue: rose 350
+ * theme: in-project (wedding-plant tokens preserved) · enrichment: none — typography + drawn mockups
+ * pre-emit critique: P5 H5 E4 S5 R4 V4
+ */
+
+      /* ───────── fonts (프로젝트 실제 폰트) ───────── */
+      @font-face {
+        font-family: "Dunggeunmiso";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Dunggeunmiso";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmoneyRound";
+        src: url("../../public/font/woff2/TmoneyRoundWindRegular.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmoneyRoundEB";
+        src: url("../../public/font/woff2/TmoneyRoundWindExtraBold.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      /* ───────── tokens ───────── */
+      :root {
+        --font-display: "Dunggeunmiso", system-ui, sans-serif;
+        --font-body: "Dunggeunmiso", system-ui, sans-serif;
+        --font-num: "TmoneyRoundEB", "Dunggeunmiso", sans-serif;
+        --font-user: "TmoneyRound", "Dunggeunmiso", sans-serif;
+
+        --color-paper: oklch(98.2% 0.004 340);
+        --color-paper-2: oklch(100% 0 0);
+        --color-paper-3: oklch(97% 0.008 345);
+        --color-ink: oklch(19% 0.045 348);
+        --color-ink-2: oklch(46% 0.018 340);
+        --color-ink-3: oklch(64% 0.012 340);
+        --color-ink-4: oklch(76% 0.01 340);
+        --color-accent: oklch(62.5% 0.243 353);
+        --color-accent-soft: oklch(96.5% 0.022 353);
+        --color-accent-line: oklch(90% 0.045 353);
+        --color-rule: oklch(93.5% 0.01 345);
+        --color-rule-2: oklch(89% 0.016 345);
+        --color-dash: oklch(85% 0.012 345);
+        --color-good: oklch(58% 0.13 160);
+        --color-good-soft: oklch(96% 0.03 160);
+        --color-warn: oklch(62% 0.16 55);
+        --color-warn-soft: oklch(96.5% 0.04 70);
+        --color-bad: oklch(58% 0.2 22);
+        --color-bad-soft: oklch(96.5% 0.035 22);
+        --color-kakao: oklch(88% 0.16 96);
+        --color-kakao-ink: oklch(28% 0.05 80);
+        --color-focus: oklch(55% 0.2 353);
+
+        --space-2xs: 4px;
+        --space-xs: 8px;
+        --space-sm: 12px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 36px;
+        --space-2xl: 56px;
+        --space-3xl: 88px;
+
+        --text-display: clamp(2.6rem, 6.2vw, 4.6rem);
+        --text-h2: clamp(1.6rem, 3.2vw, 2.35rem);
+        --text-h3: 1.16rem;
+        --text-body: 1rem;
+        --text-sm: 0.875rem;
+        --text-xs: 0.78rem;
+        --text-2xs: 0.7rem;
+
+        --radius-sm: 8px;
+        --radius-md: 13px;
+        --radius-lg: 20px;
+        --radius-xl: 28px;
+        --rule-hair: 1px;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --dur-fast: 140ms;
+        --dur-mid: 240ms;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overflow-x: clip;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-size: var(--text-body);
+        line-height: 1.72;
+        -webkit-font-smoothing: antialiased;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-style: normal;
+        overflow-wrap: anywhere;
+        min-width: 0;
+        line-height: 1.22;
+        margin: 0;
+      }
+      p {
+        margin: 0;
+      }
+      a {
+        color: var(--color-accent);
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 3px;
+        border-radius: var(--radius-sm);
+      }
+
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 var(--space-lg);
+      }
+      .rule {
+        height: var(--rule-hair);
+        background: var(--color-rule);
+        border: 0;
+        margin: 0;
+      }
+
+      /* ───────── masthead ───────── */
+      .masthead {
+        padding: var(--space-2xl) 0 var(--space-xl);
+      }
+      .masthead .kicker {
+        font-size: var(--text-2xs);
+        letter-spacing: 0.16em;
+        color: var(--color-ink-3);
+        text-transform: uppercase;
+        margin-bottom: var(--space-md);
+      }
+      .masthead h1 {
+        font-size: var(--text-display);
+        letter-spacing: -0.035em;
+        max-width: 16ch;
+      }
+      .masthead h1 .hl {
+        color: var(--color-accent);
+      }
+      .masthead .lede {
+        margin-top: var(--space-lg);
+        max-width: 60ch;
+        font-size: 1.06rem;
+        color: var(--color-ink-2);
+      }
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-xs) var(--space-lg);
+        margin-top: var(--space-xl);
+        padding-top: var(--space-md);
+        border-top: var(--rule-hair) solid var(--color-rule);
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+      .meta-row b {
+        color: var(--color-ink-2);
+        font-weight: 700;
+      }
+
+      /* ───────── diagnosis ───────── */
+      .section {
+        padding: var(--space-2xl) 0;
+      }
+      .sec-head {
+        margin-bottom: var(--space-xl);
+      }
+      .sec-head h2 {
+        font-size: var(--text-h2);
+        letter-spacing: -0.03em;
+      }
+      .sec-head p {
+        margin-top: var(--space-sm);
+        color: var(--color-ink-2);
+        max-width: 56ch;
+      }
+
+      .findings {
+        display: grid;
+        gap: var(--space-md);
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+      }
+      .finding {
+        background: var(--color-paper-2);
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+      }
+      .finding h3 {
+        font-size: var(--text-h3);
+        letter-spacing: -0.015em;
+      }
+      .finding p {
+        margin-top: var(--space-xs);
+        font-size: var(--text-sm);
+        color: var(--color-ink-2);
+      }
+      .finding code {
+        display: inline-block;
+        margin-top: var(--space-sm);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+        background: var(--color-paper-3);
+        padding: 2px 7px;
+        border-radius: 6px;
+        overflow-wrap: anywhere;
+      }
+
+      .thesis {
+        margin-top: var(--space-2xl);
+        padding: var(--space-xl);
+        background: var(--color-ink);
+        color: var(--color-paper);
+        border-radius: var(--radius-xl);
+      }
+      .thesis p {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.3rem, 3vw, 1.9rem);
+        line-height: 1.4;
+        letter-spacing: -0.02em;
+        max-width: 26ch;
+      }
+      .thesis span {
+        color: var(--color-accent-line);
+      }
+      .thesis small {
+        display: block;
+        margin-top: var(--space-md);
+        font-size: var(--text-sm);
+        color: var(--color-ink-4);
+        font-family: var(--font-body);
+        line-height: 1.7;
+        max-width: 52ch;
+      }
+
+      /* ───────── concept ───────── */
+      .concept {
+        padding: var(--space-3xl) 0 var(--space-2xl);
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .c-head {
+        display: flex;
+        gap: var(--space-lg);
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .c-mark {
+        flex: 0 0 auto;
+        width: 62px;
+        height: 62px;
+        border-radius: var(--radius-md);
+        display: grid;
+        place-items: center;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.8rem;
+        border: var(--rule-hair) solid var(--color-accent-line);
+      }
+      .c-title {
+        flex: 1 1 320px;
+        min-width: 0;
+      }
+      .c-title h2 {
+        font-size: var(--text-h2);
+        letter-spacing: -0.03em;
+      }
+      .c-title .sub {
+        margin-top: var(--space-xs);
+        color: var(--color-accent);
+        font-size: var(--text-sm);
+        font-weight: 700;
+        font-family: var(--font-display);
+      }
+      .c-title .desc {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        max-width: 62ch;
+      }
+
+      .c-body {
+        margin-top: var(--space-xl);
+        display: grid;
+        gap: var(--space-xl);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 1000px) {
+        .c-body {
+          grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+          gap: var(--space-2xl);
+        }
+      }
+
+      /* mockup figure */
+      figure {
+        margin: 0;
+      }
+      .shots {
+        display: flex;
+        gap: var(--space-md);
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .shot {
+        flex: 1 1 300px;
+        min-width: 0;
+        max-width: 100%;
+      }
+      .shot-cap {
+        font-size: var(--text-2xs);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--color-ink-3);
+        margin-bottom: var(--space-xs);
+      }
+      .screen {
+        background: var(--color-paper-2);
+        border: var(--rule-hair) solid var(--color-rule-2);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        font-size: var(--text-xs);
+        line-height: 1.5;
+      }
+      .screen.wide {
+        width: 100%;
+      }
+
+      /* generic screen atoms */
+      .s-pad {
+        padding: 14px;
+      }
+      .s-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 14px;
+        border-bottom: var(--rule-hair) solid var(--color-rule);
+      }
+      .s-title {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--color-ink);
+        letter-spacing: -0.02em;
+      }
+      .s-sub {
+        color: var(--color-ink-3);
+        font-size: var(--text-2xs);
+      }
+      .s-muted {
+        color: var(--color-ink-3);
+      }
+      .s-x {
+        margin-left: auto;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--color-paper-3);
+        display: grid;
+        place-items: center;
+        color: var(--color-ink-3);
+        font-size: 0.8rem;
+      }
+      .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 44px;
+        border-radius: var(--radius-md);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.85rem;
+        letter-spacing: -0.01em;
+      }
+      .btn-primary {
+        background: var(--color-accent);
+        color: var(--color-paper-2);
+        box-shadow: 0 8px 20px -10px oklch(62.5% 0.243 353 / 0.8);
+      }
+      .btn-ghost {
+        background: var(--color-paper-2);
+        color: var(--color-ink-2);
+        border: var(--rule-hair) solid var(--color-rule-2);
+      }
+      .btn-kakao {
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+      }
+      .btn-sm {
+        height: 32px;
+        font-size: var(--text-2xs);
+        padding: 0 12px;
+        border-radius: 9px;
+      }
+      .avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+        font-weight: 700;
+        font-size: var(--text-2xs);
+        border: 2px solid var(--color-paper-2);
+      }
+      .avatar.dash {
+        background: transparent;
+        border: 1.5px dashed var(--color-dash);
+        color: var(--color-ink-4);
+      }
+      .avatar.lg {
+        width: 44px;
+        height: 44px;
+        font-size: 0.85rem;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: var(--text-2xs);
+        font-weight: 700;
+        font-family: var(--font-display);
+      }
+      .pill-accent {
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+      }
+      .pill-muted {
+        background: var(--color-paper-3);
+        color: var(--color-ink-3);
+      }
+      .pill-good {
+        background: var(--color-good-soft);
+        color: var(--color-good);
+      }
+      .pill-warn {
+        background: var(--color-warn-soft);
+        color: var(--color-warn);
+      }
+      .card-in {
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-md);
+        padding: 12px;
+      }
+      .dashbox {
+        border: 1.5px dashed var(--color-dash);
+        border-radius: var(--radius-md);
+        padding: 14px;
+        background: var(--color-paper-3);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .stack {
+        display: grid;
+        gap: 10px;
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 560px) {
+        .split {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      @media (max-width: 560px) {
+        .ob-split {
+          flex-direction: column;
+        }
+        .ob-split > div:first-child {
+          flex: 1 1 auto !important;
+          border-right: 0 !important;
+          border-bottom: var(--rule-hair) solid var(--color-rule);
+        }
+        .dash-split {
+          grid-template-columns: minmax(0, 1fr) !important;
+        }
+      }
+      .num {
+        font-family: var(--font-num);
+        letter-spacing: -0.03em;
+      }
+
+      /* notes column */
+      .notes h3 {
+        font-size: 0.95rem;
+        letter-spacing: -0.01em;
+        margin-bottom: var(--space-xs);
+      }
+      .notes h3 + * {
+        margin-top: 0;
+      }
+      .note-block {
+        margin-bottom: var(--space-lg);
+      }
+      .flow {
+        counter-reset: f;
+        display: grid;
+        gap: var(--space-xs);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .flow li {
+        counter-increment: f;
+        position: relative;
+        padding-left: 30px;
+        font-size: var(--text-sm);
+        color: var(--color-ink-2);
+      }
+      .flow li::before {
+        content: counter(f);
+        position: absolute;
+        left: 0;
+        top: 2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        background: var(--color-ink);
+        color: var(--color-paper);
+        display: grid;
+        place-items: center;
+        font-size: var(--text-2xs);
+        font-family: var(--font-display);
+        font-weight: 700;
+        line-height: 1;
+      }
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: var(--space-xs);
+      }
+      .tag {
+        font-size: var(--text-2xs);
+        padding: 4px 9px;
+        border-radius: 7px;
+        background: var(--color-paper-3);
+        color: var(--color-ink-2);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        overflow-wrap: anywhere;
+      }
+      .pro,
+      .con {
+        position: relative;
+        display: block;
+        padding-left: 20px;
+        font-size: var(--text-sm);
+        color: var(--color-ink-2);
+        margin-top: 6px;
+      }
+      .pro::before,
+      .con::before {
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-weight: 700;
+      }
+      .pro::before {
+        content: "＋";
+        color: var(--color-good);
+      }
+      .con::before {
+        content: "−";
+        color: var(--color-bad);
+      }
+
+      /* verdict table */
+      .tablewrap {
+        overflow-x: auto;
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        background: var(--color-paper-2);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 640px;
+        font-size: var(--text-sm);
+      }
+      th,
+      td {
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: var(--rule-hair) solid var(--color-rule);
+        vertical-align: top;
+      }
+      th {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+      td b {
+        font-family: var(--font-display);
+      }
+      .dots {
+        color: var(--color-accent);
+        letter-spacing: 2px;
+        font-size: 0.8rem;
+      }
+      .dots i {
+        color: var(--color-rule-2);
+        font-style: normal;
+      }
+
+      .recommend {
+        margin-top: var(--space-xl);
+        padding: var(--space-xl);
+        border-radius: var(--radius-xl);
+        background: var(--color-accent-soft);
+        border: var(--rule-hair) solid var(--color-accent-line);
+      }
+      .recommend h3 {
+        font-size: var(--text-h3);
+        color: var(--color-ink);
+      }
+      .recommend ol {
+        margin: var(--space-md) 0 0;
+        padding-left: 1.2em;
+        color: var(--color-ink-2);
+        font-size: var(--text-sm);
+      }
+      .recommend li {
+        margin-bottom: 6px;
+      }
+      .recommend li b {
+        color: var(--color-ink);
+      }
+
+      footer {
+        padding: var(--space-2xl) 0 var(--space-3xl);
+        color: var(--color-ink-3);
+        font-size: var(--text-xs);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="masthead">
+        <p class="kicker">Wedding Plant · 설계 시안</p>
+        <h1>
+          둘이 쓰는 앱을<br /><span class="hl">혼자 써도</span> 되게 만들었다
+        </h1>
+        <p class="lede">
+          이 제품의 메리트는 “신랑·신부가 같이”인데, 지금 앱은 배우자가 없어도
+          아무 데도 비지 않습니다. 비지 않으니 부를 이유가 없고, 부를 이유가
+          없으니 초대 UI가 아무리 예뻐도 눌리지 않습니다. 아래 다섯 시안은
+          <b>초대 버튼을 예쁘게 만드는 안이 아니라, 초대할 이유를 만드는 안</b
+          >입니다.
+        </p>
+        <div class="meta-row">
+          <span
+            ><b>대상</b> components/SharePlanModal.tsx · app/main/page.tsx ·
+            app/share/[shareCode]</span
+          >
+          <span><b>권한 모델</b> OWNER / SPOUSE / WRITE / READ</span>
+          <span><b>제약</b> 배우자는 방당 1명 · 먼저 들어온 사람이 배우자</span>
+        </div>
+      </header>
+
+      <hr class="rule" />
+
+      <!-- ══════════ 진단 ══════════ -->
+      <section class="section">
+        <div class="sec-head">
+          <h2>지금 무엇이 부실한가</h2>
+          <p>
+            “UI가 부실하다”는 감각의 실체를 여섯 개로 쪼갰습니다. 시안은 이 여섯
+            개를 각각 다른 방식으로 칩니다.
+          </p>
+        </div>
+
+        <div class="findings">
+          <div class="finding">
+            <h3>1 · 진입점이 사라진다</h3>
+            <p>
+              모바일에서 초대 버튼은 <b>멤버가 나 혼자일 때만</b> 점선
+              <b>＋</b> 원으로 뜹니다. 조언자 한 명만 들어와도 배우자를 부를
+              자리가 화면에서 사라집니다.
+            </p>
+            <code>app/main/page.tsx · roomMembers.length === 1</code>
+          </div>
+          <div class="finding">
+            <h3>2 · 프레임이 “공유”다</h3>
+            <p>
+              제목이 “플랜 공유하기”. 링크를 나눠 주는 일로 읽힙니다. 실제로
+              일어나는 일은 <b>공동 소유자를 세우는 일</b>인데 문서 공유
+              시트처럼 생겼습니다.
+            </p>
+            <code>components/SharePlanModal.tsx:184</code>
+          </div>
+          <div class="finding">
+            <h3>3 · 모달의 3분의 2가 광고다</h3>
+            <p>
+              실시간 소통 · 일정 공유 · 함께 키우는 재미 — 이미 앱을 쓰는
+              사람에게 앱을 소개합니다. 정작 필요한 “누가 들어와 있나”는 스크롤
+              아래에 있습니다.
+            </p>
+            <code>Benefits List — 3 cards</code>
+          </div>
+          <div class="finding">
+            <h3>4 · 받는 쪽 화면이 없다</h3>
+            <p>
+              카톡으로 날아가는 건 맨 URL. 눌러서 도착하면 <b>스피너 한 개</b>와
+              로그인 모달입니다. 누가 왜 불렀는지가 어디에도 없습니다 — 전환이
+              죽는 지점.
+            </p>
+            <code
+              >app/share/[shareCode]/page.tsx — 스피너 +
+              LoginRequiredModal</code
+            >
+          </div>
+          <div class="finding">
+            <h3>5 · 보낸 뒤가 없다</h3>
+            <p>
+              보냈는지 · 상대가 열었는지 · 아직 안 들어왔는지 알 수 없습니다. 안
+              들어오면 점선 원이 영원히 그대로라, 다시 보낼 계기가 생기지
+              않습니다.
+            </p>
+            <code>초대 상태 모델 없음</code>
+          </div>
+          <div class="finding">
+            <h3>6 · 언어가 관리자 언어다</h3>
+            <p>
+              <b>“배우자로” / “해제”</b>. 신랑·신부는 관리 대상이 아니라 이 앱의
+              주인공입니다. “현재 최대 1명까지 공유 가능”도 사용자가 알 필요
+              없는 내부 사정입니다.
+            </p>
+            <code>setSpouse() · 안내 뱃지</code>
+          </div>
+        </div>
+
+        <div class="thesis">
+          <p>초대는 기능이 아니라 <span>제품이 완성되는 조건</span>입니다.</p>
+          <small>
+            그래서 “초대 버튼을 크게”가 아니라 셋 중 하나를 골라야 합니다 —
+            <b>①</b> 시작할 때 못 지나가게 하거나(A), <b>②</b> 혼자면 화면이
+            비어 보이게 하거나(B·E), <b>③</b> 받는 사람이 거절하기 어렵게
+            만들거나(C). D는 그 위에 얹는 관리 화면입니다.
+          </small>
+        </div>
+      </section>
+
+      <!-- ══════════ 시안 A ══════════ -->
+      <section class="concept">
+        <div class="c-head">
+          <div class="c-mark">A</div>
+          <div class="c-title">
+            <h2>다섯 번째 질문</h2>
+            <p class="sub">온보딩 안으로 · 가장 센 강제 · 전환 최상</p>
+            <p class="desc">
+              날짜 · 예산 · 이름 다음, 약관 앞에 <b>“누구와 준비하세요?”</b> 한
+              단계를 넣습니다. 온보딩은 이미 “한 번에 하나씩 묻는” 연출이고 좌측
+              패널에 남은 단계가 보입니다 — 거기에 한 칸을 더하면 초대는
+              <b>기능이 아니라 설정값</b>이 됩니다. 건너뛸 수 있지만, 건너뛴
+              사실이 홈 상단에 남습니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="c-body">
+          <figure class="shots">
+            <div class="shot" style="flex: 1 1 100%">
+              <p class="shot-cap">온보딩 5/5 — ≥1024 (좌측 진행 패널 유지)</p>
+              <div class="screen wide">
+                <div class="ob-split" style="display: flex; min-height: 300px">
+                  <!-- left rail -->
+                  <div
+                    style="
+                      flex: 0 0 168px;
+                      border-right: var(--rule-hair) solid var(--color-rule);
+                      padding: 16px 14px;
+                      background: var(--color-paper-3);
+                    "
+                  >
+                    <div
+                      style="
+                        font-family: var(--font-display);
+                        font-weight: 700;
+                        color: var(--color-accent);
+                        font-size: 0.8rem;
+                        margin-bottom: 14px;
+                      "
+                    >
+                      웨딩플랜트
+                    </div>
+                    <div class="stack" style="gap: 9px">
+                      <div
+                        class="row s-muted"
+                        style="font-size: var(--text-2xs)"
+                      >
+                        <span
+                          style="
+                            width: 14px;
+                            height: 14px;
+                            border-radius: 50%;
+                            background: var(--color-good);
+                            color: #fff;
+                            display: grid;
+                            place-items: center;
+                            font-size: 8px;
+                          "
+                          >✓</span
+                        >결혼 날짜
+                      </div>
+                      <div
+                        class="row s-muted"
+                        style="font-size: var(--text-2xs)"
+                      >
+                        <span
+                          style="
+                            width: 14px;
+                            height: 14px;
+                            border-radius: 50%;
+                            background: var(--color-good);
+                            color: #fff;
+                            display: grid;
+                            place-items: center;
+                            font-size: 8px;
+                          "
+                          >✓</span
+                        >예산
+                      </div>
+                      <div
+                        class="row s-muted"
+                        style="font-size: var(--text-2xs)"
+                      >
+                        <span
+                          style="
+                            width: 14px;
+                            height: 14px;
+                            border-radius: 50%;
+                            background: var(--color-good);
+                            color: #fff;
+                            display: grid;
+                            place-items: center;
+                            font-size: 8px;
+                          "
+                          >✓</span
+                        >이름
+                      </div>
+                      <div
+                        class="row"
+                        style="
+                          font-size: var(--text-2xs);
+                          color: var(--color-accent);
+                          font-weight: 700;
+                        "
+                      >
+                        <span
+                          style="
+                            width: 14px;
+                            height: 14px;
+                            border-radius: 50%;
+                            background: var(--color-accent);
+                            color: #fff;
+                            display: grid;
+                            place-items: center;
+                            font-size: 8px;
+                          "
+                          >4</span
+                        >함께할 사람
+                      </div>
+                      <div
+                        class="row s-muted"
+                        style="font-size: var(--text-2xs)"
+                      >
+                        <span
+                          style="
+                            width: 14px;
+                            height: 14px;
+                            border-radius: 50%;
+                            border: 1.5px solid var(--color-dash);
+                          "
+                        ></span
+                        >약관 동의
+                      </div>
+                    </div>
+                    <div
+                      style="
+                        margin-top: 20px;
+                        height: 4px;
+                        border-radius: 999px;
+                        background: var(--color-rule-2);
+                      "
+                    >
+                      <div
+                        style="
+                          width: 80%;
+                          height: 100%;
+                          border-radius: 999px;
+                          background: var(--color-accent);
+                        "
+                      ></div>
+                    </div>
+                    <div class="s-sub" style="margin-top: 6px">4 / 5</div>
+                  </div>
+                  <!-- question -->
+                  <div
+                    style="
+                      flex: 1;
+                      padding: 26px 22px;
+                      display: flex;
+                      flex-direction: column;
+                      justify-content: center;
+                    "
+                  >
+                    <div class="s-title" style="font-size: 1.15rem">
+                      누구와 함께 준비하세요?
+                    </div>
+                    <div class="s-sub" style="margin-top: 6px">
+                      신랑·신부는 일정과 예산을 같이 고칠 수 있어요.
+                    </div>
+                    <div class="stack" style="margin-top: 16px">
+                      <div
+                        class="card-in"
+                        style="
+                          border-color: var(--color-accent);
+                          background: var(--color-accent-soft);
+                          display: flex;
+                          align-items: center;
+                          gap: 10px;
+                        "
+                      >
+                        <span
+                          class="avatar lg"
+                          style="background: var(--color-accent); color: #fff"
+                          >♥</span
+                        >
+                        <div style="flex: 1; min-width: 0">
+                          <div
+                            style="
+                              font-family: var(--font-display);
+                              font-weight: 700;
+                            "
+                          >
+                            신랑 · 신부를 부를게요
+                          </div>
+                          <div class="s-sub">
+                            카카오톡으로 초대장을 보냅니다
+                          </div>
+                        </div>
+                        <span class="pill pill-accent">선택됨</span>
+                      </div>
+                      <div
+                        class="card-in"
+                        style="display: flex; align-items: center; gap: 10px"
+                      >
+                        <span class="avatar lg dash">＋</span>
+                        <div style="flex: 1; min-width: 0">
+                          <div
+                            style="
+                              font-family: var(--font-display);
+                              font-weight: 700;
+                              color: var(--color-ink-2);
+                            "
+                          >
+                            혼자 먼저 둘러볼게요
+                          </div>
+                          <div class="s-sub">
+                            나중에 홈에서 언제든 부를 수 있어요
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="btn btn-kakao" style="margin-top: 16px">
+                      카카오톡으로 초대장 보내기
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="shot">
+              <p class="shot-cap">건너뛴 경우 — 홈 상단에 남는 띠</p>
+              <div class="screen">
+                <div class="s-pad">
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 10px;
+                      padding: 11px 12px;
+                      border-radius: var(--radius-md);
+                      background: var(--color-accent-soft);
+                      border: var(--rule-hair) solid var(--color-accent-line);
+                    "
+                  >
+                    <span class="avatar dash">＋</span>
+                    <div style="flex: 1; min-width: 0">
+                      <div
+                        style="
+                          font-family: var(--font-display);
+                          font-weight: 700;
+                          font-size: 0.82rem;
+                        "
+                      >
+                        아직 혼자 준비 중이에요
+                      </div>
+                      <div class="s-sub">
+                        신랑·신부를 부르면 예산과 일정을 같이 고칠 수 있어요
+                      </div>
+                    </div>
+                    <div class="btn btn-primary btn-sm">부르기</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </figure>
+
+          <div class="notes">
+            <div class="note-block">
+              <h3>흐름</h3>
+              <ol class="flow">
+                <li>온보딩 4단계 → “누구와 함께 준비하세요?”</li>
+                <li>
+                  ‘부를게요’ 선택 시 곧바로 카카오 공유 시트 (`?as=spouse`)
+                </li>
+                <li>‘혼자’ 선택도 정상 경로 — 이탈시키지 않는다</li>
+                <li>
+                  건너뛰면 홈 상단에 초대 띠가 남고, 배우자가 들어오면 사라진다
+                </li>
+              </ol>
+            </div>
+            <div class="note-block">
+              <h3>왜 되는가 / 리스크</h3>
+              <p class="pro">
+                가장 강한 노출. 온보딩 완주자 100%가 이 질문을 본다.
+              </p>
+              <p class="pro">
+                “설정값”으로 프레이밍돼 부탁이 아니라 절차로 읽힌다.
+              </p>
+              <p class="con">
+                온보딩이 4→5단계. 이탈률이 오를 수 있어
+                <b>스킵을 반드시 열어 둬야</b> 한다.
+              </p>
+              <p class="con">
+                이 시점의 사용자는 앱에 아직 아무것도 없다 — 보낼 “내용”이 빈
+                초대장이다.
+              </p>
+            </div>
+            <div class="note-block">
+              <h3>건드리는 곳</h3>
+              <div class="tags">
+                <span class="tag">app/setting/page.tsx (단계 추가)</span>
+                <span class="tag">scripts/onboarding.cjs (4→5단계)</span>
+                <span class="tag">HomeDashboard 상단 띠</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 시안 B ══════════ -->
+      <section class="concept">
+        <div class="c-head">
+          <div class="c-mark">B</div>
+          <div class="c-title">
+            <h2>빈 자리</h2>
+            <p class="sub">대시보드를 2인 구조로 · 강요 없음 · 상시 압력</p>
+            <p class="desc">
+              초대를 버튼에서 빼서 <b>화면의 구조 자체로</b> 옮깁니다. 홈은
+              처음부터 두 사람 자리로 그려지고, 한 자리가 비어 있습니다. 예산은
+              “혼자 정한 예산”이라 표시되고, 활동 패널과 커플 대화 카드는
+              “상대가 들어오면 채워지는 자리”로 남습니다. 아무도 재촉하지 않는데
+              계속 눈에 밟힙니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="c-body">
+          <figure class="shots">
+            <div class="shot" style="flex: 1 1 100%">
+              <p class="shot-cap">
+                홈 대시보드 헤더 — 두 자리 중 하나가 빈 상태
+              </p>
+              <div class="screen wide">
+                <div
+                  style="
+                    padding: 16px 18px;
+                    border-bottom: var(--rule-hair) solid var(--color-rule);
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <div style="display: flex; align-items: center">
+                    <span class="avatar lg" style="margin-right: -8px">지</span>
+                    <span class="avatar lg dash">＋</span>
+                  </div>
+                  <div style="flex: 1; min-width: 140px">
+                    <div class="s-title" style="font-size: 1.05rem">
+                      지현
+                      <span style="color: var(--color-ink-4); font-weight: 400"
+                        >· 아직 혼자</span
+                      >
+                    </div>
+                    <div class="s-sub">2026년 12월 31일 · 아모르하우스</div>
+                  </div>
+                  <div style="text-align: right">
+                    <div
+                      class="num"
+                      style="
+                        font-size: 1.9rem;
+                        color: var(--color-accent);
+                        line-height: 1;
+                      "
+                    >
+                      129
+                    </div>
+                    <div class="s-sub">일 남음</div>
+                  </div>
+                  <div class="btn btn-primary btn-sm" style="height: 34px">
+                    신랑·신부 부르기
+                  </div>
+                </div>
+                <div
+                  class="dash-split"
+                  style="
+                    display: grid;
+                    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+                    gap: 12px;
+                    padding: 14px;
+                  "
+                >
+                  <div class="card-in">
+                    <div class="s-sub">
+                      전체 예산
+                      <span class="pill pill-warn" style="margin-left: 4px"
+                        >혼자 정함</span
+                      >
+                    </div>
+                    <div class="num" style="font-size: 1.5rem; margin-top: 4px">
+                      4,200<span
+                        style="font-size: 0.8rem; color: var(--color-ink-3)"
+                        >만원</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        height: 10px;
+                        border-radius: 999px;
+                        background: var(--color-paper-3);
+                        margin-top: 10px;
+                        overflow: hidden;
+                        display: flex;
+                      "
+                    >
+                      <span
+                        style="width: 34%; background: var(--color-accent)"
+                      ></span>
+                      <span
+                        style="width: 22%; background: var(--color-rule-2)"
+                      ></span>
+                    </div>
+                    <div class="s-sub" style="margin-top: 8px">
+                      신랑·신부가 들어오면 예산 변경이 서로에게 기록돼요
+                    </div>
+                  </div>
+                  <div
+                    class="dashbox"
+                    style="
+                      display: flex;
+                      flex-direction: column;
+                      justify-content: center;
+                      text-align: center;
+                      gap: 6px;
+                    "
+                  >
+                    <span class="avatar dash" style="margin: 0 auto">♥</span>
+                    <div
+                      style="
+                        font-family: var(--font-display);
+                        font-weight: 700;
+                        font-size: 0.82rem;
+                        color: var(--color-ink-2);
+                      "
+                    >
+                      둘만의 대화
+                    </div>
+                    <div class="s-sub">
+                      신랑·신부를 부르면<br />여기에 커플 채팅방이 열려요
+                    </div>
+                    <div
+                      class="btn btn-ghost btn-sm"
+                      style="margin: 4px auto 0"
+                    >
+                      부르기
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="shot">
+              <p class="shot-cap">
+                활동 패널 — 빈 상태를 “혼자여서 비었다”로 다시 씀
+              </p>
+              <div class="screen">
+                <div class="s-pad">
+                  <div class="s-title" style="font-size: 0.9rem">최근 활동</div>
+                  <div
+                    class="dashbox"
+                    style="margin-top: 10px; text-align: center"
+                  >
+                    <div
+                      style="
+                        font-family: var(--font-display);
+                        font-weight: 700;
+                        font-size: 0.82rem;
+                        color: var(--color-ink-2);
+                      "
+                    >
+                      아직 나 혼자예요
+                    </div>
+                    <div class="s-sub" style="margin-top: 4px">
+                      누가 무엇을 정했는지 남는 자리예요.<br />신랑·신부가
+                      들어오면 채워집니다.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="shot">
+              <p class="shot-cap">일정 카드 — “누가 정했나” 열이 비어 있음</p>
+              <div class="screen">
+                <div class="s-pad stack">
+                  <div class="card-in row">
+                    <span class="avatar" style="width: 24px; height: 24px"
+                      >지</span
+                    >
+                    <div style="flex: 1; min-width: 0">
+                      <div
+                        style="
+                          font-family: var(--font-display);
+                          font-weight: 700;
+                          font-size: 0.82rem;
+                        "
+                      >
+                        스튜디오 촬영
+                      </div>
+                      <div class="s-sub">12월 4일 · 180만원</div>
+                    </div>
+                    <span class="pill pill-muted">나만 봄</span>
+                  </div>
+                  <div class="card-in row">
+                    <span class="avatar" style="width: 24px; height: 24px"
+                      >지</span
+                    >
+                    <div style="flex: 1; min-width: 0">
+                      <div
+                        style="
+                          font-family: var(--font-display);
+                          font-weight: 700;
+                          font-size: 0.82rem;
+                        "
+                      >
+                        예식장 계약
+                      </div>
+                      <div class="s-sub">1월 12일 · 1,200만원</div>
+                    </div>
+                    <span class="pill pill-muted">나만 봄</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </figure>
+
+          <div class="notes">
+            <div class="note-block">
+              <h3>흐름</h3>
+              <ol class="flow">
+                <li>홈이 항상 2인 슬롯으로 렌더 — 한 칸은 점선</li>
+                <li>“나만 봄 / 혼자 정함” 라벨이 데이터에 붙는다</li>
+                <li>어느 빈 자리를 눌러도 같은 초대 시트가 열린다</li>
+                <li>
+                  배우자 합류 시 라벨·점선이 전부 사라진다 —
+                  <b>보상이 눈에 보인다</b>
+                </li>
+              </ol>
+            </div>
+            <div class="note-block">
+              <h3>왜 되는가 / 리스크</h3>
+              <p class="pro">
+                모달을 안 열어도 “왜 불러야 하는지”가 화면에 이미 있다.
+              </p>
+              <p class="pro">
+                합류 후 화면이 실제로 채워져 초대의 보상이 즉시 체감된다.
+              </p>
+              <p class="con">
+                진짜 혼자 준비하는 사람에게 <b>계속 결핍을 들이민다</b>. “혼자
+                준비 중” 모드로 끌 수 있어야 한다.
+              </p>
+              <p class="con">
+                모바일 트리(`md:hidden`)와 대시보드 둘 다 손대야 해서 회귀
+                위험이 가장 크다.
+              </p>
+            </div>
+            <div class="note-block">
+              <h3>건드리는 곳</h3>
+              <div class="tags">
+                <span class="tag">app/components/HomeDashboard.tsx</span>
+                <span class="tag">app/components/ActivityPanel.tsx</span>
+                <span class="tag">app/main/page.tsx (모바일 헤더)</span>
+                <span class="tag">scripts/main-dashboard.cjs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 시안 C ══════════ -->
+      <section class="concept">
+        <div class="c-head">
+          <div class="c-mark">C</div>
+          <div class="c-title">
+            <h2>초대장</h2>
+            <p class="sub">받는 쪽을 고친다 · 브랜드 적합 · 도착 전환 최상</p>
+            <p class="desc">
+              초대를 “링크 공유”가 아니라 <b>청첩장 만들기</b>로 다시
+              정의합니다. 두 사람 이름과 결혼식 날짜, D-day가 박힌 카드를 만들고
+              그 카드를 보냅니다. 받는 사람의 도착 화면(<code
+                style="font-size: inherit"
+                >/share/[code]</code
+              >)도 같은 카드로 열립니다 — 지금은 <b>스피너 한 개</b>인
+              자리입니다. 보내는 화면보다
+              <b>받는 화면을 고치는 게 전환에 더 큽니다.</b>
+            </p>
+          </div>
+        </div>
+
+        <div class="c-body">
+          <figure class="shots">
+            <div class="shot">
+              <p class="shot-cap">보내는 화면 — 초대장 미리보기</p>
+              <div class="screen">
+                <div class="s-bar">
+                  <span class="s-title">신랑 · 신부 초대장</span
+                  ><span class="s-x">✕</span>
+                </div>
+                <div class="s-pad" style="background: var(--color-paper-3)">
+                  <div
+                    style="
+                      border-radius: var(--radius-lg);
+                      background: var(--color-paper-2);
+                      border: var(--rule-hair) solid var(--color-accent-line);
+                      padding: 20px 16px;
+                      text-align: center;
+                      box-shadow: 0 12px 28px -18px oklch(19% 0.045 348 / 0.5);
+                    "
+                  >
+                    <div class="s-sub" style="letter-spacing: 0.14em">
+                      WEDDING PLANT
+                    </div>
+                    <div
+                      style="
+                        font-family: var(--font-user);
+                        font-size: 1.25rem;
+                        margin-top: 10px;
+                        color: var(--color-ink);
+                      "
+                    >
+                      지현
+                      <span style="color: var(--color-accent)">♥</span> ______
+                    </div>
+                    <div class="s-sub" style="margin-top: 6px">
+                      2026년 12월 31일 · 아모르하우스
+                    </div>
+                    <div
+                      style="
+                        height: 1px;
+                        background: var(--color-rule);
+                        margin: 14px 0;
+                      "
+                    ></div>
+                    <div
+                      style="
+                        font-family: var(--font-display);
+                        font-weight: 700;
+                        font-size: 0.88rem;
+                        line-height: 1.6;
+                      "
+                    >
+                      결혼 준비, 같이 하자.<br />
+                      <span style="color: var(--color-accent)">D-129</span>부터
+                      함께할게.
+                    </div>
+                    <div class="s-sub" style="margin-top: 10px">
+                      지현님이 신랑·신부 자리로 초대했어요
+                    </div>
+                  </div>
+                  <div class="stack" style="margin-top: 14px">
+                    <div class="btn btn-kakao">카카오톡으로 보내기</div>
+                    <div class="btn btn-ghost">링크 복사</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="shot">
+              <p class="shot-cap">받는 화면 — /share/[code] (지금은 스피너)</p>
+              <div class="screen">
+                <div
+                  style="
+                    padding: 22px 16px;
+                    background: linear-gradient(
+                      180deg,
+                      var(--color-accent-soft),
+                      var(--color-paper-2)
+                    );
+                    text-align: center;
+                  "
+                >
+                  <span class="avatar lg" style="margin: 0 auto 10px">지</span>
+                  <div
+                    style="
+                      font-family: var(--font-display);
+                      font-weight: 700;
+                      font-size: 1rem;
+                      line-height: 1.5;
+                    "
+                  >
+                    지현님이<br /><span style="color: var(--color-accent)"
+                      >신랑 · 신부</span
+                    >
+                    자리로 초대했어요
+                  </div>
+                  <div class="s-sub" style="margin-top: 8px">
+                    2026년 12월 31일 · D-129
+                  </div>
+                </div>
+                <div class="s-pad stack">
+                  <div
+                    class="card-in"
+                    style="display: flex; gap: 10px; align-items: center"
+                  >
+                    <span class="pill pill-good">지금까지</span>
+                    <div class="s-sub" style="flex: 1">
+                      일정 <b class="num">12</b>개 · 예산
+                      <b class="num">4,200</b>만원이 정해져 있어요
+                    </div>
+                  </div>
+                  <div class="card-in stack" style="gap: 7px">
+                    <div class="row s-sub">
+                      <span style="color: var(--color-accent)">✓</span> 일정과
+                      예산을 같이 고칠 수 있어요
+                    </div>
+                    <div class="row s-sub">
+                      <span style="color: var(--color-accent)">✓</span> 둘만의
+                      대화방이 열려요
+                    </div>
+                    <div class="row s-sub">
+                      <span style="color: var(--color-accent)">✓</span> 서로
+                      무엇을 바꿨는지 남아요
+                    </div>
+                  </div>
+                  <div class="btn btn-kakao" style="margin-top: 2px">
+                    카카오로 시작하고 합류하기
+                  </div>
+                  <div class="s-sub" style="text-align: center">
+                    가입은 3초 · 지현님의 플랜에만 들어갑니다
+                  </div>
+                </div>
+              </div>
+            </div>
+          </figure>
+
+          <div class="notes">
+            <div class="note-block">
+              <h3>흐름</h3>
+              <ol class="flow">
+                <li>초대장 미리보기 — 이름·날짜·D-day가 이미 채워져 있음</li>
+                <li>
+                  카카오 공유 시 <b>OG 이미지가 그 초대장</b>이라 대화창에서
+                  카드로 보인다
+                </li>
+                <li>도착 화면이 초대자·역할·현재 진행 상황을 먼저 말한다</li>
+                <li>로그인 후 곧바로 SPOUSE 로 합류, 커플 채팅방 개설</li>
+              </ol>
+            </div>
+            <div class="note-block">
+              <h3>왜 되는가 / 리스크</h3>
+              <p class="pro">
+                지금 <b>가장 크게 새는 구멍</b>(스피너 도착 화면)을 직접 막는다.
+              </p>
+              <p class="pro">
+                카톡 대화방에서 맨 URL이 아니라 카드로 뜬다 — 열람률이 다르다.
+              </p>
+              <p class="pro">
+                청첩장이라는 형식이 이 제품의 브랜드와 정확히 맞는다.
+              </p>
+              <p class="con">
+                보내는 사람에게 새 압력을 만들지 않는다 —
+                <b>A나 B와 반드시 짝지어야</b> 한다.
+              </p>
+              <p class="con">
+                OG 이미지 동적 생성(`opengraph-image`) 작업이 붙는다.
+              </p>
+            </div>
+            <div class="note-block">
+              <h3>건드리는 곳</h3>
+              <div class="tags">
+                <span class="tag">app/share/[shareCode]/page.tsx (전면)</span>
+                <span class="tag"
+                  >app/share/[shareCode]/opengraph-image.tsx (신규)</span
+                >
+                <span class="tag"
+                  >GET /plan/room/share-preview (신규 · 공개)</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 시안 D ══════════ -->
+      <section class="concept">
+        <div class="c-head">
+          <div class="c-mark">D</div>
+          <div class="c-title">
+            <h2>멤버 센터</h2>
+            <p class="sub">모달 재설계 · 가장 안전 · 압력은 약함</p>
+            <p class="desc">
+              <code style="font-size: inherit">SharePlanModal</code> 에서 앱
+              자랑 3개를 걷어내고 <b>역할 선택 → 초대 → 상태 확인</b> 한
+              흐름으로 다시 짭니다. 역할이 링크에 실린다는 사실을 화면 맨 위에
+              두 장의 카드로 드러내고, 아래에 현재 멤버와
+              <b>초대 대기 상태</b>를 둡니다. “배우자로/해제” 같은 관리자 언어를
+              사람 말로 바꿉니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="c-body">
+          <figure class="shots">
+            <div class="shot" style="flex: 1 1 100%">
+              <p class="shot-cap">
+                재설계된 멤버 시트 — 역할 2카드 · 멤버 · 대기 상태
+              </p>
+              <div class="screen wide">
+                <div class="s-bar">
+                  <div>
+                    <div class="s-title">함께하는 사람</div>
+                    <div class="s-sub">
+                      신랑·신부 1명 · 함께 보는 사람 무제한
+                    </div>
+                  </div>
+                  <span class="s-x">✕</span>
+                </div>
+                <div class="s-pad">
+                  <div class="split">
+                    <div
+                      class="card-in"
+                      style="
+                        border-color: var(--color-accent-line);
+                        background: var(--color-accent-soft);
+                      "
+                    >
+                      <span
+                        class="avatar"
+                        style="background: var(--color-accent); color: #fff"
+                        >♥</span
+                      >
+                      <div
+                        style="
+                          font-family: var(--font-display);
+                          font-weight: 700;
+                          margin-top: 8px;
+                        "
+                      >
+                        신랑 · 신부
+                      </div>
+                      <div class="s-sub" style="margin-top: 3px">
+                        일정 · 예산을 같이 고치고, 둘만의 대화방이 열려요
+                      </div>
+                      <div
+                        class="btn btn-primary btn-sm"
+                        style="margin-top: 10px"
+                      >
+                        초대장 보내기
+                      </div>
+                    </div>
+                    <div class="card-in">
+                      <span class="avatar dash">👀</span>
+                      <div
+                        style="
+                          font-family: var(--font-display);
+                          font-weight: 700;
+                          margin-top: 8px;
+                        "
+                      >
+                        함께 보는 사람
+                      </div>
+                      <div class="s-sub" style="margin-top: 3px">
+                        엄마·친구처럼 봐 주는 사람. 대화만 할 수 있어요
+                      </div>
+                      <div
+                        class="btn btn-ghost btn-sm"
+                        style="margin-top: 10px"
+                      >
+                        링크 보내기
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="margin-top: 16px">
+                    <div
+                      class="s-sub"
+                      style="letter-spacing: 0.1em; text-transform: uppercase"
+                    >
+                      지금 함께하는 사람 2
+                    </div>
+                    <div class="stack" style="margin-top: 8px">
+                      <div class="card-in row">
+                        <span class="avatar">지</span>
+                        <div style="flex: 1; min-width: 0">
+                          <b style="font-family: var(--font-display)">지현</b>
+                          <span class="s-sub">나</span>
+                        </div>
+                        <span class="pill pill-muted">방장</span>
+                      </div>
+                      <div
+                        class="card-in row"
+                        style="
+                          border-color: var(--color-accent-line);
+                          background: var(--color-accent-soft);
+                        "
+                      >
+                        <span
+                          class="avatar"
+                          style="background: var(--color-accent); color: #fff"
+                          >민</span
+                        >
+                        <div style="flex: 1; min-width: 0">
+                          <b style="font-family: var(--font-display)">민수</b>
+                        </div>
+                        <span class="pill pill-accent">♥ 신랑 · 신부</span>
+                        <span
+                          class="s-sub"
+                          style="margin-left: 6px; text-decoration: underline"
+                          >바꾸기</span
+                        >
+                      </div>
+                      <div
+                        class="card-in row"
+                        style="
+                          border-style: dashed;
+                          background: var(--color-paper-3);
+                        "
+                      >
+                        <span class="avatar dash">＋</span>
+                        <div style="flex: 1; min-width: 0">
+                          <b
+                            style="
+                              font-family: var(--font-display);
+                              color: var(--color-ink-2);
+                            "
+                            >엄마</b
+                          >
+                          <span class="s-sub"
+                            >· 2일 전 초대함 · 아직 안 들어옴</span
+                          >
+                        </div>
+                        <span class="btn btn-ghost btn-sm">다시 보내기</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="s-sub" style="margin-top: 12px">
+                    신랑·신부는 한 명이에요. 바꾸면 지금 사람은 함께 보는 사람이
+                    됩니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </figure>
+
+          <div class="notes">
+            <div class="note-block">
+              <h3>흐름</h3>
+              <ol class="flow">
+                <li>
+                  열자마자 역할 두 장 — 링크가 역할을 지닌다는 사실이 보인다
+                </li>
+                <li>보낸 초대는 대기 행으로 남는다 (보냄 · 열람 · 미합류)</li>
+                <li>“다시 보내기”가 있어 두 번째 시도가 가능해진다</li>
+                <li>배우자 변경은 “바꾸기” 한 단어 + 결과 문장으로</li>
+              </ol>
+            </div>
+            <div class="note-block">
+              <h3>왜 되는가 / 리스크</h3>
+              <p class="pro">회귀 위험이 가장 낮다. 한 파일 안에서 끝난다.</p>
+              <p class="pro">
+                “보낸 뒤가 없다”(진단 5)를 유일하게 정면으로 푼다.
+              </p>
+              <p class="pro">현재 최대 1명 뱃지 같은 내부 사정을 걷어낸다.</p>
+              <p class="con">
+                <b>모달을 열어야만 보인다.</b> 안 여는 사람에게는 아무 변화가
+                없다 — 단독으로는 부족.
+              </p>
+              <p class="con">
+                초대 대기 상태를 실제로 표시하려면 백엔드에 초대 레코드가
+                필요하다.
+              </p>
+            </div>
+            <div class="note-block">
+              <h3>건드리는 곳</h3>
+              <div class="tags">
+                <span class="tag">components/SharePlanModal.tsx (전면)</span>
+                <span class="tag">plan_room_invite 테이블 (신규 · 선택)</span>
+                <span class="tag">scripts/room-permission-ui.cjs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 시안 E ══════════ -->
+      <section class="concept">
+        <div class="c-head">
+          <div class="c-mark">E</div>
+          <div class="c-title">
+            <h2>혼자로는 안 되는 순간</h2>
+            <p class="sub">맥락 프롬프트 · 전환율 최상 · 가장 위험</p>
+            <p class="desc">
+              초대를 한 자리에 몰지 않고, <b>혼자서는 결정할 수 없는 순간</b>에
+              끼워 넣습니다. 예산을 처음 넘겼을 때, 1,000만원 넘는 계약을 등록할
+              때, 커플 채팅 탭을 눌렀을 때. “초대하세요”가 아니라
+              <b>“이건 둘이 정해야죠”</b>라고 말합니다. 횟수 상한이 반드시
+              필요합니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="c-body">
+          <figure class="shots">
+            <div class="shot">
+              <p class="shot-cap">예산 초과 시점 — 예산 상세 인라인</p>
+              <div class="screen">
+                <div class="s-pad">
+                  <div
+                    class="card-in"
+                    style="
+                      border-color: var(--color-bad-soft);
+                      background: var(--color-bad-soft);
+                    "
+                  >
+                    <div class="row">
+                      <span style="color: var(--color-bad); font-weight: 700"
+                        >!</span
+                      >
+                      <b
+                        style="
+                          font-family: var(--font-display);
+                          font-size: 0.85rem;
+                        "
+                        >예산을 <span class="num">340</span>만원 넘었어요</b
+                      >
+                    </div>
+                    <div class="s-sub" style="margin-top: 6px">
+                      어디를 줄일지는 혼자 정하기 어려운 일이에요.<br />신랑·신부를
+                      부르면 같이 보면서 정할 수 있어요.
+                    </div>
+                    <div class="row" style="margin-top: 10px; gap: 8px">
+                      <div class="btn btn-primary btn-sm">신랑·신부 부르기</div>
+                      <div class="btn btn-ghost btn-sm">혼자 볼게요</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="shot">
+              <p class="shot-cap">고액 일정 저장 직후 — 인라인 확인</p>
+              <div class="screen">
+                <div class="s-pad">
+                  <div class="card-in row" style="gap: 10px">
+                    <span
+                      class="avatar"
+                      style="
+                        background: var(--color-good-soft);
+                        color: var(--color-good);
+                      "
+                      >✓</span
+                    >
+                    <div style="flex: 1; min-width: 0">
+                      <b
+                        style="
+                          font-family: var(--font-display);
+                          font-size: 0.85rem;
+                        "
+                        >예식장 계약 · 1,200만원 저장</b
+                      >
+                      <div class="s-sub" style="margin-top: 3px">
+                        이 금액, 상대도 알고 있나요?
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row" style="margin-top: 10px; gap: 8px">
+                    <div class="btn btn-primary btn-sm" style="flex: 1">
+                      같이 보게 부르기
+                    </div>
+                    <div class="btn btn-ghost btn-sm">닫기</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="shot">
+              <p class="shot-cap">커플 대화 탭 — 빈 상태가 곧 초대</p>
+              <div class="screen">
+                <div
+                  class="s-pad"
+                  style="text-align: center; padding: 26px 16px"
+                >
+                  <span class="avatar lg dash" style="margin: 0 auto">♥</span>
+                  <div
+                    style="
+                      font-family: var(--font-display);
+                      font-weight: 700;
+                      margin-top: 10px;
+                      font-size: 0.9rem;
+                    "
+                  >
+                    둘만의 대화방이 아직 없어요
+                  </div>
+                  <div class="s-sub" style="margin-top: 6px">
+                    신랑·신부가 들어오면<br />여기에 자동으로 열립니다
+                  </div>
+                  <div
+                    class="btn btn-primary btn-sm"
+                    style="
+                      margin: 12px auto 0;
+                      width: fit-content;
+                      padding: 0 16px;
+                    "
+                  >
+                    초대장 보내기
+                  </div>
+                </div>
+              </div>
+            </div>
+          </figure>
+
+          <div class="notes">
+            <div class="note-block">
+              <h3>흐름</h3>
+              <ol class="flow">
+                <li>트리거 3종 — 예산 초과 · 고액 등록 · 커플 대화 진입</li>
+                <li>“초대” 대신 그 순간의 <b>문제</b>를 먼저 말한다</li>
+                <li>거절 버튼(“혼자 볼게요”)을 항상 같이 낸다</li>
+                <li>
+                  <b>상한: 트리거당 1회, 전체 최대 3회, 거절 2회면 영구 중단</b>
+                </li>
+              </ol>
+            </div>
+            <div class="note-block">
+              <h3>왜 되는가 / 리스크</h3>
+              <p class="pro">
+                동기가 최고조인 순간에 묻는다 — 클릭률이 다른 안과 차원이
+                다르다.
+              </p>
+              <p class="pro">기존 화면에 얹는 방식이라 레이아웃 회귀가 없다.</p>
+              <p class="con">
+                상한이 없으면 <b>즉시 광고로 읽힌다.</b> 이 안의 성패는 전적으로
+                빈도 제어에 달렸다.
+              </p>
+              <p class="con">
+                “이 금액, 상대도 알고 있나요?”는 강한 문장이다 — 혼자 준비하는
+                사람에게 무례해질 수 있다.
+              </p>
+            </div>
+            <div class="note-block">
+              <h3>건드리는 곳</h3>
+              <div class="tags">
+                <span class="tag">app/budget-detail/page.tsx</span>
+                <span class="tag">app/add-plen/AddPlanView.tsx</span>
+                <span class="tag">app/plan-list/page.tsx</span>
+                <span class="tag">lib/invitePrompt.ts (신규 · 빈도 제어)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ 비교 ══════════ -->
+      <section
+        class="section"
+        style="border-top: var(--rule-hair) solid var(--color-rule)"
+      >
+        <div class="sec-head">
+          <h2>다섯을 나란히</h2>
+          <p>
+            노출은 “몇 명이 이 UI를 보는가”, 전환은 “본 사람 중 몇 명이 실제로
+            보내는가”, 위험은 회귀·거부감을 합친 값입니다.
+          </p>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>시안</th>
+                <th>고치는 진단</th>
+                <th>노출</th>
+                <th>전환</th>
+                <th>구현</th>
+                <th>위험</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>A</b> 다섯 번째 질문</td>
+                <td>①②</td>
+                <td><span class="dots">●●●●●</span></td>
+                <td>
+                  <span class="dots">●●●●<i>●</i></span>
+                </td>
+                <td>중</td>
+                <td>온보딩 이탈</td>
+              </tr>
+              <tr>
+                <td><b>B</b> 빈 자리</td>
+                <td>①⑥</td>
+                <td><span class="dots">●●●●●</span></td>
+                <td>
+                  <span class="dots">●●●<i>●●</i></span>
+                </td>
+                <td>대</td>
+                <td>회귀 · 결핍 피로</td>
+              </tr>
+              <tr>
+                <td><b>C</b> 초대장</td>
+                <td>④⑥</td>
+                <td>
+                  <span class="dots">●●<i>●●●</i></span>
+                </td>
+                <td><span class="dots">●●●●●</span></td>
+                <td>중</td>
+                <td>보내는 압력 없음</td>
+              </tr>
+              <tr>
+                <td><b>D</b> 멤버 센터</td>
+                <td>②③⑤⑥</td>
+                <td>
+                  <span class="dots">●●<i>●●●</i></span>
+                </td>
+                <td>
+                  <span class="dots">●●●<i>●●</i></span>
+                </td>
+                <td>소</td>
+                <td>낮음</td>
+              </tr>
+              <tr>
+                <td><b>E</b> 혼자로는 안 되는 순간</td>
+                <td>①</td>
+                <td>
+                  <span class="dots">●●●●<i>●</i></span>
+                </td>
+                <td><span class="dots">●●●●●</span></td>
+                <td>중</td>
+                <td>광고로 읽힘</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="recommend">
+          <h3>추천 — 하나를 고르지 말고 C + A 를 먼저</h3>
+          <ol>
+            <li>
+              <b>C 초대장을 1순위로.</b> 지금 가장 크게 새는 곳은 보내는 화면이
+              아니라 <b>받는 화면</b>입니다. 스피너에 도착하는 사람은 무엇을
+              수락하는지 모른 채 로그인 모달을 봅니다. 다른 어떤 안을 붙여도 이
+              구멍을 지나가야 합니다.
+            </li>
+            <li>
+              <b>A 다섯 번째 질문을 2순위로.</b> C가 “받는 쪽”을 고치니, 보내는
+              압력은 A가 만듭니다. 노출 100% + 스킵 허용이라 리스크 대비 효율이
+              가장 좋습니다.
+            </li>
+            <li>
+              <b>D 멤버 센터는 A·C 작업 중 자연히 따라옵니다.</b> 초대장을
+              만들면 그 시트가 곧 새 SharePlanModal 입니다.
+            </li>
+            <li>
+              <b>B와 E는 1차 지표를 본 뒤에.</b> 둘 다 코어 화면의 톤을 바꾸는
+              안이라, 초대 전환이 여전히 낮을 때 꺼내는 카드입니다. B는 상시
+              압력, E는 순간 압력 — 동시에 넣으면 앱이 계속 조르는 앱이 됩니다.
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <footer>
+        시안 문서 · 코드는 아직 수정하지 않았습니다. 방향을 고르면 그 시안만
+        구현합니다.
+      </footer>
+    </div>
+  </body>
+</html>

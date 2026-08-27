@@ -10,6 +10,7 @@ import { useNotification } from "../contexts/NotificationContext";
 import ActivityPanel from "./ActivityPanel";
 import CoupleChatBadge, { sortCoupleFirst } from "./CoupleChatBadge";
 import PlanTaskCardBody, { PlanTaskItem } from "./PlanTaskCard";
+import SoloPlanBanner, { hasSpouse } from "./SoloPlanBanner";
 
 /** GET /plan/user/amount/category-chart 항목 */
 interface CategoryChartItem {
@@ -59,8 +60,15 @@ interface HomeDashboardProps {
   onOpenGuide: () => void;
   /** 참여 멤버 보기 · 신랑·신부 지정. 공유 모달을 연다 */
   onOpenMembers: () => void;
-  /** 헤더 아바타에 쓸 멤버 목록 */
-  members?: { planUserId: string; name: string; image: string | null }[];
+  /** 헤더 아바타에 쓸 멤버 목록. `permission` 으로 배우자 유무를 본다 */
+  members?: {
+    planUserId: string;
+    name: string;
+    image: string | null;
+    permission?: string | null;
+  }[];
+  /** 아직 배우자가 없을 때 상단에 초대 띠를 낸다 (게스트·공유 뷰는 false) */
+  showSoloBanner?: boolean;
   /**
    * 값이 바뀌면 일정·예산을 다시 받는다. 옆 pane 에서 플랜을 저장한 뒤
    * 부모가 올린다 — 통째로 remount 하면 화면이 한 번 깜빡인다.
@@ -130,6 +138,7 @@ export default function HomeDashboard({
   onOpenGuide,
   onOpenMembers,
   members = [],
+  showSoloBanner = false,
   refreshToken = 0,
   narrow = false,
   onToggle,
@@ -408,6 +417,13 @@ export default function HomeDashboard({
         예산 패널이 700px 로 늘어나면 라벨과 금액 사이가 허옇게 벌어진다.
       */}
       <div className="mx-auto min-h-0 w-full max-w-[1800px] flex-1 overflow-y-auto px-8 pb-8 pt-6">
+        {/*
+          온보딩에서 초대를 건너뛴 자리. 배우자가 들어오면 사라진다.
+          할 일 스트립 위에 둬야 처음 보는 화면에서 눈에 걸린다.
+        */}
+        {showSoloBanner && !hasSpouse(members) && (
+          <SoloPlanBanner onInvite={onOpenMembers} className="mb-6" />
+        )}
         {/*
           이번 달 할 일 — 보드의 이번 달 컬럼을 잘라 온 자리.
           비어 있어도 접지 않는다. 이 줄이 사라지면 "이번 달에 뭘 넣지"

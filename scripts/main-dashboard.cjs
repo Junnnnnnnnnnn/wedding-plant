@@ -10,6 +10,10 @@
  *
  * 준비:  npm run dev / npm install --no-save puppeteer-core
  * 실행:  node scripts/main-dashboard.cjs
+ *        NO_SPOUSE=1 node scripts/main-dashboard.cjs
+ *          → 배우자가 아직 없는 사용자. 상단에 "아직 혼자 준비 중이에요"
+ *            초대 띠가 폰·대시보드 양쪽에 떠야 한다. 붙이지 않으면 온보딩에서
+ *            초대를 건너뛴 사람이 다시 부를 자리가 없다.
  *
  * 목 응답에는 CORS 헤더와 OPTIONS 프리플라이트 응답이 반드시 필요하다.
  * API 호스트로 가는 WebSocket 도 막는다 (plan-list-panes.cjs 주석 참고).
@@ -22,6 +26,8 @@ const API = "https://api.seoulmoment.com.tw";
 const ORIGIN = "http://localhost:3000";
 /** true 면 목이 8월 일정을 빼서 "이번 달 할 일"이 빈 상태를 만든다 */
 let emptyThisMonth = false;
+/** true 면 방장 혼자다 — 초대 띠가 떠야 하는 상태 */
+const NO_SPOUSE = !!process.env.NO_SPOUSE;
 
 const OUT = process.env.SHOT_DIR || __dirname;
 
@@ -169,26 +175,35 @@ function installMocks(page) {
             roomId: null,
             hasSeenMainGuide: true,
             hasSeenBudgetGuide: true,
-            members: [
-              {
-                planUserId: "me-1",
-                name: "김지수",
-                image: null,
-                permission: "OWNER",
-              },
-              {
-                planUserId: "u-2",
-                name: "박현우",
-                image: null,
-                permission: "SPOUSE",
-              },
-              {
-                planUserId: "u-3",
-                name: "엄마",
-                image: null,
-                permission: "READ",
-              },
-            ],
+            members: NO_SPOUSE
+              ? [
+                  {
+                    planUserId: "me-1",
+                    name: "김지수",
+                    image: null,
+                    permission: "OWNER",
+                  },
+                ]
+              : [
+                  {
+                    planUserId: "me-1",
+                    name: "김지수",
+                    image: null,
+                    permission: "OWNER",
+                  },
+                  {
+                    planUserId: "u-2",
+                    name: "박현우",
+                    image: null,
+                    permission: "SPOUSE",
+                  },
+                  {
+                    planUserId: "u-3",
+                    name: "엄마",
+                    image: null,
+                    permission: "READ",
+                  },
+                ],
             chatRooms: [
               {
                 id: 101,
@@ -398,7 +413,9 @@ function installMocks(page) {
       const status = new URL(url).searchParams.get("status");
       const list = SCHEDULES.filter(
         (s) => s.status !== "DELETE" && (!status || s.status === status),
-      ).filter((s) => !emptyThisMonth || !(s.startDate || "").startsWith("2026-08"));
+      ).filter(
+        (s) => !emptyThisMonth || !(s.startDate || "").startsWith("2026-08"),
+      );
       req.respond(ok({ list, total: list.length })).catch(() => {});
       return;
     }
@@ -458,6 +475,9 @@ function installMocks(page) {
   await page.setRequestInterception(true);
   installMocks(page);
 
+  /** 초대 띠 검사 결과 */
+  const bannerProblems = [];
+
   for (const w of [375, 768, 1024, 1280, 1440, 2327]) {
     await page.setViewport({ width: w, height: 900, deviceScaleFactor: 1.5 });
     await page.goto(`${ORIGIN}/main`, {
@@ -483,6 +503,40 @@ function installMocks(page) {
         scrollable ? scrollable.canScroll : "?"
       }`,
     );
+
+    /*
+      초대 띠. 배우자가 없으면 폰·대시보드 어느 폭에서도 하나는 보여야 하고,
+      배우자가 있으면 어디에도 없어야 한다. 폰 트리와 대시보드가 각각
+      렌더하므로(`md:hidden`) 둘 다 DOM 에 있고, 보이는 쪽만 센다.
+    */
+    const banner = await page.evaluate(() => {
+      const hit = [...document.querySelectorAll("p")].filter(
+        (x) => x.textContent.trim() === "아직 혼자 준비 중이에요",
+      );
+      const visible = hit.filter((x) => {
+        const r = x.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
+      const btn = visible[0]
+        ?.closest("div")
+        ?.parentElement?.querySelector("button");
+      return {
+        inDom: hit.length,
+        visible: visible.length,
+        cta: btn?.textContent.trim() ?? null,
+      };
+    });
+    console.log(`  초대 띠 ${w}`, JSON.stringify(banner));
+    if (NO_SPOUSE) {
+      if (banner.visible !== 1)
+        bannerProblems.push(
+          `${w}: 배우자가 없는데 초대 띠가 ${banner.visible}개 보인다`,
+        );
+      if (banner.cta !== "부르기")
+        bannerProblems.push(`${w}: 초대 띠의 버튼이 "${banner.cta}"`);
+    } else if (banner.inDom !== 0) {
+      bannerProblems.push(`${w}: 배우자가 있는데 초대 띠가 떴다`);
+    }
   }
 
   // 완료 토글이 예산·카테고리에 바로 반영되는지 (새로고침 없이)
@@ -891,6 +945,18 @@ function installMocks(page) {
       // 대상이 화면 밖이면 오버레이가 smooth 로 끌어온다. 그게 끝난 뒤 재야 한다
       await wait(1100);
     }
+  }
+
+  if (bannerProblems.length) {
+    console.log("초대 띠 문제:");
+    bannerProblems.forEach((x) => console.log(" -", x));
+    process.exitCode = 1;
+  } else {
+    console.log(
+      NO_SPOUSE
+        ? "초대 띠 이상 없음 (혼자)"
+        : "초대 띠 이상 없음 (배우자 있음)",
+    );
   }
 
   if (guideProblems.length) {

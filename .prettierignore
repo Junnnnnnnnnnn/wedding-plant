@@ -10,3 +10,9 @@ node_modules/
 
 # 락파일
 package-lock.json
+
+# 디자인 시안. 손으로 맞춘 CSS·인라인 SVG 라 포맷터가 건드리면 원본과 어긋난다.
+docs/concepts/
+
+# 손으로 맞춘 문서·하네스. 포맷터가 통째로 들쑤신다.
+docs/*.html

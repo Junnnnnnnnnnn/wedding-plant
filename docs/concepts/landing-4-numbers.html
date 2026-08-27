@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>웨딩 플랜트 — 시안 4 · 결혼의 숫자</title>
+    <style>
+      /* Hallmark · macrostructure: Stat-Led · tone: austere → soft · anchor hue: rose 353 on dark paper
+ * nav: N1b canonical three-section · footer: Ft8 tall statement · enrichment: none
+ * 다른 시안과 paper band 로 갈린다 (dark) — 다양성 축을 색이 아니라 밝기로 잡았다
+ * pre-emit critique: P5 H5 E4 S5 R5 V5
+ */
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmnEB";
+        src: url("../../public/font/woff2/TmoneyRoundWindExtraBold.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Dgm", system-ui, sans-serif;
+        --font-body: "Dgm", system-ui, sans-serif;
+        --font-num: "TmnEB", "Dgm", sans-serif;
+
+        --color-paper: oklch(17.5% 0.028 330);
+        --color-paper-2: oklch(22.5% 0.032 330);
+        --color-paper-3: oklch(28% 0.034 330);
+        --color-ink: oklch(97% 0.006 330);
+        --color-ink-2: oklch(80% 0.014 330);
+        --color-ink-3: oklch(64% 0.016 330);
+        --color-ink-4: oklch(48% 0.018 330);
+        --color-accent: oklch(72% 0.19 355);
+        --color-accent-2: oklch(84% 0.12 355);
+        --color-accent-dim: oklch(30% 0.07 350);
+        --color-rule: oklch(29% 0.026 330);
+        --color-rule-2: oklch(36% 0.028 330);
+        --color-warn: oklch(72% 0.15 60);
+        --color-light: oklch(98.5% 0.004 340);
+        --color-light-ink: oklch(19% 0.045 348);
+        --color-light-rule: oklch(92% 0.008 345);
+        --color-light-tint: oklch(96.8% 0.02 353);
+        --color-kakao: oklch(88% 0.16 96);
+        --color-kakao-ink: oklch(28% 0.05 80);
+        --color-focus: oklch(80% 0.14 355);
+
+        --space-2xs: 4px;
+        --space-xs: 8px;
+        --space-sm: 12px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 40px;
+        --space-2xl: 72px;
+        --space-3xl: 112px;
+
+        /* 3열 카드 안에 "6,300만원" 이 한 줄로 들어가야 한다.
+     8.5rem 에서는 1280 에서 "6,3 / 00만원" 으로 깨졌다. */
+        --text-stat: clamp(2.6rem, 6.4vw, 4.6rem);
+        --text-hero: clamp(1.9rem, 5.4vw, 3.6rem);
+        --text-h2: clamp(1.5rem, 3.4vw, 2.3rem);
+        --text-lead: clamp(0.96rem, 1.6vw, 1.12rem);
+        --text-sm: 0.875rem;
+        --text-xs: 0.79rem;
+        --text-2xs: 0.71rem;
+
+        --radius-sm: 10px;
+        --radius-md: 14px;
+        --radius-lg: 20px;
+        --radius-xl: 28px;
+        --rule-hair: 1px;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --dur-mid: 400ms;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overflow-x: clip;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-size: 1rem;
+        line-height: 1.76;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-style: normal;
+        margin: 0;
+        line-height: 1.16;
+        letter-spacing: -0.04em;
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      p {
+        margin: 0;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 3px;
+        border-radius: var(--radius-sm);
+      }
+      .num {
+        font-family: var(--font-num);
+        letter-spacing: -0.055em;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 var(--space-lg);
+      }
+
+      /* ── N1b canonical three-section nav ── */
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        gap: var(--space-lg);
+        padding: 14px var(--space-lg);
+        background: oklch(17.5% 0.028 330 / 0.86);
+        backdrop-filter: blur(12px);
+        border-bottom: var(--rule-hair) solid var(--color-rule);
+      }
+      .nav .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: none;
+      }
+      .nav .brand i {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        background: var(--color-accent);
+        flex: none;
+      }
+      .nav b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.03em;
+      }
+      .nav .links {
+        display: none;
+        gap: var(--space-lg);
+        margin-inline: auto;
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+      @media (min-width: 720px) {
+        .nav .links {
+          display: flex;
+        }
+      }
+      .nav .links a:hover {
+        color: var(--color-ink);
+      }
+      .nav .go {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        height: 34px;
+        padding: 0 16px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-xs);
+        white-space: nowrap;
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      @media (min-width: 720px) {
+        .nav .go {
+          margin-left: 0;
+        }
+      }
+      .nav .go:hover {
+        transform: translateY(-1px);
+      }
+      .nav .go:active {
+        transform: scale(0.97);
+      }
+
+      /* ── hero ── */
+      .hero {
+        padding: var(--space-3xl) 0 var(--space-2xl);
+      }
+      .hero h1 {
+        font-size: var(--text-hero);
+        max-width: 19ch;
+      }
+      .hero h1 em {
+        font-style: normal;
+        color: var(--color-accent);
+      }
+      .hero p {
+        margin-top: var(--space-lg);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 40ch;
+      }
+
+      /* ── 숫자판 ── */
+      .stats {
+        margin-top: var(--space-2xl);
+        display: grid;
+        gap: var(--space-md);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 720px) {
+        .stats {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      .stat {
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        background: var(--color-paper-2);
+        display: flex;
+        flex-direction: column;
+      }
+      .stat .n {
+        font-family: var(--font-num);
+        font-size: var(--text-stat);
+        line-height: 0.92;
+        color: var(--color-accent);
+        letter-spacing: -0.06em;
+        white-space: nowrap;
+      }
+      .stat .n small {
+        font-size: 0.24em;
+        color: var(--color-ink-3);
+        font-family: var(--font-body);
+        letter-spacing: 0;
+        margin-left: 0.15em;
+      }
+      .stat .cap {
+        margin-top: var(--space-md);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.98rem;
+      }
+      .stat .src {
+        margin-top: auto;
+        padding-top: var(--space-md);
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      /* 출처를 못 붙이면 숫자를 쓰지 않는다 — 자리는 남기되 비운다 */
+      .stat.empty {
+        border-style: dashed;
+        border-color: var(--color-rule-2);
+        background: transparent;
+      }
+      .stat.empty .n {
+        color: var(--color-ink-4);
+      }
+      .stat.empty .src {
+        color: var(--color-warn);
+        text-decoration: none;
+      }
+
+      .disclaimer {
+        margin-top: var(--space-lg);
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+        line-height: 1.7;
+        max-width: 52ch;
+      }
+
+      /* ── 전환 ── */
+      .turn {
+        padding: var(--space-2xl) 0;
+        border-top: var(--rule-hair) solid var(--color-rule);
+        border-bottom: var(--rule-hair) solid var(--color-rule);
+        margin-top: var(--space-2xl);
+      }
+      .turn h2 {
+        font-size: var(--text-h2);
+        max-width: 20ch;
+      }
+      .turn p {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        max-width: 42ch;
+      }
+      .mess {
+        margin-top: var(--space-xl);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .mess span {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: var(--rule-hair) dashed var(--color-rule-2);
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+
+      /* ── 문제 → 해결 짝 (밝은 구간) ── */
+      .light {
+        background: var(--color-light);
+        color: var(--color-light-ink);
+        padding: var(--space-3xl) 0;
+      }
+      .light h2 {
+        font-size: var(--text-h2);
+        max-width: 18ch;
+      }
+      .light .sub {
+        margin-top: var(--space-md);
+        color: oklch(46% 0.018 340);
+        max-width: 40ch;
+      }
+      .pairs {
+        margin-top: var(--space-2xl);
+        display: grid;
+        gap: var(--space-lg);
+      }
+      .pair {
+        display: grid;
+        gap: var(--space-md);
+        grid-template-columns: minmax(0, 1fr);
+        padding-top: var(--space-lg);
+        border-top: var(--rule-hair) solid var(--color-light-rule);
+      }
+      @media (min-width: 820px) {
+        .pair {
+          grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+          gap: var(--space-2xl);
+          align-items: center;
+        }
+      }
+      .pair .txt h3 {
+        font-size: 1.2rem;
+      }
+      .pair .txt .prob {
+        display: inline-block;
+        margin-bottom: 8px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: var(--color-light-tint);
+        color: oklch(62.5% 0.243 353);
+        font-size: var(--text-2xs);
+        font-weight: 700;
+        font-family: var(--font-display);
+      }
+      .pair .txt p {
+        margin-top: 10px;
+        color: oklch(46% 0.018 340);
+        font-size: var(--text-sm);
+      }
+      .surface {
+        background: oklch(100% 0 0);
+        border: var(--rule-hair) solid var(--color-light-rule);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+      }
+      .stack {
+        display: grid;
+        gap: 11px;
+      }
+      .srow {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+      }
+      .label {
+        font-size: var(--text-2xs);
+        color: oklch(64% 0.012 340);
+      }
+      .money {
+        font-family: var(--font-num);
+        font-size: 1.7rem;
+        letter-spacing: -0.05em;
+      }
+      .money small {
+        font-size: 0.44em;
+        color: oklch(64% 0.012 340);
+        font-family: var(--font-body);
+      }
+      .bar {
+        height: 11px;
+        border-radius: 999px;
+        background: var(--color-light-tint);
+        overflow: hidden;
+        display: flex;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+      }
+      .item {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 11px;
+        border-radius: var(--radius-md);
+        border: var(--rule-hair) solid var(--color-light-rule);
+      }
+      .item .t {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.92rem;
+      }
+      .item .s {
+        font-size: var(--text-2xs);
+        color: oklch(64% 0.012 340);
+      }
+      .av {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        flex: none;
+        background: var(--color-light-tint);
+        color: oklch(62.5% 0.243 353);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-2xs);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: var(--text-2xs);
+        font-weight: 700;
+        font-family: var(--font-display);
+        background: var(--color-light-tint);
+        color: oklch(62.5% 0.243 353);
+      }
+
+      /* ── CTA ── */
+      .close {
+        padding: var(--space-3xl) 0;
+        text-align: center;
+      }
+      .close h2 {
+        font-size: clamp(1.7rem, 4.6vw, 2.9rem);
+        max-width: 17ch;
+        margin-inline: auto;
+      }
+      .close p {
+        margin-top: var(--space-lg);
+        color: var(--color-ink-2);
+        max-width: 34ch;
+        margin-inline: auto;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+        padding: 0 34px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.02rem;
+        margin-top: var(--space-xl);
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .cta:hover {
+        transform: translateY(-2px);
+      }
+      .cta:active {
+        transform: scale(0.98);
+      }
+      .sub-cta {
+        display: block;
+        margin-top: var(--space-md);
+        font-size: var(--text-sm);
+        color: var(--color-ink-3);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      /* Ft8 tall statement footer */
+      footer {
+        border-top: var(--rule-hair) solid var(--color-rule);
+        padding: var(--space-2xl) 0 var(--space-3xl);
+      }
+      footer .big {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 4.6vw, 2.8rem);
+        letter-spacing: -0.04em;
+        line-height: 1.24;
+        max-width: 17ch;
+      }
+      footer .cols {
+        margin-top: var(--space-2xl);
+        display: grid;
+        gap: var(--space-lg);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 640px) {
+        footer .cols {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      footer .cols h3 {
+        font-size: var(--text-2xs);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--color-ink-4);
+        font-weight: 700;
+      }
+      footer .cols p,
+      footer .cols a {
+        display: block;
+        margin-top: 8px;
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+      footer .cols a {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      footer .rule {
+        margin-top: var(--space-2xl);
+        padding-top: var(--space-md);
+        border-top: var(--rule-hair) solid var(--color-rule);
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <span class="brand"><i aria-hidden="true"></i><b>웨딩 플랜트</b></span>
+      <span class="links">
+        <a href="#numbers">숫자</a>
+        <a href="#how">어떻게</a>
+      </span>
+      <a class="go" href="#start">시작하기</a>
+    </nav>
+
+    <main>
+      <section class="hero" id="numbers">
+        <div class="wrap">
+          <h1>
+            결혼 준비는<br /><em>인생에서 가장 큰</em><br />프로젝트입니다
+          </h1>
+          <p>
+            그런데 대부분 카카오톡 대화방과 메모장으로 합니다. 엑셀을 쓰면
+            잘하는 축입니다.
+          </p>
+
+          <div class="stats">
+            <div class="stat">
+              <span class="n num">6,300<small>만원</small></span>
+              <span class="cap">신혼부부 평균 결혼 비용</span>
+              <a class="src" href="#src">출처 · 배포 전 실제 통계로 교체</a>
+            </div>
+            <div class="stat">
+              <span class="n num">11<small>개월</small></span>
+              <span class="cap">평균 준비 기간</span>
+              <a class="src" href="#src">출처 · 배포 전 실제 통계로 교체</a>
+            </div>
+            <div class="stat empty">
+              <span class="n num">—</span>
+              <span class="cap">챙겨야 할 항목 수</span>
+              <span class="src">출처 미확보 · 비워 둠</span>
+            </div>
+          </div>
+
+          <p class="disclaimer">
+            세 번째 칸은 일부러 비어 있습니다. 인용할 수 있는 출처를 못 찾은
+            숫자는 쓰지 않습니다 — 그럴듯한 숫자를 지어내는 순간 나머지 두 개도
+            못 믿을 숫자가 됩니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="turn">
+        <div class="wrap">
+          <h2>이만한 일을<br />이런 도구로 하고 있습니다</h2>
+          <p>
+            어디에 뭘 적었는지 서로 모르고, 계약한 사실이 상대에게 안 넘어가고,
+            얼마 남았는지는 아무도 정확히 모릅니다.
+          </p>
+          <div class="mess" aria-hidden="true">
+            <span>카톡 대화방 스크롤</span>
+            <span>폰 메모장</span>
+            <span>인스타 저장</span>
+            <span>엑셀 시트</span>
+            <span>캡처 앨범</span>
+            <span>다이어리</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="light" id="how">
+        <div class="wrap">
+          <h2>웨딩 플랜트는<br />이 세 가지를 한 곳에 둡니다</h2>
+          <p class="sub">
+            기능을 늘리는 대신, 결혼 준비에서 실제로 사고가 나는 지점만
+            막습니다.
+          </p>
+
+          <div class="pairs">
+            <div class="pair">
+              <div class="txt">
+                <span class="prob">사고 1</span>
+                <h3>얼마 남았는지 아무도 모른다</h3>
+                <p>
+                  쓴 돈과 쓸 돈이 섞여 있어서 그렇습니다. 실제 지출과 예정
+                  지출을 갈라 놓으면 남은 돈이 한 줄로 나옵니다.
+                </p>
+              </div>
+              <div class="surface stack">
+                <div>
+                  <span class="label">남은 예산</span>
+                  <div class="money">1,400<small>만원</small></div>
+                </div>
+                <div class="bar" aria-hidden="true">
+                  <i style="width: 38%; background: oklch(62.5% 0.243 353)"></i>
+                  <i style="width: 28.6%; background: oklch(82% 0.012 345)"></i>
+                </div>
+                <div class="srow" style="justify-content: space-between">
+                  <span class="label">썼어요 1,600만원</span>
+                  <span class="label">쓸 예정 1,200만원</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pair">
+              <div class="txt">
+                <span class="prob">사고 2</span>
+                <h3>한 사람이 계약했는데 다른 사람이 모른다</h3>
+                <p>
+                  신랑·신부가 같은 플랜을 씁니다. 누가 무엇을 언제 바꿨는지
+                  그대로 남습니다.
+                </p>
+              </div>
+              <div class="surface stack">
+                <div class="item">
+                  <span class="av">민</span>
+                  <span style="flex: 1; min-width: 0">
+                    <span class="t" style="display: block"
+                      >민수님이 예산을 바꿨어요</span
+                    >
+                    <span class="s">4,000 → 4,200만원 · 2시간 전</span>
+                  </span>
+                </div>
+                <div class="item">
+                  <span class="av">지</span>
+                  <span style="flex: 1; min-width: 0">
+                    <span class="t" style="display: block"
+                      >지현님이 본식 촬영을 추가했어요</span
+                    >
+                    <span class="s">9월 12일 · 185만원 · 어제</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pair">
+              <div class="txt">
+                <span class="prob">사고 3</span>
+                <h3>이게 비싼 건지 알 방법이 없다</h3>
+                <p>
+                  먼저 끝낸 사람들의 실제 지출을 봅니다. 평균이 아니라
+                  중앙값으로, 표본이 충분할 때만 냅니다.
+                </p>
+              </div>
+              <div class="surface stack">
+                <div class="srow" style="gap: 14px">
+                  <span class="money" style="font-size: 1.4rem"
+                    >580<small>만</small></span
+                  >
+                  <span style="flex: 1; min-width: 0">
+                    <span
+                      class="t"
+                      style="
+                        display: block;
+                        font-family: var(--font-display);
+                        font-weight: 700;
+                      "
+                      >아모레 스튜디오</span
+                    >
+                    <span class="s">서울 강남구 · D-131 신부</span>
+                  </span>
+                  <span class="chip">★★★★☆</span>
+                </div>
+                <div class="srow" style="gap: 14px">
+                  <span class="money" style="font-size: 1.4rem"
+                    >710<small>만</small></span
+                  >
+                  <span style="flex: 1; min-width: 0">
+                    <span
+                      class="t"
+                      style="
+                        display: block;
+                        font-family: var(--font-display);
+                        font-weight: 700;
+                      "
+                      >라비페르 스튜디오</span
+                    >
+                    <span class="s">서울 서초구 · D-88 신랑</span>
+                  </span>
+                  <span class="chip">★★★★★</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="close" id="start">
+        <div class="wrap">
+          <h2>6,300만원짜리 일을<br />메모장으로 하지 마세요</h2>
+          <p>예산 · 일정 · 대화 · 시세를 한 곳에. 둘이 같이요.</p>
+          <a class="cta" href="#start">카카오로 시작하기</a>
+          <a class="sub-cta" href="#start">로그인 없이 둘러보기</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p class="big">숫자는 빌려 왔습니다.<br />신뢰는 그렇게 못 합니다.</p>
+        <div class="cols">
+          <div>
+            <h3>서비스</h3>
+            <a href="#how">플랜 보드</a>
+            <a href="#how">예산 관리</a>
+            <a href="#how">견적 후기</a>
+          </div>
+          <div>
+            <h3>문서</h3>
+            <a href="/privacy">개인정보처리방침</a>
+            <p>이용약관</p>
+          </div>
+          <div>
+            <h3>문의</h3>
+            <p>seoulmomenttw@gmail.com</p>
+          </div>
+        </div>
+        <p class="rule" id="src">
+          인용 통계는 배포 전 출처를 확정해 각 숫자 아래에 링크로 답니다. 출처가
+          없는 칸은 비워 둔 채 배포합니다.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

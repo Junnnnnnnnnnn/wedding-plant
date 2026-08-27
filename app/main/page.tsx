@@ -38,6 +38,7 @@ import LoginRequiredModal from "../components/LoginRequiredModal";
 import CustomAlertModal from "../components/CustomAlertModal";
 import GuestPlanLimitModal from "../components/GuestPlanLimitModal";
 import SharePlanModal from "@/components/SharePlanModal";
+import SoloPlanBanner, { hasSpouse } from "@/app/components/SoloPlanBanner";
 import NoPlanFoundModal from "../components/NoPlanFoundModal";
 import PlanFilterModal, {
   type PlanSortOption,
@@ -783,16 +784,7 @@ function MainPageContent() {
     [resetData, router],
   );
 
-  // 비로그인 + share 없을 때: setting 미완료(플래그 없음) → / 로 리다이렉트
-  useEffect(() => {
-    if (getToken() || shareCode?.trim()) return;
-    const hasCompleted =
-      typeof window !== "undefined" &&
-      sessionStorage.getItem(HAS_COMPLETED_GUEST_SETTING_KEY) === "1";
-    if (!hasCompleted) {
-      router.replace("/");
-    }
-  }, [shareCode, router]);
+  // 온보딩 전 게스트를 막는 일은 GuestGate(레이아웃)가 화면 전부에 대해 한다.
 
   // 로그인되어 있을 때만 API 사용. 비로그인(setting→main 로그인 없이 둘러보기 등) 시 API 호출 없음
   useEffect(() => {
@@ -1015,6 +1007,21 @@ function MainPageContent() {
     );
     return me?.permission ?? undefined;
   }, [isRoomView, apiPlanData]);
+
+  /**
+   * 초대 띠 노출 조건. 배우자를 정할 수 있는 건 방장뿐이라, 남의 플랜을
+   * 보고 있을 때 "부르기"가 뜨면 안 된다.
+   *
+   * `myRoomPermission` 만으로 판단하면 안 된다 — 내 플랜은 `roomId` 가
+   * 아직 없을 수 있고(`isRoomView` false), 그러면 권한이 `undefined` 라
+   * 띠가 영영 안 뜬다. "방을 보고 있지 않으면 내 플랜"이 맞다.
+   */
+  const showSoloBanner =
+    !isSharedView &&
+    !!apiPlanData &&
+    apiPlanData !== "none" &&
+    (!isRoomView || String(myRoomPermission ?? "").toUpperCase() === "OWNER") &&
+    !hasSpouse(apiPlanData.members);
 
   const isPlanLoading = Boolean(
     !tokenChecked ||
@@ -2173,6 +2180,13 @@ function MainPageContent() {
               )}
             </div>
           </div>
+          {/* 온보딩에서 초대를 건너뛴 자리 — 배우자가 들어오면 사라진다 */}
+          {showSoloBanner && !isPlanLoading && (
+            <SoloPlanBanner
+              onInvite={() => setShowShareModal(true)}
+              className="mt-4 w-full"
+            />
+          )}
           {/* TodayFocus - 로딩 시 요소별 스켈레톤 */}
           <div className="mt-4 w-full">
             {isPlanLoading ? (
@@ -2692,6 +2706,7 @@ function MainPageContent() {
         }
         onAddPlan={handleAddPlan}
         onOpenMembers={() => setShowShareModal(true)}
+        showSoloBanner={showSoloBanner}
         members={
           apiPlanData && apiPlanData !== "none"
             ? (apiPlanData.members ?? [])

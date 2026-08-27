@@ -1,0 +1,1062 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>웨딩 플랜트 — 1C · 채워지는 보드</title>
+    <style>
+      /* Hallmark · macrostructure: Bento Grid · tone: technical-soft · anchor hue: rose 353
+ * nav: N2 floating chip (좌측 정렬 변형) · footer: Ft8 tall · enrichment: Tier-A CSS 타일
+ * 고도화 지점: 화면 구조가 곧 제품 화면이다. 빈 타일 그리드로 시작해 스크롤하면
+ * 타일이 하나씩 실제 카드로 바뀌고, 끝나면 그리드가 대시보드가 되어 있다.
+ * pre-emit critique: P5 H5 E5 S5 R4 V5
+ */
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmnEB";
+        src: url("../../public/font/woff2/TmoneyRoundWindExtraBold.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Dgm", system-ui, sans-serif;
+        --font-body: "Dgm", system-ui, sans-serif;
+        --font-num: "TmnEB", "Dgm", sans-serif;
+
+        --color-paper: oklch(
+          96.6% 0.005 300
+        ); /* 살짝 차가운 회백 — 타일이 떠 보이게 */
+        --color-card: oklch(100% 0 0);
+        --color-tint: oklch(97% 0.016 353);
+        --color-ink: oklch(18% 0.038 348);
+        --color-ink-2: oklch(47% 0.018 340);
+        --color-ink-3: oklch(66% 0.012 340);
+        --color-ink-4: oklch(81% 0.01 340);
+        --color-accent: oklch(62.5% 0.243 353);
+        --color-accent-soft: oklch(96.5% 0.024 353);
+        --color-accent-line: oklch(89% 0.05 353);
+        --color-rule: oklch(92% 0.006 300);
+        --color-rule-2: oklch(87% 0.008 300);
+        --color-dash: oklch(85% 0.008 300);
+        --color-plan: oklch(83% 0.01 345);
+        --color-good: oklch(58% 0.13 160);
+        --color-good-soft: oklch(96% 0.032 160);
+        --color-kakao: oklch(88% 0.16 96);
+        --color-kakao-ink: oklch(28% 0.05 80);
+        --color-focus: oklch(55% 0.2 353);
+        --color-shade: oklch(18% 0.038 348 / 0.12);
+
+        --space-2xs: 4px;
+        --space-xs: 8px;
+        --space-sm: 12px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 40px;
+        --space-2xl: 72px;
+        --space-3xl: 104px;
+
+        --text-hero: clamp(1.9rem, 5vw, 3.4rem);
+        --text-h2: clamp(1.5rem, 3.4vw, 2.2rem);
+        --text-lead: clamp(0.96rem, 1.6vw, 1.1rem);
+        --text-sm: 0.875rem;
+        --text-xs: 0.79rem;
+        --text-2xs: 0.71rem;
+
+        --radius-md: 14px;
+        --radius-lg: 20px;
+        --radius-xl: 26px;
+        --rule-hair: 1px;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --dur-mid: 400ms;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overflow-x: clip;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-size: 1rem;
+        line-height: 1.72;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-style: normal;
+        margin: 0;
+        line-height: 1.16;
+        letter-spacing: -0.04em;
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      p {
+        margin: 0;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 3px;
+        border-radius: 12px;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 var(--space-lg);
+      }
+
+      /* ── N2 floating chip (좌측) ── */
+      .nav {
+        position: fixed;
+        top: 14px;
+        left: 14px;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        padding: 7px 7px 7px 15px;
+        border-radius: 999px;
+        background: oklch(100% 0 0 / 0.84);
+        backdrop-filter: blur(14px);
+        border: var(--rule-hair) solid var(--color-rule);
+        box-shadow: 0 10px 28px -20px var(--color-shade);
+        max-width: calc(100vw - 28px);
+      }
+      .nav b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.03em;
+        white-space: nowrap;
+      }
+      .nav a {
+        display: flex;
+        align-items: center;
+        height: 32px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-2xs);
+        white-space: nowrap;
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .nav a:hover {
+        transform: translateY(-1px);
+      }
+      .nav a:active {
+        transform: scale(0.97);
+      }
+
+      /* ══ 보드 무대 ══ */
+      .board-stage {
+        position: relative;
+        height: 600svh;
+      }
+      .pin {
+        position: sticky;
+        top: 0;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: var(--space-3xl) 0 var(--space-2xl);
+        overflow: hidden;
+      }
+
+      .board-head {
+        display: flex;
+        align-items: flex-end;
+        gap: var(--space-lg);
+        flex-wrap: wrap;
+        margin-bottom: var(--space-lg);
+      }
+      .board-head h1 {
+        font-size: var(--text-hero);
+        max-width: 15ch;
+      }
+      .board-head .dd {
+        margin-left: auto;
+        font-family: var(--font-num);
+        font-size: clamp(2.2rem, 6vw, 4rem);
+        line-height: 0.9;
+        letter-spacing: -0.055em;
+        color: var(--color-accent);
+      }
+      .board-head .dd small {
+        display: block;
+        font-family: var(--font-body);
+        font-size: 0.22em;
+        letter-spacing: 0.18em;
+        color: var(--color-ink-4);
+        text-transform: uppercase;
+      }
+
+      /* 벤토 — 모바일 2열, 태블릿 4열, 데스크톱 6열 */
+      .bento {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-rows: minmax(74px, auto);
+      }
+      @media (min-width: 640px) {
+        .bento {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+        }
+      }
+      @media (min-width: 1000px) {
+        .bento {
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+      }
+
+      .b {
+        border-radius: var(--radius-lg);
+        border: 1.5px dashed var(--color-dash);
+        padding: 13px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        justify-content: center;
+        background: transparent;
+        min-width: 0;
+      }
+      .b .lbl {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+        letter-spacing: 0.06em;
+      }
+      .b .t {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.92rem;
+        color: var(--color-ink-4);
+      }
+      .b .s {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+      }
+
+      /* 채워진 타일 */
+      .b.on {
+        border-style: solid;
+        border-color: transparent;
+        background: var(--color-card);
+        box-shadow: 0 16px 36px -30px var(--color-shade);
+      }
+      .b.on .t {
+        color: var(--color-ink);
+      }
+      .b.on .s {
+        color: var(--color-ink-3);
+      }
+      .b.on .lbl {
+        color: var(--color-accent);
+      }
+      .b.tone {
+        background: var(--color-accent-soft);
+        border-color: var(--color-accent-line);
+      }
+      .b.done {
+        background: var(--color-good-soft);
+        border-color: transparent;
+      }
+      .b.done .lbl {
+        color: var(--color-good);
+      }
+      /* 색이 있는 타일은 채워질 때 그 색으로 간다 */
+      @supports (animation-timeline: scroll()) {
+        .b.on.tone {
+          animation-name: tileTone;
+        }
+        .b.on.done {
+          animation-name: tileDone;
+        }
+        .b.on.done .lbl {
+          animation-name: lblDone;
+        }
+      }
+      @keyframes tileTone {
+        to {
+          border-style: solid;
+          border-color: var(--color-accent-line);
+          background: var(--color-accent-soft);
+        }
+      }
+      @keyframes tileDone {
+        to {
+          border-style: solid;
+          border-color: transparent;
+          background: var(--color-good-soft);
+        }
+      }
+      @keyframes lblDone {
+        to {
+          color: var(--color-good);
+        }
+      }
+
+      /* 스팬 */
+      .b.w2 {
+        grid-column: span 2;
+      }
+      .b.h2 {
+        grid-row: span 2;
+      }
+      @media (min-width: 1000px) {
+        .b.w3 {
+          grid-column: span 3;
+        }
+      }
+
+      .money {
+        font-family: var(--font-num);
+        font-size: clamp(1.3rem, 2.8vw, 1.8rem);
+        letter-spacing: -0.05em;
+      }
+      .money small {
+        font-size: 0.44em;
+        color: var(--color-ink-3);
+        font-family: var(--font-body);
+      }
+      .bar {
+        height: 9px;
+        border-radius: 999px;
+        background: var(--color-tint);
+        overflow: hidden;
+        display: flex;
+        margin-top: 7px;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        transform-origin: 0 50%;
+      }
+
+      /* 스크롤이 타일을 하나씩 켠다.
+   **opacity:0 으로 감추지 않는다** — 격자에 구멍이 뚫려 보인다.
+   점선 스켈레톤과 항목 이름은 처음부터 있고, 내용이 채워진다. */
+      @supports (animation-timeline: scroll()) {
+        .b.on {
+          border-style: dashed;
+          border-color: var(--color-dash);
+          background: transparent;
+          box-shadow: none;
+          animation: tilein linear both;
+          animation-timeline: scroll(root);
+        }
+        .b.on .t {
+          color: var(--color-ink-4);
+          animation: inkin linear both;
+          animation-timeline: scroll(root);
+        }
+        .b.on .s,
+        .b.on .money,
+        .b.on .bar {
+          opacity: 0;
+          animation: detailin linear both;
+          animation-timeline: scroll(root);
+        }
+        .b.on .lbl {
+          color: var(--color-ink-4);
+          animation: lblin linear both;
+          animation-timeline: scroll(root);
+        }
+        .b.on:nth-of-type(1),
+        .b.on:nth-of-type(1) * {
+          animation-range: 4% 12%;
+        }
+        .b.on:nth-of-type(2),
+        .b.on:nth-of-type(2) * {
+          animation-range: 10% 18%;
+        }
+        .b.on:nth-of-type(3),
+        .b.on:nth-of-type(3) * {
+          animation-range: 16% 24%;
+        }
+        .b.on:nth-of-type(4),
+        .b.on:nth-of-type(4) * {
+          animation-range: 22% 30%;
+        }
+        .b.on:nth-of-type(5),
+        .b.on:nth-of-type(5) * {
+          animation-range: 28% 36%;
+        }
+        .b.on:nth-of-type(6),
+        .b.on:nth-of-type(6) * {
+          animation-range: 34% 42%;
+        }
+        .b.on:nth-of-type(7),
+        .b.on:nth-of-type(7) * {
+          animation-range: 40% 48%;
+        }
+        .b.on:nth-of-type(8),
+        .b.on:nth-of-type(8) * {
+          animation-range: 46% 54%;
+        }
+        .b.on:nth-of-type(9),
+        .b.on:nth-of-type(9) * {
+          animation-range: 52% 60%;
+        }
+        .b.on:nth-of-type(10),
+        .b.on:nth-of-type(10) * {
+          animation-range: 58% 66%;
+        }
+        .b.on:nth-of-type(11),
+        .b.on:nth-of-type(11) * {
+          animation-range: 64% 72%;
+        }
+      }
+      @keyframes tilein {
+        to {
+          border-style: solid;
+          border-color: transparent;
+          background: var(--color-card);
+          box-shadow: 0 16px 36px -30px var(--color-shade);
+        }
+      }
+      @keyframes inkin {
+        to {
+          color: var(--color-ink);
+        }
+      }
+      @keyframes lblin {
+        to {
+          color: var(--color-accent);
+        }
+      }
+      @keyframes detailin {
+        to {
+          opacity: 1;
+        }
+      }
+
+      .board-foot {
+        margin-top: var(--space-lg);
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        flex-wrap: wrap;
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+        letter-spacing: 0.1em;
+      }
+      .board-foot i {
+        flex: 1;
+        min-width: 60px;
+        height: 1px;
+        background: var(--color-rule-2);
+      }
+
+      /* ── 여섯 군데 → 한 보드 (벤토 언어 유지) ── */
+      .merge {
+        padding: var(--space-2xl) 0 var(--space-3xl);
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .merge h2 {
+        font-size: var(--text-h2);
+        max-width: 18ch;
+      }
+      .merge .lead {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 42ch;
+      }
+      .scatter {
+        margin-top: var(--space-xl);
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      @media (min-width: 640px) {
+        .scatter {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+        }
+      }
+      @media (min-width: 1000px) {
+        .scatter {
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+      }
+      .sc {
+        border-radius: var(--radius-lg);
+        border: 1.5px dashed var(--color-dash);
+        padding: 13px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        justify-content: center;
+        min-width: 0;
+      }
+      .sc .n {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--color-ink-3);
+      }
+      .sc .w {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+        line-height: 1.5;
+      }
+      .arrowline {
+        margin: var(--space-lg) 0;
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        font-size: var(--text-2xs);
+        letter-spacing: 0.14em;
+        color: var(--color-ink-4);
+      }
+      .arrowline i {
+        flex: 1;
+        height: 1px;
+        background: var(--color-rule-2);
+      }
+      .merged {
+        border-radius: var(--radius-xl);
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-accent-line);
+        padding: var(--space-lg);
+        box-shadow: 0 22px 48px -40px var(--color-shade);
+      }
+      .merged .brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: var(--space-md);
+      }
+      .merged .brand i {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        background: var(--color-accent);
+        flex: none;
+      }
+      .merged .brand b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.03em;
+      }
+      .merged .rows {
+        display: grid;
+        gap: 0;
+      }
+      .merged .r {
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        padding: 11px 0;
+        min-width: 0;
+      }
+      .merged .r + .r {
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .merged .r .n {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.9rem;
+        flex: 0 0 58px;
+      }
+      .merged .r .w {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-2);
+        min-width: 0;
+      }
+      .merge .note {
+        margin-top: var(--space-lg);
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+        line-height: 1.7;
+        max-width: 52ch;
+      }
+
+      /* ── 이후 ── */
+      .after {
+        padding: var(--space-3xl) 0;
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .after h2 {
+        font-size: var(--text-h2);
+        max-width: 17ch;
+      }
+      .after .lead {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 40ch;
+      }
+      .trio {
+        margin-top: var(--space-2xl);
+        display: grid;
+        gap: var(--space-md);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 760px) {
+        .trio {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      .card {
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        background: var(--color-card);
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      @supports (animation-timeline: view()) {
+        .card {
+          opacity: 0;
+          transform: translateY(14px);
+          animation: rise linear both;
+          animation-timeline: view();
+          animation-range: entry 12% cover 34%;
+        }
+      }
+      @keyframes rise {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .card .k {
+        width: 34px;
+        height: 34px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+      }
+      .card h3 {
+        font-size: 1.02rem;
+      }
+      .card p {
+        color: var(--color-ink-2);
+        font-size: var(--text-sm);
+      }
+
+      .finale {
+        padding: var(--space-3xl) 0;
+        text-align: center;
+      }
+      .finale h2 {
+        font-size: var(--text-h2);
+        max-width: 15ch;
+        margin-inline: auto;
+      }
+      .finale p {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        max-width: 32ch;
+        margin-inline: auto;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+        padding: 0 34px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.02rem;
+        margin-top: var(--space-xl);
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .cta:hover {
+        transform: translateY(-2px);
+      }
+      .cta:active {
+        transform: scale(0.98);
+      }
+      .sub-cta {
+        display: block;
+        margin-top: var(--space-md);
+        font-size: var(--text-sm);
+        color: var(--color-ink-3);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      footer {
+        border-top: var(--rule-hair) solid var(--color-rule);
+        padding: var(--space-2xl) 0;
+      }
+      footer .big {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.3rem, 3.6vw, 2.2rem);
+        letter-spacing: -0.04em;
+        line-height: 1.26;
+        max-width: 18ch;
+      }
+      footer .cols {
+        margin-top: var(--space-2xl);
+        display: grid;
+        gap: var(--space-lg);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 640px) {
+        footer .cols {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      footer .cols h3 {
+        font-size: var(--text-2xs);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--color-ink-4);
+      }
+      footer .cols p,
+      footer .cols a {
+        display: block;
+        margin-top: 7px;
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+      footer .cols a {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      @supports not (animation-timeline: scroll()) {
+        .board-stage {
+          height: auto;
+        }
+        .pin {
+          position: static;
+          min-height: 0;
+          padding: var(--space-3xl) 0 var(--space-2xl);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation: none !important;
+          transition-duration: 0.01ms !important;
+        }
+        .board-stage {
+          height: auto;
+        }
+        .pin {
+          position: static;
+          min-height: 0;
+        }
+        .b.on {
+          border-style: solid;
+          border-color: transparent;
+          background: var(--color-card);
+        }
+        .b.on.tone {
+          border-color: var(--color-accent-line);
+          background: var(--color-accent-soft);
+        }
+        .b.on.done {
+          background: var(--color-good-soft);
+        }
+        .b.on .t {
+          color: var(--color-ink);
+        }
+        .b.on .lbl {
+          color: var(--color-accent);
+        }
+        .b.on.done .lbl {
+          color: var(--color-good);
+        }
+        .b.on .s,
+        .b.on .money,
+        .b.on .bar {
+          opacity: 1;
+        }
+        .card {
+          opacity: 1;
+          transform: none;
+        }
+        .bar i {
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <b>웨딩 플랜트</b>
+      <a href="#start">시작하기</a>
+    </nav>
+
+    <main>
+      <section class="board-stage" aria-label="채워지는 플랜 보드">
+        <div class="pin">
+          <div class="wrap">
+            <div class="board-head">
+              <h1>빈 보드가<br />플랜이 되는 동안</h1>
+              <p class="dd">D-129<small>남음</small></p>
+            </div>
+
+            <div class="bento">
+              <span class="b w2 h2 tone on">
+                <span class="lbl">전체 예산</span>
+                <span class="money">1,400<small>만원 남음</small></span>
+                <span class="bar" aria-hidden="true"
+                  ><i style="width: 38%; background: var(--color-accent)"></i
+                  ><i style="width: 28.6%; background: var(--color-plan)"></i
+                ></span>
+                <span class="s">4,200만원 중 1,600만원 씀</span>
+              </span>
+              <span class="b on"
+                ><span class="lbl">예식장</span
+                ><span class="t">아모르하우스</span
+                ><span class="s">6월 12일</span></span
+              >
+              <span class="b on"
+                ><span class="lbl">스드메</span
+                ><span class="t">아모레 스튜디오</span
+                ><span class="s">580만원</span></span
+              >
+              <span class="b on w2"
+                ><span class="lbl">다가오는 일정</span
+                ><span class="t">본식 촬영 · 9월 12일</span
+                ><span class="s">오전 9시 · 185만원</span></span
+              >
+              <span class="b on"
+                ><span class="lbl">예물</span><span class="t">종로 귀금속</span
+                ><span class="s">9월 27일</span></span
+              >
+              <span class="b on"
+                ><span class="lbl">신혼여행</span><span class="t">발리 6박</span
+                ><span class="s">11월 3일</span></span
+              >
+              <span class="b on w2"
+                ><span class="lbl">방금 바뀐 것</span
+                ><span class="t">민수님이 예산을 바꿨어요</span
+                ><span class="s">4,000 → 4,200만원 · 2시간 전</span></span
+              >
+              <span class="b on done"
+                ><span class="lbl">완료</span><span class="t">상견례</span
+                ><span class="s">7월 4일 · 62만원</span></span
+              >
+              <span class="b on done"
+                ><span class="lbl">완료</span><span class="t">예식장 계약</span
+                ><span class="s">1,200만원</span></span
+              >
+              <span class="b on w2"
+                ><span class="lbl">둘만의 대화</span
+                ><span class="t">신랑 · 신부 방</span
+                ><span class="s">새 메시지 5</span></span
+              >
+              <span class="b"
+                ><span class="lbl">청첩장</span
+                ><span class="t">아직 안 정함</span
+                ><span class="s">날짜 미정</span></span
+              >
+              <span class="b"
+                ><span class="lbl">한복</span><span class="t">아직 안 정함</span
+                ><span class="s">날짜 미정</span></span
+              >
+            </div>
+
+            <p class="board-foot">
+              <span>비어 있음</span><i aria-hidden="true"></i
+              ><span>스크롤하면 채워집니다</span><i aria-hidden="true"></i
+              ><span>완료</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="after">
+        <div class="wrap">
+          <h2>보드가 곧<br />앱 첫 화면입니다</h2>
+          <p class="lead">
+            따로 만든 소개용 그림이 아닙니다. 방금 채워진 그 배치가 로그인하면
+            나오는 홈입니다.
+          </p>
+          <div class="trio">
+            <div class="card">
+              <span class="k" aria-hidden="true">◷</span>
+              <h3>월별 컬럼</h3>
+              <p>
+                날짜가 아직 없는 일도 자리를 차지합니다. 정해지면 끌어서 그 달로
+                옮깁니다.
+              </p>
+            </div>
+            <div class="card">
+              <span class="k" aria-hidden="true">₩</span>
+              <h3>쓴 돈 · 쓸 돈</h3>
+              <p>
+                분홍은 실제 지출, 회색은 예정, 빈 트랙은 여유. 색이 곧 뜻입니다.
+              </p>
+            </div>
+            <div class="card">
+              <span class="k" aria-hidden="true">★</span>
+              <h3>완료는 기록으로</h3>
+              <p>
+                끝난 일정은 지우지 않고 아래로 모입니다. 언제 얼마를 왜 썼는지가
+                남습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="merge">
+        <div class="wrap">
+          <h2>여섯 군데에 있던 걸<br />한 보드로</h2>
+          <p class="lead">
+            지금도 어딘가에는 다 적혀 있습니다. 문제는 흩어져 있고, 그 도구를
+            먼저 만들어야 한다는 겁니다.
+          </p>
+
+          <div class="scatter">
+            <span class="sc"
+              ><span class="n">노션</span
+              ><span class="w"
+                >표를 짜고 수식을 넣는 시간이 먼저 듭니다</span
+              ></span
+            >
+            <span class="sc"
+              ><span class="n">엑셀</span
+              ><span class="w">폰에서 열면 가로로 스크롤합니다</span></span
+            >
+            <span class="sc"
+              ><span class="n">카카오톡</span
+              ><span class="w">정한 게 대화에 묻힙니다</span></span
+            >
+            <span class="sc"
+              ><span class="n">메모장</span
+              ><span class="w">상대가 못 봅니다</span></span
+            >
+            <span class="sc"
+              ><span class="n">캡처 앨범</span
+              ><span class="w">어느 업체였는지 안 적혀 있습니다</span></span
+            >
+            <span class="sc"
+              ><span class="n">다이어리</span
+              ><span class="w">둘이 같이 볼 수 없습니다</span></span
+            >
+          </div>
+
+          <p class="arrowline">
+            <span>여섯 개</span><i aria-hidden="true"></i><span>하나</span>
+          </p>
+
+          <div class="merged">
+            <p class="brand"><i aria-hidden="true"></i><b>웨딩 플랜트</b></p>
+            <div class="rows">
+              <p class="r">
+                <span class="n">일정</span
+                ><span class="w"
+                  >월별 칸이 이미 있습니다. 날짜가 없는 일도 자리를
+                  차지합니다.</span
+                >
+              </p>
+              <p class="r">
+                <span class="n">예산</span
+                ><span class="w"
+                  >쓴 돈과 쓸 돈이 갈려 있어 남은 금액이 수식 없이
+                  나옵니다.</span
+                >
+              </p>
+              <p class="r">
+                <span class="n">대화</span
+                ><span class="w"
+                  >둘만의 방이 따로 열려서, 정한 건 카드로 남습니다.</span
+                >
+              </p>
+              <p class="r">
+                <span class="n">기록</span
+                ><span class="w"
+                  >업체명과 실제 지출이 일정에 붙어 있습니다. 따로 적을 필요가
+                  없습니다.</span
+                >
+              </p>
+            </div>
+          </div>
+
+          <p class="note">
+            노션이 나쁘다는 얘기가 아닙니다. 노션은 무엇이든 만들 수 있고,
+            그래서 만들어야 합니다. 결혼 준비에 쓸 시간을 도구 만드는 데 쓰지
+            않아도 된다는 뜻입니다.
+          </p>
+        </div>
+      </section>
+
+      <section class="finale" id="start">
+        <div class="wrap">
+          <h2>빈 보드부터<br />같이 채워요</h2>
+          <p>이름 · 날짜 · 예산 세 가지만 물어봅니다.</p>
+          <a class="cta" href="#start">카카오로 시작하기</a>
+          <a class="sub-cta" href="#start">로그인 없이 둘러보기</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p class="big">보여 준 화면이<br />실제 화면입니다.</p>
+        <div class="cols">
+          <div>
+            <h3>서비스</h3>
+            <a href="#start">플랜 보드</a>
+            <a href="#start">예산 관리</a>
+            <a href="#start">견적 후기</a>
+          </div>
+          <div>
+            <h3>문서</h3>
+            <a href="/privacy">개인정보처리방침</a>
+            <p>이용약관</p>
+          </div>
+          <div>
+            <h3>문의</h3>
+            <p>seoulmomenttw@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

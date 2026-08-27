@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check } from "lucide-react";
+import { Check, Heart, Plus } from "lucide-react";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import CustomAlertModal from "../components/CustomAlertModal";
 import LandingHero from "../components/LandingHero";
@@ -19,6 +19,7 @@ import {
   setGuestAgreement,
 } from "@/lib/api";
 import { getKstDateString } from "@/lib/utils";
+import { useSpouseInvite } from "../hooks/useSpouseInvite";
 import {
   PRIVACY_CONTENT,
   LOCATION_CONTENT,
@@ -33,8 +34,19 @@ import { track } from "@/lib/analytics";
  * 몇 개나 더 묻는지 처음부터 보여야 온보딩에서 덜 이탈한다.
  * 축하·환영·출입증(Lanyard)은 전체 화면 연출이라 단계로 세지 않는다.
  * (패널만 안 붙을 뿐, 그 화면들도 폭은 전부 쓴다)
+ *
+ * **게스트는 `함께할 사람` 단계가 없다.** 방이 없으면 공유 코드도 없어서
+ * 보낼 링크 자체가 만들어지지 않는다. 못 쓰는 단계를 보여 주는 건
+ * 안 보여 주는 것보다 나쁘다.
  */
-const ONBOARDING_STEPS = ["결혼 날짜", "예산", "이름", "약관 동의"];
+const ONBOARDING_STEPS_GUEST = ["결혼 날짜", "예산", "이름", "약관 동의"];
+const ONBOARDING_STEPS_MEMBER = [
+  "결혼 날짜",
+  "예산",
+  "이름",
+  "약관 동의",
+  "함께할 사람",
+];
 
 // 3D(WebGL)는 클라이언트에서만 로드해 Context Lost·엑스박스 방지
 const Lanyard = dynamic(() => import("../../components/Lanyard"), {
@@ -61,6 +73,16 @@ function SettingPageContent() {
   const [showThird, setShowThird] = useState(false);
   const [showFourth, setShowFourth] = useState(false);
   const [showFifth, setShowFifth] = useState(false);
+  /**
+   * 초대 단계. **약관 동의 + 저장(`POST /plan/setting`) 다음**에 온다.
+   * 그 앞에 두면 두 가지가 깨진다 —
+   *   1. 날짜·예산·이름이 아직 저장 전이라 초대받은 사람이 **빈 플랜**에 들어온다
+   *      (방과 `roomShareCode` 는 카카오 로그인 때 이미 만들어져 링크는 유효하다.
+   *       비어 있는 건 방이 아니라 내용이다)
+   *   2. 필수·제3자 제공 동의를 받기 전에 남에게 접근 권한을 주는 링크를 보낸다
+   * 로그인 사용자에게만 뜬다.
+   */
+  const [showSixth, setShowSixth] = useState(false);
   const [showSeventh, setShowSeventh] = useState(false);
   /** 플랜 설정 저장 실패 안내 */
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -70,6 +92,20 @@ function SettingPageContent() {
   const [isNameFadingOut, setIsNameFadingOut] = useState(false);
   const [isNameShaking, setIsNameShaking] = useState(false);
   const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
+  const [isSixthFadingOut, setIsSixthFadingOut] = useState(false);
+  /**
+   * 초대 단계를 낼 수 있는지. 게스트는 방이 없어 공유 코드를 못 만든다.
+   * 하이드레이션 직후 서버 렌더와 어긋나지 않도록 effect 에서만 켠다.
+   */
+  const [canInvite, setCanInvite] = useState(false);
+  /** 초대 단계에서 고른 값. null 이면 아직 안 고름 */
+  const [inviteChoice, setInviteChoice] = useState<"invite" | "solo" | null>(
+    null,
+  );
+  /** 초대장을 실제로 보냈는지(공유 시트 완료 또는 링크 복사) */
+  const [inviteSent, setInviteSent] = useState<"shared" | "copied" | null>(
+    null,
+  );
   const [isCountUpComplete, setIsCountUpComplete] = useState(false);
   const [countUpKey, setCountUpKey] = useState(0);
   const [showLanyard, setShowLanyard] = useState(false);
@@ -78,6 +114,14 @@ function SettingPageContent() {
   const [nextStep, setNextStep] = useState<"second" | "third" | "fourth">(
     "second",
   );
+
+  /** 초대 단계에 들어갈 때만 공유 코드를 받아 온다 */
+  const {
+    loading: inviteLinkLoading,
+    error: inviteError,
+    setError: setInviteError,
+    invite,
+  } = useSpouseInvite({ enabled: showSixth, from: "onboarding" });
 
   // 약관 동의 상태
   const [agreePrivacy, setAgreePrivacy] = useState(false);
@@ -135,6 +179,8 @@ function SettingPageContent() {
       setUserCheckDone(true);
       return;
     }
+
+    setCanInvite(true);
 
     const check = async () => {
       try {
@@ -303,6 +349,19 @@ function SettingPageContent() {
     }, 500); // fade-out 애니메이션 시간과 동일
   };
 
+  /** 초대 단계가 마지막이다. 보냈든 건너뛰었든 홈으로 나간다 */
+  const handleInviteNext = () => {
+    setIsSixthFadingOut(true);
+    setTimeout(() => router.push("/main"), 500);
+  };
+
+  const handleSendInvite = async () => {
+    const result = await invite("spouse");
+    if (result === "shared" || result === "copied") {
+      setInviteSent(result);
+    }
+  };
+
   const handleLanyardNext = () => {
     // fade out 시작
     setIsLanyardFadingOut(true);
@@ -363,10 +422,24 @@ function SettingPageContent() {
         return;
       }
     }
+    /*
+      저장이 끝난 다음에야 초대 단계를 연다. 이 순서가 뒤집히면 초대받은
+      사람이 날짜·예산·이름이 비어 있는 플랜에 들어오고, 필수·제3자 제공
+      동의 전에 남에게 접근 권한을 주는 링크가 나간다.
+    */
+    if (canInvite) {
+      setShowSeventh(false);
+      setShowSixth(true);
+      return;
+    }
     router.push("/main");
   };
 
-  /** 좌측 패널에 표시할 현재 단계(1~4). 0이면 연출 화면이라 패널을 내지 않는다 */
+  const onboardingSteps = canInvite
+    ? ONBOARDING_STEPS_MEMBER
+    : ONBOARDING_STEPS_GUEST;
+
+  /** 좌측 패널에 표시할 현재 단계. 0이면 연출 화면이라 패널을 내지 않는다 */
   const stepIndex = showSecond
     ? 1
     : showThird
@@ -375,7 +448,9 @@ function SettingPageContent() {
         ? 3
         : showSeventh
           ? 4
-          : 0;
+          : showSixth
+            ? 5
+            : 0;
   /** lg 이상에서만 좌우 분할. 폰에서는 예전 그대로 한 화면에 하나씩 */
   const isSplitStep = stepIndex > 0;
 
@@ -433,10 +508,10 @@ function SettingPageContent() {
             같이 시작해요
           </p>
           <p className="mb-[22px] text-[12.5px] leading-relaxed text-[#7a6c74]">
-            네 가지만 알려 주시면 됩니다. 1분이면 끝나요.
+            {onboardingSteps.length}가지만 알려 주시면 됩니다. 1분이면 끝나요.
           </p>
           <ol className="grid gap-0.5" aria-label="온보딩 단계">
-            {ONBOARDING_STEPS.map((label, i) => {
+            {onboardingSteps.map((label, i) => {
               const n = i + 1;
               const isCurrent = n === stepIndex;
               const isDone = n < stepIndex;
@@ -473,12 +548,12 @@ function SettingPageContent() {
               <span
                 className="block h-full rounded-full bg-[#ee2b8c] transition-[width] duration-500 ease-out"
                 style={{
-                  width: `${(stepIndex / ONBOARDING_STEPS.length) * 100}%`,
+                  width: `${(stepIndex / onboardingSteps.length) * 100}%`,
                 }}
               />
             </div>
             <p className="mt-2.5 text-xs text-gray-400">
-              {stepIndex} / {ONBOARDING_STEPS.length} 단계
+              {stepIndex} / {onboardingSteps.length} 단계
             </p>
           </div>
         </aside>
@@ -663,6 +738,153 @@ function SettingPageContent() {
               className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
             >
               다음
+            </button>
+          </div>
+        )}
+        {/*
+          초대 단계. 온보딩은 이미 "한 번에 하나씩 묻는" 연출이라, 여기에
+          한 칸을 더하면 초대가 부탁이 아니라 절차로 읽힌다. 다만 반드시
+          빠져나갈 길("나중에 할게요")을 함께 둔다 — 막으면 이탈한다.
+        */}
+        {showSixth && (
+          <div
+            className={`flex flex-1 flex-col items-center pt-20 pb-12 lg:justify-center lg:pt-0 lg:pb-0 ${isSixthFadingOut ? "animate-fade-out" : "animate-fade-in"}`}
+          >
+            <LandingHero
+              title="누구와 함께 준비하세요?"
+              subtitle="신랑·신부는 일정과 예산을 같이 고칠 수 있어요"
+              titleSize="text-2xl sm:text-4xl"
+              subtitleSize="text-sm sm:text-lg"
+              useUserFont={false}
+            />
+            <div className="flex flex-1 lg:hidden" />
+            <div
+              className="mb-5 grid w-full max-w-[340px] gap-2.5 lg:mt-7"
+              role="radiogroup"
+              aria-label="함께 준비할 사람"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={inviteChoice === "invite"}
+                onClick={() => {
+                  setInviteChoice("invite");
+                  setInviteError(null);
+                }}
+                className={`flex items-center gap-3 rounded-2xl border-2 bg-white px-4 py-3.5 text-left transition-colors duration-200 ${
+                  inviteChoice === "invite"
+                    ? "border-[#ee2b8c] bg-[#fff7fb]"
+                    : "border-stone-200 hover:border-[#FFAAB8]"
+                }`}
+              >
+                <span
+                  className={`grid h-10 w-10 flex-none place-items-center rounded-full transition-colors duration-200 ${
+                    inviteChoice === "invite"
+                      ? "bg-[#ee2b8c] text-white"
+                      : "bg-[#ffeaf3] text-[#ee2b8c]"
+                  }`}
+                  aria-hidden
+                >
+                  <Heart className="h-[18px] w-[18px] fill-current" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold text-stone-900">
+                    신랑 · 신부를 부를게요
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-stone-500 break-keep">
+                    지금 초대장을 보냅니다
+                  </span>
+                </span>
+                {inviteChoice === "invite" && (
+                  <Check
+                    className="h-5 w-5 flex-none text-[#ee2b8c]"
+                    strokeWidth={3}
+                    aria-hidden
+                  />
+                )}
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={inviteChoice === "solo"}
+                onClick={() => {
+                  setInviteChoice("solo");
+                  setInviteError(null);
+                }}
+                className={`flex items-center gap-3 rounded-2xl border-2 bg-white px-4 py-3.5 text-left transition-colors duration-200 ${
+                  inviteChoice === "solo"
+                    ? "border-[#ee2b8c] bg-[#fff7fb]"
+                    : "border-stone-200 hover:border-[#FFAAB8]"
+                }`}
+              >
+                <span
+                  className={`grid h-10 w-10 flex-none place-items-center rounded-full border-2 border-dashed transition-colors duration-200 ${
+                    inviteChoice === "solo"
+                      ? "border-[#ee2b8c] text-[#ee2b8c]"
+                      : "border-stone-300 text-stone-400"
+                  }`}
+                  aria-hidden
+                >
+                  <Plus className="h-[18px] w-[18px]" strokeWidth={2.5} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold text-stone-900">
+                    혼자 먼저 둘러볼게요
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-stone-500 break-keep">
+                    나중에 홈에서 언제든 부를 수 있어요
+                  </span>
+                </span>
+                {inviteChoice === "solo" && (
+                  <Check
+                    className="h-5 w-5 flex-none text-[#ee2b8c]"
+                    strokeWidth={3}
+                    aria-hidden
+                  />
+                )}
+              </button>
+            </div>
+
+            {/* 보냄·실패 안내. 자리를 늘 잡아 두면 버튼이 위아래로 튀지 않는다 */}
+            <p
+              role="status"
+              className={`mb-3 min-h-[18px] max-w-[340px] px-2 text-center text-xs leading-relaxed break-keep ${
+                inviteError ? "text-red-500" : "text-[#ee2b8c]"
+              }`}
+            >
+              {inviteError ??
+                (inviteSent === "shared"
+                  ? "초대장을 보냈어요. 상대가 열면 신랑·신부로 들어옵니다."
+                  : inviteSent === "copied"
+                    ? "링크를 복사했어요. 붙여 넣어 보내 주세요."
+                    : "")}
+            </p>
+
+            <button
+              type="button"
+              onClick={
+                inviteChoice === "invite" && !inviteSent
+                  ? handleSendInvite
+                  : handleInviteNext
+              }
+              disabled={
+                inviteChoice === null ||
+                (inviteChoice === "invite" && !inviteSent && inviteLinkLoading)
+              }
+              className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
+            >
+              {inviteChoice === "invite" && !inviteSent
+                ? inviteLinkLoading
+                  ? "준비 중..."
+                  : "초대장 보내기"
+                : "계획 짜러 가기"}
+            </button>
+            <button
+              type="button"
+              onClick={handleInviteNext}
+              className="mt-3 px-3 py-1 text-sm text-stone-400 underline underline-offset-4 transition-colors duration-200 hover:text-stone-600"
+            >
+              나중에 할게요
             </button>
           </div>
         )}
@@ -883,7 +1105,8 @@ function SettingPageContent() {
                 disabled={!isAllRequiredAgreed}
                 className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
               >
-                계획 짜러 가기
+                {/* 회원은 뒤에 초대 단계가 하나 더 남아 있다 */}
+                {canInvite ? "다음" : "계획 짜러 가기"}
               </button>
             </div>
 

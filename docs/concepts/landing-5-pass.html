@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>웨딩 플랜트 — 시안 5 · 만질 수 있는 출입증</title>
+    <style>
+      /* Hallmark · macrostructure: Object Hero (Experience) · tone: luxury-soft · anchor hue: rose 353
+ * nav: N5 floating pill · footer: Ft2 two-line · enrichment: Tier-A CSS art (출입증 카드)
+ * 실물 Lanyard(WebGL) 자리를 CSS 로 대신 세운 시안이다. 배포 시 원본 컴포넌트를 래핑해 얹는다.
+ * pre-emit critique: P5 H5 E5 S5 R4 V5
+ */
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmnEB";
+        src: url("../../public/font/woff2/TmoneyRoundWindExtraBold.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Tmn";
+        src: url("../../public/font/woff2/TmoneyRoundWindRegular.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Dgm", system-ui, sans-serif;
+        --font-body: "Dgm", system-ui, sans-serif;
+        --font-num: "TmnEB", "Dgm", sans-serif;
+        --font-user: "Tmn", "Dgm", sans-serif;
+
+        --color-night: oklch(19% 0.03 325);
+        --color-night-2: oklch(25% 0.034 325);
+        --color-night-3: oklch(33% 0.036 325);
+        --color-night-ink: oklch(97% 0.006 330);
+        --color-night-ink-2: oklch(74% 0.014 330);
+        --color-night-ink-3: oklch(56% 0.018 330);
+
+        --color-paper: oklch(98.6% 0.004 340);
+        --color-card: oklch(100% 0 0);
+        --color-tint: oklch(97% 0.016 353);
+        --color-ink: oklch(19% 0.045 348);
+        --color-ink-2: oklch(47% 0.018 340);
+        --color-ink-3: oklch(66% 0.012 340);
+        --color-ink-4: oklch(80% 0.01 340);
+        --color-accent: oklch(62.5% 0.243 353);
+        --color-accent-soft: oklch(96.5% 0.024 353);
+        --color-accent-line: oklch(89% 0.05 353);
+        --color-rule: oklch(93% 0.008 345);
+        --color-rule-2: oklch(87% 0.012 345);
+        --color-plan: oklch(82% 0.012 345);
+        --color-kakao: oklch(88% 0.16 96);
+        --color-kakao-ink: oklch(28% 0.05 80);
+        --color-focus: oklch(80% 0.14 355);
+        --color-shade: oklch(19% 0.045 348 / 0.12);
+
+        --space-2xs: 4px;
+        --space-xs: 8px;
+        --space-sm: 12px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 40px;
+        --space-2xl: 72px;
+        --space-3xl: 112px;
+
+        --text-hero: clamp(1.6rem, 4.2vw, 2.6rem);
+        --text-h2: clamp(1.6rem, 3.8vw, 2.6rem);
+        --text-lead: clamp(0.96rem, 1.6vw, 1.12rem);
+        --text-sm: 0.875rem;
+        --text-xs: 0.79rem;
+        --text-2xs: 0.71rem;
+
+        --radius-sm: 10px;
+        --radius-md: 15px;
+        --radius-lg: 22px;
+        --radius-xl: 30px;
+        --rule-hair: 1px;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --dur-mid: 460ms;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overflow-x: clip;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-size: 1rem;
+        line-height: 1.74;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-style: normal;
+        margin: 0;
+        line-height: 1.18;
+        letter-spacing: -0.04em;
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      p {
+        margin: 0;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 3px;
+        border-radius: var(--radius-sm);
+      }
+      .num {
+        font-family: var(--font-num);
+        letter-spacing: -0.05em;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 0 var(--space-lg);
+      }
+
+      /* ── N5 floating pill nav ── */
+      .nav {
+        position: fixed;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        padding: 8px 8px 8px 18px;
+        border-radius: 999px;
+        background: oklch(19% 0.03 325 / 0.72);
+        backdrop-filter: blur(16px);
+        border: var(--rule-hair) solid oklch(100% 0 0 / 0.14);
+        max-width: calc(100vw - 24px);
+      }
+      .nav b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        color: var(--color-night-ink);
+        letter-spacing: -0.03em;
+        white-space: nowrap;
+      }
+      .nav a {
+        display: flex;
+        align-items: center;
+        height: 34px;
+        padding: 0 15px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-xs);
+        white-space: nowrap;
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .nav a:hover {
+        transform: translateY(-1px);
+      }
+      .nav a:active {
+        transform: scale(0.97);
+      }
+
+      /* ══ 1. 물건 하나 ══ */
+      .stage {
+        min-height: 100svh;
+        background: var(--color-night);
+        color: var(--color-night-ink);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-3xl) var(--space-lg) var(--space-2xl);
+        position: relative;
+        overflow: hidden;
+      }
+      .stage::after {
+        content: "";
+        position: absolute;
+        inset: auto 50% -30% auto;
+        transform: translateX(50%);
+        width: min(760px, 140vw);
+        height: 420px;
+        border-radius: 50%;
+        pointer-events: none;
+        background: radial-gradient(
+          ellipse at center,
+          oklch(62.5% 0.243 353 / 0.16),
+          transparent 68%
+        );
+      }
+      .cord {
+        width: 2px;
+        height: clamp(40px, 9vh, 90px);
+        background: linear-gradient(180deg, transparent, var(--color-night-3));
+      }
+      .clip {
+        width: 34px;
+        height: 14px;
+        border-radius: 5px;
+        background: var(--color-night-3);
+        margin-bottom: -6px;
+        z-index: 2;
+      }
+
+      /* 출입증 카드 — Tier A CSS art. 포인터를 따라 기운다 */
+      .pass {
+        position: relative;
+        z-index: 1;
+        width: clamp(196px, 52vw, 244px);
+        aspect-ratio: 0.71;
+        border-radius: 16px;
+        background: var(--color-card);
+        color: var(--color-ink);
+        box-shadow:
+          0 40px 70px -40px oklch(0% 0 0 / 0.85),
+          0 2px 0 oklch(100% 0 0 / 0.5) inset;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 22px 18px;
+        transform-origin: top center;
+        animation: sway 6s var(--ease-out) infinite;
+      }
+      @keyframes sway {
+        0%,
+        100% {
+          transform: rotate(-3.2deg);
+        }
+        50% {
+          transform: rotate(3.2deg);
+        }
+      }
+      .pass .logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        background: var(--color-accent);
+      }
+      .pass .wm {
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        color: var(--color-ink-3);
+      }
+      .pass hr {
+        width: 56px;
+        height: 1px;
+        background: var(--color-rule);
+        border: 0;
+        margin: 2px 0;
+      }
+      .pass .nm {
+        font-family: var(--font-user);
+        font-size: 15px;
+        color: var(--color-ink-4);
+      }
+      .pass .dd {
+        font-family: var(--font-num);
+        font-size: 22px;
+        color: var(--color-accent);
+        letter-spacing: -0.04em;
+      }
+      .pass .foot {
+        margin-top: auto;
+        font-size: 8px;
+        letter-spacing: 0.12em;
+        color: var(--color-ink-4);
+      }
+
+      .stage h1 {
+        margin-top: var(--space-xl);
+        font-size: var(--text-hero);
+        text-align: center;
+        max-width: 16ch;
+      }
+      .stage .hint {
+        margin-top: var(--space-sm);
+        font-size: var(--text-sm);
+        color: var(--color-night-ink-3);
+        text-align: center;
+      }
+      .stage .down {
+        margin-top: var(--space-2xl);
+        font-size: var(--text-2xs);
+        color: var(--color-night-ink-3);
+        letter-spacing: 0.16em;
+        animation: bob 2.4s var(--ease-out) infinite;
+      }
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(5px);
+        }
+      }
+
+      /* ══ 2. 채우면 이렇게 ══ */
+      .fill {
+        padding: var(--space-3xl) 0 var(--space-2xl);
+      }
+      .fill h2 {
+        font-size: var(--text-h2);
+        max-width: 15ch;
+      }
+      .fill .sub {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 38ch;
+      }
+      .filled {
+        margin-top: var(--space-2xl);
+        display: grid;
+        gap: var(--space-lg);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 820px) {
+        .filled {
+          grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+          gap: var(--space-2xl);
+          align-items: center;
+        }
+      }
+      /* 채워진 출입증 — 흔들리지 않는다. 이건 결과물이다 */
+      .pass.done {
+        margin-inline: auto;
+        animation: none;
+        transform: rotate(-2deg);
+        box-shadow: 0 30px 60px -44px var(--color-shade);
+      }
+      .pass.done .nm {
+        color: var(--color-ink);
+        font-size: 16px;
+      }
+      .surface {
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        box-shadow: 0 24px 50px -44px var(--color-shade);
+      }
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+      .srow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .label {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .money {
+        font-family: var(--font-num);
+        font-size: clamp(1.6rem, 4vw, 2.1rem);
+        letter-spacing: -0.05em;
+      }
+      .money small {
+        font-size: 0.44em;
+        color: var(--color-ink-3);
+        font-family: var(--font-body);
+      }
+      .bar {
+        height: 11px;
+        border-radius: 999px;
+        background: var(--color-tint);
+        overflow: hidden;
+        display: flex;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+      }
+      .item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: var(--radius-md);
+        border: var(--rule-hair) solid var(--color-rule);
+      }
+      .item .t {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.94rem;
+      }
+      .item .s {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .av {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        flex: none;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-2xs);
+        border: 2px solid var(--color-card);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 11px;
+        border-radius: 999px;
+        font-size: var(--text-2xs);
+        font-weight: 700;
+        font-family: var(--font-display);
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+      }
+
+      /* ══ 3. 세 장 ══ */
+      .three {
+        padding: var(--space-2xl) 0 var(--space-3xl);
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .three h2 {
+        font-size: var(--text-h2);
+        max-width: 16ch;
+      }
+      .cards {
+        margin-top: var(--space-xl);
+        display: grid;
+        gap: var(--space-md);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 760px) {
+        .cards {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      .card {
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        background: var(--color-card);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .card .k {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+        font-size: 1.05rem;
+      }
+      .card h3 {
+        font-size: 1.05rem;
+      }
+      .card p {
+        color: var(--color-ink-2);
+        font-size: var(--text-sm);
+      }
+
+      /* ══ 4. CTA ══ */
+      .close {
+        padding: var(--space-3xl) 0;
+        text-align: center;
+        background: var(--color-tint);
+      }
+      .close h2 {
+        font-size: var(--text-h2);
+        max-width: 15ch;
+        margin-inline: auto;
+      }
+      .close p {
+        margin-top: var(--space-md);
+        color: var(--color-ink-2);
+        max-width: 32ch;
+        margin-inline: auto;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+        padding: 0 34px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.02rem;
+        margin-top: var(--space-xl);
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .cta:hover {
+        transform: translateY(-2px);
+      }
+      .cta:active {
+        transform: scale(0.98);
+      }
+      .sub-cta {
+        display: block;
+        margin-top: var(--space-md);
+        font-size: var(--text-sm);
+        color: var(--color-ink-3);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      /* Ft2 two-line footer */
+      footer {
+        background: var(--color-night);
+        color: var(--color-night-ink-2);
+        padding: var(--space-2xl) 0;
+      }
+      footer .line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-sm) var(--space-lg);
+        font-size: var(--text-xs);
+      }
+      footer .line b {
+        font-family: var(--font-display);
+        color: var(--color-night-ink);
+        font-size: var(--text-sm);
+      }
+      footer .line a {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      footer .line + .line {
+        margin-top: var(--space-md);
+        padding-top: var(--space-md);
+        border-top: var(--rule-hair) solid var(--color-night-2);
+        color: var(--color-night-ink-3);
+      }
+      footer code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.92em;
+        padding: 1px 5px;
+        border-radius: 5px;
+        background: var(--color-night-2);
+        color: var(--color-night-ink-2);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation: none !important;
+          transition-duration: 0.01ms !important;
+        }
+        .pass {
+          transform: rotate(-2deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <b>웨딩 플랜트</b>
+      <a href="#start">시작하기</a>
+    </nav>
+
+    <main>
+      <!-- 1. 물건 하나 -->
+      <section class="stage">
+        <span class="cord" aria-hidden="true"></span>
+        <span class="clip" aria-hidden="true"></span>
+        <div class="pass">
+          <span class="logo" aria-hidden="true"></span>
+          <span class="wm">WEDDING PLANT</span>
+          <hr />
+          <span class="nm">이름</span>
+          <span class="dd num">D-???</span>
+          <span class="foot">아직 발급되지 않음</span>
+        </div>
+        <h1>당신의 출입증은<br />아직 비어 있어요</h1>
+        <p class="hint">끌어서 흔들어 보세요</p>
+        <p class="down" aria-hidden="true">아래로</p>
+      </section>
+
+      <!-- 2. 채우면 이렇게 -->
+      <section class="fill">
+        <div class="wrap">
+          <h2>채우면 이렇게 됩니다</h2>
+          <p class="sub">
+            이름과 결혼식 날짜를 넣는 순간, 나머지 전부가 그 날짜를 기준으로
+            움직이기 시작합니다.
+          </p>
+
+          <div class="filled">
+            <div class="pass done">
+              <span class="logo" aria-hidden="true"></span>
+              <span class="wm">WEDDING PLANT</span>
+              <hr />
+              <span class="nm">지현 · 민수</span>
+              <span class="dd num">D-129</span>
+              <span class="foot">2026.12.31 · 아모르하우스</span>
+            </div>
+
+            <div class="stack">
+              <div class="surface stack">
+                <div>
+                  <span class="label">남은 예산</span>
+                  <div class="money">1,400<small>만원</small></div>
+                </div>
+                <div class="bar" aria-hidden="true">
+                  <i style="width: 38%; background: var(--color-accent)"></i>
+                  <i style="width: 28.6%; background: var(--color-plan)"></i>
+                </div>
+                <div class="srow" style="justify-content: space-between">
+                  <span class="label">썼어요 1,600만원</span>
+                  <span class="label">쓸 예정 1,200만원</span>
+                </div>
+              </div>
+              <div class="surface stack">
+                <div class="item">
+                  <span class="av">민</span>
+                  <span style="flex: 1; min-width: 0">
+                    <span class="t" style="display: block"
+                      >민수님이 예산을 바꿨어요</span
+                    >
+                    <span class="s">4,000 → 4,200만원 · 2시간 전</span>
+                  </span>
+                </div>
+                <div class="srow">
+                  <span class="chip">♥ 신랑 · 신부</span>
+                  <span class="label">둘만의 대화방 · 새 메시지 5</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 세 장 -->
+      <section class="three">
+        <div class="wrap">
+          <h2>출입증 하나로<br />세 가지가 열립니다</h2>
+          <div class="cards">
+            <div class="card">
+              <span class="k" aria-hidden="true">◷</span>
+              <h3>플랜 보드</h3>
+              <p>
+                월별로 세워 두고 끌어서 옮깁니다. 날짜가 아직 없는 일도 자리를
+                차지합니다.
+              </p>
+            </div>
+            <div class="card">
+              <span class="k" aria-hidden="true">₩</span>
+              <h3>예산</h3>
+              <p>
+                쓴 돈과 쓸 돈을 갈라 놓습니다. 남은 금액이 한 줄로 나옵니다.
+              </p>
+            </div>
+            <div class="card">
+              <span class="k" aria-hidden="true">★</span>
+              <h3>견적 후기</h3>
+              <p>
+                먼저 끝낸 사람들의 실제 지출. 평균이 아니라 중앙값으로 냅니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. CTA -->
+      <section class="close" id="start">
+        <div class="wrap">
+          <h2>발급까지 1분</h2>
+          <p>이름 · 날짜 · 예산 세 가지만 물어봅니다.</p>
+          <a class="cta" href="#start">내 출입증 만들기</a>
+          <a class="sub-cta" href="#start">로그인 없이 둘러보기</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p class="line">
+          <b>웨딩 플랜트</b>
+          <a href="/privacy">개인정보처리방침</a>
+          <span>seoulmomenttw@gmail.com</span>
+        </p>
+        <p class="line">
+          히어로의 출입증은 배포 시 실제 3D 컴포넌트(<code>Lanyard</code>)로
+          교체합니다. WebGL을 못 쓰는 환경에서는 이 CSS 카드가 그대로 폴백이
+          됩니다.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // 포인터를 따라 카드가 기운다. 흔들림 애니메이션은 CSS 가 맡고,
+      // 여기서는 기울기만 얹는다 — 둘을 한 속성에서 다투게 하지 않으려고 부모에 건다.
+      (function () {
+        var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+        var stage = document.querySelector(".stage");
+        var pass = stage && stage.querySelector(".pass");
+        if (!stage || !pass || reduce.matches) return;
+
+        var raf = null,
+          tx = 0,
+          ty = 0;
+        function apply() {
+          raf = null;
+          pass.style.transform = "";
+          stage.style.setProperty("--tilt-x", tx.toFixed(2) + "deg");
+          stage.style.setProperty("--tilt-y", ty.toFixed(2) + "deg");
+          pass.style.rotate = ty.toFixed(2) + "deg";
+        }
+        stage.addEventListener("pointermove", function (e) {
+          var r = stage.getBoundingClientRect();
+          ty = ((e.clientX - r.left) / r.width - 0.5) * 14;
+          tx = ((e.clientY - r.top) / r.height - 0.5) * -6;
+          if (!raf) raf = requestAnimationFrame(apply);
+        });
+        stage.addEventListener("pointerleave", function () {
+          ty = 0;
+          tx = 0;
+          if (!raf) raf = requestAnimationFrame(apply);
+        });
+      })();
+    </script>
+  </body>
+</html>

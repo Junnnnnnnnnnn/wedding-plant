@@ -13,6 +13,7 @@ import ApiErrorModal from "./components/ApiErrorModal";
 import ApiLoadingOverlay from "./components/ApiLoadingOverlay";
 import SessionExpiredModal from "./components/SessionExpiredModal";
 import AuthRedirectToMain from "./components/AuthRedirectToMain";
+import GuestGate from "./components/GuestGate";
 
 const hakgyoansim = localFont({
   src: [
@@ -178,6 +179,9 @@ export default function RootLayout({
         />
         <ApiProvider>
           <AuthRedirectToMain />
+          <Suspense fallback={null}>
+            <GuestGate />
+          </Suspense>
           <NotificationProvider>
             <WeddingProvider>
               {children}

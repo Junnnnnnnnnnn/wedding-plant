@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>웨딩 플랜트 — 시안 1 · 스크롤이 곧 준비 기간</title>
+    <style>
+      /* Hallmark · macrostructure: Marquee Hero (scroll-chapter) · tone: playful · anchor hue: rose 353
+ * nav: N2 floating chip · footer: Ft5 statement · enrichment: none (CSS-drawn app surfaces)
+ * pre-emit critique: P5 H5 E4 S5 R4 V5
+ */
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Dgm";
+        src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "TmnEB";
+        src: url("../../public/font/woff2/TmoneyRoundWindExtraBold.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Tmn";
+        src: url("../../public/font/woff2/TmoneyRoundWindRegular.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Dgm", system-ui, sans-serif;
+        --font-body: "Dgm", system-ui, sans-serif;
+        --font-num: "TmnEB", "Dgm", sans-serif;
+        --font-user: "Tmn", "Dgm", sans-serif;
+
+        --color-paper: oklch(98.6% 0.004 340);
+        --color-card: oklch(100% 0 0);
+        --color-tint: oklch(97.2% 0.014 353);
+        --color-ink: oklch(19% 0.045 348);
+        --color-ink-2: oklch(48% 0.02 340);
+        --color-ink-3: oklch(66% 0.014 340);
+        --color-ink-4: oklch(80% 0.01 340);
+        --color-accent: oklch(62.5% 0.243 353);
+        --color-accent-2: oklch(72% 0.18 355);
+        --color-accent-soft: oklch(96.5% 0.024 353);
+        --color-accent-line: oklch(89% 0.05 353);
+        --color-rule: oklch(93.5% 0.01 345);
+        --color-rule-2: oklch(88% 0.016 345);
+        --color-dash: oklch(84% 0.014 345);
+        --color-plan: oklch(82% 0.012 345);
+        --color-kakao: oklch(88% 0.16 96);
+        --color-kakao-ink: oklch(28% 0.05 80);
+        --color-focus: oklch(55% 0.2 353);
+        --color-shade: oklch(19% 0.045 348 / 0.1);
+
+        --space-2xs: 4px;
+        --space-xs: 8px;
+        --space-sm: 12px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 40px;
+        --space-2xl: 64px;
+        --space-3xl: 104px;
+
+        --text-hero: clamp(2.5rem, 8.5vw, 6.2rem);
+        --text-dday: clamp(4.2rem, 17vw, 12rem);
+        --text-h2: clamp(1.75rem, 4.6vw, 3.1rem);
+        --text-h3: clamp(1.05rem, 2vw, 1.35rem);
+        --text-lead: clamp(0.98rem, 1.7vw, 1.15rem);
+        --text-sm: 0.875rem;
+        --text-xs: 0.79rem;
+        --text-2xs: 0.71rem;
+
+        --radius-sm: 10px;
+        --radius-md: 16px;
+        --radius-lg: 22px;
+        --radius-xl: 30px;
+        --rule-hair: 1px;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --dur-mid: 420ms;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        overflow-x: clip;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-size: 1rem;
+        line-height: 1.72;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-style: normal;
+        margin: 0;
+        line-height: 1.16;
+        letter-spacing: -0.04em;
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      p {
+        margin: 0;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 3px;
+        border-radius: var(--radius-sm);
+      }
+      .num {
+        font-family: var(--font-num);
+        letter-spacing: -0.05em;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 var(--space-lg);
+      }
+
+      /* ── N2 floating chip nav ── */
+      .nav {
+        position: fixed;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        padding: 7px 7px 7px 16px;
+        border-radius: 999px;
+        background: oklch(100% 0 0 / 0.82);
+        backdrop-filter: blur(14px);
+        border: var(--rule-hair) solid var(--color-rule);
+        box-shadow: 0 8px 26px -18px var(--color-shade);
+        max-width: calc(100vw - 24px);
+      }
+      .nav b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.03em;
+        white-space: nowrap;
+      }
+      .nav .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--color-accent);
+        flex: none;
+      }
+      .nav a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 34px;
+        padding: 0 15px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-xs);
+        white-space: nowrap;
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .nav a:hover {
+        transform: translateY(-1px);
+      }
+      .nav a:active {
+        transform: scale(0.97);
+      }
+
+      /* ── chapters ── */
+      .chapter {
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: var(--space-3xl) 0;
+        position: relative;
+      }
+      .chapter + .chapter {
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      .mark {
+        font-size: var(--text-2xs);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--color-ink-4);
+        margin-bottom: var(--space-md);
+      }
+
+      /* hero */
+      .hero {
+        text-align: center;
+        align-items: center;
+      }
+      /* .hero 안에서만 스타일하면 마지막 장(.finale)의 D-0 이 기본 크기로 떨어진다.
+   시작(D-312)과 끝(D-0)이 같은 크기여야 "다 했다"가 보상으로 읽힌다. */
+      .dday {
+        display: block;
+        font-family: var(--font-num);
+        font-size: var(--text-dday);
+        line-height: 0.82;
+        letter-spacing: -0.06em;
+        color: var(--color-accent);
+      }
+      .hero h1 {
+        margin-top: var(--space-lg);
+        font-size: var(--text-hero);
+        max-width: 14ch;
+      }
+      .hero .lead {
+        margin-top: var(--space-lg);
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 34ch;
+      }
+      .scroll-hint {
+        margin-top: var(--space-2xl);
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+      .scroll-hint span:last-child {
+        animation: bob 2.2s var(--ease-out) infinite;
+      }
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(6px);
+        }
+      }
+
+      /* 빈 슬롯 그리드 = 아직 아무것도 없는 플랜 */
+      .slots {
+        display: grid;
+        gap: 10px;
+        margin-top: var(--space-xl);
+        width: 100%;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      @media (min-width: 620px) {
+        .slots {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+      .slot {
+        height: 76px;
+        border-radius: var(--radius-md);
+        border: 1.5px dashed var(--color-dash);
+        display: grid;
+        place-items: center;
+        font-size: var(--text-2xs);
+        color: var(--color-ink-4);
+        font-family: var(--font-display);
+        font-weight: 700;
+      }
+      .slot.on {
+        border: var(--rule-hair) solid var(--color-accent-line);
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+      }
+      .slot.done {
+        border-color: transparent;
+        background: var(--color-accent);
+        color: var(--color-card);
+      }
+
+      .chapter-head {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+        margin-bottom: var(--space-xl);
+      }
+      .chapter-head h2 {
+        font-size: var(--text-h2);
+        max-width: 16ch;
+      }
+      .chapter-head p {
+        color: var(--color-ink-2);
+        font-size: var(--text-lead);
+        max-width: 40ch;
+      }
+      .dday-inline {
+        font-family: var(--font-num);
+        font-size: clamp(2.6rem, 7vw, 4.4rem);
+        line-height: 1;
+        color: var(--color-accent);
+        letter-spacing: -0.05em;
+      }
+
+      /* 앱 표면 (기기 프레임 없음 — 내용만) */
+      .surface {
+        background: var(--color-card);
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        padding: var(--space-lg);
+        box-shadow: 0 24px 50px -40px var(--color-shade);
+      }
+      .srow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+      .label {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .money {
+        font-family: var(--font-num);
+        font-size: clamp(1.7rem, 4.4vw, 2.5rem);
+        letter-spacing: -0.05em;
+      }
+      .money small {
+        font-size: 0.42em;
+        color: var(--color-ink-3);
+        font-family: var(--font-body);
+      }
+      .bar {
+        height: 12px;
+        border-radius: 999px;
+        background: var(--color-tint);
+        overflow: hidden;
+        display: flex;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+      }
+      .bar .used {
+        background: var(--color-accent);
+      }
+      .bar .plan {
+        background: var(--color-plan);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: var(--text-2xs);
+        font-weight: 700;
+        font-family: var(--font-display);
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+      }
+      .chip.grey {
+        background: var(--color-tint);
+        color: var(--color-ink-3);
+      }
+      .item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: var(--radius-md);
+        border: var(--rule-hair) solid var(--color-rule);
+      }
+      .item .t {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.94rem;
+      }
+      .item .s {
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      .avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        flex: none;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-xs);
+        border: 2px solid var(--color-card);
+      }
+      .avatar.dash {
+        background: transparent;
+        border: 1.5px dashed var(--color-dash);
+        color: var(--color-ink-4);
+      }
+      .two {
+        display: grid;
+        gap: var(--space-lg);
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 860px) {
+        .two {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: var(--space-2xl);
+          align-items: center;
+        }
+      }
+
+      /* 마지막 장 */
+      .finale {
+        text-align: center;
+        align-items: center;
+        background: var(--color-tint);
+      }
+      .finale h2 {
+        font-size: var(--text-h2);
+        max-width: 15ch;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+        padding: 0 34px;
+        border-radius: 999px;
+        background: var(--color-kakao);
+        color: var(--color-kakao-ink);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.02rem;
+        margin-top: var(--space-xl);
+        transition: transform var(--dur-mid) var(--ease-out);
+      }
+      .cta:hover {
+        transform: translateY(-2px);
+      }
+      .cta:active {
+        transform: scale(0.98);
+      }
+      .sub-cta {
+        margin-top: var(--space-md);
+        font-size: var(--text-sm);
+        color: var(--color-ink-3);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+
+      /* Ft5 statement footer */
+      footer {
+        padding: var(--space-2xl) 0;
+        border-top: var(--rule-hair) solid var(--color-rule);
+      }
+      footer .big {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(1.3rem, 3.4vw, 2rem);
+        letter-spacing: -0.035em;
+        max-width: 20ch;
+        line-height: 1.25;
+      }
+      footer .meta {
+        margin-top: var(--space-xl);
+        padding-top: var(--space-md);
+        border-top: var(--rule-hair) solid var(--color-rule);
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-xs) var(--space-lg);
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+      footer .meta a {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <span class="dot" aria-hidden="true"></span>
+      <b>웨딩 플랜트</b>
+      <a href="#start">시작하기</a>
+    </nav>
+
+    <main>
+      <!-- 0% -->
+      <section class="chapter hero">
+        <div
+          class="wrap"
+          style="display: flex; flex-direction: column; align-items: center"
+        >
+          <span class="dday num">D-312</span>
+          <h1>아직 아무것도<br />안 정했어요</h1>
+          <p class="lead">
+            예식장도, 스드메도, 예산도. 결혼 준비는 여기서 시작합니다.
+          </p>
+          <div class="slots" aria-hidden="true">
+            <div class="slot">예식장</div>
+            <div class="slot">스드메</div>
+            <div class="slot">예물</div>
+            <div class="slot">신혼여행</div>
+          </div>
+          <p class="scroll-hint">
+            <span>내려 보세요</span><span aria-hidden="true">↓</span>
+          </p>
+        </div>
+      </section>
+
+      <!-- 25% -->
+      <section class="chapter">
+        <div class="wrap">
+          <div class="two">
+            <div class="chapter-head">
+              <span class="dday-inline num">D-274</span>
+              <h2>예식장을 잡으면<br />날짜가 생깁니다</h2>
+              <p>
+                날짜가 정해지는 순간 나머지 전부가 그 날짜를 기준으로
+                움직입니다. 그걸 사람이 세고 있을 필요는 없습니다.
+              </p>
+            </div>
+            <div class="surface stack">
+              <div class="srow">
+                <span class="chip">예식장</span>
+                <span class="label" style="margin-left: auto"
+                  >2027년 6월 12일 토요일</span
+                >
+              </div>
+              <div class="item">
+                <span class="avatar">지</span>
+                <div style="flex: 1; min-width: 0">
+                  <div class="t">아모르하우스 본식</div>
+                  <div class="s">오후 2시 30분 · 서울 강남구</div>
+                </div>
+                <span class="chip grey">확정</span>
+              </div>
+              <div class="stack" style="gap: 8px">
+                <div class="item" style="opacity: 0.55">
+                  <span class="avatar dash" aria-hidden="true">＋</span>
+                  <div style="flex: 1; min-width: 0">
+                    <div class="t">스드메 상담</div>
+                    <div class="s">날짜 미정</div>
+                  </div>
+                </div>
+                <div class="item" style="opacity: 0.4">
+                  <span class="avatar dash" aria-hidden="true">＋</span>
+                  <div style="flex: 1; min-width: 0">
+                    <div class="t">예물</div>
+                    <div class="s">날짜 미정</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="slots"
+            style="margin-top: var(--space-2xl)"
+            aria-hidden="true"
+          >
+            <div class="slot on">예식장</div>
+            <div class="slot">스드메</div>
+            <div class="slot">예물</div>
+            <div class="slot">신혼여행</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 50% -->
+      <section class="chapter">
+        <div class="wrap">
+          <div class="two">
+            <div class="surface stack">
+              <div>
+                <span class="label">남은 예산</span>
+                <div class="money">1,400<small>만원</small></div>
+              </div>
+              <div class="bar" aria-hidden="true">
+                <i class="used" style="width: 38%"></i
+                ><i class="plan" style="width: 24%"></i>
+              </div>
+              <div
+                class="srow"
+                style="
+                  justify-content: space-between;
+                  font-size: var(--text-2xs);
+                  color: var(--color-ink-3);
+                "
+              >
+                <span>썼어요 1,600만원</span><span>쓸 예정 1,200만원</span>
+              </div>
+              <div
+                class="item"
+                style="
+                  border-color: var(--color-accent-line);
+                  background: var(--color-accent-soft);
+                "
+              >
+                <span
+                  class="avatar"
+                  style="
+                    background: var(--color-accent);
+                    color: var(--color-card);
+                  "
+                  >민</span
+                >
+                <div style="flex: 1; min-width: 0">
+                  <div class="t">민수님이 예산을 바꿨어요</div>
+                  <div class="s">4,000 → 4,200만원 · 2시간 전</div>
+                </div>
+              </div>
+            </div>
+            <div class="chapter-head">
+              <span class="dday-inline num">D-186</span>
+              <h2>돈은 혼자<br />세는 게 아닙니다</h2>
+              <p>
+                한 사람이 계약하고 다른 사람이 모르는 일이 없어야 합니다. 누가
+                무엇을 얼마에 바꿨는지 그대로 남습니다.
+              </p>
+            </div>
+          </div>
+          <div
+            class="slots"
+            style="margin-top: var(--space-2xl)"
+            aria-hidden="true"
+          >
+            <div class="slot done">예식장</div>
+            <div class="slot on">스드메</div>
+            <div class="slot on">예물</div>
+            <div class="slot">신혼여행</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 80% -->
+      <section class="chapter">
+        <div class="wrap">
+          <div class="two">
+            <div class="chapter-head">
+              <span class="dday-inline num">D-41</span>
+              <h2>끝난 것들이<br />다음 사람의 답이 됩니다</h2>
+              <p>
+                완료한 일정은 업체명과 실제 지출을 그대로 가지고 있습니다.
+                거기에 한 줄만 얹으면 견적 후기가 됩니다.
+              </p>
+            </div>
+            <div class="surface stack">
+              <div class="srow" style="gap: 14px">
+                <div
+                  class="money"
+                  style="font-size: clamp(1.4rem, 3.6vw, 1.9rem)"
+                >
+                  580<small>만</small>
+                </div>
+                <div style="flex: 1; min-width: 0">
+                  <div
+                    class="t"
+                    style="font-family: var(--font-display); font-weight: 700"
+                  >
+                    아모레 스튜디오
+                  </div>
+                  <div
+                    class="s"
+                    style="
+                      font-size: var(--text-2xs);
+                      color: var(--color-ink-3);
+                    "
+                  >
+                    서울 강남구 · D-131 신부
+                  </div>
+                </div>
+                <span class="chip grey">★★★★☆</span>
+              </div>
+              <div style="height: 1px; background: var(--color-rule)"></div>
+              <div class="srow" style="gap: 14px">
+                <div
+                  class="money"
+                  style="font-size: clamp(1.4rem, 3.6vw, 1.9rem)"
+                >
+                  710<small>만</small>
+                </div>
+                <div style="flex: 1; min-width: 0">
+                  <div
+                    class="t"
+                    style="font-family: var(--font-display); font-weight: 700"
+                  >
+                    라비페르 스튜디오
+                  </div>
+                  <div
+                    class="s"
+                    style="
+                      font-size: var(--text-2xs);
+                      color: var(--color-ink-3);
+                    "
+                  >
+                    서울 서초구 · D-88 신랑
+                  </div>
+                </div>
+                <span class="chip grey">★★★★★</span>
+              </div>
+              <p class="label" style="line-height: 1.6">
+                표본이 충분할 때만 중앙값을 보여줍니다. 적은 표본으로 시세를
+                말하는 건 조작보다 큰 거짓말이라서요.
+              </p>
+            </div>
+          </div>
+          <div
+            class="slots"
+            style="margin-top: var(--space-2xl)"
+            aria-hidden="true"
+          >
+            <div class="slot done">예식장</div>
+            <div class="slot done">스드메</div>
+            <div class="slot done">예물</div>
+            <div class="slot on">신혼여행</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 100% -->
+      <section class="chapter finale" id="start">
+        <div
+          class="wrap"
+          style="display: flex; flex-direction: column; align-items: center"
+        >
+          <span class="dday num">D-0</span>
+          <h2 style="margin-top: var(--space-lg)">둘이서 다 했어요</h2>
+          <div class="slots" style="max-width: 640px" aria-hidden="true">
+            <div class="slot done">예식장</div>
+            <div class="slot done">스드메</div>
+            <div class="slot done">예물</div>
+            <div class="slot done">신혼여행</div>
+          </div>
+          <a class="cta" href="#start">카카오로 시작하기</a>
+          <a class="sub-cta" href="#start">로그인 없이 둘러보기</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p class="big">
+          결혼 준비는 둘이 하는 일입니다.<br />도구도 그래야 합니다.
+        </p>
+        <div class="meta">
+          <span>웨딩 플랜트</span>
+          <a href="/privacy">개인정보처리방침</a>
+          <span>문의 seoulmomenttw@gmail.com</span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
