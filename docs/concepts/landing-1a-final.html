@@ -3068,15 +3068,24 @@
         .beats {
           display: none;
         }
-        /* 무대 타임라인이 안 도는 폭이라 시작 상태(opacity:0)에 갇히지 않게 되돌린다 */
-        .stage2 h2,.stage2 .lead,.stage2 .hint,.stage2 .toggle,
-  .sec.vs .device,.sec.sync .web,.sec.sync .device,.sec.sync .wcard,
-  /* 핀이 안 도는 폭에서는 창 높이를 고정하지 않는다 — 글이 길어지면 잘린다 */
-  .cmpgrid .win2 {
+        /* 핀이 안 도는 폭에서는 창 높이를 고정하지 않는다 — 글이 길어지면 잘린다.
+           폰(.dev2)은 비율이 곧 정체성이라 높이를 그대로 둔다 */
+        .cmpgrid .win2 {
           height: auto;
           min-height: var(--cw-h);
         }
-        /* 폰은 비율이 곧 정체성이라 높이를 그대로 둔다 */
+        /* 무대 타임라인이 안 도는 폭이라 시작 상태(opacity:0)에 갇히지 않게 되돌린다.
+           **이 목록 가운데에 다른 규칙을 끼워 넣지 말 것** — 목록이 두 동강 나서
+           모바일에서 제목·리드문이 통째로 투명해진다(실제로 그랬다). */
+        .stage2 h2,
+        .stage2 .lead,
+        .stage2 .hint,
+        .stage2 .toggle,
+        .stage2 .note,
+        .sec.vs .device,
+        .sec.sync .web,
+        .sec.sync .device,
+        .sec.sync .wcard,
         .sec.cmp .win2,
         .sec.cmp .dev2,
         .sec.cmp .toggle,
@@ -3086,6 +3095,64 @@
           opacity: 1;
           transform: none;
           animation: none;
+        }
+      }
+
+      /* ── 좁은 폭 다듬기 ──────────────────────────────────
+         핀이 없으니 세로로 흐르는데, 넓은 화면용 비율이 그대로 남아 있으면
+         칸이 짜부라지고 빈 자리가 크게 남는다. */
+      @media (max-width: 1019px) {
+        /* 노션 창: 사이드바가 27% 를 가져가 표가 "비…" 로 잘렸다.
+           좁은 폭에서는 사이드바를 접고 표에 폭을 다 준다. */
+        .nwin .side-nav {
+          display: none;
+        }
+        .nwin .doc {
+          padding: 12px 13px 0;
+        }
+        .nwin .nrow {
+          grid-template-columns: 1.15fr 0.95fr 0.85fr 62px;
+        }
+        /* "＋ 속성" 은 이 화면의 요지다 — 잘려서 "+ …" 이 되면 안 된다 */
+        .nwin .dash {
+          padding: 0 4px;
+          font-size: 9px;
+        }
+        .nwin .nrow > span {
+          padding: 6px 7px;
+        }
+        /* 창 높이를 고정하지 않는다 — 내용보다 크면 아래가 통째로 빈다 */
+        .cmpgrid .win2 {
+          min-height: 0;
+        }
+        /* 폰 안 대화가 화면 오른쪽 끝에 붙지 않게 */
+        .cbody {
+          padding: 11px 12px;
+        }
+      }
+
+      /* 핀이 없는 폭에서는 **각 덩어리가 화면에 들어올 때** 떠오르게 한다.
+         무대 진행도(--st)가 아니라 그 요소 자신의 view() 를 쓴다 —
+         핀이 없으면 --st 는 한 번에 다 지나가 버려 아무것도 안 보인다. */
+      @supports (animation-timeline: view()) {
+        @media (max-width: 1019px) {
+          .stage2 h2,
+          .stage2 .lead,
+          .stage2 .toggle,
+          .stage2 .note,
+          .sec.vs .device,
+          .sec.vs .say .li,
+          .sec.sync .web,
+          .sec.sync .device,
+          .sec.cmp .win2,
+          .sec.cmp .dev2,
+          .sec.cmp .cmpcap {
+            opacity: 0;
+            transform: translateY(18px);
+            animation: riseIn linear both;
+            animation-timeline: view();
+            animation-range: entry 4% entry 44%;
+          }
         }
       }
 
