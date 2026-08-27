@@ -317,6 +317,10 @@
       .odo-mask {
         height: 1.12em;
         overflow: hidden;
+        /* 마스크 폭이 가장 넓은 숫자(312)에 고정되면 "0" 일 때 오른쪽에 빈칸이
+           남아 D-0 덩어리가 왼쪽으로 치우쳐 보인다. 굴림과 같은 구간에서
+           자릿수만큼 좁힌다 (312·274·186 → 3자리, 92 → 2자리, 0 → 1자리). */
+        width: 3ch;
       }
       .odo-track {
         display: block;
@@ -334,6 +338,11 @@
           animation-timeline: --hero;
           animation-range: contain 2% contain 55%;
           animation-timing-function: steps(5, jump-none);
+        }
+        .odo-mask {
+          animation: maskW linear both;
+          animation-timeline: --hero;
+          animation-range: contain 2% contain 55%;
         }
       }
       @keyframes roll {
@@ -559,6 +568,20 @@
         width: clamp(186px, min(72vw, 26vh), 290px);
       }
 
+      @keyframes maskW {
+        0%,
+        60% {
+          width: 3ch;
+        }
+        60.01%,
+        80% {
+          width: 2ch;
+        }
+        80.01%,
+        100% {
+          width: 1ch;
+        }
+      }
       @keyframes swapOut {
         to {
           opacity: 0;
@@ -3077,25 +3100,217 @@
           bottom: 12px;
         }
 
-        /* ── 두 칸을 한 자리에 겹친다 ── */
-        .syncgrid,
+        /* ── 두 칸을 **둘 다 보이게** 놓는다 ──
+           겹쳐 두고 갈아 끼워 봤더니 한 번에 하나만 보여 "지금 vs 여기서는" 대비가
+           사라졌다. 문서끼리(노션)는 세로로 쌓고, 기기끼리(폰·웹)는 가로로 나란히
+           둔다 — 가로로 두면 작아지지만 생김새의 대비는 그게 더 잘 산다. */
         .cmpgrid {
           grid-template-columns: minmax(0, 1fr);
-          justify-items: stretch;
+          gap: var(--space-sm);
         }
-        .syncgrid > .web,
-        .syncgrid > .device,
-        .cmpgrid > .cmpcol {
-          grid-area: 1 / 1;
+        .kchat .cmpgrid,
+        .syncgrid {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: 10px;
+          align-items: start;
+        }
+        .syncgrid {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
         }
 
         /* ── 창·폰을 한 화면에 맞춘다 ── */
         .stage2 .device {
           width: min(70vw, 38vh);
         }
+        /* 가로로 나란히 둔 폰·웹은 칸 폭을 그대로 쓴다 (고정 폭이면 칸을 넘친다) */
+        .sec.sync .device {
+          width: 100%;
+        }
         .cmpgrid {
-          --cw-h: min(42vh, 360px);
-          --dev2-h: min(47vh, 410px);
+          --cw-h: min(27vh, 240px);
+          --dev2-h: min(44vh, 380px);
+        }
+        /* 노션 섹션은 창 두 개를 세로로 쌓아 한 화면에 넣어야 한다 —
+           보드 화면의 완료 묶음은 넓은 화면에서만 내고, 남는 카드는 창 높이에
+           딱 맞춘다 (넘치면 카드가 중간에서 잘려 보인다) */
+        .sec.cmp .pane .bsep,
+        .sec.cmp .pane .bc.done {
+          display: none;
+        }
+        .sec.cmp .bc {
+          padding: 9px 10px;
+          margin-bottom: 6px;
+        }
+        .sec.cmp .bc .l2 {
+          margin-top: 5px;
+        }
+        .sec.cmp .brule {
+          margin: 6px 0 8px;
+        }
+        .sec.cmp .m-board .mk-body,
+        .sec.cmp .pwin .body {
+          padding: 10px 11px;
+        }
+        /* 알약 네 개가 두 줄로 넘어가 내용을 아래로 밀었다 — 아이콘을 빼고
+           한 줄에 넣는다. 둥근 모서리가 첫 알약을 파고들지 않게 여백도 늘린다. */
+        .cmp .toggle {
+          flex-wrap: nowrap;
+          padding: 6px;
+          border-radius: 22px;
+        }
+        .cmp .toggle label {
+          height: 32px;
+          padding: 0 10px;
+          font-size: 11px;
+          gap: 0;
+        }
+        .cmp .toggle label .ic {
+          display: none;
+        }
+
+        /* 웹 카드가 폰보다 두 배 높아 한 화면을 넘겼다 — 카드 속을 낮춘다 */
+        .sec.sync .wcard {
+          padding: 8px;
+          gap: 3px;
+        }
+        .sec.sync .wcard .badge {
+          width: 22px;
+          height: 22px;
+        }
+        .sec.sync .wcard .badge .ic {
+          font-size: 13px;
+        }
+        .sec.sync .wcard .s {
+          display: none;
+        }
+        .sec.sync .wcard .m {
+          font-size: 0.9rem;
+        }
+        .sec.sync .web-foot {
+          gap: 4px;
+        }
+        .sec.sync .web-foot .v {
+          font-size: 1.25rem;
+        }
+
+        /* 연동 섹션 폰은 칸 폭이 170px 밖에 안 돼, 카드 글자가 한 글자씩
+           줄바꿈됐다. 부제·타일을 빼고 제목 한 줄 + 금액 한 줄로 낮춘다. */
+        .sec.sync .apphead {
+          padding: 8px 9px;
+        }
+        .sec.sync .apphead .nm {
+          font-size: 10px;
+          white-space: nowrap;
+        }
+        .sec.sync .apphead .dday {
+          padding: 2px 6px;
+          font-size: 8.5px;
+        }
+        .sec.sync .appcard {
+          display: block;
+          padding: 7px 8px;
+        }
+        .sec.sync .appcard .tile2,
+        .sec.sync .appcard .c,
+        .sec.sync .push {
+          display: none;
+        }
+        .sec.sync .appcard .t {
+          display: block;
+          font-size: 10px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .sec.sync .appcard .right {
+          display: block;
+          margin-top: 2px;
+        }
+        .sec.sync .appcard .m {
+          font-size: 10.5px;
+          white-space: nowrap;
+        }
+        .sec.sync .appnav {
+          padding: 5px 0;
+        }
+        /* 폰 화면 아래가 탭바에 잘리지 않게 카드 수를 줄인다 */
+        .sec.sync .appcard:nth-of-type(n + 3) {
+          display: none;
+        }
+        /* 웹 창 머리글이 두 줄로 접혔다 */
+        .sec.sync .web-top {
+          gap: 6px;
+          padding-bottom: 10px;
+          margin-bottom: 10px;
+        }
+        .sec.sync .web-top b {
+          white-space: nowrap;
+          font-size: 11px;
+        }
+        .sec.sync .web-top i {
+          width: 16px;
+          height: 16px;
+        }
+        .sec.sync .web-top .tag {
+          display: none;
+        }
+        .sec.sync .wcard .n {
+          white-space: nowrap;
+          font-size: 0.8rem;
+        }
+        .sec.sync .appnav span {
+          font-size: 7px;
+        }
+
+        /* 폰이 좁아져 앱 화면 안이 오른쪽으로 넘쳤다 (완료 탭이 잘리고 줄이 어긋남) */
+        /* 폰이 좁아 탭 줄이 화면 오른쪽으로 넘쳐 "완료 1" 이 잘렸다 */
+        .sec.vs .sbody {
+          padding: 8px 9px;
+          gap: 7px;
+        }
+        .sec.vs .apptabs {
+          gap: 3px;
+          padding: 3px;
+        }
+        .sec.vs .apptabs span {
+          min-width: 0;
+          padding: 3px 4px;
+          font-size: 8.5px;
+          white-space: nowrap;
+        }
+        .sec.vs .appcard {
+          padding: 8px;
+          gap: 8px;
+        }
+        .sec.vs .appcard .t {
+          font-size: 10.5px;
+        }
+        .sec.vs .appcard .c,
+        .sec.vs .appcard .m {
+          font-size: 9px;
+        }
+        .sec.vs .appcard .tile2 {
+          width: 26px;
+          height: 26px;
+        }
+
+        /* 웹 카드가 "웹" 으로 읽혀야 한다 — 창 신호등을 붙인다 */
+        .sec.sync .web {
+          position: relative;
+          padding-top: 26px;
+        }
+        .sec.sync .web::before {
+          content: "";
+          position: absolute;
+          top: 11px;
+          left: 14px;
+          width: 30px;
+          height: 7px;
+          border-radius: 99px;
+          background:
+            radial-gradient(circle 3.5px at 3.5px 3.5px, #f0d9e5 99%, transparent),
+            radial-gradient(circle 3.5px at 15px 3.5px, #f0d9e5 99%, transparent),
+            radial-gradient(circle 3.5px at 26.5px 3.5px, #f0d9e5 99%, transparent);
         }
         .cmpgrid .win2 {
           height: var(--cw-h);
@@ -3131,7 +3346,59 @@
           padding: 6px 7px;
         }
         .cbody {
-          padding: 11px 12px;
+          padding: 9px 10px;
+          gap: 6px;
+        }
+        /* 폰 두 대를 나란히 놓아 칸이 좁다 — 머리글이 두 줄로 접히고
+           일정 카드의 "상세보기" 가 아래로 잘렸다 */
+        .kchat .chead {
+          padding: 4px 9px 6px;
+        }
+        .kchat .chead .nm {
+          font-size: 11px;
+          white-space: nowrap;
+        }
+        .kchat .cbadge {
+          padding: 1px 4px;
+          font-size: 8px;
+        }
+        .kchat .chead .mem {
+          font-size: 8px;
+        }
+        .kchat .khead {
+          padding: 5px 9px 7px;
+        }
+        .kchat .khead b {
+          font-size: 11px;
+        }
+        .kchat .cb .t,
+        .kchat .kbody .kb {
+          font-size: 10px;
+          padding: 5px 8px;
+        }
+        .kchat .schcard {
+          width: 100%;
+        }
+        .kchat .schcard .hd {
+          padding: 6px 9px 5px;
+          font-size: 10px;
+        }
+        .kchat .schcard .in {
+          padding: 7px 9px 8px;
+        }
+        .kchat .schcard .cost {
+          margin-top: 5px;
+          padding-top: 5px;
+        }
+        .kchat .schcard .go {
+          margin-top: 6px;
+          padding: 4px;
+          font-size: 9px;
+        }
+        /* 왼쪽 카톡 방은 말풍선이 많아 위가 잘린다 — 두 개는 접는다 */
+        .kchat .kbody .kwho:nth-of-type(n + 3),
+        .kchat .kbody .kb:nth-of-type(n + 6) {
+          display: none;
         }
 
         /* 엑셀 섹션은 폰 하나를 엑셀↔앱이 나눠 쓰는 구조라 겹칠 게 없다.
@@ -3141,8 +3408,11 @@
           width: min(52vw, 29vh);
         }
         .sec.vs .say {
-          gap: 4px;
-          margin-top: var(--space-sm);
+          gap: 3px;
+          margin-top: var(--space-xs);
+        }
+        .sec.vs .vsgrid {
+          gap: var(--space-md);
         }
         .sec.vs .say .li {
           font-size: 12.5px;
@@ -3176,28 +3446,6 @@
         .sec.sync .web-foot {
           margin-top: var(--space-sm);
           padding-top: var(--space-sm);
-        }
-      }
-
-      /* ── 겹친 두 칸을 스크롤로 갈아 끼운다 ──
-         앞쪽에서 "지금 쓰는 것"을 보여 주고, 넘어가면 "여기서는" 으로 바뀐다.
-         지원하지 않는 브라우저(iOS 사파리 등)에서는 이 블록이 통째로 안 걸리므로
-         아래 @supports not 에서 둘 다 보이게 되돌린다. */
-      @supports (animation-timeline: view()) {
-        @media (max-width: 700px) and (min-height: 780px) {
-          .sec.sync .device,
-          .sec.cmp .cmpcol:not(.app) {
-            animation: swapOut linear both;
-            animation-timeline: --st;
-            animation-range: contain 14% contain 24%;
-          }
-          .sec.sync .web,
-          .sec.cmp .cmpcol.app {
-            opacity: 0;
-            animation: swapIn linear both;
-            animation-timeline: --st;
-            animation-range: contain 14% contain 24%;
-          }
         }
       }
 
