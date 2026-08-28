@@ -119,6 +119,53 @@ const NAME = ["히어로", "엑셀", "연동", "노션", "카톡"];
       problems.push(`${w}x${h}: D-day 가 가운데에서 ${hero.off}px 치우침`);
   }
 
+  // ── 히어로 안무 자체 ────────────────────────────────
+  //  두 번 되살아난 회귀라 매번 본다:
+  //   (1) 예산 막대는 분홍이 다 찬 뒤에 회색이 이어 차야 한다 (같이 자라면 안 된다)
+  //   (2) D-day 숫자는 ExtraBold 여야 한다 — --font-tmoney 는 400=Regular 라
+  //       400 을 쓰면 얇아진다. 굵기는 선언값이 아니라 **그려진 글자 폭**으로 본다.
+  await page.setViewport({ width: 1440, height: 900 });
+  await page.goto(BASE + "/", { waitUntil: "networkidle0", timeout: 120000 });
+  await new Promise((r) => setTimeout(r, 900));
+  {
+    const box = await page.evaluate(() => {
+      const s = document.querySelector("#lp .stage");
+      return { top: s.offsetTop, h: s.offsetHeight };
+    });
+    const seq = [];
+    for (let m = 0.02; m <= 0.99; m += 0.03) {
+      await page.evaluate((s, mm) =>
+        window.scrollTo(0, s.top + (s.h - window.innerHeight) * mm), box, m);
+      await new Promise((r) => setTimeout(r, 110));
+      seq.push(await page.evaluate(() => {
+        const bar = ["used", "plan"].map((k) => {
+          const e = document.querySelector("#lp .mbar ." + k);
+          const t = getComputedStyle(e).transform;
+          return t === "none" ? 1 : +(+t.split("(")[1].split(",")[0]).toFixed(3);
+        });
+        const nb = document.querySelector("#lp .odo-track b");
+        const cs = getComputedStyle(nb);
+        const cv = document.createElement("canvas").getContext("2d");
+        const at = (w) => { cv.font = w + " 60px " + cs.fontFamily; return cv.measureText("312").width; };
+        return { bar, fw: cs.fontWeight, cur: at(cs.fontWeight), w700: at(700), w400: at(400) };
+      }));
+    }
+    const both = [];
+    for (let i = 1; i < seq.length; i++) {
+      if (seq[i].bar[0] - seq[i - 1].bar[0] > 0.02 &&
+          seq[i].bar[1] - seq[i - 1].bar[1] > 0.02) both.push(seq[i].m);
+    }
+    if (both.length) problems.push("예산 막대 두 구간이 같이 자란다");
+    const firstPlan = seq.find((x) => x.bar[1] > 0.03);
+    if (!firstPlan) problems.push("예산 막대 회색 구간이 자라지 않는다");
+    else if (firstPlan.bar[0] < 0.98) problems.push("회색이 자라기 시작할 때 분홍이 아직 " + firstPlan.bar[0]);
+    const last = seq[seq.length - 1];
+    if (last.bar[0] < 0.98 || last.bar[1] < 0.98) problems.push("히어로 끝에 예산 막대 미완 " + last.bar.join(" "));
+    const f = seq[0];
+    if (Math.abs(f.cur - f.w700) > 0.5)
+      problems.push(`D-day 숫자가 ExtraBold 가 아니다 (현재 ${f.cur} / 700 ${f.w700} / 400 ${f.w400})`);
+  }
+
   // ── 감속 모드도 한 번 본다 ──────────────────────────
   //  안무를 끄면 시작 상태(opacity:0)에 갇히는 요소가 없어야 한다.
   await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);

@@ -577,7 +577,9 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
   **`--color-*` 를 `:root` 에 두면 Tailwind v4 가 테마 색으로 등록해** 앱 전체에
   샙니다. 스코프를 풀지 마세요.
 - **`app/landing.css` 는 손으로 고치지 말고 시안에서 다시 만듭니다** —
-  `node scripts/gen-landing-css.cjs`. 시안의 `<style>` 을 PostCSS 로 파싱해
+  `node scripts/gen-landing-css.cjs`. **`app/landing.css` 를 직접 고치면 다음
+  생성 때 통째로 사라집니다** — 예산 막대 순서와 D-day 숫자 굵기를 그렇게 고쳤다가
+  두 번 다 되살아났습니다. 고칠 곳은 언제나 시안입니다. 시안의 `<style>` 을 PostCSS 로 파싱해
   선택자마다 `#lp` 를 붙이고, 규칙 수·선언 수가 시안과 같은지 검사한 뒤에만 씁니다.
   손으로 짠 문자열 치환으로 옮겼다가 **주석이 선택자 자리에 끼면서 규칙 두 개가
   뒤섞여**, 모바일 리셋(`opacity:1`)이 통째로 사라진 적이 있습니다.
