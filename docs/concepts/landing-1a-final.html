@@ -3551,9 +3551,33 @@
         }
       }
 
+      /* ══ 감속 모드 (prefers-reduced-motion: reduce) ═══════════
+         윈도우의 "애니메이션 효과" 를 끈 사람이 보는 화면이다. 적지 않다.
+         핀과 스크롤 안무를 전부 걷어내고 평범하게 흐르게 하되, **핀을 걷어낸
+         자리에 여백이 그대로 남으면 빈 화면이 몇 개씩 생긴다** — 여백도 같이
+         줄여야 한 장의 문서처럼 읽힌다. */
       @media (prefers-reduced-motion: reduce) {
         html {
           scroll-behavior: auto;
+        }
+        .pin,
+        .pin2 {
+          padding: var(--space-2xl) 0;
+        }
+        .stage2 {
+          padding: 0;
+        }
+        .sec {
+          padding: var(--space-2xl) 0;
+        }
+        .vsgrid,
+        .syncgrid,
+        .cmpgrid {
+          margin-top: var(--space-lg);
+        }
+        .beats,
+        .hintdown {
+          display: none;
         }
         * {
           animation: none !important;

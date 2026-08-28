@@ -34,6 +34,15 @@ const NAME = ["히어로", "엑셀", "연동", "노션", "카톡"];
     ],
   });
   const page = await browser.newPage();
+  /*
+    **헤드리스 크롬은 prefers-reduced-motion 이 기본으로 reduce 다.**
+    그대로 두면 랜딩의 감속 폴백(핀 해제 + 모든 요소 opacity:1)만 보게 되고
+    스크롤 안무는 한 번도 돌지 않는다 — 이걸 모르고 "이상 없음" 을 여러 번
+    보고했다. 반드시 실제 사용자 환경으로 맞춘 뒤 검사한다.
+  */
+  await page.emulateMediaFeatures([
+    { name: "prefers-reduced-motion", value: "no-preference" },
+  ]);
   const errs = [];
   const problems = [];
   page.on("pageerror", (e) => errs.push(String(e)));
@@ -108,6 +117,28 @@ const NAME = ["히어로", "엑셀", "연동", "노션", "카톡"];
       problems.push(`${w}x${h}: 히어로 끝 타일 미완 ${hero.tiles.join(" ")}`);
     if (hero.centered && hero.off > 4)
       problems.push(`${w}x${h}: D-day 가 가운데에서 ${hero.off}px 치우침`);
+  }
+
+  // ── 감속 모드도 한 번 본다 ──────────────────────────
+  //  안무를 끄면 시작 상태(opacity:0)에 갇히는 요소가 없어야 한다.
+  await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
+  for (const [w, h] of [[1440, 900], [390, 844]]) {
+    await page.setViewport({ width: w, height: h, isMobile: w <= 430, hasTouch: w <= 430 });
+    await page.goto(BASE + "/", { waitUntil: "networkidle0", timeout: 120000 });
+    await new Promise((r) => setTimeout(r, 900));
+    const hid = await page.evaluate(() => {
+      const o = [];
+      document.querySelectorAll("#lp h2,#lp .lead,#lp .toggle,#lp .win2,#lp .dev2," +
+        "#lp .device,#lp .web,#lp .cmpcap,#lp .tiles,#lp .money-strip,#lp .tile .s")
+        .forEach((e) => {
+          const cs = getComputedStyle(e);
+          if (cs.display === "none") return;
+          if (parseFloat(cs.opacity) < 0.5)
+            o.push((e.className || e.tagName).toString().split(" ")[0]);
+        });
+      return [...new Set(o)];
+    });
+    if (hid.length) problems.push(`${w}x${h} 감속 모드: 투명하게 갇힘 ${hid.join(",")}`);
   }
 
   await browser.close();
