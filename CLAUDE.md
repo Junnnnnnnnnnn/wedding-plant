@@ -62,6 +62,27 @@ npm run format:check # Prettier 검사만
 
 **OAuth 외부 이동 시 로딩 유지:** `useKakaoAuth.handleKakaoAuth`는 `redirectToOAuth` 헬퍼로 `requestAnimationFrame` 두 번 후 `window.location.href`를 설정하고, **`willRedirect` 플래그가 true이면 `setLoading(false)`를 호출하지 않습니다.** 외부 페이지 전환 직전에 로딩이 꺼지면 사용자가 빈 화면을 보게 되는 회귀 버그가 있었기 때문입니다. 새 OAuth 분기를 추가할 때 같은 패턴을 유지하세요.
 
+### 진입 규칙 — 랜딩 · 로그인 · 대시보드
+
+`/` 는 **이 앱이 뭔지 모르는 사람** 자리입니다. 한 번이라도 로그인한 적이 있으면
+다시 보여 주지 않습니다. `AuthRedirectToMain` 이 토큰을 보고 갈 곳을 정합니다.
+
+| 상태 | 가는 곳 |
+| --- | --- |
+| 토큰 없음 | `/` (랜딩) |
+| 토큰 살아 있고 플랜 완성 | `/main` |
+| 토큰 만료(401·403) | **`/login?expired=1`** |
+
+- **랜딩 위에 "세션이 만료되었습니다" 모달을 띄우지 마세요.** 앱을 처음 보는
+  사람에게도 뜨는 것처럼 보이고, 닫으면 갈 곳이 없습니다. 그래서
+  `AuthRedirectToMain` 의 `/plan/user` 만 `skipAuthHandling: true` 로 401 을 직접
+  받아 `/login` 으로 보냅니다 — 공통 처리에 맡기면 전역 모달이 뜹니다.
+- `SessionExpiredModal` 은 `/` 와 `/login` 에서 뜨지 않습니다(`SILENT_PATHS`).
+  둘 다 로그인하러 들어오는 문이라 말이 겹칩니다. 앱 안에서 쓰다가 끊기는
+  경우에는 그대로 뜹니다 — 거기서는 하던 자리를 잃지 않는 게 낫습니다.
+- `/login` 은 `GuestGate` 가 막지 않습니다. 문이니까요.
+- 확인은 `node scripts/session-entry.cjs` (백엔드를 목으로 세워 세 경우를 돕니다).
+
 ### 비회원(게스트) 모드
 
 **앱 화면은 온보딩을 마쳐야 들어갈 수 있습니다** — `app/components/GuestGate.tsx`
@@ -718,6 +739,7 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 - `scripts/main-dashboard.cjs` — `/main` 폭별 레이아웃 + 리스트 스크롤 게이트 + 가이드 말풍선 좌표 + **초대 띠** 확인. `HEADED=1`을 붙이면 브라우저를 띄워 직접 눌러볼 수 있고, `NO_SPOUSE=1` 을 붙이면 배우자가 아직 없는 사용자로 구동합니다
 - `scripts/plan-board.cjs` — `/calendar` 보드 뷰. 컬럼 분리, 보드↔캘린더 전환, 인스펙터, 완료 토글(`PATCH status`), 드래그 날짜 이동(`PATCH schedule`)까지 실제 요청을 잡아 확인합니다
 - `scripts/landing-widths.cjs` — **랜딩 폭·높이별 검사.** 15개 뷰포트(2327~320)에서 다섯 섹션을 훑으며 핀이 걸려야 할 곳에 걸렸는지, 핀 내용이 한 화면을 넘치는지(`.pin2` 의 `overflow:hidden` 이 잘라 먹습니다), 화면 한가운데인데 투명한 덩어리가 있는지, 가로 스크롤·히어로 끝 타일·D-day 중심을 봅니다
+- `scripts/session-entry.cjs` — **랜딩·로그인 진입 규칙.** `/plan/user` 를 목으로 세워 토큰 없음 → 랜딩, 만료(401) → `/login?expired=1`, 살아 있음 → `/main` 세 경우를 돌고, 랜딩에 세션 만료 모달이 뜨지 않는지·만료 토큰이 지워지는지 확인합니다
 - `scripts/guest-flow.cjs` — **게스트(로그인 없이 둘러보기) 흐름 전체.** 랜딩 → 온보딩 4단계 → `/main` 을 실제로 눌러 넘기고, 일곱 화면을 돌며 **매번 "홈" 을 눌러 랜딩으로 튕겨 나가지 않는지** 확인합니다. 온보딩을 건너뛰고 `/calendar` 로 직접 들어온 경우와 새 탭도 따로 봅니다. 일정 추가는 단계형 폼(제목 → 카테고리 → 결제 유형 → 저장)을 순서대로 몰아 sessionStorage 저장과 보드 반영까지 확인하고, **게스트인데 인증 API 를 불렀는지**도 봅니다. `npm run dev` 만 있으면 되고 `HEADED=1` 로 띄워 볼 수 있습니다
 - `scripts/misc-pages.cjs` — `/`, `/user`, `/add-plen`, `/setting` 폭별 캡처
 - `scripts/onboarding.cjs` — `/setting` 온보딩을 실제로 눌러 넘기며 폭별(375·768·1280·1686·2327) 캡처. **게스트(4단계)와 회원(5단계) 두 모드를 모두 돕니다** — 회원 모드는 토큰을 심고 `share-code` 를 목으로 주며, 약관까지 실제로 동의해 넘어간 뒤 초대 단계에서 카드 선택 전 버튼 잠김 · 선택 후 라벨 전환 · 보낸 뒤 안내 문구 · **보낸 링크의 `?as=spouse`** · **`POST /plan/setting` 이 `share-code` 보다 먼저 나갔는지** · 끝나고 `/main` 으로 갔는지까지 확인합니다. 헤드리스 크롬에도 `navigator.share` 가 있어 그대로 두면 취소로 빠지므로 하네스가 스텁합니다. 회원 모드 기본 폭은 375·1280 이고 `WIDTHS` 를 주면 그 폭을 씁니다. `≥1024` 에서만 좌측 진행 패널이 붙는지, 연출 화면에는 안 붙는지, **출입증 캔버스가 `≥1024` 에서 뷰포트 폭을 다 쓰는지**(그 아래는 폰 프레임 500px) 확인합니다. Lanyard 는 dynamic import 라 캔버스가 붙을 때까지 기다린 뒤 찍습니다
