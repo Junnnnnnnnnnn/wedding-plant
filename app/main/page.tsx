@@ -1707,6 +1707,15 @@ function MainPageContent() {
    * GET /plan/user/amount/detail (방이면 /plan/room/amount/detail/{roomId})
    */
   const [plannedUseAmount, setPlannedUseAmount] = useState<number | null>(null);
+  /**
+   * **실제로 쓴 돈**(완료로 잡힌 금액). 같은 응답의 `usedAmount` 다.
+   *
+   * `/plan/user/total-amount` 의 `usedAmount` 와 이름만 같고 뜻이 다르다 —
+   * 그쪽은 예정까지 합친 "잡힌 금액"이라, 그 값으로 예산 막대의 분홍
+   * (지출) 몫을 그리면 아무것도 안 썼는데도 분홍이 찬다. 게다가 회색
+   * 예정 몫이 뒤에 또 붙어 같은 금액이 두 번 그려졌다.
+   */
+  const [usedAmount, setUsedAmount] = useState<number | null>(null);
   useEffect(() => {
     if (!getToken() || isSharedView) return;
     let cancelled = false;
@@ -1718,10 +1727,11 @@ function MainPageContent() {
         const res = await fetchWithAuth(url, { skipLoading: true });
         const json = (await res.json().catch(() => null)) as {
           result?: boolean;
-          data?: { plannedUseAmount?: number };
+          data?: { plannedUseAmount?: number; usedAmount?: number };
         } | null;
         if (!cancelled && json?.result === true && json.data) {
           setPlannedUseAmount(json.data.plannedUseAmount ?? null);
+          setUsedAmount(json.data.usedAmount ?? null);
         }
       } catch {
         // 예산 패널의 부가 문구라 실패해도 조용히 넘어간다
@@ -2695,6 +2705,7 @@ function MainPageContent() {
         dDayLabel={dDayLabel}
         dDayCount={dDay}
         plannedUseAmount={plannedUseAmount}
+        usedAmount={usedAmount}
         totalBudget={initialBudget}
         remainingBudget={remainingBudget}
         budgetUsagePercentage={budgetUsagePercentage}

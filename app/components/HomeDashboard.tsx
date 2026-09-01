@@ -40,6 +40,15 @@ interface HomeDashboardProps {
   dDayCount: number | null;
   /** GET /plan/user/amount/detail 의 plannedUseAmount (만원). 없으면 null */
   plannedUseAmount: number | null;
+  /**
+   * 같은 응답의 `usedAmount` — **실제로 쓴 돈**(만원). 없으면 null.
+   *
+   * 막대의 분홍(지출) 몫은 이 값으로만 그린다. `budgetUsagePercentage` 는
+   * `/plan/user/total-amount` 에서 오는데 그 `usedAmount` 는 예정까지 합친
+   * "잡힌 금액"이라, 그걸로 그리면 한 푼도 안 썼는데 분홍이 차고 뒤에
+   * 붙는 회색 예정 몫과 같은 금액이 두 번 그려진다.
+   */
+  usedAmount: number | null;
   /** 만원 단위 */
   totalBudget: number;
   remainingBudget: number;
@@ -128,6 +137,7 @@ export default function HomeDashboard({
   dDayLabel,
   dDayCount,
   plannedUseAmount,
+  usedAmount,
   totalBudget,
   remainingBudget,
   budgetUsagePercentage,
@@ -280,11 +290,22 @@ export default function HomeDashboard({
    * 비율을 지키고, 0 이 아닌 조각은 최소 4px 은 남긴다 — 금액이 있는데
    * 막대에서 안 보이면 없는 것처럼 읽힌다.
    */
+  /**
+   * 분홍(지출) 몫이 트랙에서 차지할 비율.
+   *
+   * 카테고리별 사용액이 있으면 그 합, 없으면 `usedAmount`(실제로 쓴 돈).
+   * `budgetUsagePercentage` 는 마지막 수단이다 — 게스트처럼 amount/detail
+   * 을 못 받는 경우에만 쓴다. 그 값은 예정까지 합친 비율이라, 회색 예정
+   * 몫과 나란히 두면 같은 금액이 두 번 그려진다.
+   */
+  const spentPct =
+    topCategories.length > 0
+      ? topCategories.reduce((n, c) => n + pct(c.usedAmount), 0)
+      : usedAmount != null
+        ? pct(usedAmount)
+        : Math.min(100, budgetUsagePercentage);
   const barScale = (() => {
-    const total =
-      (topCategories.length > 0
-        ? topCategories.reduce((n, c) => n + pct(c.usedAmount), 0)
-        : Math.min(100, budgetUsagePercentage)) + pct(plannedUseAmount ?? 0);
+    const total = spentPct + pct(plannedUseAmount ?? 0);
     return total > 100 ? 100 / total : 1;
   })();
   const barWidth = (v: number) => `${pct(v) * barScale}%`;
@@ -582,7 +603,8 @@ export default function HomeDashboard({
                 <i
                   className="block h-full shrink-0 bg-gradient-to-r from-[#ff7ab5] to-[#ee2b8c]"
                   style={{
-                    width: `${Math.min(100, budgetUsagePercentage) * barScale}%`,
+                    width: `${spentPct * barScale}%`,
+                    minWidth: spentPct > 0 ? 4 : 0,
                   }}
                 />
               )}
