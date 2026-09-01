@@ -25,6 +25,8 @@ import {
   getGuestScheduleList,
 } from "@/lib/guestSchedule";
 import { useScrollDirection } from "../hooks/useScrollDirection";
+import { useIsTabletUp } from "../hooks/useMediaQuery";
+import AddPlanSheet from "./AddPlanSheet";
 import DatePickerModal from "../components/DatePickerModal";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
@@ -151,6 +153,15 @@ export default function AddPlanView({
   const { fetchWithAuth, setLoading: setGlobalLoading } = useApi();
   const { unreadCount } = useNotification();
   const isPane = variant === "pane";
+  /**
+   * 넓은 화면(≥768)의 자기 화면일 때만 A1 시트를 쓴다.
+   *
+   * `pane` 은 보드 옆 좁은 열이라 라벨 열 + 미리보기가 들어갈 자리가 없다 —
+   * 지금 카드 스택 그대로 둔다. 훅은 서버 스냅샷이 false 라 첫 렌더는 폰
+   * 트리이고 하이드레이션 뒤 한 번 바뀐다(`/calendar` 의 보드 전환과 같다).
+   */
+  const isTabletUp = useIsTabletUp();
+  const useSheet = !isPane && isTabletUp;
   /**
    * 폼은 폰 폭(≈390px 전체)에 맞춰 크게 잡혀 있다. pane 은 그와 비슷한
    * 폭이지만 옆에 보드가 함께 있어, 같은 크기로 두면 화면이 시끄럽다.
@@ -896,8 +907,13 @@ export default function AddPlanView({
     setNewCategoryName("");
   };
 
-  const handleCompleteAddingCategory = () => {
-    const trimmed = newCategoryName.trim();
+  /**
+   * 새 카테고리 확정. 모달은 `newCategoryName` 상태를 쓰고, 넓은 화면 시트는
+   * 자기 줄에서 받은 이름을 그대로 넘긴다 — 중복 검사·색 배정을 두 벌로
+   * 나누지 않으려고 이름만 인자로 뺐다.
+   */
+  const completeAddingCategory = (rawName: string) => {
+    const trimmed = rawName.trim();
     if (!trimmed) return;
 
     // 기존 카테고리·사용자 추가 카테고리와 이름 중복 검사
@@ -936,6 +952,9 @@ export default function AddPlanView({
     setIsAddingCategory(false);
     setNewCategoryName("");
   };
+
+  const handleCompleteAddingCategory = () =>
+    completeAddingCategory(newCategoryName);
 
   const handleNewCategoryKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
@@ -1169,6 +1188,121 @@ export default function AddPlanView({
     // 검색 결과가 없으면 아무것도 표시하지 않음
   }
 
+  /**
+   * 위치 칸의 값이 바뀔 때. 폰 트리의 onChange 와 같은 규칙이다 —
+   * 장소를 고른 뒤 이름만 고치면 좌표가 그대로 남아 엉뚱한 위치가 저장된다.
+   */
+  const handleLocationChange = (newValue: string) => {
+    setLocation(newValue);
+    if (!newValue.trim()) {
+      setLocationSearchResults([]);
+      setShowMap(false);
+      setMapCoords(null);
+      setHasSearched(false);
+      setShowAllLocationResults(false);
+    } else if (mapCoords && newValue.trim() !== selectedPlaceNameRef.current) {
+      setShowMap(false);
+      setMapCoords(null);
+    }
+  };
+
+  /**
+   * 플랜 저장. 예전에는 저장 버튼의 onClick 안에 통째로 들어 있어서
+   * 넓은 화면 시트가 같은 로직을 쓸 수 없었다. 동작은 그대로다.
+   */
+  const handleSavePlan = async () => {
+    // 예전에는 저장 버튼 자체가 이 두 값이 있을 때만 렌더돼서 좁혀졌다.
+    // 함수로 꺼내면서 그 보증이 사라지므로 여기서 다시 막는다.
+    if (!selectedCategory || !paymentType) return;
+    if (!validateForm()) return;
+    if (!getToken()) {
+      if (guestSavedRef.current) return;
+      const existing = getGuestScheduleList();
+      if (existing.length >= 3) {
+        setShowLoginRequiredModal(true);
+        return;
+      }
+
+      const amountValue = amount.replace(/,/g, "");
+      const guestItem = {
+        categoryName: selectedCategory.label,
+        title: inputValue.trim(),
+        amount: amountValue ? parseInt(amountValue, 10) : 0,
+        startDate: isDateUndecided ? null : formatDate(selectedDate),
+        startTime: isDateUndecided ? null : startTime || null,
+        status: "NORMAL",
+        location: location.trim() || "",
+        locationLat: mapCoords?.lat ?? 0,
+        locationLng: mapCoords?.lng ?? 0,
+        memo: memo.trim() || "",
+        payType: paymentType ? PAY_TYPE_MAP[paymentType] : "OTHER",
+        addCategoryNameList: userAddedCategories.map((c) => c.label),
+      };
+      guestSavedRef.current = true;
+      addGuestScheduleItem(guestItem);
+      setIsSaving(true);
+      setShowPlanSavedModal(true);
+      return;
+    }
+
+    const amountValue = amount.replace(/,/g, "");
+    const body: Record<string, unknown> = {
+      categoryName: selectedCategory.label,
+      title: inputValue.trim(),
+      payType: paymentType ? PAY_TYPE_MAP[paymentType] : "OTHER",
+      amount: amountValue ? parseInt(amountValue, 10) : 0,
+      location: location.trim() || "",
+      locationLat: mapCoords?.lat ?? 0,
+      locationLng: mapCoords?.lng ?? 0,
+      memo: memo.trim() || "",
+      addCategoryNameList: userAddedCategories.map((c) => c.label),
+    };
+    if (isDateUndecided) {
+      // 수정 시 필드를 빼면 PATCH 시맨틱상 "변경 없음"이라
+      // 날짜를 미정으로 되돌릴 수 없었다. null 을 명시한다.
+      if (editId) body.startDate = null;
+      // 날짜가 미정이면 시각도 의미가 없다
+      body.startTime = "";
+    } else {
+      body.startDate = formatDate(selectedDate);
+      body.startTime = startTime || "";
+    }
+    if (!editId && roomId != null) {
+      body.roomId = roomId;
+    }
+
+    setIsSaving(true);
+    try {
+      const url = editId ? `/plan/schedule/${editId}` : "/plan/schedule";
+      const res = await fetchWithAuth(url, {
+        method: editId ? "PATCH" : "POST",
+        body: JSON.stringify(body),
+        skipLoading: true,
+      });
+      const json = await res.json().catch(() => ({}));
+
+      if (res.ok && json.result === true) {
+        // 수정 모드일 때는 기존 editId 사용, 새로 생성할 때는 응답에서 받은 ID 사용
+        const scheduleId =
+          editId || (json.data?.id ? Number(json.data.id) : null);
+        if (scheduleId) {
+          setSavedScheduleId(scheduleId);
+        }
+        // 수정은 새 일정이 아니다. 등록만 센다.
+        if (!editId) {
+          track("schedule_add");
+        }
+        setShowPlanSavedModal(true);
+        return;
+      }
+      setShowSystemErrorModal(true);
+    } catch {
+      setShowSystemErrorModal(true);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const content = (
     // data-plan-pane: pane 으로 붙었을 때 바깥에서 이 영역만 집어내는 표식.
     // /main 에는 같은 이름의 카테고리 필터 칩이 이미 떠 있어, 문서 전체에서
@@ -1177,661 +1311,628 @@ export default function AddPlanView({
       data-plan-pane={isPane ? "" : undefined}
       className="relative flex h-full min-h-0 w-full flex-col"
     >
-      {isPane ? (
+      {useSheet ? (
         /*
+          ≥768 · 자기 화면으로 열렸을 때 — 시안 A1 "시트 한 장".
+          폰 트리를 CSS 로 재배치하지 않고 아예 갈라 렌더한다. `#map` 이
+          문서에 하나뿐이어야 하고, 폰 마크업을 한 줄도 안 건드려야 한다.
+          `pane` 은 폭이 좁아 여기 들어오지 않는다 — 지금 카드 스택 그대로다.
+        */
+        <AddPlanSheet
+          editId={editId}
+          roomId={roomId}
+          isLoadingDetail={isLoadingDetail}
+          isSaving={isSaving}
+          title={inputValue}
+          onTitleChange={(v) => {
+            setInputValue(v);
+            setCategorySelectedByUser(false);
+          }}
+          categories={categoriesForModal}
+          userAddedLabels={userAddedLabels}
+          selectedCategory={selectedCategory}
+          onSelectCategory={handleSelectFromModal}
+          onAddCategory={(name) => {
+            if (!getToken()) {
+              setShowLoginRequiredModal(true);
+              return;
+            }
+            completeAddingCategory(name);
+          }}
+          paymentType={paymentType}
+          onPaymentTypeChange={setPaymentType}
+          amount={amount}
+          onAmountChange={handleAmountChange}
+          dateLabel={formatDate(selectedDate)}
+          isDateUndecided={isDateUndecided}
+          onOpenDatePicker={() => {
+            setIsDateUndecided(false);
+            setIsDatePickerOpen(true);
+          }}
+          onToggleDateUndecided={() => setIsDateUndecided(!isDateUndecided)}
+          startTime={startTime}
+          onStartTimeChange={setStartTime}
+          location={location}
+          onLocationChange={handleLocationChange}
+          onSearchLocation={handleSearchLocation}
+          hasSearched={hasSearched}
+          locationResults={locationSearchResults}
+          onSelectLocation={handleSelectLocation}
+          onUseRawLocation={handleSaveWithoutLocation}
+          showMap={showMap}
+          onResetMap={() => {
+            setShowMap(false);
+            setShowAllLocationResults(false);
+          }}
+          memo={memo}
+          onMemoChange={setMemo}
+          spouseName={null}
+          onSave={handleSavePlan}
+          onClose={leaveScreen}
+        />
+      ) : (
+        <>
+          {isPane ? (
+            /*
             pane 은 폭이 좁고 셸이 이미 화면을 나눠 놨다. 떠 있는
             "뒤로가기" 알약 대신, 인스펙터와 같은 모양의 머리글을 둔다.
           */
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#ee2b8c14] bg-white px-5 py-3.5">
-          <b className="truncate text-[15px] font-bold tracking-tight text-[#1b0d14]">
-            {editId ? "플랜 수정" : "플랜 추가"}
-          </b>
-          <button
-            type="button"
-            onClick={leaveScreen}
-            aria-label="닫기"
-            className="-mr-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-full text-gray-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      ) : (
-        <div className="absolute top-0 left-0 z-50 w-full pointer-events-none">
-          <div className="px-6 py-4 pointer-events-auto">
-            <button
-              type="button"
-              onClick={leaveScreen}
-              className="flex items-center gap-2 text-stone-500 hover:bg-stone-100 px-3 py-1.5 rounded-full transition-colors w-fit bg-white/50 backdrop-blur-sm"
-              aria-label="뒤로가기"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-semibold">뒤로가기</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      <main
-        ref={mainScrollRef}
-        className={
-          isPane
-            ? "flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-5 pt-5 pb-10"
-            : "flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 pt-14 pb-24 md:px-8 md:pb-12"
-        }
-      >
-        {!isPane && (
-          <div className="w-full pt-2 md:max-w-[680px]">
-            <div className="flex flex-col items-start justify-start">
-              <span className="text-[32px] font-semibold text-[#ee2b8c] leading-none">
-                {editId ? "플랜 수정" : "계획을 추가해보세요"}
-              </span>
-              <span className="text-[42px] font-semibold text-[#1b0d14] leading-none mt-2">
-                {editId ? "수정하기" : "플랜 추가"}
-              </span>
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#ee2b8c14] bg-white px-5 py-3.5">
+              <b className="truncate text-[15px] font-bold tracking-tight text-[#1b0d14]">
+                {editId ? "플랜 수정" : "플랜 추가"}
+              </b>
+              <button
+                type="button"
+                onClick={leaveScreen}
+                aria-label="닫기"
+                className="-mr-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-full text-gray-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-          </div>
-        )}
-        {editId && isLoadingDetail && (
-          <div className="mt-6 w-full space-y-5 animate-pulse">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-24 bg-stone-50 rounded-2xl border border-stone-100"
-              />
-            ))}
-          </div>
-        )}
-        {/* 폼 카드 영역 */}
-        <div
-          className={
-            isPane
-              ? "w-full space-y-4"
-              : "mt-6 w-full space-y-5 md:max-w-[680px]"
-          }
-        >
-          {/* 제목 */}
-          <div className={cardClass}>
-            <label className="block text-sm font-semibold text-stone-600 mb-2">
-              제목 <span className="text-[#ee2b8c]">*</span>
-            </label>
-            <input
-              id="plan-name"
-              type="text"
-              value={inputValue}
-              onChange={(e) => {
-                setInputValue(e.target.value);
-                setCategorySelectedByUser(false);
-              }}
-              placeholder="어떤 지출인가요?"
-              className={`w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-user-content font-extrabold ${fieldTextClass}`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  if (!inputValue.trim()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  } else {
-                    e.stopPropagation();
-                  }
-                }
-              }}
-            />
-          </div>
-          {/* 카테고리 */}
-          <AnimatePresence>
-            {showCategory && (
-              <motion.div
-                key="category-section"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-              >
-                <div className={cardClass}>
-                  <label className="block text-sm font-semibold text-stone-600 mb-2">
-                    카테고리 <span className="text-[#ee2b8c]">*</span>
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleOpenModal}
-                      className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${
-                        selectedCategory
-                          ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
-                          : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                      }`}
-                    >
-                      {selectedCategory
-                        ? selectedCategory.label
-                        : "카테고리 선택"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleOpenModal}
-                      className="w-14 h-14 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-center hover:bg-stone-100 transition-colors flex-shrink-0"
-                      aria-label="카테고리 추가"
-                    >
-                      <Plus className="w-6 h-6 text-stone-400" />
-                    </button>
-                  </div>
-                  {/* 검색 결과 - 제목 입력 시 추천 카테고리 (모달/칩으로 직접 선택했을 때는 숨김, 제목 수정 시 다시 표시) */}
-                  {inputValue.trim() &&
-                    displayItems.length > 0 &&
-                    !categorySelectedByUser && (
-                      <div
-                        ref={scrollRef}
-                        className="mt-3 w-full overflow-x-auto overflow-y-hidden scrollbar-hide flex gap-2 flex-nowrap pr-2 select-none cursor-grab active:cursor-grabbing"
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUpOrLeave}
-                        onMouseLeave={handleMouseUpOrLeave}
-                      >
-                        {displayItems.map((category) => (
-                          <div
-                            key={category.id}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => handleCategoryClick(category)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                handleCategoryClick(category);
-                              }
-                            }}
-                            className="h-9 px-3 flex-shrink-0 rounded-lg flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity bg-stone-100 border border-stone-200"
-                          >
-                            <span className="text-sm font-medium text-stone-600 whitespace-nowrap">
-                              {category.label}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+          ) : (
+            <div className="absolute top-0 left-0 z-50 w-full pointer-events-none">
+              <div className="px-6 py-4 pointer-events-auto">
+                <button
+                  type="button"
+                  onClick={leaveScreen}
+                  className="flex items-center gap-2 text-stone-500 hover:bg-stone-100 px-3 py-1.5 rounded-full transition-colors w-fit bg-white/50 backdrop-blur-sm"
+                  aria-label="뒤로가기"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span className="font-semibold">뒤로가기</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <main
+            ref={mainScrollRef}
+            className={
+              isPane
+                ? "flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-5 pt-5 pb-10"
+                : "flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 pt-14 pb-24 md:px-8 md:pb-12"
+            }
+          >
+            {!isPane && (
+              <div className="w-full pt-2 md:max-w-[680px]">
+                <div className="flex flex-col items-start justify-start">
+                  <span className="text-[32px] font-semibold text-[#ee2b8c] leading-none">
+                    {editId ? "플랜 수정" : "계획을 추가해보세요"}
+                  </span>
+                  <span className="text-[42px] font-semibold text-[#1b0d14] leading-none mt-2">
+                    {editId ? "수정하기" : "플랜 추가"}
+                  </span>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-          {/* 결제 유형 */}
-          <AnimatePresence>
-            {showPaymentType && (
-              <motion.div
-                key="payment-type-section"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-              >
-                <div className={cardClass}>
-                  <label className="block text-sm font-semibold text-stone-600 mb-2">
-                    결제 유형 <span className="text-[#ee2b8c]">*</span>
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(["현금", "카드", "기타"] as const).map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setPaymentType(type)}
-                        className={`py-3 rounded-xl font-medium transition-all text-sm border ${
-                          paymentType === type
-                            ? "bg-stone-800 text-white shadow-sm border-stone-800"
-                            : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
+            {editId && isLoadingDetail && (
+              <div className="mt-6 w-full space-y-5 animate-pulse">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="h-24 bg-stone-50 rounded-2xl border border-stone-100"
+                  />
+                ))}
+              </div>
             )}
-          </AnimatePresence>
-          {/* 나머지 필드: 금액·일자·위치·메모 */}
-          <AnimatePresence>
-            {showRestFields && (
-              <motion.div
-                key="rest-fields-section"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="space-y-5"
-              >
-                {/* 금액 */}
-                <div className={cardClass}>
-                  <label className="block text-sm font-semibold text-stone-600 mb-2">
-                    금액
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="plan-amount"
-                      type="text"
-                      inputMode="numeric"
-                      value={amount}
-                      onChange={handleAmountChange}
-                      placeholder="0"
-                      className={`w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-300 font-medium ${fieldTextClass} text-right pr-12`}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          if (!amount.trim()) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          } else {
-                            e.stopPropagation();
-                          }
-                        }
-                      }}
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-medium">
-                      만원
-                    </span>
-                  </div>
-                </div>
-                {/* 일자 */}
-                <div className={cardClass}>
-                  <label className="block text-sm font-semibold text-stone-600 mb-2">
-                    일자
-                  </label>
-                  <div className="flex gap-2">
-                    <div
-                      className={`flex-1 px-4 py-4 rounded-2xl ${fieldTextClass} font-medium transition-all cursor-pointer flex items-center justify-center border ${
-                        isDateUndecided
-                          ? "bg-stone-50 text-stone-300 border-stone-200"
-                          : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
-                      }`}
-                      onClick={() => {
-                        setIsDateUndecided(false);
-                        setIsDatePickerOpen(true);
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setIsDateUndecided(false);
-                          setIsDatePickerOpen(true);
-                        }
-                      }}
-                    >
-                      {isDateUndecided ? "미정" : formatDate(selectedDate)}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsDateUndecided(!isDateUndecided)}
-                      className={`px-6 rounded-2xl font-medium transition-all text-sm border ${
-                        isDateUndecided
-                          ? "bg-stone-800 text-white border-stone-800"
-                          : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                      }`}
-                    >
-                      미정
-                    </button>
-                  </div>
-                  {/*
-                      시간은 선택이다. 날짜만 잡아 두는 일정이 훨씬 많아서
-                      비워 두는 걸 기본으로 하고, 날짜가 미정이면 아예 감춘다.
-                    */}
-                  {!isDateUndecided && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-stone-400 shrink-0" />
-                      <input
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        step={300}
-                        aria-label="시작 시각"
-                        className="flex-1 px-4 py-3 rounded-2xl border border-stone-200 bg-stone-50 text-base font-medium text-stone-700 outline-none transition-colors focus:border-[#ee2b8c]/40 focus:bg-white"
-                      />
-                      {startTime ? (
+            {/* 폼 카드 영역 */}
+            <div
+              className={
+                isPane
+                  ? "w-full space-y-4"
+                  : "mt-6 w-full space-y-5 md:max-w-[680px]"
+              }
+            >
+              {/* 제목 */}
+              <div className={cardClass}>
+                <label className="block text-sm font-semibold text-stone-600 mb-2">
+                  제목 <span className="text-[#ee2b8c]">*</span>
+                </label>
+                <input
+                  id="plan-name"
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => {
+                    setInputValue(e.target.value);
+                    setCategorySelectedByUser(false);
+                  }}
+                  placeholder="어떤 지출인가요?"
+                  className={`w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-user-content font-extrabold ${fieldTextClass}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      if (!inputValue.trim()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      } else {
+                        e.stopPropagation();
+                      }
+                    }
+                  }}
+                />
+              </div>
+              {/* 카테고리 */}
+              <AnimatePresence>
+                {showCategory && (
+                  <motion.div
+                    key="category-section"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  >
+                    <div className={cardClass}>
+                      <label className="block text-sm font-semibold text-stone-600 mb-2">
+                        카테고리 <span className="text-[#ee2b8c]">*</span>
+                      </label>
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => setStartTime("")}
-                          className="px-4 py-3 rounded-2xl text-sm font-medium text-stone-400 border border-stone-200 bg-stone-50 transition-colors hover:bg-stone-100"
+                          onClick={handleOpenModal}
+                          className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${
+                            selectedCategory
+                              ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                              : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                          }`}
                         >
-                          지우기
+                          {selectedCategory
+                            ? selectedCategory.label
+                            : "카테고리 선택"}
                         </button>
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-                {/* 위치 */}
-                <div className={cardClass}>
-                  <label className="block text-sm font-semibold text-stone-600 mb-2">
-                    위치
-                  </label>
-                  <div className="flex items-center gap-2 mb-2">
-                    <input
-                      id="plan-location"
-                      type="text"
-                      value={location}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setLocation(newValue);
-                        if (!newValue.trim()) {
-                          setLocationSearchResults([]);
-                          setShowMap(false);
-                          setMapCoords(null);
-                          setHasSearched(false);
-                          setShowAllLocationResults(false);
-                        } else if (
-                          mapCoords &&
-                          newValue.trim() !== selectedPlaceNameRef.current
-                        ) {
-                          // 장소를 고른 뒤 이름만 바꾸면 좌표가 그대로 남아
-                          // 엉뚱한 위치가 저장된다. 이름이 달라지면 좌표를 버린다.
-                          setShowMap(false);
-                          setMapCoords(null);
-                        }
-                      }}
-                      placeholder="예식장, 스튜디오 등"
-                      className="flex-1 min-w-0 px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-user-content font-semibold"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.stopPropagation();
-                          if (!location.trim()) {
-                            e.preventDefault();
-                          } else {
-                            handleSearchLocation();
-                          }
-                        }
-                        if (e.key === " ") {
-                          if (!location.trim()) e.preventDefault();
-                          e.stopPropagation();
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSearchLocation}
-                      disabled={!location.trim()}
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${
-                        location.trim()
-                          ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
-                          : "bg-stone-100 text-stone-400 border-stone-200"
-                      }`}
-                    >
-                      <Search className="w-5 h-5" />
-                    </button>
-                  </div>
-                  {/* 검색 결과 목록 */}
-                  {hasSearched && locationSearchResults.length > 0 && (
-                    <div className="mt-3 w-full">
-                      <div className="flex flex-col gap-2">
-                        {/* 지도가 표시되지 않았을 때만 검색 결과 목록 표시 */}
-                        {!showMap && (
-                          <>
-                            {(showAllLocationResults
-                              ? locationSearchResults
-                              : locationSearchResults.slice(0, 3)
-                            ).map((result) => (
+                        <button
+                          type="button"
+                          onClick={handleOpenModal}
+                          className="w-14 h-14 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-center hover:bg-stone-100 transition-colors flex-shrink-0"
+                          aria-label="카테고리 추가"
+                        >
+                          <Plus className="w-6 h-6 text-stone-400" />
+                        </button>
+                      </div>
+                      {/* 검색 결과 - 제목 입력 시 추천 카테고리 (모달/칩으로 직접 선택했을 때는 숨김, 제목 수정 시 다시 표시) */}
+                      {inputValue.trim() &&
+                        displayItems.length > 0 &&
+                        !categorySelectedByUser && (
+                          <div
+                            ref={scrollRef}
+                            className="mt-3 w-full overflow-x-auto overflow-y-hidden scrollbar-hide flex gap-2 flex-nowrap pr-2 select-none cursor-grab active:cursor-grabbing"
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUpOrLeave}
+                            onMouseLeave={handleMouseUpOrLeave}
+                          >
+                            {displayItems.map((category) => (
                               <div
-                                key={`${result.x}-${result.y}-${result.place_name}`}
-                                onClick={() => handleSelectLocation(result)}
+                                key={category.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => handleCategoryClick(category)}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
                                     e.preventDefault();
-                                    handleSelectLocation(result);
+                                    handleCategoryClick(category);
                                   }
                                 }}
-                                role="button"
-                                tabIndex={0}
-                                className="px-4 py-3 bg-white rounded-xl border border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors"
+                                className="h-9 px-3 flex-shrink-0 rounded-lg flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity bg-stone-100 border border-stone-200"
                               >
-                                <div className="font-bold text-stone-900 mb-1">
-                                  {result.place_name}
-                                </div>
-                                <div className="text-sm text-stone-600">
-                                  {result.road_address_name ||
-                                    result.address_name}
-                                </div>
+                                <span className="text-sm font-medium text-stone-600 whitespace-nowrap">
+                                  {category.label}
+                                </span>
                               </div>
                             ))}
-                            {locationSearchResults.length > 3 &&
-                              !showAllLocationResults && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setShowAllLocationResults(true)
-                                  }
-                                  className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-600 font-medium text-sm hover:bg-stone-100 transition-colors"
-                                >
-                                  + {locationSearchResults.length - 3}개 더보기
-                                </button>
-                              )}
-                          </>
-                        )}
-                        {/* 지도가 표시되었을 때는 버튼만 표시 (전체 개수) */}
-                        {showMap && locationSearchResults.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowMap(false);
-                              setShowAllLocationResults(false);
-                            }}
-                            className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-600 font-medium text-sm hover:bg-stone-100 transition-colors"
-                          >
-                            다른 장소 선택하기 ({locationSearchResults.length}
-                            개)
-                          </button>
-                        )}
-                        {/* 원하는 결과가 없을 때 */}
-                        {!showMap && (
-                          <div className="flex justify-between items-center px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl">
-                            <span className="text-sm text-stone-500">
-                              원하는 결과가 없나요?
-                            </span>
-                            <button
-                              type="button"
-                              onClick={handleSaveWithoutLocation}
-                              className="text-sm font-semibold text-stone-700 hover:text-stone-900 underline underline-offset-2"
-                            >
-                              그냥 사용하기
-                            </button>
                           </div>
                         )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {/* 결제 유형 */}
+              <AnimatePresence>
+                {showPaymentType && (
+                  <motion.div
+                    key="payment-type-section"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  >
+                    <div className={cardClass}>
+                      <label className="block text-sm font-semibold text-stone-600 mb-2">
+                        결제 유형 <span className="text-[#ee2b8c]">*</span>
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(["현금", "카드", "기타"] as const).map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setPaymentType(type)}
+                            className={`py-3 rounded-xl font-medium transition-all text-sm border ${
+                              paymentType === type
+                                ? "bg-stone-800 text-white shadow-sm border-stone-800"
+                                : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                            }`}
+                          >
+                            {type}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  )}
-                  {/* 검색 결과 없음 */}
-                  {hasSearched && locationSearchResults.length === 0 && (
-                    <div className="mt-2 text-center text-sm text-stone-500 bg-stone-50 border border-stone-200 rounded-xl py-4">
-                      검색 결과가 없습니다.{" "}
-                      <button
-                        type="button"
-                        onClick={handleSaveWithoutLocation}
-                        className="font-semibold text-stone-700 underline underline-offset-2"
-                      >
-                        그냥 사용하기
-                      </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {/* 나머지 필드: 금액·일자·위치·메모 */}
+              <AnimatePresence>
+                {showRestFields && (
+                  <motion.div
+                    key="rest-fields-section"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="space-y-5"
+                  >
+                    {/* 금액 */}
+                    <div className={cardClass}>
+                      <label className="block text-sm font-semibold text-stone-600 mb-2">
+                        금액
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="plan-amount"
+                          type="text"
+                          inputMode="numeric"
+                          value={amount}
+                          onChange={handleAmountChange}
+                          placeholder="0"
+                          className={`w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-300 font-medium ${fieldTextClass} text-right pr-12`}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              if (!amount.trim()) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              } else {
+                                e.stopPropagation();
+                              }
+                            }
+                          }}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-medium">
+                          만원
+                        </span>
+                      </div>
                     </div>
-                  )}
-                  {/* 지도 - 위치 선택 시 카드 내에 표시 */}
-                  {showMap && (
-                    <div ref={mapContainerRef} className="mt-3 w-full">
-                      <div
-                        id="map"
-                        className="w-full h-[180px] rounded-2xl overflow-hidden border border-stone-200 md:h-[260px] lg:h-[320px]"
-                        style={{ pointerEvents: "auto" }}
-                      />
+                    {/* 일자 */}
+                    <div className={cardClass}>
+                      <label className="block text-sm font-semibold text-stone-600 mb-2">
+                        일자
+                      </label>
+                      <div className="flex gap-2">
+                        <div
+                          className={`flex-1 px-4 py-4 rounded-2xl ${fieldTextClass} font-medium transition-all cursor-pointer flex items-center justify-center border ${
+                            isDateUndecided
+                              ? "bg-stone-50 text-stone-300 border-stone-200"
+                              : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                          }`}
+                          onClick={() => {
+                            setIsDateUndecided(false);
+                            setIsDatePickerOpen(true);
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setIsDateUndecided(false);
+                              setIsDatePickerOpen(true);
+                            }
+                          }}
+                        >
+                          {isDateUndecided ? "미정" : formatDate(selectedDate)}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsDateUndecided(!isDateUndecided)}
+                          className={`px-6 rounded-2xl font-medium transition-all text-sm border ${
+                            isDateUndecided
+                              ? "bg-stone-800 text-white border-stone-800"
+                              : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                          }`}
+                        >
+                          미정
+                        </button>
+                      </div>
+                      {/*
+                      시간은 선택이다. 날짜만 잡아 두는 일정이 훨씬 많아서
+                      비워 두는 걸 기본으로 하고, 날짜가 미정이면 아예 감춘다.
+                    */}
+                      {!isDateUndecided && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-stone-400 shrink-0" />
+                          <input
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            step={300}
+                            aria-label="시작 시각"
+                            className="flex-1 px-4 py-3 rounded-2xl border border-stone-200 bg-stone-50 text-base font-medium text-stone-700 outline-none transition-colors focus:border-[#ee2b8c]/40 focus:bg-white"
+                          />
+                          {startTime ? (
+                            <button
+                              type="button"
+                              onClick={() => setStartTime("")}
+                              className="px-4 py-3 rounded-2xl text-sm font-medium text-stone-400 border border-stone-200 bg-stone-50 transition-colors hover:bg-stone-100"
+                            >
+                              지우기
+                            </button>
+                          ) : null}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-
-                {/* 메모 */}
-                <div className={cardClass}>
-                  <label className="block text-sm font-semibold text-stone-600 mb-2">
-                    메모
-                  </label>
-                  <div className="relative">
-                    <textarea
-                      ref={memoTextareaRef}
-                      id="plan-memo"
-                      value={memo}
-                      maxLength={500}
-                      onChange={(e) => {
-                        const newValue = e.target.value.slice(0, 500);
-                        setMemo(newValue);
-                        if (memoTextareaRef.current) {
-                          memoTextareaRef.current.style.height = "auto";
-                          memoTextareaRef.current.style.height = `${memoTextareaRef.current.scrollHeight}px`;
-                        }
-                      }}
-                      placeholder="메모 남기기"
-                      className="w-full min-h-[100px] px-4 py-4 pb-8 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all resize-none text-stone-800 placeholder:text-stone-400 font-user-content font-semibold"
-                      style={{ height: "auto" }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          if (!memo.trim()) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          } else {
-                            e.stopPropagation();
-                          }
-                        }
-                      }}
-                    />
-                    <div className="absolute bottom-3 right-3 text-xs text-stone-400 font-medium">
-                      {memo.length}/500
+                    {/* 위치 */}
+                    <div className={cardClass}>
+                      <label className="block text-sm font-semibold text-stone-600 mb-2">
+                        위치
+                      </label>
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          id="plan-location"
+                          type="text"
+                          value={location}
+                          onChange={(e) => {
+                            const newValue = e.target.value;
+                            setLocation(newValue);
+                            if (!newValue.trim()) {
+                              setLocationSearchResults([]);
+                              setShowMap(false);
+                              setMapCoords(null);
+                              setHasSearched(false);
+                              setShowAllLocationResults(false);
+                            } else if (
+                              mapCoords &&
+                              newValue.trim() !== selectedPlaceNameRef.current
+                            ) {
+                              // 장소를 고른 뒤 이름만 바꾸면 좌표가 그대로 남아
+                              // 엉뚱한 위치가 저장된다. 이름이 달라지면 좌표를 버린다.
+                              setShowMap(false);
+                              setMapCoords(null);
+                            }
+                          }}
+                          placeholder="예식장, 스튜디오 등"
+                          className="flex-1 min-w-0 px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-user-content font-semibold"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.stopPropagation();
+                              if (!location.trim()) {
+                                e.preventDefault();
+                              } else {
+                                handleSearchLocation();
+                              }
+                            }
+                            if (e.key === " ") {
+                              if (!location.trim()) e.preventDefault();
+                              e.stopPropagation();
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSearchLocation}
+                          disabled={!location.trim()}
+                          className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${
+                            location.trim()
+                              ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
+                              : "bg-stone-100 text-stone-400 border-stone-200"
+                          }`}
+                        >
+                          <Search className="w-5 h-5" />
+                        </button>
+                      </div>
+                      {/* 검색 결과 목록 */}
+                      {hasSearched && locationSearchResults.length > 0 && (
+                        <div className="mt-3 w-full">
+                          <div className="flex flex-col gap-2">
+                            {/* 지도가 표시되지 않았을 때만 검색 결과 목록 표시 */}
+                            {!showMap && (
+                              <>
+                                {(showAllLocationResults
+                                  ? locationSearchResults
+                                  : locationSearchResults.slice(0, 3)
+                                ).map((result) => (
+                                  <div
+                                    key={`${result.x}-${result.y}-${result.place_name}`}
+                                    onClick={() => handleSelectLocation(result)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        handleSelectLocation(result);
+                                      }
+                                    }}
+                                    role="button"
+                                    tabIndex={0}
+                                    className="px-4 py-3 bg-white rounded-xl border border-stone-200 hover:border-[#ee2b8c] cursor-pointer transition-colors"
+                                  >
+                                    <div className="font-bold text-stone-900 mb-1">
+                                      {result.place_name}
+                                    </div>
+                                    <div className="text-sm text-stone-600">
+                                      {result.road_address_name ||
+                                        result.address_name}
+                                    </div>
+                                  </div>
+                                ))}
+                                {locationSearchResults.length > 3 &&
+                                  !showAllLocationResults && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setShowAllLocationResults(true)
+                                      }
+                                      className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-600 font-medium text-sm hover:bg-stone-100 transition-colors"
+                                    >
+                                      + {locationSearchResults.length - 3}개
+                                      더보기
+                                    </button>
+                                  )}
+                              </>
+                            )}
+                            {/* 지도가 표시되었을 때는 버튼만 표시 (전체 개수) */}
+                            {showMap && locationSearchResults.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowMap(false);
+                                  setShowAllLocationResults(false);
+                                }}
+                                className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-600 font-medium text-sm hover:bg-stone-100 transition-colors"
+                              >
+                                다른 장소 선택하기 (
+                                {locationSearchResults.length}
+                                개)
+                              </button>
+                            )}
+                            {/* 원하는 결과가 없을 때 */}
+                            {!showMap && (
+                              <div className="flex justify-between items-center px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl">
+                                <span className="text-sm text-stone-500">
+                                  원하는 결과가 없나요?
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={handleSaveWithoutLocation}
+                                  className="text-sm font-semibold text-stone-700 hover:text-stone-900 underline underline-offset-2"
+                                >
+                                  그냥 사용하기
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {/* 검색 결과 없음 */}
+                      {hasSearched && locationSearchResults.length === 0 && (
+                        <div className="mt-2 text-center text-sm text-stone-500 bg-stone-50 border border-stone-200 rounded-xl py-4">
+                          검색 결과가 없습니다.{" "}
+                          <button
+                            type="button"
+                            onClick={handleSaveWithoutLocation}
+                            className="font-semibold text-stone-700 underline underline-offset-2"
+                          >
+                            그냥 사용하기
+                          </button>
+                        </div>
+                      )}
+                      {/* 지도 - 위치 선택 시 카드 내에 표시 */}
+                      {showMap && (
+                        <div ref={mapContainerRef} className="mt-3 w-full">
+                          <div
+                            id="map"
+                            className="w-full h-[180px] rounded-2xl overflow-hidden border border-stone-200 md:h-[260px] lg:h-[320px]"
+                            style={{ pointerEvents: "auto" }}
+                          />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
-        {/* 저장 버튼 - 제목과 카테고리가 모두 있을 때만 표시 */}
-        {inputValue.trim() &&
-          selectedCategory &&
-          paymentType &&
-          !isLoadingDetail && (
-            <div className="mt-8 w-full">
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={async () => {
-                  if (!validateForm()) return;
-                  if (!getToken()) {
-                    if (guestSavedRef.current) return;
-                    const existing = getGuestScheduleList();
-                    if (existing.length >= 3) {
-                      setShowLoginRequiredModal(true);
-                      return;
-                    }
-
-                    const amountValue = amount.replace(/,/g, "");
-                    const guestItem = {
-                      categoryName: selectedCategory.label,
-                      title: inputValue.trim(),
-                      amount: amountValue ? parseInt(amountValue, 10) : 0,
-                      startDate: isDateUndecided
-                        ? null
-                        : formatDate(selectedDate),
-                      startTime: isDateUndecided ? null : startTime || null,
-                      status: "NORMAL",
-                      location: location.trim() || "",
-                      locationLat: mapCoords?.lat ?? 0,
-                      locationLng: mapCoords?.lng ?? 0,
-                      memo: memo.trim() || "",
-                      payType: paymentType
-                        ? PAY_TYPE_MAP[paymentType]
-                        : "OTHER",
-                      addCategoryNameList: userAddedCategories.map(
-                        (c) => c.label,
-                      ),
-                    };
-                    guestSavedRef.current = true;
-                    addGuestScheduleItem(guestItem);
-                    setIsSaving(true);
-                    setShowPlanSavedModal(true);
-                    return;
-                  }
-
-                  const amountValue = amount.replace(/,/g, "");
-                  const body: Record<string, unknown> = {
-                    categoryName: selectedCategory.label,
-                    title: inputValue.trim(),
-                    payType: paymentType ? PAY_TYPE_MAP[paymentType] : "OTHER",
-                    amount: amountValue ? parseInt(amountValue, 10) : 0,
-                    location: location.trim() || "",
-                    locationLat: mapCoords?.lat ?? 0,
-                    locationLng: mapCoords?.lng ?? 0,
-                    memo: memo.trim() || "",
-                    addCategoryNameList: userAddedCategories.map(
-                      (c) => c.label,
-                    ),
-                  };
-                  if (isDateUndecided) {
-                    // 수정 시 필드를 빼면 PATCH 시맨틱상 "변경 없음"이라
-                    // 날짜를 미정으로 되돌릴 수 없었다. null 을 명시한다.
-                    if (editId) body.startDate = null;
-                    // 날짜가 미정이면 시각도 의미가 없다
-                    body.startTime = "";
-                  } else {
-                    body.startDate = formatDate(selectedDate);
-                    body.startTime = startTime || "";
-                  }
-                  if (!editId && roomId != null) {
-                    body.roomId = roomId;
-                  }
-
-                  setIsSaving(true);
-                  try {
-                    const url = editId
-                      ? `/plan/schedule/${editId}`
-                      : "/plan/schedule";
-                    const res = await fetchWithAuth(url, {
-                      method: editId ? "PATCH" : "POST",
-                      body: JSON.stringify(body),
-                      skipLoading: true,
-                    });
-                    const json = await res.json().catch(() => ({}));
-
-                    if (res.ok && json.result === true) {
-                      // 수정 모드일 때는 기존 editId 사용, 새로 생성할 때는 응답에서 받은 ID 사용
-                      const scheduleId =
-                        editId || (json.data?.id ? Number(json.data.id) : null);
-                      if (scheduleId) {
-                        setSavedScheduleId(scheduleId);
-                      }
-                      // 수정은 새 일정이 아니다. 등록만 센다.
-                      if (!editId) {
-                        track("schedule_add");
-                      }
-                      setShowPlanSavedModal(true);
-                      return;
-                    }
-                    setShowSystemErrorModal(true);
-                  } catch {
-                    setShowSystemErrorModal(true);
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }}
-                className="w-full px-6 py-4 bg-[#ee2b8c] text-white font-bold text-lg rounded-xl hover:bg-[#d4237b] transition-colors shadow-lg shadow-[#ee2b8c44] active:scale-[0.98] transform disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {isSaving
-                  ? editId
-                    ? "수정 중..."
-                    : "저장 중..."
-                  : editId
-                    ? "수정하기"
-                    : "플랜 저장하기"}
-              </button>
+                    {/* 메모 */}
+                    <div className={cardClass}>
+                      <label className="block text-sm font-semibold text-stone-600 mb-2">
+                        메모
+                      </label>
+                      <div className="relative">
+                        <textarea
+                          ref={memoTextareaRef}
+                          id="plan-memo"
+                          value={memo}
+                          maxLength={500}
+                          onChange={(e) => {
+                            const newValue = e.target.value.slice(0, 500);
+                            setMemo(newValue);
+                            if (memoTextareaRef.current) {
+                              memoTextareaRef.current.style.height = "auto";
+                              memoTextareaRef.current.style.height = `${memoTextareaRef.current.scrollHeight}px`;
+                            }
+                          }}
+                          placeholder="메모 남기기"
+                          className="w-full min-h-[100px] px-4 py-4 pb-8 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all resize-none text-stone-800 placeholder:text-stone-400 font-user-content font-semibold"
+                          style={{ height: "auto" }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              if (!memo.trim()) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              } else {
+                                e.stopPropagation();
+                              }
+                            }
+                          }}
+                        />
+                        <div className="absolute bottom-3 right-3 text-xs text-stone-400 font-medium">
+                          {memo.length}/500
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          )}
-      </main>
-      {/*
+
+            {/* 저장 버튼 - 제목과 카테고리가 모두 있을 때만 표시 */}
+            {inputValue.trim() &&
+              selectedCategory &&
+              paymentType &&
+              !isLoadingDetail && (
+                <div className="mt-8 w-full">
+                  <button
+                    type="button"
+                    disabled={isSaving}
+                    onClick={handleSavePlan}
+                    className="w-full px-6 py-4 bg-[#ee2b8c] text-white font-bold text-lg rounded-xl hover:bg-[#d4237b] transition-colors shadow-lg shadow-[#ee2b8c44] active:scale-[0.98] transform disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isSaving
+                      ? editId
+                        ? "수정 중..."
+                        : "저장 중..."
+                      : editId
+                        ? "수정하기"
+                        : "플랜 저장하기"}
+                  </button>
+                </div>
+              )}
+          </main>
+          {/*
         하단 탭바 — 모바일 전용. ≥768 은 셸의 좌측 레일이 대신한다.
         pane 에서는 내지 않는다. 셸이 이미 하나 렌더하고 있어서 DOM 에
         탭바가 둘이 되고, 바깥에서 pane 안을 훑을 때 걸리적거린다.
       */}
-      {!isPane && (
-        <div className="md:hidden">
-          <BottomTabBar
-            showLoginButton={false}
-            scrollDirection={scrollDirection}
-            unreadCount={unreadCount}
-          />
-        </div>
+          {!isPane && (
+            <div className="md:hidden">
+              <BottomTabBar
+                showLoginButton={false}
+                scrollDirection={scrollDirection}
+                unreadCount={unreadCount}
+              />
+            </div>
+          )}
+        </>
       )}
       <LoginRequiredModal
         show={showLoginRequiredModal}
