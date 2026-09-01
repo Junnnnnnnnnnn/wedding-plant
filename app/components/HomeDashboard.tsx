@@ -672,31 +672,49 @@ export default function HomeDashboard({
             <div className="mt-5 flex items-center gap-3 border-t border-dashed border-[#f2eaee] pt-[18px]">
               <p className="m-0 flex-1 text-[12.5px] leading-relaxed text-[#7a6c74] break-keep">
                 {plannedUseAmount != null ? (
-                  (() => {
-                    // 초과했을 때 0 으로 깎아 버리면 큰 숫자는 -254만원인데
-                    // 여기는 "0만원이 남습니다" 가 되어 서로 어긋난다.
-                    const after = remainingBudget - plannedUseAmount;
-                    if (after < 0) {
-                      return (
+                  /*
+                    **여기서 예정을 다시 빼지 말 것.** `remainingBudget` 은
+                    `/plan/user/total-amount` 의 `remainingAmount` 이고, 그
+                    응답의 `usedAmount` 는 예정까지 합친 "잡힌 금액"이다.
+                    즉 큰 숫자가 이미 예정을 뺀 값이다.
+
+                    예전에는 `remainingBudget - plannedUseAmount` 로 한 번 더
+                    빼서, 3,000만원 중 409만원만 잡아 둔 상태에 "예정된
+                    지출까지 반영하면 2,182만원이 남습니다" 라고 적혔다
+                    (2,591 - 409). 같은 409만원을 두 번 뺀 것이다.
+
+                    두 번째 잔액 숫자를 만들지 않는다 — 예산 상세에서 이미
+                    같은 이유로 없앴다. 대신 큰 숫자가 어떻게 나온 값인지를
+                    적는다. 총 사용액은 이 카드 어디에도 숫자로 없었다
+                    ("이번 달 지출" 은 이번 달만 센다).
+                  */
+                  remainingBudget < 0 ? (
+                    <>
+                      예정된 지출까지 반영하면{" "}
+                      <b className="text-[#ee2b8c]">
+                        {Math.abs(remainingBudget).toLocaleString("ko-KR")}만원
+                      </b>
+                      을 넘어섭니다.
+                    </>
+                  ) : (
+                    <>
+                      {totalBudget.toLocaleString("ko-KR")}만원 중{" "}
+                      <b className="text-[#1b0d14]">
+                        {plannedUseAmount.toLocaleString("ko-KR")}만원
+                      </b>
+                      을 예정으로 잡아 뒀어요.
+                      {usedAmount != null && (
                         <>
-                          예정된 지출까지 반영하면{" "}
-                          <b className="text-[#ee2b8c]">
-                            {Math.abs(after).toLocaleString("ko-KR")}만원
+                          {" "}
+                          실제로 쓴 돈은{" "}
+                          <b className="text-[#1b0d14]">
+                            {usedAmount.toLocaleString("ko-KR")}만원
                           </b>
-                          을 넘어섭니다.
+                          이에요.
                         </>
-                      );
-                    }
-                    return (
-                      <>
-                        예정된 지출까지 반영하면{" "}
-                        <b className="text-[#1b0d14]">
-                          {after.toLocaleString("ko-KR")}만원
-                        </b>
-                        이 남습니다.
-                      </>
-                    );
-                  })()
+                      )}
+                    </>
+                  )
                 ) : (
                   <>
                     전체 예산의{" "}
