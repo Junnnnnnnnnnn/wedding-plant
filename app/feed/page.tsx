@@ -10,6 +10,7 @@ import LoginRequiredModal from "../components/LoginRequiredModal";
 import FeedPostModal, { FeedPostTarget } from "../components/FeedPostModal";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
+import { useOwnRoomId } from "../hooks/useOwnRoomId";
 import FeedCard from "./FeedCard";
 
 const ALL = "전체";
@@ -27,6 +28,8 @@ const FeedPageContent: React.FC = () => {
   const router = useRouter();
   const { fetchWithAuth } = useApi();
   const { unreadCount } = useNotification();
+  /** 담은 일정을 저장할 방. 안 붙이면 방 밖으로 떨어져 배우자가 못 본다 */
+  const ownRoomId = useOwnRoomId();
 
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [total, setTotal] = useState(0);
@@ -221,6 +224,7 @@ const FeedPageContent: React.FC = () => {
       검색해서 고르는 것으로 좌표까지 붙는다.
     */
     params.set("location", post.title);
+    if (ownRoomId != null) params.set("roomId", String(ownRoomId));
     router.push(`/add-plen?${params}`);
   };
 

@@ -20,6 +20,7 @@ import PlanBoard, { BoardItem } from "./PlanBoard";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { useIsDesktop, useIsTabletUp } from "../hooks/useMediaQuery";
+import { useOwnRoomId } from "../hooks/useOwnRoomId";
 import { getToken, getPlanUserIdFromToken } from "@/lib/api";
 import { formatKoreanTime, parseLocalDate, getKstDate } from "@/lib/utils";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
@@ -53,6 +54,16 @@ function CalendarPageContent() {
   const searchParams = useSearchParams();
   const roomId = searchParams.get("roomId");
   const { fetchWithAuth } = useApi();
+  /**
+   * 일정을 **저장할** 방. 읽기는 위의 `roomId`(주소창) 그대로 두고
+   * 쓰기에만 내 방을 채운다 — `/main` 의 `handleAddPlan` 과 같은 규칙이다.
+   *
+   * 예전에는 여기가 주소창만 봐서, 내 플랜을 보는 중(`?roomId=` 없음)에
+   * 보드·달력에서 추가한 일정이 방에 안 붙었다. 만든 사람 눈에는 보드에
+   * 보이는데 홈 대시보드 합계에서 빠지고 배우자는 403 을 받았다.
+   */
+  const ownRoomId = useOwnRoomId();
+  const addRoomId = roomId?.trim() ? Number(roomId.trim()) : ownRoomId;
   const { unreadCount } = useNotification();
   const [currentDate, setCurrentDate] = useState(getKstDate());
   /**
@@ -420,7 +431,7 @@ function CalendarPageContent() {
       return;
     }
     const params = new URLSearchParams();
-    if (roomId?.trim()) params.set("roomId", roomId.trim());
+    if (addRoomId != null) params.set("roomId", String(addRoomId));
     params.set("from", "calendar");
     if (dateStr) params.set("date", dateStr);
     router.push(`/add-plen?${params.toString()}`);
@@ -467,7 +478,7 @@ function CalendarPageContent() {
             /* 날짜를 바꿔 다시 열면 폼을 새로 잡아야 한다 */
             key={addPaneDate ?? "new"}
             variant="pane"
-            roomId={roomId?.trim() ? Number(roomId.trim()) : null}
+            roomId={addRoomId}
             initialDate={addPaneDate}
             from="calendar"
             onClose={() => setIsAddPaneOpen(false)}
