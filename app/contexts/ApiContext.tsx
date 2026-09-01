@@ -13,7 +13,9 @@ import {
   clearToken,
   getApiBaseUrl,
   getToken,
+  RENEWED_TOKEN_HEADER,
   setReturnPathAfterLogin,
+  setToken,
 } from "@/lib/api";
 
 interface ApiRequestOptions extends RequestInit {
@@ -90,6 +92,24 @@ export function ApiProvider({ children }: { children: ReactNode }) {
    * 토큰이 있었는데 401이 온 경우에만 만료로 간주한다.
    * (비로그인 게스트의 401은 정상이므로 건드리지 않는다)
    */
+  /**
+   * 백엔드가 갱신해 준 세션 토큰을 저장한다.
+   *
+   * 토큰 수명(180일)의 절반이 지나면 백엔드가 아무 플랜 API 응답에나 새
+   * 토큰을 헤더로 얹어 준다. 여기서 받아 갈아 끼워야 **쓰는 동안 세션이 계속
+   * 밀린다** — 안 그러면 매일 들어오는 사람도 로그인한 지 180일째에 한 번
+   * 튕긴다.
+   *
+   * 갱신은 90일에 한 번뿐이라 이 분기는 거의 타지 않는다. 그래도 보낸 토큰과
+   * 같은지 비교하는 이유는, 서버가 매 요청 갱신하는 상태가 되면 여기서
+   * setToken 이 계속 불려 SSE 가 그때마다 다시 붙기 때문이다.
+   */
+  const storeRenewedToken = useCallback((res: Response, sentToken: string) => {
+    const renewed = res.headers.get(RENEWED_TOKEN_HEADER)?.trim();
+    if (!renewed || renewed === sentToken) return;
+    setToken(renewed);
+  }, []);
+
   const handleUnauthorized = useCallback((hadToken: boolean) => {
     if (!hadToken) return;
     clearToken();
@@ -184,12 +204,19 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         if (res.status === 401 && options?.skipAuthHandling !== true) {
           handleUnauthorized(!!token);
         }
+        if (token) storeRenewedToken(res, token);
         return res;
       } finally {
         if (!skipLoading) endRequest();
       }
     },
-    [buildBackendUrl, beginRequest, endRequest, handleUnauthorized],
+    [
+      buildBackendUrl,
+      beginRequest,
+      endRequest,
+      handleUnauthorized,
+      storeRenewedToken,
+    ],
   );
 
   const value = useMemo(

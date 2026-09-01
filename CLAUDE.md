@@ -58,6 +58,30 @@ npm run format:check # Prettier 검사만
 6. 받은 **앱 자체 JWT**를 `lib/api.ts`의 `setToken`으로 저장 → `sessionStorage` + `localStorage` 두 군데 모두 (탭 간 공유 의도; 한쪽만 통합하는 후속 정리는 검토 대상)
 7. 토큰 키는 `plan_auth_token`. JWT payload에서 `planUserId / sub` 디코드 (`getPlanUserIdFromToken`, `getSubFromToken`)
 
+### 세션은 쓰는 동안 계속 밀린다 (슬라이딩 갱신)
+
+앱 JWT 수명은 **180일**이고, 절반(90일)이 지나면 백엔드가 **아무 플랜 API
+응답에나** 새 토큰을 `X-Renewed-Token` 헤더로 얹어 줍니다. `ApiContext` 의
+`fetchWithAuth` 가 그걸 받아 `setToken` 으로 갈아 끼웁니다
+(`storeRenewedToken`). 그래서 계속 쓰는 사람은 로그인이 풀리지 않고, 180일
+동안 한 번도 안 들어온 경우에만 다시 로그인합니다.
+
+- **`Access-Control-Expose-Headers` 에서 이 헤더를 빼면 갱신이 조용히 죽습니다.**
+  브라우저는 다른 오리진의 응답에서 노출한 헤더만 읽습니다 — 헤더가 오는데도
+  프론트에는 없는 것처럼 보이고, 90일 뒤에야 증상이 납니다. 백엔드
+  `apps/api/src/main.ts` 의 `cors: { exposedHeaders: [...] }` 자리입니다.
+- 갱신 판단은 백엔드 `PlanApiGuard` 가 **인증을 다 통과한 뒤에만** 합니다.
+  회수·만료된 토큰은 거기까지 못 오므로 죽은 토큰이 갱신으로 되살아나지
+  않습니다.
+- 예전에 발급된 토큰(카카오 access_token 이 payload 에 박혀 있던 100년짜리)은
+  수명이 남아도 갱신 대상입니다. 새 모양으로 한 번 갈아 끼워 그 카카오
+  토큰을 클라이언트에서 걷어냅니다.
+- **로그인 상태를 카카오 토큰에 다시 매달지 마세요.** 예전에는 가드가 매 요청
+  카카오 서버에 물어봐서, 우리 JWT 가 100년짜리여도 실효 세션은 카카오
+  access_token 수명인 6시간이었습니다.
+- 확인은 `node scripts/session-renewal.cjs` (프론트 쪽), 백엔드는
+  `test/plan.session.spec.ts` 입니다.
+
 `AuthRedirectToMain` (layout 전역) 은 **`/`나 `/setting` 진입 시에만** 토큰 + `weddingDate/budget/name`이 모두 채워졌는지 확인 후 `/main`으로 자동 이동시킵니다 (`isPlanDataComplete()`). `/main` 자체는 자동 리다이렉트 대상이 아닙니다.
 
 **OAuth 외부 이동 시 로딩 유지:** `useKakaoAuth.handleKakaoAuth`는 `redirectToOAuth` 헬퍼로 `requestAnimationFrame` 두 번 후 `window.location.href`를 설정하고, **`willRedirect` 플래그가 true이면 `setLoading(false)`를 호출하지 않습니다.** 외부 페이지 전환 직전에 로딩이 꺼지면 사용자가 빈 화면을 보게 되는 회귀 버그가 있었기 때문입니다. 새 OAuth 분기를 추가할 때 같은 패턴을 유지하세요.
@@ -739,6 +763,7 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 - `scripts/main-dashboard.cjs` — `/main` 폭별 레이아웃 + 리스트 스크롤 게이트 + 가이드 말풍선 좌표 + **초대 띠** 확인. `HEADED=1`을 붙이면 브라우저를 띄워 직접 눌러볼 수 있고, `NO_SPOUSE=1` 을 붙이면 배우자가 아직 없는 사용자로 구동합니다
 - `scripts/plan-board.cjs` — `/calendar` 보드 뷰. 컬럼 분리, 보드↔캘린더 전환, 인스펙터, 완료 토글(`PATCH status`), 드래그 날짜 이동(`PATCH schedule`)까지 실제 요청을 잡아 확인합니다
 - `scripts/landing-widths.cjs` — **랜딩 폭·높이별 검사.** 15개 뷰포트(2327~320)에서 다섯 섹션을 훑으며 핀이 걸려야 할 곳에 걸렸는지, 핀 내용이 한 화면을 넘치는지(`.pin2` 의 `overflow:hidden` 이 잘라 먹습니다), 화면 한가운데인데 투명한 덩어리가 있는지, 가로 스크롤·히어로 끝 타일·D-day 중심을 봅니다
+- `scripts/session-renewal.cjs` — **세션 슬라이딩 갱신.** 백엔드를 목으로 세워 `X-Renewed-Token` 헤더가 오면 저장된 토큰이 바뀌는지, 없으면 그대로인지, **CORS 로 노출하지 않으면 갱신이 죽는지**, 비로그인에는 심지 않는지를 확인합니다. `npm run dev` 만 있으면 됩니다
 - `scripts/session-entry.cjs` — **랜딩·로그인 진입 규칙.** `/plan/user` 를 목으로 세워 토큰 없음 → 랜딩, 만료(401) → `/login?expired=1`, 살아 있음 → `/main` 세 경우를 돌고, 랜딩에 세션 만료 모달이 뜨지 않는지·만료 토큰이 지워지는지 확인합니다
 - `scripts/guest-flow.cjs` — **게스트(로그인 없이 둘러보기) 흐름 전체.** 랜딩 → 온보딩 4단계 → `/main` 을 실제로 눌러 넘기고, 일곱 화면을 돌며 **매번 "홈" 을 눌러 랜딩으로 튕겨 나가지 않는지** 확인합니다. 온보딩을 건너뛰고 `/calendar` 로 직접 들어온 경우와 새 탭도 따로 봅니다. 일정 추가는 단계형 폼(제목 → 카테고리 → 결제 유형 → 저장)을 순서대로 몰아 sessionStorage 저장과 보드 반영까지 확인하고, **게스트인데 인증 API 를 불렀는지**도 봅니다. `npm run dev` 만 있으면 되고 `HEADED=1` 로 띄워 볼 수 있습니다
 - `scripts/misc-pages.cjs` — `/`, `/user`, `/add-plen`, `/setting` 폭별 캡처

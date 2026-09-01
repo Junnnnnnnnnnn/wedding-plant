@@ -2,6 +2,18 @@
 export const AUTH_TOKEN_KEY = "plan_auth_token";
 export const AUTH_TOKEN_CHANGED_EVENT = "plan-auth-token-changed";
 
+/**
+ * 백엔드가 갱신된 세션 토큰을 실어 보내는 응답 헤더.
+ *
+ * 토큰 수명(180일)의 절반이 지나면 백엔드가 요청을 처리하면서 새 토큰을 이
+ * 헤더에 담아 준다. 받아서 저장해야 **쓰는 동안 세션이 계속 밀린다** — 안
+ * 받으면 매일 들어오는 사람도 로그인한 지 180일째에 한 번 튕긴다.
+ *
+ * 백엔드가 `exposedHeaders` 로 노출해 둔 헤더다(CORS). 거기서 빠지면
+ * 브라우저가 헤더 자체를 숨겨 갱신이 조용히 죽는다.
+ */
+export const RENEWED_TOKEN_HEADER = "x-renewed-token";
+
 /** OAuth 로그인 전 공유 링크 shareCode 저장용 (로그인 후 /main?share=xxx로 복원) */
 export const SHARE_AFTER_LOGIN_KEY = "plan_share_after_login";
 
