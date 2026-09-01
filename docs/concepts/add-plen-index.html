@@ -1,0 +1,146 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P4 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · macrostructure: Catalogue · tone: austere · theme: 앱 incumbent -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>플랜 추가 화면 시안 5안</title>
+<link rel="stylesheet" href="add-plen-tokens.css">
+<style>
+  .wrap { max-width: 1080px; margin: 0 auto; padding: var(--space-8) var(--space-6); }
+  .kick { font-size: var(--text-sm); color: var(--accent); font-weight: 700; }
+  h1 { font-size: var(--text-3xl); font-weight: 800; letter-spacing: -.04em; margin-top: var(--space-2);
+       overflow-wrap: anywhere; min-width: 0; }
+  .lede { margin-top: var(--space-4); font-size: var(--text-lg); color: var(--ink-2); line-height: 1.7; max-width: 60ch; }
+  .list { margin-top: var(--space-8); display: grid; gap: var(--space-4); }
+  .item {
+    display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(0, 280px);
+    gap: var(--space-5); align-items: start;
+    background: var(--card); border: var(--rule); border-radius: var(--radius-xl);
+    padding: var(--space-6); box-shadow: var(--shadow-card); text-decoration: none; color: inherit;
+    transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  }
+  .item:hover { border-color: var(--accent-line); transform: translateY(-2px); }
+  .letter {
+    width: 56px; height: 56px; border-radius: var(--radius-md);
+    background: var(--accent-soft); color: var(--accent);
+    display: grid; place-items: center; font-size: var(--text-xl); font-weight: 800;
+  }
+  .item__t { font-size: var(--text-lg); font-weight: 800; letter-spacing: -.02em; }
+  .item__d { margin-top: var(--space-2); font-size: var(--text-md); color: var(--ink-2); line-height: 1.65; }
+  .item__m { font-size: var(--text-sm); color: var(--ink-2); line-height: 1.7; }
+  .item__m b { color: var(--ink); }
+  .tag {
+    display: inline-block; font-size: 11.5px; font-weight: 700; color: var(--ink-2);
+    background: var(--field); border: 1px solid var(--field-line);
+    padding: 3px 9px; border-radius: var(--radius-pill); margin: 0 4px 4px 0;
+  }
+  .note {
+    margin-top: var(--space-8); padding-top: var(--space-5); border-top: var(--rule);
+    font-size: var(--text-sm); color: var(--ink-2); line-height: 1.8; max-width: 70ch;
+  }
+  .note b { color: var(--ink); }
+  @media (max-width: 820px) {
+    .item { grid-template-columns: 44px minmax(0, 1fr); }
+    .letter { width: 44px; height: 44px; font-size: var(--text-md); }
+    .item__m { grid-column: 1 / -1; padding-top: var(--space-3); border-top: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kick">/add-plen · 넓은 화면 재설계</p>
+  <h1>플랜 추가 화면 시안 5안</h1>
+  <p class="lede">
+    지금 화면은 폰용 카드 스택을 2,100px 자리에 가운데 680px 로 세워 둔 것입니다.
+    양옆 1,400px 이 비고, 스크롤을 내려야 저장 버튼이 나옵니다.
+    다섯 안은 색이 아니라 <b>구조</b>가 서로 다릅니다.
+  </p>
+
+  <div class="list">
+    <a class="item" href="add-plen-a-preview.html">
+      <span class="letter">A</span>
+      <div>
+        <h2 class="item__t">입력 | 미리보기</h2>
+        <p class="item__d">왼쪽에 폼, 오른쪽에 결과. 저장하기 전에 보드 카드 · 예산 막대 · 지도가 실시간으로 따라옵니다.</p>
+        <div style="margin-top:var(--space-3)">
+          <span class="tag">가장 안전</span><span class="tag">기존 폼 재사용</span><span class="tag">2열</span>
+        </div>
+      </div>
+      <p class="item__m">
+        <b>강점</b> 지금 마크업을 거의 그대로 쓰고 오른쪽 열만 새로 만듭니다. 구현이 제일 짧습니다.<br>
+        <b>약점</b> 여전히 "폼"입니다. 항목 수가 줄지 않습니다.
+      </p>
+    </a>
+
+    <a class="item" href="add-plen-b-ledger.html">
+      <span class="letter">B</span>
+      <div>
+        <h2 class="item__t">금액이 먼저</h2>
+        <p class="item__d">64px 금액 입력이 히어로입니다. 아래는 무엇을 · 언제 · 어디서 3열 작업대. 스크롤 없이 한 화면에 다 들어갑니다.</p>
+        <div style="margin-top:var(--space-3)">
+          <span class="tag">한 화면</span><span class="tag">3열</span><span class="tag">예산 중심</span>
+        </div>
+      </div>
+      <p class="item__m">
+        <b>강점</b> 이 앱의 목적이 예산이라는 걸 화면이 말합니다. 필드 수가 그대로여도 짧게 느껴집니다.<br>
+        <b>약점</b> 단계형 노출(제목 → 카테고리 → …)을 버려야 합니다. 처음 쓰는 사람에게 한꺼번에 보입니다.
+      </p>
+    </a>
+
+    <a class="item" href="add-plen-c-sentence.html">
+      <span class="letter">C</span>
+      <div>
+        <h2 class="item__t">문장으로 채우기</h2>
+        <p class="item__d">"1월 10일 오후 3:00에 씨쉘에서 신혼여행 몫으로 142만원을 카드로 씁니다." 빈칸을 눌러 그 자리에서 고칩니다.</p>
+        <div style="margin-top:var(--space-3)">
+          <span class="tag">가장 대담</span><span class="tag">라벨 없음</span><span class="tag">읽히는 폼</span>
+        </div>
+      </div>
+      <p class="item__m">
+        <b>강점</b> 라벨 8개가 사라지고 문장 하나가 남습니다. 저장 전에 내용을 소리내어 검토하게 됩니다.<br>
+        <b>약점</b> 값이 비었을 때 문장이 어색해집니다. 접근성·IME 처리를 따로 설계해야 합니다.
+      </p>
+    </a>
+
+    <a class="item" href="add-plen-d-map.html">
+      <span class="letter">D</span>
+      <div>
+        <h2 class="item__t">지도 우선</h2>
+        <p class="item__d">오른쪽을 지도가 채웁니다. 왼쪽 480px 폼은 스크롤하고 지도는 고정. 장소 검색이 곁다리가 아니라 주인공입니다.</p>
+        <div style="margin-top:var(--space-3)">
+          <span class="tag">장소 중심</span><span class="tag">분할</span><span class="tag">카카오 SDK</span>
+        </div>
+      </div>
+      <p class="item__m">
+        <b>강점</b> 웨딩홀 · 스튜디오 · 숙박처럼 장소가 본질인 일정에 맞습니다. 후기 피드의 placeId 수집과도 맞물립니다.<br>
+        <b>약점</b> 청첩장 · 예물처럼 장소가 없는 카테고리에서는 화면 절반이 낭비됩니다.
+      </p>
+    </a>
+
+    <a class="item" href="add-plen-e-timeline.html">
+      <span class="letter">E</span>
+      <div>
+        <h2 class="item__t">타임라인 안에 끼우기</h2>
+        <p class="item__d">왼쪽은 그 달의 흐름, 오른쪽은 표 형태의 폼. 새 건이 1월 7일과 1월 14일 사이에 들어가는 게 채우는 동안 보입니다.</p>
+        <div style="margin-top:var(--space-3)">
+          <span class="tag">맥락 유지</span><span class="tag">인라인 편집</span><span class="tag">표</span>
+        </div>
+      </div>
+      <p class="item__m">
+        <b>강점</b> 보드에서 넘어온 흐름이 끊기지 않습니다. 필드가 카드가 아니라 행이라 세로가 짧습니다.<br>
+        <b>약점</b> 왼쪽 타임라인이 폰에서는 갈 곳이 없어 접어야 합니다.
+      </p>
+    </a>
+  </div>
+
+  <p class="note">
+    다섯 안 모두 실제 값(씨쉘 푸꾸옥 호텔 앤 스파 숙박 · 신혼여행 · 카드 · 142만원 · 2027-01-10 오후 3:00)과
+    실제 예산(3,000만원 · 예정 409만원 · 남음 2,591만원)으로 채웠습니다. 지어낸 숫자는 없습니다.<br>
+    색 · 글꼴 · 라운드는 앱의 기존 값 그대로이고, 공통 토큰은 <b>add-plen-tokens.css</b> 한 곳에 있습니다.<br>
+    <b>폰 화면은 건드리지 않는 전제</b>입니다. 지금 마크업이 폰의 기준이고, 다섯 안은 전부 넓은 화면에서만 갈라집니다.
+  </p>
+</div>
+</body>
+</html>

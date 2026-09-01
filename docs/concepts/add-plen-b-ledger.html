@@ -1,0 +1,223 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E5 S5 R4 V5 -->
+<!-- Hallmark · macrostructure: Stat-Led(금액이 히어로) · tone: technical
+     theme: 앱 incumbent(light · rounded-sans · warm-magenta) · nav: N3 side-rail · enrichment: none -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시안 B · 금액이 먼저 — 플랜 추가</title>
+<link rel="stylesheet" href="add-plen-tokens.css">
+<style>
+  .wrap { width: 100%; max-width: 1280px; padding: var(--space-8) var(--space-7) var(--space-8); }
+
+  /* ── 히어로: 이 화면에서 사람이 제일 신경 쓰는 값이 금액이다 ── */
+  .hero {
+    display: grid; gap: var(--space-6);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 336px);
+    align-items: end;
+    padding-bottom: var(--space-6); border-bottom: 2px solid var(--ink);
+  }
+  .hero__kick { font-size: var(--text-sm); color: var(--accent); font-weight: 700; }
+  .hero__amt {
+    display: flex; align-items: baseline; gap: var(--space-3); margin-top: var(--space-2);
+  }
+  .amtin {
+    font-size: var(--text-display); font-weight: 800; letter-spacing: -.05em;
+    border: 0; background: transparent; padding: 0;
+    width: 5ch; text-align: right; font-variant-numeric: tabular-nums;
+    border-bottom: 3px solid var(--accent-line);
+    overflow-wrap: anywhere; min-width: 0;
+  }
+  .amtin:focus { outline: none; border-bottom-color: var(--accent); }
+  .hero__unit { font-size: var(--text-2xl); font-weight: 800; color: var(--ink-2); }
+  .hero__pay { display: flex; gap: var(--space-2); margin-top: var(--space-4); }
+  .pay {
+    padding: 9px var(--space-4); border-radius: var(--radius-pill); font-size: var(--text-sm);
+    border: 1px solid var(--field-line); background: var(--card); color: var(--ink-3);
+    transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  }
+  .pay:hover { color: var(--ink-2); border-color: var(--ink-3); }
+  .pay[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  .runway { text-align: right; font-size: var(--text-sm); color: var(--ink-2); line-height: 1.8; }
+  .runway b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .runway .big { display: block; font-size: var(--text-2xl); font-weight: 800; letter-spacing: -.03em; color: var(--ink); }
+
+  /* ── 아래 3열 작업대 ── */
+  .desk {
+    display: grid; gap: 0; margin-top: var(--space-7);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border: var(--rule); border-radius: var(--radius-xl); overflow: hidden;
+    background: var(--card); box-shadow: var(--shadow-card);
+  }
+  .bay { padding: var(--space-6); border-right: var(--rule); }
+  .bay:last-child { border-right: 0; }
+  .bay__h {
+    font-size: var(--text-xs); color: var(--ink-3); font-weight: 700;
+    padding-bottom: var(--space-3); margin-bottom: var(--space-4);
+    border-bottom: 1px solid var(--line);
+  }
+  .f { margin-bottom: var(--space-5); }
+  .f:last-child { margin-bottom: 0; }
+  .f__l { display: block; font-size: var(--text-sm); font-weight: 700; color: var(--ink-2); margin-bottom: var(--space-2); }
+  .req { color: var(--accent); }
+  .i {
+    width: 100%; padding: 12px var(--space-3);
+    background: var(--field); border: 1px solid var(--field-line);
+    border-radius: var(--radius-sm); font-size: var(--text-md); font-weight: 700;
+  }
+  .i:focus { outline: none; border-color: var(--accent); background: var(--card); }
+  .cats { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .cat {
+    padding: 8px 13px; border-radius: var(--radius-pill); font-size: var(--text-sm);
+    border: 1px solid var(--field-line); background: var(--card); color: var(--ink-3);
+  }
+  .cat:hover { color: var(--ink-2); border-color: var(--ink-3); }
+  .cat[aria-pressed="true"] {
+    background: var(--accent-soft); color: var(--accent);
+    border-color: var(--accent-line); font-weight: 800;
+  }
+  .two { display: grid; grid-template-columns: minmax(0,1fr) 112px; gap: var(--space-2); }
+  .undated {
+    margin-top: var(--space-2); font-size: var(--text-xs); color: var(--ink-3);
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .undated:hover { color: var(--accent); }
+  .mini {
+    margin-top: var(--space-3); height: 120px; border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background:
+      radial-gradient(circle at 55% 50%, var(--accent) 0 5px, transparent 6px),
+      linear-gradient(0deg, var(--line) 1px, transparent 1px) 0 0 / 100% 30px,
+      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 38px 100%,
+      var(--field);
+  }
+
+  .foot {
+    margin-top: var(--space-6); display: flex; align-items: center; gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .foot__memo { flex: 1; min-width: 260px; }
+  .memo {
+    width: 100%; min-height: 62px; resize: vertical; padding: var(--space-3) var(--space-4);
+    background: var(--card); border: var(--rule); border-radius: var(--radius-md);
+    font-size: var(--text-md);
+  }
+  .memo:focus { outline: none; border-color: var(--accent); }
+  .primary {
+    padding: 17px var(--space-8); border-radius: var(--radius-lg);
+    background: var(--accent); color: #fff; font-size: var(--text-lg); font-weight: 800;
+    box-shadow: var(--shadow-lift); transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .primary:hover { transform: translateY(-1px); }
+  .primary:active { transform: translateY(0) scale(.995); }
+
+  @media (max-width: 1080px) {
+    .desk { grid-template-columns: minmax(0, 1fr); }
+    .bay { border-right: 0; border-bottom: var(--rule); }
+    .bay:last-child { border-bottom: 0; }
+  }
+  @media (max-width: 760px) {
+    .wrap { padding: var(--space-6) var(--space-4); }
+    .hero { grid-template-columns: minmax(0, 1fr); align-items: start; }
+    .runway { text-align: left; }
+    .amtin { font-size: var(--text-3xl); }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" aria-label="주 메뉴">
+    <div class="rail__brand"><span class="rail__mark">WP</span>웨딩 플랜트</div>
+    <div class="rail__label">우리 결혼 준비</div>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>홈</a>
+    <a class="rail__item" href="#" aria-current="page"><i class="rail__dot"></i>플랜 보드</a>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>참여 플랜 · 대화</a>
+    <div class="rail__label">둘러보기</div>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>피드</a>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>Settings</a>
+  </nav>
+
+  <div class="stage">
+    <form class="wrap" onsubmit="return false">
+      <section class="hero">
+        <div>
+          <p class="hero__kick">플랜 추가 · 2027년 1월</p>
+          <div class="hero__amt">
+            <input class="amtin" aria-label="금액(만원)" inputmode="numeric" value="142">
+            <span class="hero__unit">만원</span>
+          </div>
+          <div class="hero__pay" role="group" aria-label="결제 유형">
+            <button class="pay" type="button" aria-pressed="false">현금</button>
+            <button class="pay" type="button" aria-pressed="true">카드</button>
+            <button class="pay" type="button" aria-pressed="false">기타</button>
+          </div>
+        </div>
+        <p class="runway">
+          이 건을 넣으면 남는 돈
+          <b class="big">2,449만원</b>
+          3,000만원 중 · 지금 <b>2,591만원</b>
+        </p>
+      </section>
+
+      <div class="desk">
+        <section class="bay">
+          <h2 class="bay__h">무엇을</h2>
+          <div class="f">
+            <label class="f__l" for="b-title">제목 <span class="req">*</span></label>
+            <input class="i" id="b-title" value="씨쉘 푸꾸옥 호텔 앤 스파 숙박" placeholder="어떤 지출인가요?">
+          </div>
+          <div class="f">
+            <span class="f__l">카테고리 <span class="req">*</span></span>
+            <div class="cats">
+              <button class="cat" type="button" aria-pressed="false">상견례</button>
+              <button class="cat" type="button" aria-pressed="false">스드메</button>
+              <button class="cat" type="button" aria-pressed="true">신혼여행</button>
+              <button class="cat" type="button" aria-pressed="false">웨딩홀</button>
+              <button class="cat" type="button">+ 추가</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="bay">
+          <h2 class="bay__h">언제</h2>
+          <div class="f">
+            <label class="f__l" for="b-date">일자</label>
+            <div class="two">
+              <input class="i" id="b-date" value="2027-01-10">
+              <input class="i" aria-label="시작 시각" value="오후 3:00">
+            </div>
+            <button class="undated" type="button">날짜 미정으로 두기</button>
+          </div>
+          <div class="f">
+            <span class="f__l">그 달 상황</span>
+            <p style="font-size:var(--text-sm);color:var(--ink-2);line-height:1.7;margin:0">
+              2027년 1월에 이미 <b>5건 · 267만원</b>이 잡혀 있어요.<br>
+              1월 7일 · 1월 14일에 다른 일정이 있습니다.
+            </p>
+          </div>
+        </section>
+
+        <section class="bay">
+          <h2 class="bay__h">어디서</h2>
+          <div class="f">
+            <label class="f__l" for="b-loc">위치</label>
+            <input class="i" id="b-loc" value="씨쉘 푸꾸옥 호텔 앤 스파" placeholder="예식장, 스튜디오 등">
+            <div class="mini" role="img" aria-label="선택한 장소 위치"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="foot">
+        <div class="foot__memo">
+          <label class="f__l" for="b-memo">메모</label>
+          <textarea class="memo" id="b-memo" placeholder="메모 남기기">공항픽업 알아보기</textarea>
+        </div>
+        <button class="primary" type="submit">플랜 저장하기</button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P4 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · A안 변형 3개 목차 · macrostructure: Catalogue · theme: 앱 incumbent -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A안 변형 3개 — 플랜 추가</title>
+<link rel="stylesheet" href="add-plen-tokens.css">
+<style>
+  .wrap { max-width: 1040px; margin: 0 auto; padding: var(--space-8) var(--space-6); }
+  .kick { font-size: var(--text-sm); color: var(--accent); font-weight: 700; }
+  h1 { font-size: var(--text-3xl); font-weight: 800; letter-spacing: -.04em; margin-top: var(--space-2);
+       overflow-wrap: anywhere; min-width: 0; }
+  .lede { margin-top: var(--space-4); font-size: var(--text-lg); color: var(--ink-2); line-height: 1.7; max-width: 62ch; }
+  .lede b { color: var(--ink); }
+  .keep {
+    margin-top: var(--space-6); padding: var(--space-5) var(--space-6);
+    background: var(--card); border: var(--rule); border-radius: var(--radius-lg);
+    font-size: var(--text-md); color: var(--ink-2); line-height: 1.8;
+  }
+  .keep b { color: var(--ink); }
+  .list { margin-top: var(--space-7); display: grid; gap: var(--space-4); }
+  .item {
+    display: grid; grid-template-columns: 58px minmax(0, 1fr) minmax(0, 300px);
+    gap: var(--space-5); align-items: start;
+    background: var(--card); border: var(--rule); border-radius: var(--radius-xl);
+    padding: var(--space-6); box-shadow: var(--shadow-card); text-decoration: none; color: inherit;
+    transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  }
+  .item:hover { border-color: var(--accent-line); transform: translateY(-2px); }
+  .letter {
+    width: 58px; height: 58px; border-radius: var(--radius-md);
+    background: var(--accent-soft); color: var(--accent);
+    display: grid; place-items: center; font-size: var(--text-lg); font-weight: 800;
+  }
+  .item__t { font-size: var(--text-lg); font-weight: 800; letter-spacing: -.02em; }
+  .item__one { margin-top: 4px; font-size: var(--text-sm); color: var(--accent); font-weight: 700; }
+  .item__d { margin-top: var(--space-3); font-size: var(--text-md); color: var(--ink-2); line-height: 1.65; }
+  .item__m { font-size: var(--text-sm); color: var(--ink-2); line-height: 1.7; }
+  .item__m b { color: var(--ink); }
+  .tag {
+    display: inline-block; font-size: 11.5px; font-weight: 700; color: var(--ink-2);
+    background: var(--field); border: 1px solid var(--field-line);
+    padding: 3px 9px; border-radius: var(--radius-pill); margin: var(--space-3) 4px 0 0;
+  }
+  .note { margin-top: var(--space-7); padding-top: var(--space-5); border-top: var(--rule);
+          font-size: var(--text-sm); color: var(--ink-2); line-height: 1.8; max-width: 72ch; }
+  .note b { color: var(--ink); }
+  .note a { color: var(--accent); }
+  @media (max-width: 840px) {
+    .item { grid-template-columns: 46px minmax(0, 1fr); }
+    .letter { width: 46px; height: 46px; font-size: var(--text-md); }
+    .item__m { grid-column: 1 / -1; padding-top: var(--space-3); border-top: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kick">/add-plen · A안(입력 | 미리보기) 변형</p>
+  <h1>A안 변형 3개</h1>
+  <p class="lede">
+    셋 다 <b>왼쪽 폼 · 오른쪽 결과</b>라는 A의 뼈대를 그대로 씁니다.
+    다른 건 각각 <b>결정 하나</b>입니다 — 카드 껍데기를 둘 것인가, 저장 버튼을 어디에 둘 것인가,
+    오른쪽에 무엇을 보여줄 것인가.
+  </p>
+
+  <p class="keep">
+    <b>셋 다 유지하는 것</b> · 폰 화면 그대로 · 왼쪽 폼 항목과 순서 그대로 ·
+    앱 색과 글꼴 그대로 · 좁아지면 1열로 접힘
+  </p>
+
+  <div class="list">
+    <a class="item" href="add-plen-a1-sheet.html">
+      <span class="letter">A1</span>
+      <div>
+        <h2 class="item__t">시트 한 장</h2>
+        <p class="item__one">다른 점 — 카드 8장을 없앤다</p>
+        <p class="item__d">
+          카드마다 두르던 테두리·그림자·여백을 걷고 흰 시트 한 장에 구분선 행으로 넣습니다.
+          입력칸도 평소엔 테두리가 없고 손이 닿을 때만 면이 뜹니다.
+          <b>세로가 A보다 짧아 저장 버튼까지 한 화면에 들어옵니다.</b>
+        </p>
+        <span class="tag">세로 최단</span><span class="tag">읽기 편함</span><span class="tag">인라인 편집</span>
+      </div>
+      <p class="item__m">
+        <b>얻는 것</b> 스크롤이 사라지고 화면이 조용해집니다. 라벨 · 값이 표처럼 줄맞춰 읽힙니다.<br>
+        <b>잃는 것</b> 단계별로 카드가 나타나던 연출을 못 씁니다. 필수 표시가 카드 강조 없이 <b>*</b> 하나에 걸립니다.
+      </p>
+    </a>
+
+    <a class="item" href="add-plen-a2-confirm.html">
+      <span class="letter">A2</span>
+      <div>
+        <h2 class="item__t">확정 패널</h2>
+        <p class="item__one">다른 점 — 저장 버튼을 오른쪽으로 옮긴다</p>
+        <p class="item__d">
+          오른쪽 열을 420px 로 키우고 <b>저장하면 남는 돈 2,449만원</b>을 화면에서 제일 큰 글자로 둡니다.
+          저장 버튼도 그 아래에 붙습니다 — 값을 넣는 곳과 확정하는 곳을 갈라 놓는 흐름입니다.
+        </p>
+        <span class="tag">예산이 주인공</span><span class="tag">확정 분리</span><span class="tag">누락 안내</span>
+      </div>
+      <p class="item__m">
+        <b>얻는 것</b> 저장 직전에 금액이 한 번 더 눈에 들어옵니다. 좌표 누락 같은 경고를 버튼 바로 위에 둘 수 있습니다.<br>
+        <b>잃는 것</b> 폼을 다 채우고 시선을 오른쪽으로 옮겨야 합니다. 좁은 화면에서는 버튼이 맨 아래로 내려갑니다.
+      </p>
+    </a>
+
+    <a class="item" href="add-plen-a3-context.html">
+      <span class="letter">A3</span>
+      <div>
+        <h2 class="item__t">보드 맥락 미리보기</h2>
+        <p class="item__one">다른 점 — 오른쪽에 그 달 보드를 통째로 보여준다</p>
+        <p class="item__d">
+          카드 한 장이 아니라 <b>2027년 1월 컬럼 전체</b>가 오른쪽에 서고, 새 카드가 1월 7일과 1월 14일 사이
+          제자리에 분홍 테두리로 끼어 있습니다. 나머지는 흐리게 둡니다.
+        </p>
+        <span class="tag">맥락 유지</span><span class="tag">가장 넓게 씀</span><span class="tag">폼 1열</span>
+      </div>
+      <p class="item__m">
+        <b>얻는 것</b> 보드에서 넘어온 흐름이 안 끊깁니다. 날짜를 고를 때 앞뒤에 뭐가 있는지 보면서 정합니다.<br>
+        <b>잃는 것</b> 폼이 520px 한 열로 좁아져 세로가 길어집니다. 그 달 일정을 한 번 더 받아야 합니다.
+      </p>
+    </a>
+  </div>
+
+  <p class="note">
+    값은 셋 다 실제 데이터입니다 — 씨쉘 푸꾸옥 호텔 앤 스파 숙박 · 신혼여행 · 카드 · 142만원 ·
+    2027-01-10 오후 3:00, 예산 3,000만원 · 예정 267만원 · 남음 2,591만원.<br>
+    공통 토큰은 <b>add-plen-tokens.css</b> 한 곳입니다. 원안 다섯은
+    <a href="add-plen-index.html">add-plen-index.html</a> 에 있습니다.
+  </p>
+</div>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V4 -->
+<!-- Hallmark · A 변형 2 · 확정 패널(저장이 오른쪽으로) · tone: utilitarian
+     theme: 앱 incumbent(light · rounded-sans · warm-magenta) · nav: N3 side-rail -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A2 · 확정 패널 — 플랜 추가</title>
+<link rel="stylesheet" href="add-plen-tokens.css">
+<style>
+  .head {
+    border-bottom: var(--rule); background: var(--card);
+    padding: var(--space-5) var(--space-7); display: flex; align-items: center; gap: var(--space-4);
+  }
+  .head__crumb { font-size: var(--text-sm); color: var(--ink-3); }
+  .head__title { font-size: var(--text-xl); font-weight: 800; letter-spacing: -.02em; }
+  .head__spacer { flex: 1; }
+  .ghost {
+    border: var(--rule); border-radius: var(--radius-md); padding: 9px var(--space-4);
+    font-size: var(--text-sm); color: var(--ink-2); background: var(--card);
+  }
+  .ghost:hover { border-color: var(--accent-line); color: var(--accent); }
+
+  /* 오른쪽이 넓어진다 — 결정이 거기서 난다 */
+  .cols {
+    display: grid; gap: var(--space-7); align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+    padding: var(--space-7); max-width: 1380px; width: 100%;
+  }
+
+  .form { display: grid; gap: var(--space-4); }
+  .pair { display: grid; gap: var(--space-4); grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+  .fld { background: var(--card); border: var(--rule); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-card); }
+  .fld__label { display: block; font-size: var(--text-sm); font-weight: 700; color: var(--ink-2); margin-bottom: var(--space-2); }
+  .req { color: var(--accent); }
+  .inp {
+    width: 100%; padding: 13px var(--space-4); background: var(--field);
+    border: 1px solid var(--field-line); border-radius: var(--radius-md);
+    font-size: var(--text-md); font-weight: 700;
+  }
+  .inp:hover { border-color: var(--ink-3); }
+  .inp:focus { outline: none; border-color: var(--accent); background: var(--card); }
+  .inp--num { text-align: right; font-variant-numeric: tabular-nums; }
+  .money { position: relative; }
+  .money .unit { position: absolute; right: var(--space-4); top: 50%; transform: translateY(-50%); font-size: var(--text-sm); color: var(--ink-2); font-weight: 600; }
+  .money .inp { padding-right: 50px; }
+  .row { display: flex; gap: var(--space-2); }
+  .seg { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: var(--space-2); }
+  .seg button { padding: 11px 0; border-radius: var(--radius-sm); font-size: var(--text-sm); border: 1px solid var(--field-line); background: var(--field); color: var(--ink-3); }
+  .seg button:hover { color: var(--ink-2); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .chip { padding: 12px var(--space-4); border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line); font-weight: 800; text-align: left; width: 100%; }
+  .add { width: 48px; flex: 0 0 48px; border-radius: var(--radius-md); background: var(--field); border: 1px solid var(--field-line); color: var(--ink-3); font-size: 20px; }
+  .add:hover { background: #f0efee; color: var(--ink-2); }
+  .memo { width: 100%; min-height: 88px; resize: vertical; padding: var(--space-4); background: var(--field); border: 1px solid var(--field-line); border-radius: var(--radius-md); font-size: var(--text-md); }
+  .memo:focus { outline: none; border-color: var(--accent); background: var(--card); }
+  .count { margin-top: 6px; text-align: right; font-size: var(--text-xs); color: var(--ink-3); }
+
+  /* ── 오른쪽: 예산 숫자가 화면에서 제일 크고, 저장도 여기 있다 ── */
+  .decide {
+    position: sticky; top: var(--space-7);
+    background: var(--card); border: 1px solid var(--accent-line); border-radius: var(--radius-xl);
+    box-shadow: 0 1px 2px #1b0d1408, 0 18px 44px -26px #ee2b8c59;
+    overflow: hidden;
+  }
+  .decide__top { padding: var(--space-6) var(--space-6) var(--space-5); }
+  .decide__cap { font-size: var(--text-xs); color: var(--ink-3); }
+  .decide__big {
+    margin-top: 6px; font-size: 46px; font-weight: 800; letter-spacing: -.045em; line-height: 1;
+    font-variant-numeric: tabular-nums; overflow-wrap: anywhere; min-width: 0;
+  }
+  .decide__from { margin-top: var(--space-3); font-size: var(--text-sm); color: var(--ink-2); }
+  .decide__from b { color: var(--ink); }
+  .bar { height: 14px; border-radius: var(--radius-pill); background: var(--track); display: flex; overflow: hidden; margin: var(--space-5) 0 var(--space-3); }
+  .bar i { display: block; height: 100%; }
+  .bar .plan { background: var(--planned); }
+  .bar .now { background: repeating-linear-gradient(45deg, var(--accent) 0 5px, var(--accent-2) 5px 10px); }
+  .legend { display: grid; gap: 7px; font-size: var(--text-xs); color: var(--ink-2); }
+  .legend div { display: flex; align-items: center; gap: var(--space-2); }
+  .legend b { margin-left: auto; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .sw { width: 9px; height: 9px; border-radius: 3px; }
+
+  .decide__mid { padding: var(--space-5) var(--space-6); border-top: 1px solid var(--line); background: var(--paper); }
+  .prev { border: 1px solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); background: var(--card); }
+  .prev__title { font-weight: 800; }
+  .prev__meta { margin-top: 7px; display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+  .tag { font-size: 11.5px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 3px 9px; border-radius: var(--radius-pill); }
+  .prev__when { font-size: var(--text-xs); color: var(--ink-2); }
+  .prev__amt { margin-top: var(--space-3); font-size: var(--text-lg); font-weight: 800; letter-spacing: -.03em; }
+  .miss { margin-top: var(--space-3); font-size: var(--text-xs); color: var(--ink-3); }
+
+  .decide__foot { padding: var(--space-5) var(--space-6); border-top: 1px solid var(--line); }
+  .primary {
+    width: 100%; padding: 17px; border-radius: var(--radius-lg);
+    background: var(--accent); color: #fff; font-size: var(--text-lg); font-weight: 800;
+    box-shadow: var(--shadow-lift); transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .primary:hover { transform: translateY(-1px); }
+  .primary:active { transform: translateY(0) scale(.995); }
+  .cancel { display: block; width: 100%; margin-top: var(--space-3); font-size: var(--text-sm); color: var(--ink-3); text-align: center; }
+  .cancel:hover { color: var(--ink-2); }
+
+  @media (max-width: 1180px) { .cols { grid-template-columns: minmax(0, 1fr); } .decide { position: static; } }
+  @media (max-width: 620px) {
+    .cols, .head { padding: var(--space-5) var(--space-4); }
+    .pair { grid-template-columns: minmax(0, 1fr); }
+    .decide__top, .decide__mid, .decide__foot { padding-left: var(--space-4); padding-right: var(--space-4); }
+    .decide__big { font-size: var(--text-2xl); }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" aria-label="주 메뉴">
+    <div class="rail__brand"><span class="rail__mark">WP</span>웨딩 플랜트</div>
+    <div class="rail__label">우리 결혼 준비</div>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>홈</a>
+    <a class="rail__item" href="#" aria-current="page"><i class="rail__dot"></i>플랜 보드</a>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>참여 플랜 · 대화</a>
+    <div class="rail__label">둘러보기</div>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>피드</a>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>Settings</a>
+  </nav>
+
+  <div class="stage">
+    <header class="head">
+      <button class="ghost" type="button">← 보드로</button>
+      <div>
+        <div class="head__crumb">플랜 보드 · 2027년 1월</div>
+        <h1 class="head__title">계획을 추가해보세요</h1>
+      </div>
+      <div class="head__spacer"></div>
+      <button class="ghost" type="button">임시 저장</button>
+    </header>
+
+    <div class="cols">
+      <form class="form" onsubmit="return false">
+        <div class="fld">
+          <label class="fld__label" for="a2-title">제목 <span class="req">*</span></label>
+          <input class="inp" id="a2-title" value="씨쉘 푸꾸옥 호텔 앤 스파 숙박" placeholder="어떤 지출인가요?">
+        </div>
+        <div class="pair">
+          <div class="fld">
+            <span class="fld__label">카테고리 <span class="req">*</span></span>
+            <div class="row">
+              <button class="chip" type="button">신혼여행</button>
+              <button class="add" type="button" aria-label="카테고리 추가">+</button>
+            </div>
+          </div>
+          <div class="fld">
+            <span class="fld__label">결제 유형 <span class="req">*</span></span>
+            <div class="seg">
+              <button type="button" aria-pressed="false">현금</button>
+              <button type="button" aria-pressed="true">카드</button>
+              <button type="button" aria-pressed="false">기타</button>
+            </div>
+          </div>
+        </div>
+        <div class="pair">
+          <div class="fld">
+            <label class="fld__label" for="a2-amt">금액</label>
+            <div class="money">
+              <input class="inp inp--num" id="a2-amt" inputmode="numeric" value="142">
+              <span class="unit">만원</span>
+            </div>
+          </div>
+          <div class="fld">
+            <label class="fld__label" for="a2-date">일자</label>
+            <div class="row">
+              <input class="inp" id="a2-date" value="2027-01-10" style="flex:1">
+              <input class="inp" aria-label="시작 시각" value="오후 3:00" style="width:114px">
+            </div>
+          </div>
+        </div>
+        <div class="fld">
+          <label class="fld__label" for="a2-loc">위치</label>
+          <input class="inp" id="a2-loc" value="씨쉘 푸꾸옥 호텔 앤 스파" placeholder="예식장, 스튜디오 등">
+        </div>
+        <div class="fld">
+          <label class="fld__label" for="a2-memo">메모</label>
+          <textarea class="memo" id="a2-memo" placeholder="메모 남기기">공항픽업 알아보기</textarea>
+          <div class="count">9/500</div>
+        </div>
+      </form>
+
+      <aside class="decide" aria-label="저장하기 전 확인">
+        <div class="decide__top">
+          <p class="decide__cap">저장하면 남는 돈</p>
+          <p class="decide__big">2,449만원</p>
+          <p class="decide__from">지금 <b>2,591만원</b> · 예산 3,000만원</p>
+          <div class="bar" role="img" aria-label="예산 중 예정·이번 건 비중">
+            <i class="plan" style="width:8.9%"></i><i class="now" style="width:4.7%"></i>
+          </div>
+          <div class="legend">
+            <div><span class="sw" style="background:var(--planned)"></span>이미 예정 <b>267만원</b></div>
+            <div><span class="sw" style="background:var(--accent)"></span>이번 건 <b>142만원</b></div>
+          </div>
+        </div>
+
+        <div class="decide__mid">
+          <div class="prev">
+            <div class="prev__title">씨쉘 푸꾸옥 호텔 앤 스파 숙박</div>
+            <div class="prev__meta"><span class="tag">신혼여행</span><span class="prev__when">1월 10일 · 오후 3:00</span></div>
+            <div class="prev__amt">142만 원</div>
+          </div>
+          <p class="miss">위치 좌표가 아직 없습니다 — 검색으로 고르면 지도에 찍힙니다.</p>
+        </div>
+
+        <div class="decide__foot">
+          <button class="primary" type="submit">플랜 저장하기</button>
+          <button class="cancel" type="button">취소하고 보드로</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</body>
+</html>

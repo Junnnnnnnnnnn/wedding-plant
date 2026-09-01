@@ -1,0 +1,173 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 -->
+<!-- Hallmark · macrostructure: Manifesto(문장 한 덩어리) · tone: editorial
+     theme: 앱 incumbent(light · rounded-sans · warm-magenta) · nav: N3 side-rail · enrichment: none -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시안 C · 문장으로 채우기 — 플랜 추가</title>
+<link rel="stylesheet" href="add-plen-tokens.css">
+<style>
+  .wrap {
+    width: 100%; max-width: 1180px;
+    padding: var(--space-8) var(--space-7);
+    display: grid; gap: var(--space-7);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+    align-items: start;
+  }
+  .kick { font-size: var(--text-sm); color: var(--accent); font-weight: 700; margin-bottom: var(--space-5); }
+
+  /* ── 문장 하나가 곧 폼이다. 빈칸을 눌러 채운다 ── */
+  .sentence {
+    font-size: var(--text-3xl); font-weight: 700; line-height: 1.55;
+    letter-spacing: -.025em; color: var(--ink);
+    overflow-wrap: anywhere; min-width: 0;
+  }
+  .blank {
+    display: inline-block; position: relative;
+    font: inherit; color: var(--accent); font-weight: 800;
+    background: none; padding: 0 2px; border: 0;
+    border-bottom: 3px solid var(--accent-line);
+    transition: border-color var(--dur-fast) var(--ease-out);
+  }
+  .blank:hover { border-bottom-color: var(--accent); }
+  .blank[data-open="true"] { border-bottom-color: var(--accent); }
+  .blank--empty { color: var(--ink-3); font-weight: 700; }
+  .quiet { color: var(--ink-2); font-weight: 600; }
+
+  /* 지금 열려 있는 칸의 선택지. 실제로는 눌린 칸 아래에 뜬다 */
+  .pop {
+    margin-top: var(--space-5);
+    background: var(--card); border: 1px solid var(--accent-line);
+    border-radius: var(--radius-xl); box-shadow: var(--shadow-card);
+    padding: var(--space-5); max-width: 560px;
+  }
+  .pop__h { font-size: var(--text-sm); color: var(--ink-3); margin-bottom: var(--space-3); }
+  .opts { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .opt {
+    padding: 10px var(--space-4); border-radius: var(--radius-pill); font-size: var(--text-md);
+    border: 1px solid var(--field-line); background: var(--card); color: var(--ink-2); font-weight: 700;
+  }
+  .opt:hover { border-color: var(--ink-3); }
+  .opt[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-line); }
+  .pop__hint { margin-top: var(--space-3); font-size: var(--text-xs); color: var(--ink-3); }
+
+  .extra { margin-top: var(--space-7); display: grid; gap: var(--space-4); max-width: 620px; }
+  .l { font-size: var(--text-sm); font-weight: 700; color: var(--ink-2); margin-bottom: var(--space-2); display: block; }
+  .memo {
+    width: 100%; min-height: 84px; resize: vertical; padding: var(--space-4);
+    background: var(--card); border: var(--rule); border-radius: var(--radius-md); font-size: var(--text-md);
+  }
+  .memo:focus { outline: none; border-color: var(--accent); }
+  .primary {
+    justify-self: start; padding: 16px var(--space-8); border-radius: var(--radius-lg);
+    background: var(--accent); color: #fff; font-size: var(--text-lg); font-weight: 800;
+    box-shadow: var(--shadow-lift); transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .primary:hover { transform: translateY(-1px); }
+  .primary:active { transform: translateY(0) scale(.995); }
+
+  .side { position: sticky; top: var(--space-8); display: grid; gap: var(--space-4); }
+  .card {
+    background: var(--card); border: var(--rule); border-radius: var(--radius-xl);
+    padding: var(--space-5); box-shadow: var(--shadow-card);
+  }
+  .card__cap { font-size: var(--text-xs); color: var(--ink-3); margin-bottom: var(--space-3); }
+  .checks { display: grid; gap: var(--space-3); font-size: var(--text-sm); }
+  .checks div { display: flex; align-items: center; gap: var(--space-3); color: var(--ink-2); }
+  .tick {
+    width: 20px; height: 20px; flex: 0 0 20px; border-radius: 7px;
+    display: grid; place-items: center; font-size: 12px; font-weight: 800;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .tick--off { background: var(--field); color: var(--ink-3); }
+  .checks b { margin-left: auto; color: var(--ink); font-weight: 700; }
+  .impact { font-size: var(--text-sm); color: var(--ink-2); line-height: 1.7; }
+  .impact b { color: var(--ink); }
+
+  @media (max-width: 1020px) {
+    .wrap { grid-template-columns: minmax(0, 1fr); }
+    .side { position: static; }
+  }
+  @media (max-width: 700px) {
+    .wrap { padding: var(--space-6) var(--space-4); }
+    .sentence { font-size: var(--text-xl); line-height: 1.7; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" aria-label="주 메뉴">
+    <div class="rail__brand"><span class="rail__mark">WP</span>웨딩 플랜트</div>
+    <div class="rail__label">우리 결혼 준비</div>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>홈</a>
+    <a class="rail__item" href="#" aria-current="page"><i class="rail__dot"></i>플랜 보드</a>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>참여 플랜 · 대화</a>
+    <div class="rail__label">둘러보기</div>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>피드</a>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>Settings</a>
+  </nav>
+
+  <div class="stage">
+    <form class="wrap" onsubmit="return false">
+      <div>
+        <p class="kick">플랜 추가</p>
+
+        <h1 class="sentence">
+          <button class="blank" type="button">2027년 1월 10일</button><span class="quiet"> 오후 </span><button class="blank" type="button">3:00</button><span class="quiet">에 </span><br>
+          <button class="blank" type="button">씨쉘 푸꾸옥 호텔 앤 스파</button><span class="quiet">에서 </span><br>
+          <button class="blank" data-open="true" type="button">신혼여행</button><span class="quiet"> 몫으로 </span><button class="blank" type="button">142만원</button><span class="quiet">을 </span><button class="blank" type="button">카드</button><span class="quiet">로 씁니다.</span>
+        </h1>
+
+        <div class="pop" role="group" aria-label="카테고리 고르기">
+          <p class="pop__h">카테고리</p>
+          <div class="opts">
+            <button class="opt" type="button" aria-pressed="false">상견례</button>
+            <button class="opt" type="button" aria-pressed="false">스드메</button>
+            <button class="opt" type="button" aria-pressed="true">신혼여행</button>
+            <button class="opt" type="button" aria-pressed="false">웨딩홀</button>
+            <button class="opt" type="button">+ 새 카테고리</button>
+          </div>
+          <p class="pop__hint">칸을 누르면 그 자리에서 고릅니다. 화면이 바뀌지 않습니다.</p>
+        </div>
+
+        <div class="extra">
+          <div>
+            <label class="l" for="c-title">이 지출을 뭐라고 부를까요</label>
+            <input class="memo" id="c-title" style="min-height:auto;padding:13px var(--space-4);font-weight:700"
+                   value="씨쉘 푸꾸옥 호텔 앤 스파 숙박" placeholder="어떤 지출인가요?">
+          </div>
+          <div>
+            <label class="l" for="c-memo">메모</label>
+            <textarea class="memo" id="c-memo" placeholder="메모 남기기">공항픽업 알아보기</textarea>
+          </div>
+          <button class="primary" type="submit">플랜 저장하기</button>
+        </div>
+      </div>
+
+      <aside class="side">
+        <section class="card">
+          <p class="card__cap">채운 칸</p>
+          <div class="checks">
+            <div><span class="tick">✓</span>제목 <b>씨쉘…숙박</b></div>
+            <div><span class="tick">✓</span>카테고리 <b>신혼여행</b></div>
+            <div><span class="tick">✓</span>결제 <b>카드</b></div>
+            <div><span class="tick">✓</span>금액 <b>142만원</b></div>
+            <div><span class="tick">✓</span>일자 <b>1월 10일</b></div>
+            <div><span class="tick tick--off">·</span>위치 좌표 <b>미확인</b></div>
+          </div>
+        </section>
+        <section class="card">
+          <p class="card__cap">예산</p>
+          <p class="impact">
+            저장하면 남은 예산 <b>2,591만원 → 2,449만원</b>.<br>
+            2027년 1월에 이미 <b>5건 · 267만원</b>이 잡혀 있습니다.
+          </p>
+        </section>
+      </aside>
+    </form>
+  </div>
+</div>
+</body>
+</html>

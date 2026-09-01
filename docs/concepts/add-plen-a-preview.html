@@ -1,0 +1,284 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V4 -->
+<!-- Hallmark · macrostructure: Workbench(입력 | 결과 2열) · tone: utilitarian
+     theme: 앱 incumbent(light · rounded-sans · warm-magenta) · nav: N3 side-rail · enrichment: none -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시안 A · 입력 | 미리보기 — 플랜 추가</title>
+<link rel="stylesheet" href="add-plen-tokens.css">
+<style>
+  .head {
+    border-bottom: var(--rule); background: var(--card);
+    padding: var(--space-5) var(--space-7);
+    display: flex; align-items: center; gap: var(--space-4);
+  }
+  .head__crumb { font-size: var(--text-sm); color: var(--ink-3); }
+  .head__title { font-size: var(--text-xl); font-weight: 800; letter-spacing: -.02em; }
+  .head__spacer { flex: 1; }
+  .ghost {
+    border: var(--rule); border-radius: var(--radius-md);
+    padding: 9px var(--space-4); font-size: var(--text-sm); color: var(--ink-2);
+    background: var(--card); transition: border-color var(--dur-fast) var(--ease-out);
+  }
+  .ghost:hover { border-color: var(--accent-line); color: var(--accent); }
+
+  .cols {
+    flex: 1; min-height: 0; display: grid; gap: var(--space-7);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    align-items: start;
+    padding: var(--space-7);
+    max-width: 1320px; width: 100%;
+  }
+
+  .form { display: grid; gap: var(--space-4); }
+  /* 넓은 화면에서만 짝이 되는 필드를 나란히 놓는다. 좁으면 한 줄씩. */
+  .pair { display: grid; gap: var(--space-4); grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+
+  .fld {
+    background: var(--card); border: var(--rule); border-radius: var(--radius-lg);
+    padding: var(--space-5); box-shadow: var(--shadow-card);
+  }
+  .fld__label {
+    display: block; font-size: var(--text-sm); font-weight: 700;
+    color: var(--ink-2); margin-bottom: var(--space-2);
+  }
+  .req { color: var(--accent); }
+  .inp {
+    width: 100%; padding: 14px var(--space-4);
+    background: var(--field); border: 1px solid var(--field-line);
+    border-radius: var(--radius-md); font-size: var(--text-lg); font-weight: 700;
+    transition: border-color var(--dur-fast) var(--ease-out);
+  }
+  .inp:hover { border-color: var(--ink-3); }
+  .inp:focus { outline: none; border-color: var(--accent); background: var(--card); }
+  .inp--num { text-align: right; font-variant-numeric: tabular-nums; }
+  .money { position: relative; }
+  .money .unit {
+    position: absolute; right: var(--space-4); top: 50%; transform: translateY(-50%);
+    color: var(--ink-2); font-size: var(--text-sm); font-weight: 600;
+  }
+  .money .inp { padding-right: 52px; }
+
+  .seg { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: var(--space-2); }
+  .seg button {
+    padding: 11px 0; border-radius: var(--radius-sm); font-size: var(--text-sm);
+    border: 1px solid var(--field-line); background: var(--field); color: var(--ink-3);
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  }
+  .seg button:hover { background: #f0efee; color: var(--ink-2); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .chip {
+    padding: 13px var(--space-4); border-radius: var(--radius-md);
+    background: var(--accent-soft); color: var(--accent);
+    border: 1px solid var(--accent-line); font-weight: 800; text-align: left; width: 100%;
+  }
+  .row { display: flex; gap: var(--space-2); }
+  .add {
+    width: 52px; flex: 0 0 52px; border-radius: var(--radius-md);
+    background: var(--field); border: 1px solid var(--field-line); color: var(--ink-3);
+    font-size: 22px; line-height: 1;
+  }
+  .add:hover { background: #f0efee; color: var(--ink-2); }
+  .memo {
+    width: 100%; min-height: 96px; resize: vertical; padding: var(--space-4);
+    background: var(--field); border: 1px solid var(--field-line);
+    border-radius: var(--radius-md); font-size: var(--text-md);
+  }
+  .memo:focus { outline: none; border-color: var(--accent); background: var(--card); }
+  .count { margin-top: 6px; text-align: right; font-size: var(--text-xs); color: var(--ink-3); }
+
+  .save {
+    position: sticky; bottom: 0; margin-top: var(--space-2);
+    padding: var(--space-4) 0 var(--space-2);
+    background: linear-gradient(to top, var(--paper) 62%, transparent);
+  }
+  .save button {
+    width: 100%; padding: 17px; border-radius: var(--radius-lg);
+    background: var(--accent); color: #fff; font-size: var(--text-lg); font-weight: 800;
+    box-shadow: var(--shadow-lift);
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .save button:hover { transform: translateY(-1px); }
+  .save button:active { transform: translateY(0) scale(.995); }
+
+  /* ── 오른쪽: 지금 넣는 값이 앱 어디에 어떻게 나타나는지 ── */
+  .aside { position: sticky; top: var(--space-7); display: grid; gap: var(--space-4); }
+  .panel {
+    background: var(--card); border: var(--rule); border-radius: var(--radius-xl);
+    padding: var(--space-5); box-shadow: var(--shadow-card);
+  }
+  .panel__cap {
+    font-size: var(--text-xs); color: var(--ink-3); letter-spacing: .02em;
+    margin-bottom: var(--space-3);
+  }
+  .prev {
+    border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: var(--space-4); background: var(--card);
+  }
+  .prev__title { font-weight: 800; font-size: var(--text-md); }
+  .prev__meta { margin-top: 7px; display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+  .tag {
+    font-size: 11.5px; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); padding: 3px 9px; border-radius: var(--radius-pill);
+  }
+  .prev__when { font-size: var(--text-xs); color: var(--ink-2); }
+  .prev__amt { margin-top: var(--space-3); font-size: var(--text-xl); font-weight: 800; letter-spacing: -.03em; }
+
+  .bar { height: 12px; border-radius: var(--radius-pill); background: var(--track); display: flex; overflow: hidden; margin: var(--space-4) 0 var(--space-3); }
+  .bar i { display: block; height: 100%; }
+  .bar .plan { background: var(--planned); }
+  .bar .now { background: repeating-linear-gradient(45deg, var(--accent) 0 5px, var(--accent-2) 5px 10px); }
+  .legend { display: grid; gap: 7px; font-size: var(--text-xs); color: var(--ink-2); }
+  .legend div { display: flex; align-items: center; gap: var(--space-2); }
+  .legend b { margin-left: auto; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .sw { width: 9px; height: 9px; border-radius: 3px; }
+  .impact {
+    margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px dashed var(--line);
+    font-size: var(--text-sm); color: var(--ink-2); line-height: 1.6;
+  }
+  .impact b { color: var(--ink); }
+
+  .map {
+    height: 168px; border-radius: var(--radius-md); border: 1px solid var(--line);
+    background:
+      radial-gradient(circle at 62% 46%, var(--accent) 0 6px, transparent 7px),
+      radial-gradient(circle at 62% 46%, var(--accent-line) 0 26px, transparent 27px),
+      linear-gradient(0deg, var(--line) 1px, transparent 1px) 0 0 / 100% 34px,
+      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 44px 100%,
+      var(--field);
+  }
+  .map__cap { margin-top: var(--space-2); font-size: var(--text-xs); color: var(--ink-3); }
+
+  @media (max-width: 1120px) {
+    .cols { grid-template-columns: minmax(0, 1fr); }
+    .aside { position: static; }
+  }
+  @media (max-width: 620px) {
+    .cols, .head { padding: var(--space-5) var(--space-4); }
+    .pair { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" aria-label="주 메뉴">
+    <div class="rail__brand"><span class="rail__mark">WP</span>웨딩 플랜트</div>
+    <div class="rail__label">우리 결혼 준비</div>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>홈</a>
+    <a class="rail__item" href="#" aria-current="page"><i class="rail__dot"></i>플랜 보드</a>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>참여 플랜 · 대화</a>
+    <div class="rail__label">둘러보기</div>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>피드</a>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>Settings</a>
+  </nav>
+
+  <div class="stage">
+    <header class="head">
+      <button class="ghost" type="button">← 보드로</button>
+      <div>
+        <div class="head__crumb">플랜 보드 · 2027년 1월</div>
+        <h1 class="head__title">계획을 추가해보세요</h1>
+      </div>
+      <div class="head__spacer"></div>
+      <button class="ghost" type="button">임시 저장</button>
+    </header>
+
+    <div class="cols">
+      <form class="form" onsubmit="return false">
+        <div class="fld">
+          <label class="fld__label" for="a-title">제목 <span class="req">*</span></label>
+          <input class="inp" id="a-title" type="text" value="씨쉘 푸꾸옥 호텔 앤 스파 숙박" placeholder="어떤 지출인가요?">
+        </div>
+
+        <div class="pair">
+          <div class="fld">
+            <span class="fld__label">카테고리 <span class="req">*</span></span>
+            <div class="row">
+              <button class="chip" type="button">신혼여행</button>
+              <button class="add" type="button" aria-label="카테고리 추가">+</button>
+            </div>
+          </div>
+          <div class="fld">
+            <span class="fld__label">결제 유형 <span class="req">*</span></span>
+            <div class="seg">
+              <button type="button" aria-pressed="false">현금</button>
+              <button type="button" aria-pressed="true">카드</button>
+              <button type="button" aria-pressed="false">기타</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pair">
+          <div class="fld">
+            <label class="fld__label" for="a-amt">금액</label>
+            <div class="money">
+              <input class="inp inp--num" id="a-amt" type="text" inputmode="numeric" value="142">
+              <span class="unit">만원</span>
+            </div>
+          </div>
+          <div class="fld">
+            <label class="fld__label" for="a-date">일자</label>
+            <div class="row">
+              <input class="inp" id="a-date" type="text" value="2027-01-10" style="flex:1">
+              <input class="inp" aria-label="시작 시각" type="text" value="오후 3:00" style="width:118px">
+            </div>
+          </div>
+        </div>
+
+        <div class="fld">
+          <label class="fld__label" for="a-loc">위치</label>
+          <input class="inp" id="a-loc" type="text" value="씨쉘 푸꾸옥 호텔 앤 스파" placeholder="예식장, 스튜디오 등">
+        </div>
+
+        <div class="fld">
+          <label class="fld__label" for="a-memo">메모</label>
+          <textarea class="memo" id="a-memo" placeholder="메모 남기기">공항픽업 알아보기</textarea>
+          <div class="count">9/500</div>
+        </div>
+
+        <div class="save"><button type="submit">플랜 저장하기</button></div>
+      </form>
+
+      <aside class="aside" aria-label="미리보기">
+        <section class="panel">
+          <p class="panel__cap">보드에는 이렇게 놓입니다</p>
+          <div class="prev">
+            <div class="prev__title">씨쉘 푸꾸옥 호텔 앤 스파 숙박</div>
+            <div class="prev__meta">
+              <span class="tag">신혼여행</span>
+              <span class="prev__when">1월 10일 · 오후 3:00</span>
+            </div>
+            <div class="prev__amt">142만 원</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <p class="panel__cap">예산에 미치는 영향</p>
+          <div class="bar" role="img" aria-label="예산 중 예정·이번 건 비중">
+            <i class="plan" style="width:8.9%"></i>
+            <i class="now" style="width:4.7%"></i>
+          </div>
+          <div class="legend">
+            <div><span class="sw" style="background:var(--planned)"></span>이미 예정 <b>267만원</b></div>
+            <div><span class="sw" style="background:var(--accent)"></span>이번 건 <b>142만원</b></div>
+          </div>
+          <p class="impact">
+            저장하면 남은 예산이 <b>2,591만원 → 2,449만원</b>이 됩니다.
+            3,000만원 중 <b>13.6%</b>를 잡아 둔 상태가 됩니다.
+          </p>
+        </section>
+
+        <section class="panel">
+          <p class="panel__cap">위치</p>
+          <div class="map" role="img" aria-label="선택한 장소 위치 미리보기"></div>
+          <p class="map__cap">씨쉘 푸꾸옥 호텔 앤 스파 · 카카오맵에서 열기</p>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+</body>
+</html>

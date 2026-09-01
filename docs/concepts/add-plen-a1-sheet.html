@@ -1,0 +1,407 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 -->
+<!-- Hallmark · A 변형 1 · 카드 껍데기 제거(시트 한 장) · tone: utilitarian
+     theme: 앱 incumbent(light · rounded-sans · warm-magenta) · nav: N3 side-rail -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A1 · 시트 한 장 — 플랜 추가</title>
+<link rel="stylesheet" href="add-plen-tokens.css">
+<style>
+  .head {
+    border-bottom: var(--rule); background: var(--card);
+    padding: var(--space-5) var(--space-7); display: flex; align-items: center; gap: var(--space-4);
+  }
+  .head__crumb { font-size: var(--text-sm); color: var(--ink-3); }
+  .head__title { font-size: var(--text-xl); font-weight: 800; letter-spacing: -.02em; }
+  .head__spacer { flex: 1; }
+  .ghost {
+    border: var(--rule); border-radius: var(--radius-md); padding: 9px var(--space-4);
+    font-size: var(--text-sm); color: var(--ink-2); background: var(--card);
+    transition: border-color var(--dur-fast) var(--ease-out);
+  }
+  .ghost:hover { border-color: var(--accent-line); color: var(--accent); }
+
+  .cols {
+    display: grid; gap: var(--space-7); align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    padding: var(--space-7); max-width: 1320px; width: 100%;
+  }
+
+  /* ── 카드 8장 대신 시트 한 장. 구분선이 카드 여백 일을 대신한다 ── */
+  .sheet {
+    background: var(--card); border: var(--rule); border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card); overflow: hidden;
+  }
+  /* 그룹 머리글(무엇을 · 얼마를 · 언제·어디서)은 두지 않는다.
+     행 라벨이 이미 무슨 칸인지 말하고 있어, 머리글은 같은 말을 한 번 더
+     하면서 세로만 늘렸다. 시트는 끊기지 않는 한 장으로 둔다. */
+  .sheet__pad { padding-top: var(--space-3); }
+  .r {
+    display: grid; grid-template-columns: 132px minmax(0, 1fr);
+    gap: var(--space-4); align-items: center;
+    padding: var(--space-3) var(--space-6); border-top: 1px solid var(--line);
+  }
+  .r:first-of-type { border-top: 0; }
+  .r__l { font-size: var(--text-sm); font-weight: 700; color: var(--ink-2); }
+  .req { color: var(--accent); }
+
+  /* 입력은 테두리 없이 눕혀 두고, 손이 닿을 때만 면이 뜬다 */
+  .i {
+    width: 100%; padding: 11px var(--space-3); font-size: var(--text-md); font-weight: 700;
+    background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
+    transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  }
+  .i:hover { background: var(--field); }
+  .i:focus { outline: none; background: var(--card); border-color: var(--accent); }
+  .i--big { font-size: var(--text-lg); }
+  .i--num { font-variant-numeric: tabular-nums; font-size: var(--text-lg); }
+  .inline { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+  .unit { font-size: var(--text-sm); color: var(--ink-2); font-weight: 600; }
+
+  .pill {
+    padding: 7px 13px; border-radius: var(--radius-pill); font-size: var(--text-sm);
+    border: 1px solid var(--field-line); background: var(--card); color: var(--ink-3);
+    transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  }
+  .pill:hover { color: var(--ink-2); border-color: var(--ink-3); }
+  .pill--cat[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-line); font-weight: 800; }
+  /* 칩 안에 들어가므로 모달의 배지보다 한 눈금 작다. 모달 목록은 한 줄에
+     하나뿐이라 큰 알약이 견디지만, 칩 줄에서는 다섯이 나란히 서서
+     같은 크기로 두면 무엇이 선택됐는지가 안 보인다. */
+  .pill--cat { display: inline-flex; align-items: center; gap: 5px; }
+  .pill__b {
+    font-size: 10px; font-weight: 800; line-height: 1.4;
+    padding: 1px 5px; border-radius: var(--radius-pill); color: #fff;
+  }
+  .pill__b--my { background: var(--accent); }
+  .pill__b--room { background: #57534e; }
+  .pill--pay[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* 그 자리에서 새 카테고리 만들기. 모달로 보내지 않는다.
+     여닫는 일은 체크박스 + 형제 선택자로 하고 자바스크립트를 쓰지 않는다 —
+     file:// 로 열거나 인라인 스크립트가 막혀도 눌리는 게 보여야 한다.
+     JS 는 칩을 실제로 만들 때만 거든다. */
+  .cat-toggle {
+    position: absolute; width: 1px; height: 1px; opacity: 0;
+    margin: 0; pointer-events: none;
+  }
+  .cat-toggle:not(:checked) ~ .newcat { display: none; }
+  .cat-toggle:checked ~ .pill[for="cat-add-t"] { display: none; }
+  .cat-toggle:focus-visible ~ .pill[for="cat-add-t"] {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .newcat { display: inline-flex; align-items: center; gap: var(--space-2); }
+  /* label 은 button 이 아니라 커서·정렬을 따로 준다 */
+  label.pill { display: inline-block; cursor: pointer; line-height: 20.25px; }
+  .newcat__no { cursor: pointer; }
+  .newcat__i {
+    width: 168px; padding: 7px 13px; border-radius: var(--radius-pill);
+    background: var(--card); border: 1px solid var(--accent); font-size: var(--text-sm); font-weight: 700;
+  }
+  .newcat__i:focus { outline: none; box-shadow: 0 0 0 3px var(--accent-line); }
+  .newcat__ok {
+    padding: 7px 13px; border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 700;
+    background: var(--accent); color: #fff;
+    transition: opacity var(--dur-fast) var(--ease-out);
+  }
+  .newcat__ok:disabled { opacity: .4; cursor: not-allowed; }
+  .newcat__no { padding: 7px 9px; font-size: var(--text-sm); color: var(--ink-3); }
+  .newcat__no:hover { color: var(--ink-2); }
+
+  /* ── 위치 검색 결과. 행이 아래로 자란다(레이어를 띄우지 않는다) ── */
+  /* 결과가 열리면 행이 자라므로 라벨은 위에 붙여 둔다 */
+  .r--loc { align-items: start; }
+  .r--loc .r__l { padding-top: 11px; }
+  .locwrap { min-width: 0; }
+  .locres { display: none; margin-top: var(--space-2); }
+  .r--loc:focus-within .locres { display: block; }
+  .locres__i {
+    display: block; width: 100%; text-align: left;
+    padding: 10px var(--space-3); border-radius: var(--radius-sm);
+    transition: background var(--dur-fast) var(--ease-out);
+  }
+  .locres__i:hover { background: var(--field); }
+  .locres__i[aria-selected="true"] { background: var(--accent-soft); }
+  .locres__i b { display: block; font-size: var(--text-md); font-weight: 800; }
+  .locres__i[aria-selected="true"] b { color: var(--accent); }
+  .locres__i span { display: block; margin-top: 2px; font-size: var(--text-xs); color: var(--ink-3); }
+  .locres__f {
+    margin-top: var(--space-2); padding: var(--space-3);
+    border-top: 1px dashed var(--line);
+    font-size: var(--text-xs); color: var(--ink-3); line-height: 1.7;
+  }
+  /* 장소는 필수가 아니다 — 청첩장·예물처럼 지도에 없는 게 정상인 항목이 있다.
+     이 길을 막으면 그런 일정에서 사람이 갇힌다. */
+  .locres__raw {
+    display: block; margin-top: 6px; font-size: var(--text-sm);
+    font-weight: 700; color: var(--accent);
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+
+  .memo {
+    width: 100%; min-height: 70px; resize: vertical; padding: 11px var(--space-3);
+    background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
+    font-size: var(--text-md);
+  }
+  .memo:hover { background: var(--field); }
+  .memo:focus { outline: none; background: var(--card); border-color: var(--accent); }
+
+  .sheet__f {
+    padding: var(--space-5) var(--space-6); border-top: var(--rule); background: var(--paper);
+    display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap;
+  }
+  .sheet__note { flex: 1; min-width: 200px; font-size: var(--text-sm); color: var(--ink-2); }
+  .primary {
+    padding: 15px var(--space-7); border-radius: var(--radius-lg);
+    background: var(--accent); color: #fff; font-size: var(--text-md); font-weight: 800;
+    box-shadow: var(--shadow-lift); transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .primary:hover { transform: translateY(-1px); }
+  .primary:active { transform: translateY(0) scale(.995); }
+
+  .aside { position: sticky; top: var(--space-7); display: grid; gap: var(--space-4); }
+  .panel { background: var(--card); border: var(--rule); border-radius: var(--radius-xl); padding: var(--space-5); box-shadow: var(--shadow-card); }
+  .panel__cap { font-size: var(--text-xs); color: var(--ink-3); margin-bottom: var(--space-3); }
+  .prev { border: 1px solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); }
+  .prev__title { font-weight: 800; }
+  .prev__meta { margin-top: 7px; display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+  .tag { font-size: 11.5px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 3px 9px; border-radius: var(--radius-pill); }
+  .prev__when { font-size: var(--text-xs); color: var(--ink-2); }
+  .prev__amt { margin-top: var(--space-3); font-size: var(--text-xl); font-weight: 800; letter-spacing: -.03em; }
+  .bar { height: 12px; border-radius: var(--radius-pill); background: var(--track); display: flex; overflow: hidden; margin: var(--space-4) 0 var(--space-3); }
+  .bar i { display: block; height: 100%; }
+  .bar .plan { background: var(--planned); }
+  .bar .now { background: repeating-linear-gradient(45deg, var(--accent) 0 5px, var(--accent-2) 5px 10px); }
+  .legend { display: grid; gap: 7px; font-size: var(--text-xs); color: var(--ink-2); }
+  .legend div { display: flex; align-items: center; gap: var(--space-2); }
+  .legend b { margin-left: auto; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .sw { width: 9px; height: 9px; border-radius: 3px; }
+  .impact { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px dashed var(--line); font-size: var(--text-sm); color: var(--ink-2); line-height: 1.6; }
+  .impact b { color: var(--ink); }
+  .map {
+    height: 156px; border-radius: var(--radius-md); border: 1px solid var(--line);
+    background:
+      radial-gradient(circle at 60% 48%, var(--accent) 0 6px, transparent 7px),
+      radial-gradient(circle at 60% 48%, var(--accent-line) 0 26px, transparent 27px),
+      linear-gradient(0deg, var(--line) 1px, transparent 1px) 0 0 / 100% 34px,
+      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 44px 100%,
+      var(--field);
+  }
+  .map__cap { margin-top: var(--space-2); font-size: var(--text-xs); color: var(--ink-3); }
+
+  @media (max-width: 1120px) { .cols { grid-template-columns: minmax(0, 1fr); } .aside { position: static; } }
+  @media (max-width: 640px) {
+    .cols, .head { padding: var(--space-5) var(--space-4); }
+    .r { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); padding: var(--space-3) var(--space-4); }
+    .sheet__f { padding-left: var(--space-4); padding-right: var(--space-4); }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" aria-label="주 메뉴">
+    <div class="rail__brand"><span class="rail__mark">WP</span>웨딩 플랜트</div>
+    <div class="rail__label">우리 결혼 준비</div>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>홈</a>
+    <a class="rail__item" href="#" aria-current="page"><i class="rail__dot"></i>플랜 보드</a>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>참여 플랜 · 대화</a>
+    <div class="rail__label">둘러보기</div>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>피드</a>
+    <a class="rail__item" href="#"><i class="rail__dot"></i>Settings</a>
+  </nav>
+
+  <div class="stage">
+    <header class="head">
+      <div>
+        <div class="head__crumb">플랜 보드 · 2027년 1월</div>
+        <h1 class="head__title">계획을 추가해보세요</h1>
+      </div>
+      <div class="head__spacer"></div>
+      <button class="ghost" type="button">임시 저장</button>
+    </header>
+
+    <div class="cols">
+      <form class="sheet sheet__pad" onsubmit="return false">
+        <div class="r">
+          <label class="r__l" for="a1-title">제목 <span class="req">*</span></label>
+          <input class="i i--big" id="a1-title" value="씨쉘 푸꾸옥 호텔 앤 스파 숙박" placeholder="어떤 지출인가요?">
+        </div>
+        <div class="r">
+          <span class="r__l">카테고리 <span class="req">*</span></span>
+          <div class="inline" id="cats">
+            <button class="pill pill--cat" type="button" aria-pressed="false">상견례</button>
+            <button class="pill pill--cat" type="button" aria-pressed="false">스드메</button>
+            <button class="pill pill--cat" type="button" aria-pressed="true">
+              신혼여행<span class="pill__b pill__b--room" aria-label="공유 카테고리">room</span>
+            </button>
+            <button class="pill pill--cat" type="button" aria-pressed="false">웨딩홀</button>
+            <button class="pill pill--cat" type="button" aria-pressed="false">
+              한복<span class="pill__b pill__b--my" aria-label="내가 추가한 카테고리">my</span>
+            </button>
+            <!--
+              "+ 추가"는 모달을 열지 않는다. 그 자리에서 이름 칸이 열리고,
+              Enter 로 만들어져 바로 선택된다. Esc 로 닫는다.
+              지금 앱은 이 버튼과 카테고리 버튼이 둘 다 같은 모달을 여는데,
+              새로 만들기는 그 모달 안에 한 겹 더 들어가 있다.
+            -->
+            <input class="cat-toggle" type="checkbox" id="cat-add-t">
+            <label class="pill" for="cat-add-t" id="cat-add">+ 추가</label>
+            <span class="newcat" id="cat-new">
+              <input class="newcat__i" id="cat-new-i" type="text" placeholder="새 카테고리 이름" aria-label="새 카테고리 이름">
+              <button class="newcat__ok" type="button" id="cat-new-ok" disabled>확인</button>
+              <label class="newcat__no" for="cat-add-t">취소</label>
+            </span>
+          </div>
+        </div>
+
+        <div class="r">
+          <span class="r__l">금액 · 결제 <span class="req">*</span></span>
+          <div class="inline">
+            <input class="i i--num" aria-label="금액(만원)" inputmode="numeric" value="142" style="width:104px">
+            <span class="unit">만원</span>
+            <span style="width:var(--space-3)"></span>
+            <button class="pill pill--pay" type="button" aria-pressed="false">현금</button>
+            <button class="pill pill--pay" type="button" aria-pressed="true">카드</button>
+            <button class="pill pill--pay" type="button" aria-pressed="false">기타</button>
+          </div>
+        </div>
+
+        <div class="r">
+          <span class="r__l">일자</span>
+          <div class="inline">
+            <input class="i" aria-label="일자" value="2027-01-10" style="width:158px">
+            <input class="i" aria-label="시작 시각" value="오후 3:00" style="width:118px">
+            <button class="pill" type="button">미정</button>
+          </div>
+        </div>
+        <!--
+          위치 검색 결과는 떠 있는 드롭다운이 아니라 **그 행이 아래로 자라는**
+          방식이다. 시트 한 장이라는 전제를 지키려면 레이어를 하나 더 띄우면
+          안 되고, 지도는 이미 오른쪽 패널에 있으니 폼 안에 또 넣지 않는다.
+          칸에 손이 닿아 있는 동안만 열린다(:focus-within, JS 없음).
+        -->
+        <div class="r r--loc">
+          <label class="r__l" for="a1-loc">위치</label>
+          <div class="locwrap">
+            <input class="i" id="a1-loc" value="씨쉘 푸꾸옥" placeholder="예식장, 스튜디오 등" autocomplete="off">
+            <div class="locres" role="listbox" aria-label="장소 검색 결과">
+              <button class="locres__i" type="button" role="option" aria-selected="true">
+                <b>씨쉘 푸꾸옥 호텔 앤 스파</b>
+                <span>Bãi Trường, Dương Tơ, Phú Quốc</span>
+              </button>
+              <button class="locres__i" type="button" role="option" aria-selected="false">
+                <b>씨쉘 리조트 &amp; 스파 푸꾸옥</b>
+                <span>Đường Trần Hưng Đạo, Phú Quốc</span>
+              </button>
+              <button class="locres__i" type="button" role="option" aria-selected="false">
+                <b>씨쉘 스파</b>
+                <span>Dương Đông, Phú Quốc</span>
+              </button>
+              <p class="locres__f">
+                고르면 오른쪽 지도에 찍히고, 같은 업체의 후기가 함께 묶입니다.
+                <button class="locres__raw" type="button">지도에 없는 곳 — “씨쉘 푸꾸옥” 그대로 쓰기</button>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="r" style="align-items:start">
+          <label class="r__l" for="a1-memo" style="padding-top:11px">메모</label>
+          <textarea class="memo" id="a1-memo" placeholder="메모 남기기">공항픽업 알아보기</textarea>
+        </div>
+
+        <div class="sheet__f">
+          <p class="sheet__note">배우자 <b>미듀</b>님에게도 바로 보입니다.</p>
+          <button class="primary" type="submit">플랜 저장하기</button>
+        </div>
+      </form>
+
+      <aside class="aside" aria-label="미리보기">
+        <section class="panel">
+          <p class="panel__cap">보드에는 이렇게 놓입니다</p>
+          <div class="prev">
+            <div class="prev__title">씨쉘 푸꾸옥 호텔 앤 스파 숙박</div>
+            <div class="prev__meta"><span class="tag">신혼여행</span><span class="prev__when">1월 10일 · 오후 3:00</span></div>
+            <div class="prev__amt">142만 원</div>
+          </div>
+        </section>
+        <section class="panel">
+          <p class="panel__cap">예산에 미치는 영향</p>
+          <div class="bar" role="img" aria-label="예산 중 예정·이번 건 비중">
+            <i class="plan" style="width:8.9%"></i><i class="now" style="width:4.7%"></i>
+          </div>
+          <div class="legend">
+            <div><span class="sw" style="background:var(--planned)"></span>이미 예정 <b>267만원</b></div>
+            <div><span class="sw" style="background:var(--accent)"></span>이번 건 <b>142만원</b></div>
+          </div>
+          <p class="impact">저장하면 남은 예산이 <b>2,591만원 → 2,449만원</b>이 됩니다.</p>
+        </section>
+        <section class="panel">
+          <p class="panel__cap">위치</p>
+          <div class="map" role="img" aria-label="선택한 장소 위치 미리보기"></div>
+          <p class="map__cap">씨쉘 푸꾸옥 호텔 앤 스파 · 카카오맵에서 열기</p>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+  /*
+    시안이 실제로 눌러지도록 최소한만 붙인다.
+    카테고리 pill 은 하나만 선택되고, "+ 추가"는 같은 줄에서 이름 칸을 연다.
+  */
+  const cats = document.getElementById("cats");
+  const toggle = document.getElementById("cat-add-t");
+  const addBtn = document.getElementById("cat-add");
+  const input = document.getElementById("cat-new-i");
+  const ok = document.getElementById("cat-new-ok");
+
+  const selectPill = (pill) => {
+    cats.querySelectorAll(".pill--cat").forEach((p) => p.setAttribute("aria-pressed", "false"));
+    pill.setAttribute("aria-pressed", "true");
+  };
+  cats.addEventListener("click", (e) => {
+    const pill = e.target.closest(".pill--cat");
+    if (pill) selectPill(pill);
+  });
+
+  const close = () => {
+    toggle.checked = false;
+    toggle.focus();
+  };
+  const commit = () => {
+    const name = input.value.trim();
+    if (!name) return;
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = "pill pill--cat";
+    pill.textContent = name;
+    // 방금 내가 만든 것이므로 my 가 붙는다 (앱의 userAddedLabels 와 같은 뜻)
+    const badge = document.createElement("span");
+    badge.className = "pill__b pill__b--my";
+    badge.setAttribute("aria-label", "내가 추가한 카테고리");
+    badge.textContent = "my";
+    pill.appendChild(badge);
+    cats.insertBefore(pill, addBtn);
+    selectPill(pill);
+    close();
+  };
+
+  // 여닫기는 CSS 가 이미 했다. 여기서는 칸을 비우고 포커스만 옮긴다.
+  toggle.addEventListener("change", () => {
+    if (!toggle.checked) return;
+    input.value = "";
+    ok.disabled = true;
+    input.focus();
+  });
+  ok.addEventListener("click", commit);
+  input.addEventListener("input", () => { ok.disabled = !input.value.trim(); });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); commit(); }
+    if (e.key === "Escape") { e.preventDefault(); close(); }
+  });
+</script>
+</body>
+</html>
