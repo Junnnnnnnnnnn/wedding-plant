@@ -1719,7 +1719,7 @@ export default function Landing() {
           <div className="meta">
             <span>웨딩 플랜트</span>
             <Link href="/privacy">개인정보처리방침</Link>
-            <span>seoulmomenttw@gmail.com</span>
+            <span>yotdark1004@kakao.com</span>
           </div>
         </div>
       </footer>
