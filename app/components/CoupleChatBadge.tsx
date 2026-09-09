@@ -1,7 +1,5 @@
 "use client";
 
-import { Heart } from "lucide-react";
-
 /**
  * 신랑·신부 방 표식.
  *
@@ -18,16 +16,19 @@ export default function CoupleChatBadge({
   size?: "sm" | "md";
 }) {
   const sm = size === "sm";
+  /*
+    시안(C안 03)의 `.ch__b` 다 — 하트를 뺐다. 10.5px 짜리 글자 옆의 하트는
+    형태가 뭉개져 얼룩으로만 보였고, 방 이름 옆에서 눈만 끌었다.
+  */
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1 rounded-full bg-[#fff2f6] font-bold text-[#ee2b8c] ${
-        sm ? "px-1.5 py-0.5 text-[10.5px]" : "px-2.5 py-1 text-[11.5px]"
+      className={`inline-flex shrink-0 items-center font-bold text-[#cc1873] ${
+        sm
+          ? "rounded-[4px] bg-[#fff1f7] px-[5px] py-px text-[10px]"
+          : "rounded-full bg-[#fff1f7] px-2.5 py-1 text-[11.5px]"
       }`}
     >
-      <Heart
-        className={sm ? "h-2.5 w-2.5 fill-current" : "h-3 w-3 fill-current"}
-      />
-      신랑 · 신부
+      {sm ? "신랑·신부" : "신랑 · 신부"}
     </span>
   );
 }

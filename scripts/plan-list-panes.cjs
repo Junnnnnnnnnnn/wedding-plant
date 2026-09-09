@@ -269,6 +269,19 @@ const hasToast = (page) =>
     args: ["--font-render-hinting=none"],
   });
   const page = await browser.newPage();
+
+  /*
+    Next 개발 서버가 띄우는 좌하단 배지와 표식은 **앱 UI 가 아니다.**
+    대조 문서에 그대로 실리면 앱 요소로 오해되므로 캡처에서만 가린다.
+  */
+  await page.evaluateOnNewDocument(() => {
+    const css = document.createElement("style");
+    css.textContent =
+      "nextjs-portal,#nextjs-dev-overlay,[data-nextjs-toast],[data-next-badge-root]{display:none!important}";
+    const put = () => document.head && document.head.appendChild(css);
+    if (document.head) put();
+    else document.addEventListener("DOMContentLoaded", put);
+  });
   await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1.5 });
 
   await page.goto(`${ORIGIN}/plan-list`, {
@@ -322,13 +335,13 @@ const hasToast = (page) =>
   await wait(1500);
 
   await page.evaluate(() => {
-    // 커플 방은 제목 옆에 "신랑 · 신부" 배지가 붙어 innerText 가 길어진다.
-    // 정확히 일치로 찾으면 못 찾는다.
-    const el = [...document.querySelectorAll("h4")].find((h) =>
-      h.innerText.trim().startsWith("스드메"),
+    // 커플 방은 이름 옆에 "신랑·신부" 배지가 붙어 innerText 가 길어진다.
+    // 정확히 일치로 찾으면 못 찾는다. 줄 자체가 role=button 이다.
+    const el = [...document.querySelectorAll('[role="button"]')].find((b) =>
+      b.innerText.trim().startsWith("스드메"),
     );
     if (!el) throw new Error("스드메 채팅방을 찾지 못했다");
-    el.closest("div[class*='rounded-2xl']").click();
+    el.click();
   });
   await wait(2500);
 

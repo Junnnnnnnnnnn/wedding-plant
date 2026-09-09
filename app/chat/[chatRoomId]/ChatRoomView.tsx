@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import {
   ChevronLeft,
-  ChevronRight,
   Send,
   Image as ImageIcon,
   Smile,
@@ -338,73 +337,52 @@ const ChatMessage = React.memo(
                 )}
               </>
             ) : msg.messageType === "schedule" && msg.schedule ? (
-              <div
-                className="relative min-w-[220px] max-w-[280px] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100"
-                style={{
-                  boxShadow:
-                    "inset 0 0 1px rgba(255, 255, 255, 1), 0 4px 12px rgba(0, 0, 0, 0.08)",
-                }}
-              >
-                {/* 제목 헤더 */}
-                <div className="px-4 pt-3 pb-2 bg-gradient-to-r from-[#ee2b8c] to-[#ff6b9d]">
-                  <span className="text-[13px] font-bold text-white">
-                    {msg.schedule.title}
-                  </span>
+              /*
+                시안(C안 08)의 일정 카드다. 대화 안에서 "다른 종류의 것"이라는
+                신호는 **테두리 한 줄**로 충분하다 — 분홍 그러데이션 머리를
+                얹으면 내 말풍선(같은 분홍)과 뜻이 겹쳐, 이 카드가 "내가
+                보낸 것"인지 "일정"인지가 색으로 구분되지 않았다.
+              */
+              <div className="min-w-[220px] max-w-[280px] rounded-2xl border border-[#0000000f] bg-white p-3.5">
+                <div className="text-[12px] font-bold text-[#cc1873]">
+                  {msg.schedule.categoryName}
                 </div>
-
-                {/* 콘텐츠 */}
-                <div className="relative p-4 pt-3">
-                  {/* 카테고리 */}
-                  <div className="text-[11px] font-medium text-gray-500 mb-2">
-                    {msg.schedule.categoryName}
-                  </div>
-
-                  {/* 날짜 */}
-                  {msg.schedule.startDate && (
-                    <div className="text-xs text-gray-500 mb-1">
-                      {new Date(msg.schedule.startDate).toLocaleDateString(
+                <div className="mt-0.5 text-[16px] font-bold text-[#1a1c20]">
+                  {msg.schedule.title}
+                </div>
+                <div className="mt-1.5 text-[13px] text-[#555d6d]">
+                  {msg.schedule.startDate
+                    ? new Date(msg.schedule.startDate).toLocaleDateString(
                         "ko-KR",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        },
-                      )}
-                    </div>
-                  )}
-
-                  {/* 장소 */}
-                  {msg.schedule.location && (
-                    <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                      <span>📍</span>
-                      <span className="truncate">{msg.schedule.location}</span>
-                    </div>
-                  )}
-
-                  {/* 금액 */}
-                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-200/60">
-                    <span className="text-[11px] text-gray-400 font-medium">
-                      비용
-                    </span>
-                    <span className="text-base font-extrabold text-[#ee2b8c]">
-                      {Number(msg.schedule.amount) > 0
-                        ? `${Number(msg.schedule.amount).toLocaleString()}만원`
-                        : "미정"}
-                    </span>
-                  </div>
-
-                  {/* 바로가기 버튼 */}
-                  {msg.schedule.id && (
-                    <button
-                      type="button"
-                      onClick={() => onScheduleClick?.(msg.schedule!.id)}
-                      className="w-full mt-3 py-2 flex items-center justify-center gap-1 rounded-lg bg-white/80 border border-gray-200 text-xs font-bold text-gray-600 hover:bg-white active:scale-[0.98] transition-all"
-                    >
-                      <span>상세보기</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                        { year: "numeric", month: "long", day: "numeric" },
+                      )
+                    : "날짜 미정"}
+                  {msg.schedule.location ? (
+                    <>
+                      <span className="mx-1 text-[#b0b4bb]">·</span>
+                      {msg.schedule.location}
+                    </>
+                  ) : null}
                 </div>
+
+                <div className="mt-3 flex items-baseline border-t border-[#0000000c] pt-2.5 text-[12px] text-[#868b94]">
+                  비용
+                  <b className="ml-auto text-[16px] font-bold text-[#ee2b8c] [font-variant-numeric:tabular-nums]">
+                    {Number(msg.schedule.amount) > 0
+                      ? `${Number(msg.schedule.amount).toLocaleString()}만 원`
+                      : "미정"}
+                  </b>
+                </div>
+
+                {msg.schedule.id && (
+                  <button
+                    type="button"
+                    onClick={() => onScheduleClick?.(msg.schedule!.id)}
+                    className="mt-3 w-full rounded-[10px] bg-[#f7f8f9] py-2 text-[13px] font-bold text-[#555d6d] transition-colors hover:bg-[#edeef0]"
+                  >
+                    상세보기
+                  </button>
+                )}
               </div>
             ) : (
               <div className="px-4 py-2.5 rounded-[20px] text-sm bg-gray-100 text-gray-400">
@@ -413,9 +391,13 @@ const ChatMessage = React.memo(
             )}
           </div>
 
-          <div className="flex flex-col items-center gap-0.5 mb-1 flex-shrink-0">
+          {/*
+            읽음 표시는 시각 **옆**에 붙는다(시안 C안 08). 위에 따로 쌓으면
+            분홍 체크가 말풍선보다 눈에 띄어 시선을 가져갔다.
+          */}
+          <div className="mb-1 flex flex-shrink-0 items-center gap-1">
             {isMe && msg.unreadCount === 0 && (
-              <CheckCheck className="w-3.5 h-3.5 text-[#ee2b8c]" />
+              <CheckCheck className="h-3 w-3 text-[#c9ccd2]" />
             )}
             <span className="text-[9px] font-bold text-gray-300">
               {msg.timestamp}
@@ -1097,36 +1079,81 @@ export default function ChatRoomView({
             isPane ? "w-full" : "max-w-md mx-auto shadow-2xl"
           }`}
         >
-          <header className="flex items-center justify-between px-4 h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex-shrink-0 z-50">
+          {/*
+            폰(standalone)은 **분홍 머리 면**. pane 은 셸이 이미 화면을
+            나눠 놨고 옆 목록이 흰 바탕이라 예전 흰 머리글을 유지한다.
+          */}
+          <header
+            className={`z-50 flex h-16 flex-shrink-0 items-center justify-between px-4 ${
+              isPane
+                ? "border-b border-gray-100 bg-white/80 backdrop-blur-md"
+                : "rounded-b-[20px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95]"
+            }`}
+          >
             <div className="flex items-center gap-3">
               {!isPane && (
                 <button
                   type="button"
                   onClick={() => router.push("/plan-list")}
-                  className="p-1 -ml-1 text-stone-600"
+                  className="-ml-1 p-1 text-white"
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </button>
               )}
               <div className="min-w-0">
-                <h1 className="flex items-center gap-2 text-xl font-normal text-[#1b0d14] max-w-[260px] truncate leading-tight tracking-tight">
+                <h1
+                  className={`flex max-w-[260px] items-center gap-2 truncate text-xl font-normal leading-tight tracking-tight ${isPane ? "text-[#1b0d14]" : "text-white"}`}
+                >
                   <span className="truncate">{roomName}</span>
                   {isCoupleRoom && <CoupleChatBadge size="sm" />}
                 </h1>
-                <p className="text-[10px] text-stone-400 font-medium mt-1 truncate max-w-[200px]">
+                <p
+                  className={`mt-1 max-w-[200px] truncate text-[10px] font-medium ${isPane ? "text-stone-400" : "text-white/75"}`}
+                >
                   {members.length > 0
                     ? members.map((m) => m.name).join(", ")
                     : "대화 중인 멤버"}
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowNameEditModal(true)}
-              className="p-2 text-stone-400 hover:text-[#ee2b8c] transition-colors"
-            >
-              <MoreVertical className="w-5 h-5" />
-            </button>
+            {/*
+              시안(C안 08)은 머리에 **참여 멤버 얼굴**을 둔다. 부제의 이름
+              목록은 좁은 화면에서 잘리는데, 얼굴은 몇 명인지를 잘리지 않고
+              말한다.
+            */}
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              {members.length > 0 && (
+                <div className="flex items-center -space-x-[7px]">
+                  {members.slice(0, 3).map((m) => (
+                    <span
+                      key={m.planUserId}
+                      className={`grid h-6 w-6 place-items-center overflow-hidden rounded-full border-2 text-[10px] font-bold ${
+                        isPane
+                          ? "border-white bg-[#f4eff2] text-[#7a6c74]"
+                          : "border-white/0 bg-white/25 text-white"
+                      }`}
+                    >
+                      {m.image ? (
+                        <img
+                          src={m.image}
+                          alt={m.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        m.name.charAt(0)
+                      )}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowNameEditModal(true)}
+                className={`p-2 transition-colors ${isPane ? "text-stone-400 hover:text-[#ee2b8c]" : "text-white hover:text-white/70"}`}
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+            </div>
           </header>
 
           <div

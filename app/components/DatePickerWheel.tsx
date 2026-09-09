@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getKstToday } from "@/lib/utils";
 
@@ -526,58 +525,37 @@ export default function DatePickerWheel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedMonth, selectedDay, years, months, days]);
 
-  const handleYearClick = (direction: "up" | "down") => {
-    const currentIndex = years.indexOf(selectedYear);
-    const newIndex =
-      direction === "up"
-        ? Math.max(0, currentIndex - 1)
-        : Math.min(years.length - 1, currentIndex + 1);
-    setYearAndRef(years[newIndex]);
-  };
-
-  const handleMonthClick = (direction: "up" | "down") => {
-    const currentIndex = months.indexOf(selectedMonth);
-    let newIndex: number;
-    if (direction === "up") {
-      newIndex = (currentIndex - 1 + 12) % 12;
-    } else {
-      newIndex = (currentIndex + 1) % 12;
-    }
-    setMonthAndRef(months[newIndex]);
-  };
-
-  const handleDayClick = (direction: "up" | "down") => {
-    const currentIndex = days.indexOf(selectedDay);
-    let newIndex: number;
-    if (direction === "up") {
-      newIndex = (currentIndex - 1 + days.length) % days.length;
-    } else {
-      newIndex = (currentIndex + 1) % days.length;
-    }
-    setDayAndRef(days[newIndex]);
-  };
-
-  const arrowClass =
-    "flex items-center justify-center w-full h-8 text-stone-400 hover:text-[#ee2b8c] active:scale-90 transition-all";
+  /**
+   * 값을 눌러도 고를 수 있다. 예전에는 칸 위아래의 화살표 버튼이 그 일을
+   * 했는데, 시안(C안 10)에는 화살표가 없다 — 세 칸 위아래로 여섯 개가
+   * 붙어 있으면 정작 고르는 숫자보다 화살표가 먼저 읽혔다. 드래그·스크롤은
+   * 그대로다.
+   */
+  const colClass = "min-w-0";
+  const labelClass = "mb-2 text-center text-[12px] font-bold text-[#868b94]";
+  const boxClass =
+    "relative h-40 w-full overflow-hidden rounded-xl bg-[#f7f8f9]";
+  const listClass =
+    "h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory cursor-grab active:cursor-grabbing";
+  /* 고른 칸. 흰 면 + 분홍 실선 한 겹 — 시안 .wv--on 이다 */
+  const markerClass =
+    "pointer-events-none absolute inset-x-0 top-1/2 z-10 h-12 -translate-y-1/2 rounded-lg bg-white shadow-[inset_0_0_0_1px_#ffc9e0]";
+  const cellClass = (on: boolean) =>
+    `relative z-20 flex h-12 w-full snap-center items-center justify-center [font-variant-numeric:tabular-nums] ${
+      on ? "text-[20px] font-bold text-[#1a1c20]" : "text-[16px] text-[#b0b4bb]"
+    }`;
 
   return (
-    <div className="flex flex-col items-center mt-8">
-      <div className="flex items-start justify-center gap-4">
+    <div className="mt-8 w-full max-w-[340px]">
+      <div className="grid grid-cols-3 gap-3">
         {/* 년도 선택 */}
-        <div className="flex flex-col items-center w-20">
-          <div className="text-sm font-medium text-stone-600 mb-2">년</div>
-          <button
-            type="button"
-            onClick={() => handleYearClick("up")}
-            className={arrowClass}
-          >
-            <ChevronUp className="w-6 h-6" />
-          </button>
-          <div className="relative w-full h-40 overflow-hidden rounded-lg bg-white shadow-sm">
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-12 bg-stone-100/50 border-y-2 border-stone-300 pointer-events-none z-10" />
+        <div className={colClass}>
+          <div className={labelClass}>년</div>
+          <div className={boxClass}>
+            <div className={markerClass} />
             <div
               ref={yearRef}
-              className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory cursor-grab active:cursor-grabbing"
+              className={listClass}
               role="listbox"
               tabIndex={0}
               onScroll={() => handleScroll(yearRef, years, setYearAndRef)}
@@ -587,40 +565,28 @@ export default function DatePickerWheel({
             >
               <div className="h-[calc(50%-24px)]" />
               {years.map((year) => (
-                <div
+                <button
+                  type="button"
                   key={year}
-                  className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900"
+                  onClick={() => setYearAndRef(year)}
+                  className={cellClass(year === selectedYear)}
                 >
                   {year}
-                </div>
+                </button>
               ))}
               <div className="h-[calc(50%-24px)]" />
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => handleYearClick("down")}
-            className={arrowClass}
-          >
-            <ChevronDown className="w-6 h-6" />
-          </button>
         </div>
 
         {/* 월 선택 */}
-        <div className="flex flex-col items-center w-16">
-          <div className="text-sm font-medium text-stone-600 mb-2">월</div>
-          <button
-            type="button"
-            onClick={() => handleMonthClick("up")}
-            className={arrowClass}
-          >
-            <ChevronUp className="w-6 h-6" />
-          </button>
-          <div className="relative w-full h-40 overflow-hidden rounded-lg bg-white shadow-sm">
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-12 bg-stone-100/50 border-y-2 border-stone-300 pointer-events-none z-10" />
+        <div className={colClass}>
+          <div className={labelClass}>월</div>
+          <div className={boxClass}>
+            <div className={markerClass} />
             <div
               ref={monthRef}
-              className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory cursor-grab active:cursor-grabbing"
+              className={listClass}
               role="listbox"
               tabIndex={0}
               onScroll={() =>
@@ -634,40 +600,28 @@ export default function DatePickerWheel({
             >
               <div className="h-[calc(50%-24px)]" />
               {monthsTriple.map((month, i) => (
-                <div
+                <button
+                  type="button"
                   key={`month-${Math.floor(i / MONTH_BLOCK)}-${month}`}
-                  className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900"
+                  onClick={() => setMonthAndRef(month)}
+                  className={cellClass(month === selectedMonth)}
                 >
                   {month}
-                </div>
+                </button>
               ))}
               <div className="h-[calc(50%-24px)]" />
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => handleMonthClick("down")}
-            className={arrowClass}
-          >
-            <ChevronDown className="w-6 h-6" />
-          </button>
         </div>
 
         {/* 일 선택 */}
-        <div className="flex flex-col items-center w-16">
-          <div className="text-sm font-medium text-stone-600 mb-2">일</div>
-          <button
-            type="button"
-            onClick={() => handleDayClick("up")}
-            className={arrowClass}
-          >
-            <ChevronUp className="w-6 h-6" />
-          </button>
-          <div className="relative w-full h-40 overflow-hidden rounded-lg bg-white shadow-sm">
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-12 bg-stone-100/50 border-y-2 border-stone-300 pointer-events-none z-10" />
+        <div className={colClass}>
+          <div className={labelClass}>일</div>
+          <div className={boxClass}>
+            <div className={markerClass} />
             <div
               ref={dayRef}
-              className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory cursor-grab active:cursor-grabbing"
+              className={listClass}
               role="listbox"
               tabIndex={0}
               onScroll={() =>
@@ -681,23 +635,18 @@ export default function DatePickerWheel({
             >
               <div className="h-[calc(50%-24px)]" />
               {daysTriple.map((day, i) => (
-                <div
+                <button
+                  type="button"
                   key={`day-${Math.floor(i / days.length)}-${day}`}
-                  className="h-12 flex items-center justify-center snap-center text-lg font-semibold text-stone-900"
+                  onClick={() => setDayAndRef(day)}
+                  className={cellClass(day === selectedDay)}
                 >
                   {day}
-                </div>
+                </button>
               ))}
               <div className="h-[calc(50%-24px)]" />
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => handleDayClick("down")}
-            className={arrowClass}
-          >
-            <ChevronDown className="w-6 h-6" />
-          </button>
         </div>
       </div>
     </div>

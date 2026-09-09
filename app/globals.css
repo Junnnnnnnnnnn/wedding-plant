@@ -332,7 +332,17 @@ main {
   border-radius: var(--confetti-shape);
 }
 
-/* 배경 그리드 점 패턴 (budget-detail 등 공통 레이아웃) */
+/*
+ * 배경 그리드 점 패턴.
+ *
+ * **앱 화면에서는 쓰지 않는다.** SEED 를 따라 표면을 layer-default(흰) ·
+ * fill · basement 세 단계로만 쌓기로 하면서, 셸을 쓰는 화면
+ * (`/main`·`/calendar`·`/plan-list`·`/budget-detail`·`/user`·
+ * `/schedule-detail`)에서 걷어냈다. 점이 깔리면 카드와 바탕의 층 차이가
+ * 흐려져 "무엇이 위에 있는지"가 안 보인다.
+ *
+ * 남아 있는 곳은 에러·404 같은 앱 밖 화면뿐이다.
+ */
 .grid-bg {
   background-image: radial-gradient(#ee2b8c22 1px, transparent 1px);
   background-size: 20px 20px;

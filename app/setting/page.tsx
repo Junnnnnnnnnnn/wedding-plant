@@ -18,7 +18,7 @@ import {
   isPlanDataComplete,
   setGuestAgreement,
 } from "@/lib/api";
-import { getKstDateString } from "@/lib/utils";
+import { getKstDateString, getDaysUntil } from "@/lib/utils";
 import { useSpouseInvite } from "../hooks/useSpouseInvite";
 import {
   PRIVACY_CONTENT,
@@ -52,7 +52,7 @@ const ONBOARDING_STEPS_MEMBER = [
 const Lanyard = dynamic(() => import("../../components/Lanyard"), {
   ssr: false,
   loading: () => (
-    <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#fcfbfc] grid-bg">
+    <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-white">
       {/* Decorative Blur Elements (match app/page.tsx) */}
       <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none" />
@@ -91,6 +91,18 @@ function SettingPageContent() {
   const [isBudgetFadingOut, setIsBudgetFadingOut] = useState(false);
   const [isNameFadingOut, setIsNameFadingOut] = useState(false);
   const [isNameShaking, setIsNameShaking] = useState(false);
+
+  /** "2026년 11월 14일 토요일 · D-74". 휠 아래 한 줄에만 쓴다 */
+  const selectedDateSentence = (() => {
+    const d = weddingData.date;
+    if (!d) return "";
+    const dayName = ["일", "월", "화", "수", "목", "금", "토"][
+      new Date(d.year, d.month - 1, d.day).getDay()
+    ];
+    const left = getDaysUntil(d);
+    const dday = left > 0 ? `D-${left}` : left === 0 ? "D-Day" : `D+${-left}`;
+    return `${d.year}년 ${d.month}월 ${d.day}일 ${dayName}요일 · ${dday}`;
+  })();
   const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
   const [isSixthFadingOut, setIsSixthFadingOut] = useState(false);
   /**
@@ -563,10 +575,34 @@ function SettingPageContent() {
        * absolute inset-0 로 펼쳐지는데, 여기를 600px 로 묶어 두면 전체 화면
        * 연출이 아니라 넓은 모니터 한가운데 600px 띠가 된다.
        */}
-      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-[#fcfbfc] px-4 sm:px-6 py-8 overscroll-none grid-bg lg:max-w-none lg:flex-1 lg:px-10 lg:py-12">
-        {/* Decorative Blur Elements (match app/page.tsx) */}
-        <div className="absolute top-[-10%] right-[-20%] w-80 h-80 bg-[#ee2b8c11] rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-[-10%] left-[-20%] w-80 h-80 bg-purple-100/50 rounded-full blur-[100px] pointer-events-none" />
+      <main className="relative flex h-full w-full max-w-[500px] flex-col overflow-hidden bg-white px-4 py-8 overscroll-none sm:px-6 lg:max-w-none lg:flex-1 lg:px-10 lg:py-12">
+        {/*
+          SEED 기준으로 표면은 민 바탕이다 — 점 패턴과 뿌연 원 두 개를
+          걷어냈다. 배경 장식이 있으면 "한 번에 하나씩 묻는" 연출에서 질문이
+          화면의 주인이 아니게 된다.
+        */}
+
+        {/*
+          폰에는 남은 단계 표시가 아무것도 없었다. 웹은 ≥1024 에서 좌측 패널이
+          알려 주는데, 폰에서는 묻는 대로 따라가는 수밖에 없었다.
+          4px 막대 하나면 몇 개나 더 묻는지가 보인다 — 질문 단계에만 낸다
+          (축하·환영·출입증은 연출이라 단계로 세지 않는다).
+        */}
+        {isSplitStep && (
+          <div className="absolute inset-x-4 top-4 z-40 flex items-center gap-3 sm:inset-x-6 lg:hidden">
+            <span className="h-1 flex-1 overflow-hidden rounded-full bg-[#f3f4f5]">
+              <i
+                className="block h-full rounded-full bg-[#ee2b8c] transition-[width] duration-300"
+                style={{
+                  width: `${(stepIndex / onboardingSteps.length) * 100}%`,
+                }}
+              />
+            </span>
+            <span className="text-[11px] font-bold tabular-nums text-[#868b94]">
+              {stepIndex} / {onboardingSteps.length}
+            </span>
+          </div>
+        )}
 
         {(showThird || showFourth || showFifth || showSeventh) && (
           <button
@@ -610,15 +646,25 @@ function SettingPageContent() {
             <LandingHero
               title="결혼 날짜가 언제인가요"
               subtitle="예신, 예랑님. 가장 빛날 그날까지 함께해요."
-              titleSize="text-2xl sm:text-4xl"
-              subtitleSize="text-sm sm:text-lg"
+              titleSize="text-[28px] sm:text-4xl"
+              subtitleSize="text-[14px] leading-[1.7] sm:text-lg"
               useUserFont={false}
+              align="start"
             />
-            <div className="flex flex-1 flex-col items-center justify-center lg:my-9 lg:flex-none">
+            <div className="flex w-full flex-1 flex-col items-center justify-center lg:my-9 lg:flex-none">
               <DatePickerWheel
                 initialDate={weddingData.date}
                 onDateChange={handleDateChange}
               />
+              {/*
+                고른 값을 문장으로 한 번 더 낸다(시안 C안 10). 숫자 세 칸만
+                보고 요일과 남은 날을 머릿속에서 계산하게 두지 않는다.
+              */}
+              {weddingData.date && (
+                <p className="mt-3 text-center text-[13px] text-[#868b94]">
+                  {selectedDateSentence}
+                </p>
+              )}
             </div>
             <button
               type="button"
@@ -632,7 +678,7 @@ function SettingPageContent() {
                 );
                 handleDateNext();
               }}
-              className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
+              className="w-full max-w-[340px] rounded-xl bg-[#ee2b8c] px-8 py-4 text-[16px] font-bold text-white transition-colors hover:bg-[#d4237b] active:scale-[0.99]"
             >
               다음
             </button>
@@ -645,9 +691,10 @@ function SettingPageContent() {
             <LandingHero
               title="예산도 살짝 알려주세요!"
               subtitle="마음 편하시게 제가 꼼꼼히 챙겨드릴게요."
-              titleSize="text-2xl sm:text-4xl"
-              subtitleSize="text-sm sm:text-lg"
+              titleSize="text-[28px] sm:text-4xl"
+              subtitleSize="text-[14px] leading-[1.7] sm:text-lg"
               useUserFont={false}
+              align="start"
             />
             <div className="flex flex-1 lg:hidden" />
             <div className="flex flex-col items-center mb-6 lg:mt-7">
@@ -689,7 +736,7 @@ function SettingPageContent() {
             <button
               type="button"
               onClick={handleBudgetNext}
-              className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md"
+              className="w-full max-w-[340px] rounded-xl bg-[#ee2b8c] px-8 py-4 text-[16px] font-bold text-white transition-colors hover:bg-[#d4237b] active:scale-[0.99]"
             >
               다음
             </button>
@@ -702,9 +749,10 @@ function SettingPageContent() {
             <LandingHero
               title="이름도 괜찮을까요?"
               subtitle="닉네임도 괜찮아요!"
-              titleSize="text-2xl sm:text-4xl"
-              subtitleSize="text-sm sm:text-lg"
+              titleSize="text-[28px] sm:text-4xl"
+              subtitleSize="text-[14px] leading-[1.7] sm:text-lg"
               useUserFont={false}
+              align="start"
             />
             <div className="flex flex-1 lg:hidden" />
             <div className="flex flex-col items-center mb-6 lg:mt-7">
@@ -735,7 +783,7 @@ function SettingPageContent() {
               type="button"
               onClick={handleNameNext}
               disabled={!weddingData.name || weddingData.name.trim() === ""}
-              className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
+              className="w-full max-w-[340px] rounded-xl bg-[#ee2b8c] px-8 py-4 text-[16px] font-bold text-white transition-colors hover:bg-[#d4237b] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-[#e8eaed] disabled:text-[#b0b4bb] disabled:hover:bg-[#e8eaed]"
             >
               다음
             </button>
@@ -753,9 +801,10 @@ function SettingPageContent() {
             <LandingHero
               title="누구와 함께 준비하세요?"
               subtitle="신랑·신부는 일정과 예산을 같이 고칠 수 있어요"
-              titleSize="text-2xl sm:text-4xl"
-              subtitleSize="text-sm sm:text-lg"
+              titleSize="text-[28px] sm:text-4xl"
+              subtitleSize="text-[14px] leading-[1.7] sm:text-lg"
               useUserFont={false}
+              align="start"
             />
             <div className="flex flex-1 lg:hidden" />
             <div
@@ -871,7 +920,7 @@ function SettingPageContent() {
                 inviteChoice === null ||
                 (inviteChoice === "invite" && !inviteSent && inviteLinkLoading)
               }
-              className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
+              className="w-full max-w-[340px] rounded-xl bg-[#ee2b8c] px-8 py-4 text-[16px] font-bold text-white transition-colors hover:bg-[#d4237b] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-[#e8eaed] disabled:text-[#b0b4bb] disabled:hover:bg-[#e8eaed]"
             >
               {inviteChoice === "invite" && !inviteSent
                 ? inviteLinkLoading
@@ -895,8 +944,8 @@ function SettingPageContent() {
             <LandingHero
               title={`${weddingData.name} 님 환영합니다`}
               subtitle="출입증을 발급해 드렸어요!"
-              titleSize="text-2xl sm:text-4xl"
-              subtitleSize="text-sm sm:text-lg"
+              titleSize="text-[28px] sm:text-4xl"
+              subtitleSize="text-[14px] leading-[1.7] sm:text-lg"
             />
           </div>
         )}
@@ -923,8 +972,8 @@ function SettingPageContent() {
               title="자 이제 시작해볼까요?"
               subtitle="결혼식까지 든든한 플랜을 같이 짜보아요"
               useUserFont={false}
-              titleSize="text-2xl sm:text-4xl"
-              subtitleSize="text-sm sm:text-lg"
+              titleSize="text-[28px] sm:text-4xl"
+              subtitleSize="text-[14px] leading-[1.7] sm:text-lg"
             />
             {/*
              * 상자 비율을 카드(1.8×2.53 ≈ 0.71)에 맞춘다. 예전의 200×40vh 는
@@ -1103,7 +1152,7 @@ function SettingPageContent() {
                 type="button"
                 onClick={handleGoToMain}
                 disabled={!isAllRequiredAgreed}
-                className="w-full max-w-[320px] px-8 py-3 bg-[#FFAAB8] text-white text-lg font-semibold rounded-lg hover:bg-[#FF9AA8] transition-colors duration-200 shadow-md disabled:bg-stone-300 disabled:cursor-not-allowed disabled:hover:bg-stone-300"
+                className="w-full max-w-[340px] rounded-xl bg-[#ee2b8c] px-8 py-4 text-[16px] font-bold text-white transition-colors hover:bg-[#d4237b] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-[#e8eaed] disabled:text-[#b0b4bb] disabled:hover:bg-[#e8eaed]"
               >
                 {/* 회원은 뒤에 초대 단계가 하나 더 남아 있다 */}
                 {canInvite ? "다음" : "계획 짜러 가기"}
@@ -1149,7 +1198,7 @@ export default function SettingPage() {
     <Suspense
       fallback={
         <div className="flex h-[100dvh] justify-center bg-[#fcfbfc] px-0 overflow-hidden">
-          <div className="h-full w-full max-w-[500px] bg-[#fcfbfc] grid-bg lg:max-w-none lg:flex-1" />
+          <div className="h-full w-full max-w-[500px] bg-white lg:max-w-none lg:flex-1" />
         </div>
       }
     >

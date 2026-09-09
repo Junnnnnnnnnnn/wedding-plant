@@ -66,3 +66,7 @@ next-env.d.ts
 
 # 로컬 워크트리 (에이전트 작업용)
 .claude/worktrees/
+
+# 하네스 캡처 임시 폴더 (SHOT_DIR=__shots/… 로 찍은 것들 — 57MB 쯤 된다)
+# 대조 문서에 싣는 캡처만 docs/concepts/shots/ 에 손으로 옮긴다
+/__shots/

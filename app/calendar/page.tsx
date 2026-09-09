@@ -77,15 +77,22 @@ function CalendarPageContent() {
     Record<string, CalendarPlanItem[]>
   >({});
   // Modal state
+  /**
+   * 폰의 달력 ↔ 목록 (시안 C안 02).
+   *
+   * ≥768 의 보드↔캘린더와는 다른 축이다 — 보드는 넓은 화면 전용 뷰이고,
+   * 여기 "목록"은 달력 격자 대신 **다가오는 순 한 줄 목록**이다.
+   */
+  const [mobileView, setMobileView] = useState<"calendar" | "list">("calendar");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDateLabel, setSelectedDateLabel] = useState("");
   const [selectedDayPlans, setSelectedDayPlans] = useState<ScheduleListItem[]>(
     [],
   );
-  const [selectedDateParams, setSelectedDateParams] = useState({
-    day: 0,
-    month: 0,
-    year: 0,
+  /** 처음부터 오늘이 골라져 있어야 달력 아래 목록이 비지 않는다 */
+  const [selectedDateParams, setSelectedDateParams] = useState(() => {
+    const t = getKstDate();
+    return { day: t.getDate(), month: t.getMonth(), year: t.getFullYear() };
   });
 
   const year = currentDate.getFullYear();
@@ -323,10 +330,32 @@ function CalendarPageContent() {
       month: targetMonth,
       year: targetYear,
     });
-    setIsModalOpen(true);
+    /*
+      폰에서는 **달력 아래 목록**이 그날을 바로 보여 준다(시안 C안 02) —
+      바텀 시트를 한 겹 더 띄우면 달력이 가려져 다른 날로 옮기기가 어렵다.
+      ≥768 은 예전처럼 시트를 연다(보드·인스펙터와 함께 쓰는 화면이라
+      아래로 길게 늘일 자리가 없다).
+
+      `useMediaQuery` 대신 `matchMedia` 를 직접 읽는다 — 훅은 서버 스냅샷이
+      false 라 하이드레이션 직후 한 번 뒤집힌다.
+    */
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 768px)").matches
+    ) {
+      setIsModalOpen(true);
+    }
   };
 
   const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+
+  /** 그날 목록 제목. 시안처럼 연도 없이 "9월 12일 (토)" */
+  const selectedDayLabelShort = (() => {
+    const { year: y, month: m, day } = selectedDateParams;
+    if (!day) return "";
+    const d = new Date(y, m, day);
+    return `${m + 1}월 ${day}일 (${weekdays[d.getDay()]})`;
+  })();
 
   const isReadOnly = myRoomPermission === "READ";
 
@@ -362,10 +391,12 @@ function CalendarPageContent() {
     let spent = 0;
     let planned = 0;
     let doneCount = 0;
+    let count = 0;
     Object.entries(calendarData).forEach(([day, list]) => {
       if (!day.startsWith(prefix)) return;
       list.forEach((item) => {
         const amount = item.amount ?? 0;
+        count += 1;
         if (item.status === "COMPLETED") {
           spent += amount;
           doneCount += 1;
@@ -374,8 +405,25 @@ function CalendarPageContent() {
         }
       });
     });
-    return { spent, planned, doneCount };
+    return { spent, planned, doneCount, count };
   }, [calendarData, year, month]);
+
+  /** 목록 뷰에 쓰는 다가오는 순 정렬. 날짜 없는 것은 맨 뒤 */
+  const upcomingList = useMemo(() => {
+    const time = (d?: string | null) => {
+      if (!d?.trim()) return null;
+      const parsed = parseLocalDate(d);
+      return parsed ? parsed.getTime() : null;
+    };
+    return [...boardItems].sort((a, b) => {
+      const at = time(a.startDate);
+      const bt = time(b.startDate);
+      if (at === null && bt === null) return a.id - b.id;
+      if (at === null) return 1;
+      if (bt === null) return -1;
+      return at - bt;
+    });
+  }, [boardItems]);
 
   /** 셀이 커지는 ≥768 에서는 일정 미리보기를 한 줄 더 보여준다 */
   const visibleEventCount = isTabletUp ? 3 : 2;
@@ -412,10 +460,15 @@ function CalendarPageContent() {
     }
   }, [fetchWithAuth, roomId]);
 
+  /*
+    보드(≥768)와 **폰의 목록 뷰**가 같은 데이터를 쓴다
+    (`/plan/schedule/list?count=10000`). 캘린더 응답은 그 달만 주는데,
+    목록은 달 경계를 넘어 다가오는 순으로 이어져야 한다.
+  */
   useEffect(() => {
-    if (!isTabletUp) return;
+    if (!isTabletUp && mobileView !== "list") return;
     fetchBoardItems();
-  }, [isTabletUp, fetchBoardItems]);
+  }, [isTabletUp, mobileView, fetchBoardItems]);
 
   /**
    * 플랜 등록. ≥1024 는 우측 pane 에서 바로 쓰고, 그보다 좁으면 지금처럼
@@ -526,12 +579,64 @@ function CalendarPageContent() {
               : "flex-1 overflow-y-auto"
           }`}
         >
-          {/* Header */}
-          <header className="px-6 pt-8 pb-4 flex items-center justify-between md:px-8 md:pt-6">
-            <h1 className="text-2xl font-black text-[#1b0d14]">
-              {showBoard ? "플랜 보드" : `${year}년 ${month + 1}월`}
-            </h1>
-            <div className="flex items-center gap-1">
+          {/*
+            폰(캘린더 뷰)은 **분홍 머리 면**. 달을 넘길 때마다 그 달의 규모가
+            먼저 눈에 들어와야 해서, 아래 작은 회색 줄이던 합계를 면 안으로
+            올린다(합계 마크업은 `md:` 쪽에 그대로 남는다).
+
+            보드는 넓은 화면 전용이라 면을 달지 않는다 — 가로 폭이 곧 기능이다.
+          */}
+          {/*
+            시안(C안 02)의 머리 면이다. 좌측에 `‹ 달 ›`, 우측에 닫기.
+            추가(+)는 여기 두지 않는다 — **그날 목록의 "추가"** 가 맡는다.
+            날짜를 고른 뒤 누르게 되므로 어느 날에 넣을지가 이미 정해진다.
+
+            보드(≥768)는 넓은 화면 전용이라 면을 달지 않는다.
+          */}
+          <header
+            /*
+              위/아래 여백을 **기본 클래스에 두지 않는다.** `pt-8` 과 `pt-4` 가
+              한 문자열에 같이 있으면 클래스 나열 순서가 아니라 생성된 CSS
+              순서가 승자를 정해, 분기 값이 무시된다(실제로 그래서 머리 면이
+              시안보다 32px 높았다). 분기마다 제 값을 갖게 한다.
+            */
+            className={`flex items-center justify-between gap-2 px-6 md:px-8 ${
+              showBoard
+                ? "pb-4 pt-8 md:pt-6"
+                : "bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] pb-0 pt-4 md:bg-none md:pb-4 md:pt-6"
+            }`}
+          >
+            <div className="flex min-w-0 items-center gap-1">
+              {!showBoard && (
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/20 md:hover:bg-gray-100"
+                  aria-label="이전 달"
+                >
+                  <ChevronLeft className="h-5 w-5 text-white md:text-gray-600" />
+                </button>
+              )}
+              <h1
+                className={`truncate text-[20px] font-bold tracking-[-0.02em] md:text-2xl md:font-black ${
+                  showBoard ? "text-[#1b0d14]" : "text-white md:text-[#1b0d14]"
+                }`}
+              >
+                {showBoard ? "플랜 보드" : `${year}년 ${month + 1}월`}
+              </h1>
+              {!showBoard && (
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/20 md:hover:bg-gray-100"
+                  aria-label="다음 달"
+                >
+                  <ChevronRight className="h-5 w-5 text-white md:text-gray-600" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1">
               {/* 보드 ↔ 캘린더 — 넓은 화면 전용 */}
               {isTabletUp && (
                 <div className="mr-2 flex gap-0.5 rounded-xl bg-[#f6f2f5] p-[3px]">
@@ -552,34 +657,15 @@ function CalendarPageContent() {
                   ))}
                 </div>
               )}
-              {!showBoard && (
-                <>
-                  <button
-                    type="button"
-                    onClick={handlePrevMonth}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <ChevronLeft className="w-6 h-6 text-gray-600" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNextMonth}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <ChevronRight className="w-6 h-6 text-gray-600" />
-                  </button>
-                </>
-              )}
-              <div className="w-px h-4 bg-gray-200 mx-1" />
               <button
                 type="button"
                 onClick={() =>
                   router.push(roomId ? `/main?roomId=${roomId}` : "/main")
                 }
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="grid h-8 w-8 place-items-center rounded-full transition-colors hover:bg-white/20 md:hover:bg-gray-100"
                 aria-label="닫기"
               >
-                <X className="w-6 h-6 text-gray-400" />
+                <X className="h-5 w-5 text-white md:text-gray-400" />
               </button>
             </div>
           </header>
@@ -599,42 +685,75 @@ function CalendarPageContent() {
             />
           ) : (
             <>
-              {(monthTotals.spent > 0 || monthTotals.planned > 0) && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 pb-3 md:px-8">
-                  {monthTotals.spent > 0 && (
-                    <span className="inline-flex items-baseline gap-1.5 text-[12.5px] text-[#7a6c74]">
-                      <Check
-                        className="w-3 h-3 self-center text-[#a79ba3]"
-                        strokeWidth={3}
-                      />
-                      이번 달 지출
-                      <b className="text-[13.5px] font-bold tracking-tight text-[#1b0d14]">
-                        {monthTotals.spent.toLocaleString("ko-KR")}만 원
-                      </b>
-                    </span>
-                  )}
-                  {monthTotals.planned > 0 && (
-                    <span className="inline-flex items-baseline gap-1.5 text-[12.5px] text-[#7a6c74]">
-                      예정
-                      <b className="text-[13.5px] font-bold tracking-tight text-[#ee2b8c]">
-                        {monthTotals.planned.toLocaleString("ko-KR")}만 원
-                      </b>
-                    </span>
-                  )}
+              {/*
+                시안(C안 02)의 면 안쪽 — **얇은 상자 + 세그먼트**.
+                예전에는 합계가 작은 회색 줄이었고 세그먼트가 없었다.
+                폰에서는 값이 없어도 이 블록이 면의 아래 끝을 맡는다
+                (조건부로 빼면 머리글과 달력 사이에 각진 이음매가 생긴다).
+                ≥768 은 예전처럼 값이 있을 때만 한 줄로 보인다.
+              */}
+              <div
+                className={`rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-5 pt-3 md:rounded-none md:bg-none md:px-8 md:pb-3 md:pt-0 ${
+                  monthTotals.spent > 0 || monthTotals.planned > 0
+                    ? ""
+                    : "md:hidden"
+                }`}
+              >
+                <div className="rounded-xl bg-white/20 px-4 py-3 md:bg-transparent md:p-0">
+                  <p className="text-[14px] font-bold text-white md:text-[13.5px] md:text-[#1b0d14]">
+                    이번 달 예정 {monthTotals.planned.toLocaleString("ko-KR")}만
+                    원
+                  </p>
+                  <p className="mt-0.5 text-[12px] text-white/75 md:text-[12.5px] md:text-[#7a6c74]">
+                    지출 {monthTotals.spent.toLocaleString("ko-KR")}만 원 · 일정{" "}
+                    {monthTotals.count}개
+                  </p>
                 </div>
-              )}
-              {/* Calendar Grid Container */}
-              <div className="grid grid-cols-7 px-4 content-start border-l border-t border-gray-50 md:px-8">
+
+                {/* 달력 ↔ 목록 — 폰 전용. ≥768 은 위의 보드↔캘린더가 맡는다 */}
+                <div
+                  className="mt-4 grid grid-cols-2 gap-0.5 rounded-[10px] bg-white/20 p-[3px] md:hidden"
+                  role="tablist"
+                >
+                  {(["calendar", "list"] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      role="tab"
+                      aria-selected={mobileView === v}
+                      onClick={() => setMobileView(v)}
+                      className={`rounded-lg py-1.5 text-[13px] transition-colors ${
+                        mobileView === v
+                          ? "bg-white font-bold text-[#ee2b8c]"
+                          : "font-medium text-white/80"
+                      }`}
+                    >
+                      {v === "calendar" ? "달력" : "목록"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/*
+                시안(C안 02)의 달력이다. **격자 선을 전부 걷어냈다** — 셀마다
+                테두리를 두르면 날짜보다 선이 먼저 읽히고, 일정 칩이 갇힌
+                것처럼 보인다. 구분은 여백이 한다.
+              */}
+              <div
+                className={`grid-cols-7 content-start px-2 md:grid md:px-8 ${
+                  mobileView === "list" ? "hidden" : "grid"
+                }`}
+              >
                 {/* Weekdays */}
                 {weekdays.map((d, i) => (
                   <div
                     key={d}
-                    className={`text-center py-4 text-xs font-bold border-b border-r border-gray-50 ${
+                    className={`py-2 text-center text-[12px] font-bold ${
                       i === 0
-                        ? "text-red-400"
+                        ? "text-[#fa342c]"
                         : i === 6
-                          ? "text-blue-400"
-                          : "text-gray-400"
+                          ? "text-[#217cf9]"
+                          : "text-[#868b94]"
                     }`}
                   >
                     {d}
@@ -657,20 +776,20 @@ function CalendarPageContent() {
                     <div
                       key={idx}
                       onClick={() => handleDayClick(dateObj)}
-                      className={`min-h-[100px] border-b border-r border-gray-50 p-1 flex flex-col gap-1 cursor-pointer hover:bg-gray-50/50 transition-colors md:min-h-[118px] md:p-1.5 ${!dateObj.isCurrentMonth ? "bg-gray-50/50" : ""}`}
+                      className={`flex min-h-[68px] cursor-pointer flex-col gap-1 rounded-lg p-1 transition-colors hover:bg-[#f7f8f9] md:min-h-[118px] md:p-1.5 ${!dateObj.isCurrentMonth ? "opacity-40" : ""}`}
                     >
-                      <div className="flex justify-center items-center mb-1">
+                      <div className="mb-0.5 flex items-center justify-center">
                         <span
-                          className={`text-xs font-bold ${
+                          className={`text-[13px] font-medium tabular-nums ${
                             !dateObj.isCurrentMonth
-                              ? "text-gray-300"
+                              ? "text-[#d1d3d8]"
                               : isToday
-                                ? "bg-[#ee2b8c] text-white w-5 h-5 flex items-center justify-center rounded-full"
+                                ? "flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#ee2b8c] font-bold text-white"
                                 : idx % 7 === 0
-                                  ? "text-red-400"
+                                  ? "text-[#fa342c]"
                                   : idx % 7 === 6
-                                    ? "text-blue-400"
-                                    : "text-gray-700"
+                                    ? "text-[#217cf9]"
+                                    : "text-[#1a1c20]"
                           }`}
                         >
                           {dateObj.day}
@@ -680,10 +799,10 @@ function CalendarPageContent() {
                         {daySchedules.slice(0, visibleEventCount).map((s) => (
                           <div
                             key={s.id}
-                            className={`font-user-content flex items-baseline gap-1 text-[8px] p-1 rounded-md transition-colors md:text-[11px] md:px-1.5 md:py-1 ${
+                            className={`font-user-content flex items-baseline gap-1 rounded px-1 py-px text-[9.5px] leading-[1.3] transition-colors md:px-1.5 md:py-1 md:text-[11px] ${
                               s.status === "COMPLETED"
-                                ? "bg-gray-100 text-gray-400"
-                                : "bg-[#ee2b8c10] text-[#ee2b8c]"
+                                ? "bg-[#f3f4f5] text-[#868b94]"
+                                : "bg-[#fff1f7] text-[#cc1873]"
                             }`}
                           >
                             <span
@@ -715,20 +834,142 @@ function CalendarPageContent() {
                   );
                 })}
               </div>
+
+              {/*
+                시안(C안 02)의 그날 목록. 폰에서는 시트 대신 **달력 바로 아래**
+                에 붙어, 날짜를 옮겨 가며 볼 수 있다. ≥768 은 시트가 맡으므로
+                내지 않는다.
+              */}
+              <section
+                className={`px-4 pb-6 pt-5 md:hidden ${
+                  mobileView === "list" ? "hidden" : ""
+                }`}
+              >
+                <div className="flex items-baseline gap-2 px-1">
+                  <h3 className="text-[16px] font-bold tracking-[-0.01em] text-[#1a1c20]">
+                    {selectedDayLabelShort}
+                  </h3>
+                  <span className="text-[13px] tabular-nums text-[#868b94]">
+                    {selectedDayPlans.length}
+                  </span>
+                  <span className="flex-1" />
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      onClick={() => openAddPlan(toDateStr(selectedDateParams))}
+                      className="text-[13px] font-bold text-[#ee2b8c] transition-colors hover:text-[#cc1873]"
+                    >
+                      추가
+                    </button>
+                  )}
+                </div>
+
+                {selectedDayPlans.length === 0 ? (
+                  <p className="px-1 pt-6 text-center text-[14px] text-[#868b94]">
+                    이 날은 비어 있어요
+                  </p>
+                ) : (
+                  <ul className="mt-3 grid gap-2">
+                    {selectedDayPlans.map((plan) => (
+                      <li key={plan.id}>
+                        <button
+                          type="button"
+                          onClick={() => openSchedule(plan.id)}
+                          className="flex w-full items-start gap-3 rounded-2xl bg-[#f7f8f9] p-4 text-left transition-colors active:bg-[#eeeff1]"
+                        >
+                          <span className="min-w-0 flex-1">
+                            <span className="font-user-content block truncate text-[16px] font-bold tracking-[-0.01em] text-[#1a1c20]">
+                              {plan.title}
+                            </span>
+                            <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[#555d6d]">
+                              <span className="rounded bg-[#fff1f7] px-1.5 py-px text-[11px] font-bold text-[#cc1873]">
+                                {plan.categoryName}
+                              </span>
+                              {formatKoreanTime(plan.startTime) ? (
+                                <span>{formatKoreanTime(plan.startTime)}</span>
+                              ) : null}
+                              <span
+                                className={`ml-auto shrink-0 tabular-nums ${
+                                  (plan.amount ?? 0) > 0
+                                    ? "text-[14px] font-bold text-[#1a1c20]"
+                                    : "text-[13px] font-medium text-[#868b94]"
+                                }`}
+                              >
+                                {(plan.amount ?? 0) > 0
+                                  ? `${(plan.amount ?? 0).toLocaleString("ko-KR")}만 원`
+                                  : "미정"}
+                              </span>
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              {/*
+                목록 뷰 — 달력 격자 대신 **다가오는 순 한 줄 목록**.
+                달 경계를 넘어 이어지므로 `boardItems`(전체 목록)를 쓴다.
+                달력 응답은 그 달만 주기 때문이다.
+              */}
+              {mobileView === "list" && (
+                <section className="px-4 pb-6 pt-4 md:hidden">
+                  {upcomingList.length === 0 ? (
+                    <p className="pt-10 text-center text-[14px] text-[#868b94]">
+                      아직 일정이 없어요
+                    </p>
+                  ) : (
+                    <ul>
+                      {upcomingList.map((item) => (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            onClick={() => openSchedule(item.id)}
+                            className="flex w-full items-center gap-3 border-b border-[#0000000c] px-1 py-3.5 text-left transition-colors active:bg-[#f7f8f9]"
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span
+                                className={`font-user-content block truncate text-[15px] font-medium ${
+                                  item.status === "COMPLETED"
+                                    ? "text-[#868b94] line-through"
+                                    : "text-[#1a1c20]"
+                                }`}
+                              >
+                                {item.title}
+                              </span>
+                              <span className="mt-0.5 block truncate text-[12px] text-[#868b94]">
+                                {item.categoryName}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-[13px] tabular-nums text-[#868b94]">
+                              {item.startDate?.trim()
+                                ? (() => {
+                                    const d = parseLocalDate(item.startDate);
+                                    return d
+                                      ? `${d.getMonth() + 1}월 ${d.getDate()}일`
+                                      : "날짜 미정";
+                                  })()
+                                : "날짜 미정"}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )}
             </>
           )}
         </div>
 
-        {/* 보드에는 컬럼마다 "+ 플랜 추가"가 있어 떠 있는 버튼이 필요 없다 */}
-        {!isReadOnly && !showBoard && (
-          <button
-            type="button"
-            onClick={() => openAddPlan(null)}
-            className="absolute bottom-28 right-6 w-14 h-14 bg-[#ee2b8c] text-white rounded-full flex items-center justify-center shadow-xl shadow-[#ee2b8c44] active:scale-95 transition-transform z-50 md:bottom-8"
-          >
-            <Plus className="w-8 h-8" strokeWidth={3} />
-          </button>
-        )}
+        {/*
+          떠 있던 분홍 FAB 는 없앴다. 오른쪽 아래에 앉아 **마지막 주를 가렸고**,
+          날짜를 안 정한 채로 추가를 시작하게 만들었다. 추가는 두 자리에 있다 —
+          머리 면의 `+`(날짜 미정으로 시작), 그리고 날짜를 누르면 나오는
+          그날 목록의 "플랜 추가하기"(그 날짜로 시작).
+          보드에는 컬럼마다 "+ 플랜 추가"가 이미 있다.
+        */}
       </div>
 
       {/* Day Detail Modal */}

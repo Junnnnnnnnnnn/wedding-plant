@@ -2,7 +2,7 @@
 
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, ThumbsUp } from "lucide-react";
+import { ChevronRight, Plus, ThumbsUp } from "lucide-react";
 import { FeedMyStatus, FeedPost, FeedVote, PostableSchedule } from "@/types";
 import { getToken } from "@/lib/api";
 import AppShell from "../components/AppShell";
@@ -330,54 +330,88 @@ const FeedPageContent: React.FC = () => {
 
   return (
     <AppShell activeTab="feed" activeRailView="feed" unreadCount={unreadCount}>
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-stone-100 bg-white px-6 py-4 md:px-8 md:py-5">
+      {/* 폰은 분홍 머리 면, ≥768 은 대시보드와 같은 흰 머리글 띠 */}
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 py-5 md:rounded-none md:border-b md:border-stone-100 md:bg-white md:bg-none md:px-8 md:py-5">
         <div className="min-w-0">
-          <h1 className="truncate text-[20px] font-bold leading-tight tracking-[-0.02em] text-[#1b0d14] md:text-[22px]">
+          <h1 className="truncate text-[20px] font-bold leading-tight tracking-[-0.02em] text-white md:text-[22px] md:text-[#1b0d14]">
             피드
           </h1>
-          <p className="mt-1 text-[12.5px] text-[#7a6c74]">
+          <p className="mt-1 text-[12.5px] text-white/80 md:text-[#7a6c74]">
             다른 커플은 얼마 썼을까
           </p>
         </div>
+        {/* 시안(C안 04)은 아이콘 하나다. 무엇을 올리는지는 아래 상자가 말한다 */}
         <button
           type="button"
           onClick={openPostable}
-          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#ee2b8c33] bg-white px-4 py-2 text-[12.5px] font-bold text-[#ee2b8c] transition-colors hover:bg-[#fff2f6]"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white transition-colors hover:bg-white/20 md:h-auto md:w-auto md:rounded-full md:border md:border-[#ee2b8c33] md:bg-white md:px-4 md:py-2 md:text-[#ee2b8c] md:hover:bg-[#fff2f6]"
+          aria-label="내 후기 올리기"
         >
-          <Plus className="h-4 w-4" />내 후기 올리기
+          <Plus className="h-[22px] w-[22px] md:h-4 md:w-4" />
+          <span className="hidden md:inline">내 후기 올리기</span>
         </button>
+
+        {/*
+          안 올린 일정은 **면 안**으로 넣는다(시안 C안 04). 예전에는 목록 위
+          분홍 띠라, 보러 온 후기가 한 화면 아래로 밀렸다. 공급이 이 기능의
+          생사이므로 없애지는 않는다 — 자리만 옮긴다.
+        */}
+        {(myStatus?.postableScheduleCount ?? 0) > 0 && (
+          <button
+            type="button"
+            onClick={openPostable}
+            className="mt-4 flex w-full items-center gap-3 rounded-xl bg-white/20 px-4 py-3 text-left text-white transition-colors hover:bg-white/25 md:hidden"
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-bold">
+                완료한 일정 {myStatus?.postableScheduleCount}개를 아직 안
+                올렸어요
+              </span>
+              <span className="mt-0.5 block text-[12px] text-white/75">
+                올리면 다른 커플의 후기도 더 잘 보입니다
+              </span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+          </button>
+        )}
       </header>
 
       <div className="@container no-scrollbar flex-1 overflow-y-auto px-4 pt-4 pb-28 md:mx-auto md:w-full md:max-w-[1400px] md:px-8 md:pt-5 md:pb-10">
         {/* 카테고리 · 정렬 */}
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="mb-4 grid gap-3">
           <div className="no-scrollbar -mx-1 flex max-w-full gap-1.5 overflow-x-auto px-1 py-0.5">
             {chips.map((name) => (
               <button
                 key={name}
                 type="button"
                 onClick={() => setCategory(name)}
-                className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[12.5px] font-bold transition-colors ${
+                /* 시안(C안 04)의 채움 칩. 활성은 검정 solid — 분홍은 "누를 것"에만 쓴다 */
+                className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] transition-colors ${
                   category === name
-                    ? "border-[#ee2b8c] bg-[#ee2b8c] text-white"
-                    : "border-[#efe7eb] bg-white text-[#7a6c74] hover:border-[#ee2b8c33]"
+                    ? "bg-[#1a1c20] font-bold text-white"
+                    : "bg-[#f7f8f9] font-medium text-[#555d6d] hover:bg-[#eeeff1]"
                 }`}
               >
                 {name}
               </button>
             ))}
           </div>
-          <div className="ml-auto inline-flex shrink-0 gap-0.5 rounded-full bg-[#f4eff2] p-[3px]">
+          {/*
+            정렬은 **글자**다(시안 C안 04). 알약으로 두면 카테고리 칩과 같은
+            층위로 보이는데, 카테고리는 "무엇을" 이고 정렬은 "어떻게" 라
+            성격이 다르다.
+          */}
+          <div className="flex w-full shrink-0 gap-3 px-1">
             {SORTS.map((item) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => setSort(item.key)}
                 aria-pressed={sort === item.key}
-                className={`rounded-full px-3 py-1.5 text-[12.5px] font-bold transition-all ${
+                className={`text-[13px] transition-colors ${
                   sort === item.key
-                    ? "bg-white text-[#1b0d14] shadow-sm"
-                    : "text-[#7a6c74] hover:text-[#1b0d14]"
+                    ? "font-bold text-[#1a1c20]"
+                    : "font-medium text-[#868b94] hover:text-[#555d6d]"
                 }`}
               >
                 {item.label}
@@ -395,25 +429,6 @@ const FeedPageContent: React.FC = () => {
           후기가 한 화면 아래로 밀린다 — 한 줄로 줄이고 나머지는 목록 아래
           사이드에 둔다.
         */}
-        {(myStatus?.postableScheduleCount ?? 0) > 0 && (
-          <button
-            type="button"
-            onClick={openPostable}
-            className="mb-3 flex w-full items-center gap-2 rounded-2xl border border-[#ee2b8c22] bg-[#fff7fa] px-4 py-3 text-left @[900px]:hidden"
-          >
-            <span className="min-w-0 flex-1 text-[12.5px] leading-relaxed text-[#7a6c74]">
-              완료한 일정{" "}
-              <b className="font-bold text-[#1b0d14]">
-                {myStatus?.postableScheduleCount}개
-              </b>
-              를 아직 안 올렸어요
-            </span>
-            <span className="shrink-0 rounded-full bg-[#ee2b8c] px-3 py-1.5 text-[12px] font-bold text-white">
-              올리기
-            </span>
-          </button>
-        )}
-
         <div className="grid gap-4 @[900px]:grid-cols-[minmax(0,1fr)_300px] @[900px]:items-start @[900px]:gap-5">
           <div>
             {listLoading ? (
@@ -443,7 +458,8 @@ const FeedPageContent: React.FC = () => {
               </div>
             ) : (
               <>
-                <div className="space-y-2.5">
+                {/* 폰은 구분선 목록이라 간격을 두지 않는다. ≥768 은 카드 간격 유지 */}
+                <div className="md:space-y-2.5">
                   {posts.map((post) => (
                     <FeedCard
                       key={post.id}

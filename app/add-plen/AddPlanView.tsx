@@ -167,10 +167,32 @@ export default function AddPlanView({
    * 폭이지만 옆에 보드가 함께 있어, 같은 크기로 두면 화면이 시끄럽다.
    * 카드 여백과 입력 글자만 한 단계 줄인다.
    */
+  /*
+    폰은 카드 8장이 아니라 **시트 한 장**이다. 카드마다 테두리·그림자·여백이
+    붙어 실제로 채우는 칸보다 껍데기가 더 컸고, 저장 버튼까지 두 번 스크롤해야
+    닿았다. 구분선으로만 나누면 세로가 절반 가까이 줄어든다.
+    (웹은 이미 시트 한 장이다 — `docs/concepts/add-plen-a1-sheet.html`)
+    pane 은 폭이 좁아 예전 카드 여백을 유지한다.
+  */
   const cardClass = isPane
     ? "bg-white p-4 rounded-2xl shadow-sm border border-stone-100"
-    : "bg-white p-5 rounded-2xl shadow-sm border border-stone-100";
+    : "bg-white px-5 py-4 border-b border-[#0000000c]";
   const fieldTextClass = isPane ? "text-[15px]" : "text-lg";
+  /*
+    시안(C안 07)의 시트다. 폰은 **84px 라벨 열 + 구분선** 한 장이고,
+    입력 칸은 테두리 없는 `#f7f8f9` 면이다. pane 은 폭이 좁아 예전 카드를
+    그대로 쓴다 — 84px 을 라벨에 떼어 주면 값이 들어갈 자리가 안 남는다.
+  */
+  const rowClass = isPane
+    ? cardClass
+    : "border-t border-[#0000000c] bg-white px-4 py-3";
+  const rowGridClass = isPane
+    ? ""
+    : "grid grid-cols-[84px_minmax(0,1fr)] items-center gap-3";
+  const labelClass = isPane
+    ? "block text-sm font-semibold text-stone-600 mb-2"
+    : "text-[13px] font-bold text-[#555d6d]";
+  const stackLabelClass = isPane ? labelClass : `${labelClass} mb-2 block`;
   const dateParam = initialDate;
   const fromParam = from;
 
@@ -418,6 +440,21 @@ export default function AddPlanView({
   const highlightedCategoryRef = useRef<HTMLDivElement>(null);
   /** 모달/칩으로 카테고리를 직접 선택했을 때 true → 제목 추천 칩 영역 숨김. 제목 입력 변경 시 false로 리셋되어 제목 매칭 시 다시 표시 */
   const [categorySelectedByUser, setCategorySelectedByUser] = useState(false);
+
+  /*
+    제목 칸은 폰에서는 머리 면 안에, pane 에서는 시트 첫 칸에 있다. 값을
+    바꾸면 카테고리 추천이 다시 도는 규칙이 둘 다 같아야 해서 props 를
+    한 곳에서 만든다.
+  */
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    setCategorySelectedByUser(false);
+  };
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    if (!inputValue.trim()) e.preventDefault();
+    e.stopPropagation();
+  };
   const [userAddedCategories, setUserAddedCategories] = useState<
     Array<{ color: string; label: string }>
   >([]);
@@ -1139,6 +1176,16 @@ export default function AddPlanView({
     return `${year}-${month}-${day}`;
   };
 
+  /**
+   * 화면에 보이는 날짜. 저장에 쓰는 `formatDate`(YYYY-MM-DD)와 다르다 —
+   * 시안(C안 07)은 일자 줄에 `2026년 9월 12일 (토)` 로 적는다. 요일이
+   * 있어야 "그날이 주말인가"를 여기서 바로 판단한다.
+   */
+  const formatDateLabel = (date: Date): string => {
+    const day = ["일", "월", "화", "수", "목", "금", "토"][date.getDay()];
+    return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${day})`;
+  };
+
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
     setIsDateUndecided(false);
@@ -1391,18 +1438,43 @@ export default function AddPlanView({
               </button>
             </div>
           ) : (
-            <div className="absolute top-0 left-0 z-50 w-full pointer-events-none">
-              <div className="px-6 py-4 pointer-events-auto">
+            /*
+              폰은 **분홍 머리 면**. 예전에는 떠 있는 "뒤로가기" 알약 + 그 아래
+              32px/42px 두 줄 제목이 화면 위쪽 200px 가까이를 썼다. 면 안으로
+              합치면 첫 입력 칸이 그만큼 올라온다.
+            */
+            <div className="shrink-0 rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-4 pb-5 pt-4">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={leaveScreen}
-                  className="flex items-center gap-2 text-stone-500 hover:bg-stone-100 px-3 py-1.5 rounded-full transition-colors w-fit bg-white/50 backdrop-blur-sm"
+                  className="-ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full text-white transition-colors hover:bg-white/20"
                   aria-label="뒤로가기"
                 >
-                  <ArrowLeft className="w-5 h-5" />
-                  <span className="font-semibold">뒤로가기</span>
+                  <ArrowLeft className="h-5 w-5" />
                 </button>
+                <span className="text-[18px] font-bold tracking-[-0.02em] text-white">
+                  {editId ? "플랜 수정" : "플랜 추가"}
+                </span>
               </div>
+              {/*
+                제목이 면으로 올라온다(시안 C안 07). 이 화면에서 **가장 먼저
+                정해지고 끝까지 안 바뀌는 값**이라, 아래로 스크롤해도 무엇을
+                만들고 있는지 계속 보인다. 예전에는 시트 첫 칸이라 스크롤하면
+                사라졌다.
+              */}
+              <input
+                id="plan-name"
+                type="text"
+                value={inputValue}
+                onChange={handleTitleChange}
+                onKeyDown={handleTitleKeyDown}
+                placeholder="어떤 지출인가요?"
+                className="font-user-content mt-3 w-full bg-transparent text-[24px] font-bold leading-tight tracking-[-0.03em] text-white outline-none placeholder:text-white/50"
+              />
+              <p className="mt-1 text-[14px] text-white/80">
+                제목을 누르면 고칠 수 있어요
+              </p>
             </div>
           )}
 
@@ -1411,23 +1483,12 @@ export default function AddPlanView({
             className={
               isPane
                 ? "flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-5 pt-5 pb-10"
-                : "flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 pt-14 pb-24 md:px-8 md:pb-12"
+                : "flex min-h-0 flex-1 flex-col items-center overflow-y-auto pb-24 md:px-8 md:pt-5 md:pb-12"
             }
           >
-            {!isPane && (
-              <div className="w-full pt-2 md:max-w-[680px]">
-                <div className="flex flex-col items-start justify-start">
-                  <span className="text-[32px] font-semibold text-[#ee2b8c] leading-none">
-                    {editId ? "플랜 수정" : "계획을 추가해보세요"}
-                  </span>
-                  <span className="text-[42px] font-semibold text-[#1b0d14] leading-none mt-2">
-                    {editId ? "수정하기" : "플랜 추가"}
-                  </span>
-                </div>
-              </div>
-            )}
+            {/* 제목은 위 분홍 머리 면이 가져갔다 — 같은 말을 두 번 하지 않는다 */}
             {editId && isLoadingDetail && (
-              <div className="mt-6 w-full space-y-5 animate-pulse">
+              <div className="mt-6 w-full animate-pulse space-y-5 px-4 md:px-0">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
@@ -1441,36 +1502,26 @@ export default function AddPlanView({
               className={
                 isPane
                   ? "w-full space-y-4"
-                  : "mt-6 w-full space-y-5 md:max-w-[680px]"
+                  : "w-full bg-white md:max-w-[680px] md:overflow-hidden md:rounded-2xl md:border md:border-stone-100"
               }
             >
-              {/* 제목 */}
-              <div className={cardClass}>
-                <label className="block text-sm font-semibold text-stone-600 mb-2">
-                  제목 <span className="text-[#ee2b8c]">*</span>
-                </label>
-                <input
-                  id="plan-name"
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => {
-                    setInputValue(e.target.value);
-                    setCategorySelectedByUser(false);
-                  }}
-                  placeholder="어떤 지출인가요?"
-                  className={`w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-user-content font-extrabold ${fieldTextClass}`}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      if (!inputValue.trim()) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      } else {
-                        e.stopPropagation();
-                      }
-                    }
-                  }}
-                />
-              </div>
+              {/* 제목. 폰은 위 머리 면이 가져갔다 — 같은 칸을 두 번 두지 않는다 */}
+              {isPane && (
+                <div className={cardClass}>
+                  <label className="block text-sm font-semibold text-stone-600 mb-2">
+                    제목 <span className="text-[#ee2b8c]">*</span>
+                  </label>
+                  <input
+                    id="plan-name"
+                    type="text"
+                    value={inputValue}
+                    onChange={handleTitleChange}
+                    onKeyDown={handleTitleKeyDown}
+                    placeholder="어떤 지출인가요?"
+                    className={`w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-user-content font-extrabold ${fieldTextClass}`}
+                  />
+                </div>
+              )}
               {/* 카테고리 */}
               <AnimatePresence>
                 {showCategory && (
@@ -1481,32 +1532,50 @@ export default function AddPlanView({
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
                   >
-                    <div className={cardClass}>
-                      <label className="block text-sm font-semibold text-stone-600 mb-2">
-                        카테고리 <span className="text-[#ee2b8c]">*</span>
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={handleOpenModal}
-                          className={`flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${
-                            selectedCategory
-                              ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
-                              : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                          }`}
+                    <div className={rowClass}>
+                      <div className={rowGridClass}>
+                        <label className={labelClass}>
+                          카테고리{" "}
+                          {isPane && <span className="text-[#ee2b8c]">*</span>}
+                        </label>
+                        {/* 폰은 값 한 줄이다(시안). 누르면 같은 모달이 열린다 */}
+                        <div
+                          className={
+                            isPane ? "flex items-center gap-2" : "min-w-0"
+                          }
                         >
-                          {selectedCategory
-                            ? selectedCategory.label
-                            : "카테고리 선택"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleOpenModal}
-                          className="w-14 h-14 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-center hover:bg-stone-100 transition-colors flex-shrink-0"
-                          aria-label="카테고리 추가"
-                        >
-                          <Plus className="w-6 h-6 text-stone-400" />
-                        </button>
+                          <button
+                            type="button"
+                            onClick={handleOpenModal}
+                            className={
+                              isPane
+                                ? `flex-1 px-4 py-4 rounded-2xl text-left transition-all border font-user-content font-extrabold ${
+                                    selectedCategory
+                                      ? "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                                      : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                                  }`
+                                : `w-full truncate text-left text-[16px] ${
+                                    selectedCategory
+                                      ? "text-[#1a1c20]"
+                                      : "text-[#b0b4bb]"
+                                  }`
+                            }
+                          >
+                            {selectedCategory
+                              ? selectedCategory.label
+                              : "카테고리 선택"}
+                          </button>
+                          {isPane && (
+                            <button
+                              type="button"
+                              onClick={handleOpenModal}
+                              className="w-14 h-14 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-center hover:bg-stone-100 transition-colors flex-shrink-0"
+                              aria-label="카테고리 추가"
+                            >
+                              <Plus className="w-6 h-6 text-stone-400" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       {/* 검색 결과 - 제목 입력 시 추천 카테고리 (모달/칩으로 직접 선택했을 때는 숨김, 제목 수정 시 다시 표시) */}
                       {inputValue.trim() &&
@@ -1555,9 +1624,10 @@ export default function AddPlanView({
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
                   >
-                    <div className={cardClass}>
-                      <label className="block text-sm font-semibold text-stone-600 mb-2">
-                        결제 유형 <span className="text-[#ee2b8c]">*</span>
+                    <div className={rowClass}>
+                      <label className={stackLabelClass}>
+                        결제 유형{" "}
+                        {isPane && <span className="text-[#ee2b8c]">*</span>}
                       </label>
                       <div className="grid grid-cols-3 gap-2">
                         {(["현금", "카드", "기타"] as const).map((type) => (
@@ -1565,11 +1635,19 @@ export default function AddPlanView({
                             key={type}
                             type="button"
                             onClick={() => setPaymentType(type)}
-                            className={`py-3 rounded-xl font-medium transition-all text-sm border ${
-                              paymentType === type
-                                ? "bg-stone-800 text-white shadow-sm border-stone-800"
-                                : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                            }`}
+                            className={
+                              isPane
+                                ? `py-3 rounded-xl font-medium transition-all text-sm border ${
+                                    paymentType === type
+                                      ? "bg-stone-800 text-white shadow-sm border-stone-800"
+                                      : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                                  }`
+                                : `rounded-[10px] py-3 text-[14px] transition-colors ${
+                                    paymentType === type
+                                      ? "bg-[#2a3038] font-bold text-white"
+                                      : "bg-[#f7f8f9] font-medium text-[#555d6d] hover:bg-[#edeef0]"
+                                  }`
+                            }
                           >
                             {type}
                           </button>
@@ -1588,13 +1666,11 @@ export default function AddPlanView({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
-                    className="space-y-5"
+                    className={isPane ? "space-y-5" : undefined}
                   >
                     {/* 금액 */}
-                    <div className={cardClass}>
-                      <label className="block text-sm font-semibold text-stone-600 mb-2">
-                        금액
-                      </label>
+                    <div className={rowClass}>
+                      <label className={stackLabelClass}>금액</label>
                       <div className="relative">
                         <input
                           id="plan-amount"
@@ -1603,7 +1679,12 @@ export default function AddPlanView({
                           value={amount}
                           onChange={handleAmountChange}
                           placeholder="0"
-                          className={`w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-300 font-medium ${fieldTextClass} text-right pr-12`}
+                          className={
+                            isPane
+                              ? `w-full px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-300 font-medium ${fieldTextClass} text-right pr-12`
+                              : /* 시안 .amt — 숫자가 크고 단위는 작다 */
+                                "font-user-content w-full rounded-xl bg-[#f7f8f9] py-3 pl-4 pr-14 text-right text-[24px] font-bold tracking-[-0.03em] text-[#1a1c20] outline-none placeholder:text-[#b0b4bb] [font-variant-numeric:tabular-nums]"
+                          }
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
                               if (!amount.trim()) {
@@ -1615,56 +1696,84 @@ export default function AddPlanView({
                             }
                           }}
                         />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-medium">
-                          만원
+                        <span
+                          className={
+                            isPane
+                              ? "absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-medium"
+                              : "absolute bottom-3 right-4 text-[14px] text-[#555d6d]"
+                          }
+                        >
+                          만 원
                         </span>
                       </div>
                     </div>
                     {/* 일자 */}
-                    <div className={cardClass}>
-                      <label className="block text-sm font-semibold text-stone-600 mb-2">
-                        일자
-                      </label>
-                      <div className="flex gap-2">
+                    <div className={rowClass}>
+                      <div className={rowGridClass}>
+                        <label className={labelClass}>일자</label>
                         <div
-                          className={`flex-1 px-4 py-4 rounded-2xl ${fieldTextClass} font-medium transition-all cursor-pointer flex items-center justify-center border ${
-                            isDateUndecided
-                              ? "bg-stone-50 text-stone-300 border-stone-200"
-                              : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
-                          }`}
-                          onClick={() => {
-                            setIsDateUndecided(false);
-                            setIsDatePickerOpen(true);
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
+                          className={
+                            isPane ? "flex gap-2" : "flex items-center gap-3"
+                          }
+                        >
+                          <div
+                            className={
+                              isPane
+                                ? `flex-1 px-4 py-4 rounded-2xl ${fieldTextClass} font-medium transition-all cursor-pointer flex items-center justify-center border ${
+                                    isDateUndecided
+                                      ? "bg-stone-50 text-stone-300 border-stone-200"
+                                      : "bg-[#ee2b8c]/5 text-[#ee2b8c] border-[#ee2b8c]/20"
+                                  }`
+                                : `min-w-0 flex-1 cursor-pointer truncate text-[16px] ${
+                                    isDateUndecided
+                                      ? "text-[#b0b4bb]"
+                                      : "text-[#1a1c20]"
+                                  }`
+                            }
+                            onClick={() => {
                               setIsDateUndecided(false);
                               setIsDatePickerOpen(true);
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setIsDateUndecided(false);
+                                setIsDatePickerOpen(true);
+                              }
+                            }}
+                          >
+                            {isDateUndecided
+                              ? "미정"
+                              : formatDateLabel(selectedDate)}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsDateUndecided(!isDateUndecided)}
+                            className={
+                              isPane
+                                ? `px-6 rounded-2xl font-medium transition-all text-sm border ${
+                                    isDateUndecided
+                                      ? "bg-stone-800 text-white border-stone-800"
+                                      : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
+                                  }`
+                                : `shrink-0 rounded-full px-3 py-1 text-[12px] font-bold transition-colors ${
+                                    isDateUndecided
+                                      ? "bg-[#2a3038] text-white"
+                                      : "bg-[#f7f8f9] text-[#868b94] hover:bg-[#edeef0]"
+                                  }`
                             }
-                          }}
-                        >
-                          {isDateUndecided ? "미정" : formatDate(selectedDate)}
+                          >
+                            미정
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setIsDateUndecided(!isDateUndecided)}
-                          className={`px-6 rounded-2xl font-medium transition-all text-sm border ${
-                            isDateUndecided
-                              ? "bg-stone-800 text-white border-stone-800"
-                              : "bg-stone-50 text-stone-400 border-stone-200 hover:bg-stone-100"
-                          }`}
-                        >
-                          미정
-                        </button>
                       </div>
                       {/*
                       시간은 선택이다. 날짜만 잡아 두는 일정이 훨씬 많아서
                       비워 두는 걸 기본으로 하고, 날짜가 미정이면 아예 감춘다.
                     */}
-                      {!isDateUndecided && (
+                      {!isDateUndecided && isPane && (
                         <div className="mt-2 flex items-center gap-2">
                           <Clock className="w-4 h-4 text-stone-400 shrink-0" />
                           <input
@@ -1687,11 +1796,44 @@ export default function AddPlanView({
                         </div>
                       )}
                     </div>
+                    {/*
+                      시각은 시안에서 **일자와 나란한 자기 줄**이다. 날짜가
+                      미정이면 시각도 뜻이 없어 줄째로 감춘다.
+                    */}
+                    {!isDateUndecided && !isPane && (
+                      <div className={rowClass}>
+                        <div className={rowGridClass}>
+                          <label className={labelClass} htmlFor="plan-time">
+                            시각
+                          </label>
+                          <div className="flex items-center gap-3">
+                            <input
+                              id="plan-time"
+                              type="time"
+                              value={startTime}
+                              onChange={(e) => setStartTime(e.target.value)}
+                              step={300}
+                              aria-label="시작 시각"
+                              className={`min-w-0 flex-1 bg-transparent text-[16px] outline-none ${
+                                startTime ? "text-[#1a1c20]" : "text-[#b0b4bb]"
+                              }`}
+                            />
+                            {startTime ? (
+                              <button
+                                type="button"
+                                onClick={() => setStartTime("")}
+                                className="shrink-0 rounded-full bg-[#f7f8f9] px-3 py-1 text-[12px] font-bold text-[#868b94] transition-colors hover:bg-[#edeef0]"
+                              >
+                                지우기
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {/* 위치 */}
-                    <div className={cardClass}>
-                      <label className="block text-sm font-semibold text-stone-600 mb-2">
-                        위치
-                      </label>
+                    <div className={rowClass}>
+                      <label className={stackLabelClass}>위치</label>
                       <div className="flex items-center gap-2 mb-2">
                         <input
                           id="plan-location"
@@ -1717,7 +1859,11 @@ export default function AddPlanView({
                             }
                           }}
                           placeholder="예식장, 스튜디오 등"
-                          className="flex-1 min-w-0 px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-user-content font-semibold"
+                          className={
+                            isPane
+                              ? "flex-1 min-w-0 px-4 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all text-stone-800 placeholder:text-stone-400 font-user-content font-semibold"
+                              : "font-user-content min-w-0 flex-1 rounded-xl bg-[#f7f8f9] px-4 py-3 text-[16px] text-[#1a1c20] outline-none transition-colors placeholder:text-[#b0b4bb] focus:bg-[#f1f2f4]"
+                          }
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.stopPropagation();
@@ -1737,13 +1883,21 @@ export default function AddPlanView({
                           type="button"
                           onClick={handleSearchLocation}
                           disabled={!location.trim()}
-                          className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${
-                            location.trim()
-                              ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
-                              : "bg-stone-100 text-stone-400 border-stone-200"
-                          }`}
+                          className={
+                            isPane
+                              ? `w-14 h-14 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 border ${
+                                  location.trim()
+                                    ? "bg-stone-800 text-white border-stone-800 hover:bg-stone-700 shadow-sm"
+                                    : "bg-stone-100 text-stone-400 border-stone-200"
+                                }`
+                              : `grid h-11 w-11 flex-shrink-0 place-items-center rounded-xl transition-colors ${
+                                  location.trim()
+                                    ? "bg-[#2a3038] text-white hover:bg-[#3a4149]"
+                                    : "bg-[#f7f8f9] text-[#868b94]"
+                                }`
+                          }
                         >
-                          <Search className="w-5 h-5" />
+                          <Search className="h-[18px] w-[18px]" />
                         </button>
                       </div>
                       {/* 검색 결과 목록 */}
@@ -1853,10 +2007,8 @@ export default function AddPlanView({
                     </div>
 
                     {/* 메모 */}
-                    <div className={cardClass}>
-                      <label className="block text-sm font-semibold text-stone-600 mb-2">
-                        메모
-                      </label>
+                    <div className={rowClass}>
+                      <label className={stackLabelClass}>메모</label>
                       <div className="relative">
                         <textarea
                           ref={memoTextareaRef}
@@ -1872,7 +2024,11 @@ export default function AddPlanView({
                             }
                           }}
                           placeholder="메모 남기기"
-                          className="w-full min-h-[100px] px-4 py-4 pb-8 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all resize-none text-stone-800 placeholder:text-stone-400 font-user-content font-semibold"
+                          className={
+                            isPane
+                              ? "w-full min-h-[100px] px-4 py-4 pb-8 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ee2b8c]/20 transition-all resize-none text-stone-800 placeholder:text-stone-400 font-user-content font-semibold"
+                              : "font-user-content w-full min-h-[76px] resize-none rounded-xl bg-[#f7f8f9] px-4 py-3 pb-8 text-[14px] text-[#1a1c20] outline-none transition-colors placeholder:text-[#b0b4bb] focus:bg-[#f1f2f4]"
+                          }
                           style={{ height: "auto" }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
@@ -1885,7 +2041,7 @@ export default function AddPlanView({
                             }
                           }}
                         />
-                        <div className="absolute bottom-3 right-3 text-xs text-stone-400 font-medium">
+                        <div className="absolute bottom-2 right-4 text-[12px] text-[#868b94] md:font-medium">
                           {memo.length}/500
                         </div>
                       </div>
@@ -1900,12 +2056,20 @@ export default function AddPlanView({
               selectedCategory &&
               paymentType &&
               !isLoadingDetail && (
-                <div className="mt-8 w-full">
+                <div
+                  className={
+                    isPane
+                      ? "mt-8 w-full"
+                      : /* 시안 .save — 시트 아래에 붙는다. 예전에는 목록 맨
+                           끝이라 탭바에 가렸다 */
+                        "sticky bottom-0 z-10 w-full border-t border-[#0000001a] bg-white px-4 pb-4 pt-3 md:static md:border-0 md:bg-transparent md:px-0 md:pb-0"
+                  }
+                >
                   <button
                     type="button"
                     disabled={isSaving}
                     onClick={handleSavePlan}
-                    className="w-full px-6 py-4 bg-[#ee2b8c] text-white font-bold text-lg rounded-xl hover:bg-[#d4237b] transition-colors shadow-lg shadow-[#ee2b8c44] active:scale-[0.98] transform disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full rounded-xl bg-[#ee2b8c] px-6 py-4 text-[16px] font-bold text-white transition-colors hover:bg-[#d4237b] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {isSaving
                       ? editId
@@ -2317,7 +2481,7 @@ export default function AddPlanView({
   if (isPane) return content;
 
   return (
-    <AppShell activeTab="home" activeRailView="home" gridBackground>
+    <AppShell activeTab="home" activeRailView="home">
       {content}
     </AppShell>
   );

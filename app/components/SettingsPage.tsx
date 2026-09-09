@@ -62,26 +62,46 @@ const Field: React.FC<{
   label: string;
   /** 라벨 옆 회색 보조 문구 ("(선택)" 등) */
   labelHint?: string;
-  /** 오른쪽 끝 단위·안내 ("만원", "눌러서 바꾸기") */
+  /** 오른쪽 끝 안내 문구 ("눌러서 바꾸기"). 넓은 화면에만 낸다 */
   suffix?: string;
+  /** 값 옆에 붙는 단위 ("만 원"). 폭과 무관하게 상자 안 오른쪽 끝이다 */
+  unit?: string;
   children: React.ReactNode;
-}> = ({ label, labelHint, suffix, children }) => (
-  <div className="rounded-2xl border border-[#efe7eb] bg-white px-4 py-2.5 transition-all focus-within:border-[#ee2b8c] focus-within:ring-4 focus-within:ring-[#ee2b8c14]">
+}> = ({ label, labelHint, suffix, unit, children }) => (
+  /*
+    SEED 채움 필드 — 테두리 대신 회색 바탕(layer-fill)으로 입력 칸임을 알린다.
+    라벨은 어느 폭에서도 항상 띄운다(placeholder 만 있으면 값을 넣는 순간
+    무슨 칸인지 사라진다 — 화면에 `4200`, `2026-11-14` 만 남았다).
+
+    다만 **자리가 다르다.** 폰(시안 C안 09)은 라벨을 상자 **밖 위**로 올리고
+    상자에는 값만 둔다. 넓은 화면은 예전처럼 라벨을 상자 안에 넣는다 —
+    거기서는 폼이 오른쪽 열에 들어가 세로가 아까운 자리다.
+  */
+  <div className="md:rounded-2xl md:border md:border-transparent md:bg-[#f7f8f9] md:px-4 md:py-2.5 md:transition-all md:focus-within:border-[#ffc9e0] md:focus-within:bg-white">
     <div className="flex items-baseline justify-between gap-3">
-      <label className="text-[11.5px] text-gray-400">
+      <label className="text-[13px] font-bold text-[#555d6d] md:text-[11.5px] md:font-normal md:text-gray-400">
         {label}
         {labelHint && <span className="ml-1 text-gray-300">{labelHint}</span>}
       </label>
       {suffix && (
-        <span className="shrink-0 text-[11.5px] text-gray-400">{suffix}</span>
+        <span className="hidden shrink-0 text-[11.5px] text-gray-400 md:inline">
+          {suffix}
+        </span>
       )}
     </div>
-    {children}
+    <div className="mt-1.5 flex items-center gap-2 rounded-xl bg-[#f7f8f9] px-4 py-3 md:mt-0 md:rounded-none md:bg-transparent md:p-0">
+      <div className="min-w-0 flex-1">{children}</div>
+      {unit && (
+        <span className="shrink-0 text-[14px] text-[#555d6d] md:hidden">
+          {unit}
+        </span>
+      )}
+    </div>
   </div>
 );
 
 const INPUT_CLASS =
-  "w-full bg-transparent text-[15px] font-bold tracking-[-0.01em] text-[#1b0d14] outline-none placeholder:font-normal placeholder:text-[#c8bfc4]";
+  "w-full bg-transparent text-[16px] font-medium tracking-[-0.01em] text-[#1a1c20] outline-none placeholder:font-normal placeholder:text-[#b0b4bb] md:text-[15px] md:font-bold md:text-[#1b0d14] md:placeholder:text-[#c8bfc4]";
 
 const SettingsPage: React.FC<SettingsPageProps> = ({
   user,
@@ -167,7 +187,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       />
     ) : (
       <div
-        className={`flex shrink-0 items-center justify-center rounded-full border-2 border-[#ee2b8c22] bg-gradient-to-br from-[#ee2b8c] to-[#ff7eb3] font-black text-white ${
+        className={`flex shrink-0 items-center justify-center rounded-full border-2 border-white/50 bg-white/20 font-black text-white md:border-[#ee2b8c22] md:bg-gradient-to-br md:from-[#ee2b8c] md:to-[#ff7eb3] ${
           size === "lg" ? "h-[68px] w-[68px] text-[26px]" : "h-11 w-11 text-lg"
         }`}
         aria-hidden
@@ -178,29 +198,40 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-[#fcfbfc]">
-      {/* 다른 화면과 같은 머리글 띠 */}
-      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-stone-100 bg-white px-6 py-4 md:px-8 md:py-5">
+      {/*
+        폰은 **분홍 머리 면**, ≥768 은 예전의 흰 머리글 띠 그대로다.
+        C안은 모바일 리디자인이고, 넓은 화면은 대시보드 카드 언어를 쓰기로
+        이미 정해 둔 자리라 섞지 않는다.
+
+        닫기(X)는 폰에서 내지 않는다 — 이 화면은 탭 목적지라 "닫으면" 갈 곳이
+        정해져 있지 않고, 나가는 길은 하단 탭바가 이미 넷 다 갖고 있다.
+        D-day 는 여전히 **여기 한 곳에만** 둔다(옆 미리보기 카드에 또 넣으면
+        넓은 화면에서 같은 값이 두 번 보인다).
+      */}
+      <header className="flex shrink-0 items-center justify-between gap-4 rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 py-5 md:rounded-none md:border-b md:border-stone-100 md:bg-white md:bg-none md:px-8 md:py-5">
         <div className="flex min-w-0 items-center gap-3">
           {avatar("sm")}
           <div className="min-w-0">
-            <h2 className="truncate text-[20px] font-bold leading-tight tracking-[-0.02em] text-[#1b0d14] md:text-[22px]">
-              프로필
+            <h2 className="truncate text-[20px] font-bold leading-tight tracking-[-0.02em] text-white md:text-[22px] md:text-[#1b0d14]">
+              {formData.name?.trim() || "프로필"}
             </h2>
-            <p className="mt-1 text-[12.5px] text-[#7a6c74]">
-              결혼 정보를 관리해요
+            <p className="mt-1 text-[12.5px] text-white/80 md:text-[#7a6c74]">
+              결혼식까지 {ddayLabel.replace("D-", "")}
+              {ddayLabel.startsWith("D-") ? "일" : ""}
+              {/* 폰은 여기까지다(시안 C안 09). 바로 아래 "정보 수정" 이
+                  같은 말을 하고 있어 두 번 적을 자리가 아니다 */}
+              <span className="hidden md:inline"> · 결혼 정보를 관리해요</span>
             </p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {/* D-day 는 여기 한 곳에만 둔다. 옆 미리보기 카드에도 넣으면
-              넓은 화면에서 같은 값이 두 번 보인다 */}
-          <span className="rounded-full bg-[#fff2f6] px-3 py-1 text-[12.5px] font-bold text-[#ee2b8c]">
+          <span className="hidden rounded-full bg-[#fff2f6] px-3 py-1 text-[12.5px] font-bold text-[#ee2b8c] md:inline">
             {ddayLabel}
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-stone-400 transition-colors hover:bg-stone-50 hover:text-stone-600"
+            className="hidden h-10 w-10 items-center justify-center rounded-full text-stone-400 transition-colors hover:bg-stone-50 hover:text-stone-600 md:flex"
             aria-label="닫기"
           >
             <X className="h-6 w-6" />
@@ -270,7 +301,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
               한 번에 하나만 묻는다. 로그아웃을 확인하는 중에는 탈퇴 줄이,
               탈퇴를 확인하는 중에는 로그아웃 버튼이 사라진다.
             */}
-            <div className="rounded-[28px] border border-[#ee2b8c0f] bg-white p-5 shadow-sm">
+            <div className="border-t border-[#0000000c] pt-5 md:rounded-[28px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-5 md:pt-5 md:shadow-sm">
               {confirmWithdraw ? (
                 /*
                   탈퇴는 되돌릴 수 없다. "정말요?" 만 묻는 확인은 사용자가
@@ -376,10 +407,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
           </div>
           {/* 편집 폼 — 폰에서는 이게 첫 카드다 */}
-          <div className="order-1 rounded-[28px] border border-[#ee2b8c0f] bg-white p-6 shadow-sm @[860px]:order-2">
-            <p className="mb-4 text-[12.5px] text-gray-400">정보 수정</p>
+          <div className="order-1 md:rounded-[28px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-6 md:shadow-sm @[860px]:order-2">
+            {/* 시안은 섹션 제목이다 — 카드가 없으니 제목이 묶음을 만든다 */}
+            <p className="mb-4 text-[18px] font-bold tracking-[-0.02em] text-[#1a1c20] md:text-[12.5px] md:font-normal md:text-gray-400">
+              정보 수정
+            </p>
 
-            <div className="grid gap-3">
+            <div className="grid gap-4 md:gap-3">
               <Field label="이름">
                 <input
                   type="text"
@@ -401,9 +435,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsDatePickerOpen(true)}
-                  className="flex w-full items-center gap-2 text-left text-[15px] font-bold tracking-[-0.01em] text-[#1b0d14]"
+                  className="flex w-full items-center gap-2 text-left text-[16px] font-medium tracking-[-0.01em] text-[#1a1c20] md:text-[15px] md:font-bold md:text-[#1b0d14]"
                 >
-                  <Calendar className="h-4 w-4 shrink-0 text-[#ee2b8c]" />
+                  {/* 아이콘은 넓은 화면에만. 폰은 라벨이 이미 밖에 있어
+                      무슨 칸인지 두 번 말할 필요가 없다 */}
+                  <Calendar className="hidden h-4 w-4 shrink-0 text-[#ee2b8c] md:block" />
                   {formatKoreanDate(formData.weddingDate) || "날짜 선택"}
                 </button>
               </Field>
@@ -414,7 +450,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
               */}
               <Field label="예식장" labelHint="(선택)">
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 shrink-0 text-gray-300" />
+                  <MapPin className="hidden h-4 w-4 shrink-0 text-gray-300 md:block" />
                   <input
                     type="text"
                     placeholder="아직 안 정했어요"
@@ -427,9 +463,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 </div>
               </Field>
 
-              <Field label="예산" suffix="만원">
+              <Field label="예산" suffix="만원" unit="만 원">
                 <div className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4 shrink-0 text-gray-300" />
+                  <Wallet className="hidden h-4 w-4 shrink-0 text-gray-300 md:block" />
                   <input
                     type="number"
                     min={0}

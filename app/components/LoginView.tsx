@@ -16,56 +16,60 @@ export default function LoginView() {
   const expired = useSearchParams().get("expired") === "1";
 
   return (
-    <div className="grid-bg relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-[#fcfbfc] px-8 py-20">
-      <div className="pointer-events-none absolute right-[-20%] top-[-10%] h-80 w-80 rounded-full bg-[#ee2b8c11] blur-[100px]" />
-      <div className="pointer-events-none absolute bottom-[-10%] left-[-20%] h-80 w-80 rounded-full bg-purple-100/50 blur-[100px]" />
+    /*
+      로그인은 **들어오는 문**이다. 안에 들어와야 볼 것이 있는 화면이 아니라
+      들어올지 말지를 정하는 화면이라, 분홍을 머리에만 두지 않고 화면 전체로
+      편다 — 앱에서 초대 수락과 이 화면 둘만 그렇다.
 
-      <div className="z-10 w-full max-w-md space-y-4 text-center">
-        <div className="mb-6 inline-flex items-center justify-center rounded-[32px] border border-[#ee2b8c0a] bg-white p-4 shadow-xl shadow-[#ee2b8c11]">
+      점 패턴과 뿌연 원 두 개는 걷어냈다(SEED 기준: 표면은 민 바탕).
+    */
+    <div className="relative flex min-h-screen w-full flex-col justify-between overflow-hidden bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-8 pb-10 pt-20">
+      <div className="z-10 w-full max-w-md">
+        <div className="mb-8 inline-flex items-center justify-center rounded-[24px] bg-white p-3 shadow-lg shadow-black/10">
           <Image
             src="/images/icon.png"
             alt="웨딩 플랜트"
             width={128}
             height={128}
             quality={100}
-            className="h-16 w-16 rounded-[16px] object-contain"
+            className="h-14 w-14 rounded-[14px] object-contain"
           />
         </div>
 
         {expired ? (
           <>
-            <h1 className="text-3xl font-black tracking-tight text-[#1b0d14]">
-              다시 로그인해 주세요
+            <h1 className="text-[32px] font-black leading-tight tracking-[-0.045em] text-white">
+              다시
+              <br />
+              로그인해 주세요
             </h1>
-            <p className="text-base font-bold leading-snug text-gray-400">
+            <p className="mt-3 text-base font-bold leading-snug text-white/80">
               로그인이 만료됐어요.
               <br />
-              <span className="text-[#ee2b8c]">
-                플랜은 그대로 있으니 걱정 마세요.
-              </span>
+              플랜은 그대로 있으니 걱정 마세요.
             </p>
           </>
         ) : (
           <>
-            <h1 className="text-3xl font-black tracking-tight text-[#1b0d14]">
-              다시 오셨네요
+            <h1 className="text-[32px] font-black leading-tight tracking-[-0.045em] text-white">
+              다시
+              <br />
+              오셨네요
             </h1>
-            <p className="text-base font-bold leading-snug text-gray-400">
+            <p className="mt-3 text-base font-bold leading-snug text-white/80">
               카카오로 로그인하면
               <br />
-              <span className="text-[#ee2b8c]">이어서 준비할 수 있어요.</span>
+              이어서 준비할 수 있어요.
             </p>
           </>
         )}
       </div>
 
-      <div className="z-10 mt-16 flex w-full max-w-md flex-col items-center">
-        <div className="flex w-full justify-center">
-          <AuthButtons />
-        </div>
+      <div className="z-10 flex w-full max-w-md flex-col items-center">
+        <AuthButtons variant="onBrand" />
         <Link
           href="/"
-          className="mt-6 text-xs font-medium text-stone-400 underline underline-offset-4"
+          className="mt-4 text-xs font-medium text-white/70 underline underline-offset-4"
         >
           웨딩 플랜트가 처음이신가요?
         </Link>

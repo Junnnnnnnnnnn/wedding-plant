@@ -97,7 +97,13 @@ const FeedCard: React.FC<FeedCardProps> = ({
   const mapLink = kakaoMapLink(post);
 
   return (
-    <article className="rounded-[24px] border border-[#ee2b8c0f] bg-white p-5 shadow-sm transition-shadow hover:shadow-md hover:shadow-[#ee2b8c0f] md:flex md:gap-5 md:p-[18px_20px]">
+    /*
+      폰은 카드 껍데기를 벗고 **구분선**으로만 나눈다. 카드마다 테두리 +
+      그림자 + 20px 여백이 붙어 한 화면에 후기가 두 개 반만 들어갔다.
+      금액을 위아래로 훑는 설계라 한 화면에 더 들어와야 비교가 된다.
+      ≥768 은 예전 카드 언어 그대로다.
+    */
+    <article className="border-b border-[#0000000c] px-1 py-5 transition-colors hover:bg-[#f7f8f9] md:flex md:gap-5 md:rounded-[24px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-[18px_20px] md:shadow-sm md:transition-shadow md:hover:bg-white md:hover:shadow-md md:hover:shadow-[#ee2b8c0f]">
       {/* 금액 열 — 넓은 화면에서 세로로 줄이 맞아야 비교가 된다 */}
       <div className="shrink-0 md:w-[120px]">
         {post.amount === undefined ? (

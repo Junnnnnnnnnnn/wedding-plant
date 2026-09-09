@@ -473,7 +473,6 @@ function BudgetDetailsPage() {
       activeTab="home"
       activeRailView="home"
       unreadCount={unreadCount}
-      gridBackground
       bottomBarSlot={
         <BottomTabBar showLoginButton={false} unreadCount={unreadCount} />
       }
@@ -508,24 +507,51 @@ function BudgetDetailsPage() {
       </header>
 
       <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide scroll-smooth min-h-0">
-        <div className="flex justify-between items-center px-6 py-3 shrink-0 md:hidden">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-[#ee2b8c] hover:bg-[#ee2b8c11] px-3 py-1.5 rounded-full transition-colors w-fit backdrop-blur-sm bg-white/30 shadow-sm"
-            aria-label="뒤로가기"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-bold">뒤로가기</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowGuide(true)}
-            className="flex h-10 w-10 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors backdrop-blur-sm bg-white/30 rounded-full"
-            aria-label="가이드 보기"
-          >
-            <CircleHelp className="h-6 w-6" strokeWidth={2} />
-          </button>
+        {/*
+          폰은 **분홍 머리 면**. 예전에는 흰 "뒤로가기" 알약이 도넛 카드 위에
+          떠 있어 스크롤하면 카드와 섞였다. 면 안으로 들여 겹침을 없앤다.
+
+          면에는 **초기 자본만** 올린다. 남은 금액은 도넛이 계속 맡는다 —
+          예전에 `남은 금액`과 `사용 후 잔액`이 따로 놀아 물음표 툴팁으로
+          해명하던 화면이라, 면에 잔액을 또 쓰면 그 문제가 되돌아온다.
+        */}
+        <div className="rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-6 pt-4 md:hidden">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="-ml-2 grid h-9 w-9 place-items-center rounded-full text-white transition-colors hover:bg-white/20"
+              aria-label="뒤로가기"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <span className="text-[17px] font-bold tracking-[-0.02em] text-white">
+              예산
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowGuide(true)}
+              className="grid h-9 w-9 place-items-center rounded-full text-white transition-colors hover:bg-white/20"
+              aria-label="가이드 보기"
+            >
+              <CircleHelp className="h-5 w-5" strokeWidth={2} />
+            </button>
+          </div>
+          <p className="mt-3 text-[13px] font-medium text-white/80">
+            초기 자본
+          </p>
+          {/*
+            자본은 **`stats` 를 먼저 본다.** `weddingData.budget` 은 방을 보고
+            있을 때 내 플랜 값이라, 아래 도넛·표와 다른 숫자가 같은 화면에
+            둘 뜬 적이 있다.
+          */}
+          <p className="mt-1 text-[40px] font-bold leading-none tracking-[-0.04em] text-white [font-variant-numeric:tabular-nums]">
+            {(stats
+              ? stats.initialCapital
+              : Number(weddingData.budget) || 0
+            ).toLocaleString()}
+            <span className="ml-1 text-[18px] tracking-[-0.02em]">만 원</span>
+          </p>
         </div>
         {/*
             @container: 아래 2열 분기를 뷰포트가 아니라 이 영역이 실제로
@@ -590,12 +616,12 @@ function BudgetDetailsPage() {
                 게스트 흐림은 오른쪽 열에만 건다 — 예전에도 요약 카드는
                 흐리지 않았다.
               */}
-              <div className="px-4 py-4 md:px-8 md:pt-6 @[980px]:md:grid @[980px]:md:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] @[980px]:md:items-start @[980px]:md:gap-5">
+              <div className="py-4 md:px-8 md:pt-6 @[980px]:md:grid @[980px]:md:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] @[980px]:md:items-start @[980px]:md:gap-5">
                 <div id="budget-stat-grid">
                   <BudgetDonut stats={stats} />
                 </div>
 
-                <div className="relative mt-5 @[980px]:md:mt-0">
+                <div className="relative mt-6 md:mt-5 @[980px]:md:mt-0">
                   <div
                     className={
                       isGuest
@@ -612,41 +638,48 @@ function BudgetDetailsPage() {
                       />
                     </div>
 
-                    <div className="mt-5 rounded-[28px] border border-[#ee2b8c0f] bg-white p-6 shadow-sm">
-                      <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="mt-6 md:mt-5 md:rounded-[28px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-6 md:shadow-sm">
+                      <div className="flex items-baseline gap-2 px-4 pb-3 md:mb-4 md:justify-between md:px-0 md:pb-0">
                         <h2
                           id="budget-list-title"
-                          className="text-[17px] font-bold tracking-[-0.02em] text-[#1b0d14]"
+                          className="text-[18px] font-bold tracking-[-0.02em] text-[#1b0d14] md:text-[17px]"
                         >
                           {selectedCategory
                             ? `${selectedCategory} 항목`
                             : "항목"}
                         </h2>
-                        {/* 세그먼트 알약. 밑줄 탭은 카드 안에서 선이 겹쳤다 */}
-                        <div
-                          id="budget-tab"
-                          className="inline-flex shrink-0 gap-0.5 rounded-full bg-[#f4eff2] p-[3px]"
-                        >
-                          {(["예정", "사용"] as const).map((tab) => (
-                            <button
-                              type="button"
-                              key={tab}
-                              onClick={() => setActiveTab(tab)}
-                              aria-pressed={activeTab === tab}
-                              className={`rounded-full px-4 py-1.5 text-[12.5px] font-bold transition-all ${
-                                activeTab === tab
-                                  ? "bg-white text-[#1b0d14] shadow-sm"
-                                  : "text-[#7a6c74] hover:text-[#1b0d14]"
-                              }`}
-                            >
-                              {tab}
-                            </button>
-                          ))}
-                        </div>
+                        {/* 개수는 제목 옆 회색 숫자로. 시안 .c-sec__n */}
+                        <span className="text-[13px] text-[#868b94] md:hidden">
+                          {listExpenses.length}
+                        </span>
+                      </div>
+                      {/*
+                        세그먼트. 폰은 시안대로 **한 줄을 반씩** 나눈다 —
+                        제목 옆 작은 알약은 손가락으로 누르기 좁았다.
+                      */}
+                      <div
+                        id="budget-tab"
+                        className="mx-4 grid grid-cols-2 gap-0.5 rounded-[10px] bg-[#f7f8f9] p-[3px] md:mx-0 md:mb-4 md:inline-flex md:shrink-0 md:rounded-full md:bg-[#f4eff2]"
+                      >
+                        {(["예정", "사용"] as const).map((tab) => (
+                          <button
+                            type="button"
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            aria-pressed={activeTab === tab}
+                            className={`rounded-lg py-1.5 text-[13px] font-bold transition-all md:rounded-full md:px-4 md:text-[12.5px] ${
+                              activeTab === tab
+                                ? "bg-white text-[#1b0d14] shadow-sm"
+                                : "text-[#868b94] hover:text-[#1b0d14]"
+                            }`}
+                          >
+                            {tab}
+                          </button>
+                        ))}
                       </div>
 
                       {/* count=10000으로 전체 한 번에 로드 */}
-                      <div id="budget-list">
+                      <div id="budget-list" className="mt-3 md:mt-0">
                         <ExpenseList expenses={listExpenses} />
                       </div>
                     </div>

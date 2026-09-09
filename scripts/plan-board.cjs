@@ -293,6 +293,19 @@ const boxOf = (page, sel) =>
     args: ["--font-render-hinting=none"],
   });
   const page = await browser.newPage();
+
+  /*
+    Next 개발 서버가 띄우는 좌하단 배지와 표식은 **앱 UI 가 아니다.**
+    대조 문서에 그대로 실리면 앱 요소로 오해되므로 캡처에서만 가린다.
+  */
+  await page.evaluateOnNewDocument(() => {
+    const css = document.createElement("style");
+    css.textContent =
+      "nextjs-portal,#nextjs-dev-overlay,[data-nextjs-toast],[data-next-badge-root]{display:none!important}";
+    const put = () => document.head && document.head.appendChild(css);
+    if (document.head) put();
+    else document.addEventListener("DOMContentLoaded", put);
+  });
   await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1.5 });
 
   await page.goto(`${ORIGIN}/calendar`, {
@@ -664,19 +677,20 @@ const boxOf = (page, sel) =>
   await wait(2200);
   await page.screenshot({ path: path.join(OUT, "detail-page-375.png") });
   const pageVariant = await page.evaluate(() => {
-    const hero = document.querySelector('[class*="bg-[#f14d8e]"]');
-    // 완료면 초록, 예정이면 주황이다. 한쪽만 찾으면 오탐이 난다.
-    const stamp = [...document.querySelectorAll("div")].find((d) => {
-      const c = String(d.className);
-      return c.includes("from-green-400") || c.includes("from-orange-300");
-    });
+    // 폰(page 변형)의 분홍 머리 면. 색을 단색 #f14d8e 에서 앱 공통
+    // 그러데이션(#ee2b8c→#ff5c95)으로 맞춘 뒤로는 이 클래스로 찾는다.
+    const hero = document.querySelector('[class*="from-[#ee2b8c]"]');
+    // 예전에는 회전하는 주황/초록 그라데이션 스티커를 찾았다. 지키려던 것은
+    // 그 그라데이션이 아니라 **폰 변형에 상태 표시가 남아 있는가** 였으므로,
+    // 알약으로 바뀐 지금은 알약을 찾는다.
+    const pill = document.querySelector("[data-status-pill]");
     return {
       분홍히어로: !!hero,
-      상태스티커: !!stamp,
+      상태표시: pill ? pill.getAttribute("data-status-pill") : null,
     };
   });
   console.log(
-    `캡처 detail-page-375.png   분홍 히어로=${pageVariant.분홍히어로 ? "그대로" : "사라짐(문제)"} 상태 스티커=${pageVariant.상태스티커 ? "그대로" : "사라짐"}`,
+    `캡처 detail-page-375.png   분홍 머리 면=${pageVariant.분홍히어로 ? "그대로" : "사라짐(문제)"} 상태 표시=${pageVariant.상태표시 ?? "사라짐(문제)"}`,
   );
 
   await browser.close();

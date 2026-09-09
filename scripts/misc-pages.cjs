@@ -108,6 +108,19 @@ const PAGES = [
     args: ["--font-render-hinting=none"],
   });
   const page = await browser.newPage();
+
+  /*
+    Next 개발 서버가 띄우는 좌하단 배지와 표식은 **앱 UI 가 아니다.**
+    대조 문서에 그대로 실리면 앱 요소로 오해되므로 캡처에서만 가린다.
+  */
+  await page.evaluateOnNewDocument(() => {
+    const css = document.createElement("style");
+    css.textContent =
+      "nextjs-portal,#nextjs-dev-overlay,[data-nextjs-toast],[data-next-badge-root]{display:none!important}";
+    const put = () => document.head && document.head.appendChild(css);
+    if (document.head) put();
+    else document.addEventListener("DOMContentLoaded", put);
+  });
   await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1.5 });
 
   await page.goto(`${ORIGIN}/`, {

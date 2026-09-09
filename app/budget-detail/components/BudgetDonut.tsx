@@ -56,10 +56,12 @@ const BudgetDonut: React.FC<BudgetDonutProps> = ({ stats }) => {
   const capitalMark = overAmount > 0 ? pct(capital) : null;
 
   return (
-    <div className="rounded-[28px] border border-[#ee2b8c0f] bg-white p-6 shadow-sm">
-      <p className="text-[12.5px] text-gray-400">예산 구성</p>
+    /* 폰에서는 카드를 두르지 않는다(시안 C안 05) — 도넛 하나뿐인 카드는
+       테두리만 한 겹 더 그릴 뿐이고, 그 여백이 그대로 스크롤이 된다 */
+    <div className="pt-5 md:rounded-[28px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-6 md:pt-6 md:shadow-sm">
+      <p className="hidden text-[12.5px] text-gray-400 md:block">예산 구성</p>
 
-      <div className="relative mx-auto mt-4 h-[190px] w-[190px]">
+      <div className="relative mx-auto h-[190px] w-[190px] md:mt-4">
         <svg viewBox="0 0 42 42" className="h-full w-full -rotate-90">
           <circle
             cx="21"
@@ -118,19 +120,23 @@ const BudgetDonut: React.FC<BudgetDonutProps> = ({ stats }) => {
           )}
         </svg>
         <div className="absolute inset-[30px] flex flex-col items-center justify-center rounded-full text-center">
-          <span className="text-[12px] text-gray-400">남은 금액</span>
+          <span className="text-[12px] text-[#555d6d] md:text-gray-400">
+            남은 금액
+          </span>
           <span
-            className={`font-user-content mt-0.5 text-[26px] font-bold leading-none tracking-[-0.03em] ${
+            className={`font-user-content mt-0.5 text-[32px] font-bold leading-none tracking-[-0.04em] md:text-[26px] md:tracking-[-0.03em] ${
               remaining < 0 ? "text-[#e5484d]" : "text-[#1b0d14]"
             }`}
           >
             {remaining.toLocaleString("ko-KR")}
           </span>
-          <span className="mt-0.5 text-[11.5px] text-gray-400">만원</span>
+          <span className="mt-0.5 text-[12px] text-[#868b94] md:text-[11.5px]">
+            만 원
+          </span>
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-2 text-[12.5px] text-[#7a6c74]">
+      <div className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-2 text-[13px] text-[#555d6d] md:mt-5 md:text-[12.5px] md:text-[#7a6c74]">
         {/*
           넘긴 경우 분홍 구간은 "사용 전체"가 아니라 자본까지다. 그냥
           "사용"이라 쓰면 옆 표의 합과 어긋나 보여서 이름을 나눈다.
@@ -158,9 +164,42 @@ const BudgetDonut: React.FC<BudgetDonutProps> = ({ stats }) => {
             예정 {planned.toLocaleString("ko-KR")}
           </span>
         )}
+        {/* 남은 트랙에도 이름을 준다 — 세 조각의 합이 자본이라는 게 보인다 */}
+        {remaining > 0 && (
+          <span className="inline-flex items-center gap-1.5">
+            <i className="h-2.5 w-2.5 rounded-[3px] bg-[#f4eff2]" />
+            여유 {remaining.toLocaleString("ko-KR")}
+          </span>
+        )}
       </div>
 
-      <div className="mt-5 space-y-2.5 border-t border-[#f4eff2] pt-4 text-[12.5px]">
+      {/*
+        폰(시안 C안 05)은 구분선 행 둘이다 — 초기 자본은 머리 면이 이미
+        말하고 있어 여기서 다시 세지 않는다. `사용 후 잔액`(자본-사용)은
+        도넛의 분홍 구간 밖 전부라, 가운데 `남은 금액`(자본-예정-사용)과
+        같은 그림의 다른 구간이다. 예전처럼 물음표 툴팁으로 해명할 필요가
+        없는 이유다.
+      */}
+      <div className="mt-5 px-4 text-[14px] md:hidden">
+        <div className="flex items-baseline border-t border-[#0000000c] py-3">
+          <span className="text-[#555d6d]">사용률</span>
+          <span
+            className={`font-user-content ml-auto font-bold ${
+              usedPercent > 100 ? "text-[#e5484d]" : "text-[#1a1c20]"
+            }`}
+          >
+            {usedPercent}%
+          </span>
+        </div>
+        <div className="flex items-baseline border-t border-[#0000000c] py-3">
+          <span className="text-[#555d6d]">사용 후 잔액</span>
+          <span className="font-user-content ml-auto font-bold text-[#1a1c20]">
+            {(capital - used).toLocaleString("ko-KR")}만 원
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-5 hidden space-y-2.5 border-t border-[#f4eff2] pt-4 text-[12.5px] md:block">
         <div className="flex items-center justify-between">
           <span className="text-gray-400">초기 자본</span>
           <span className="font-user-content text-[14px] font-bold tracking-[-0.02em]">
@@ -185,7 +224,7 @@ const BudgetDonut: React.FC<BudgetDonutProps> = ({ stats }) => {
         툴팁으로 해명해야 했다. 지금은 둘 다 이 도넛의 구간이다.
       */}
       {remaining < 0 && (
-        <p className="mt-4 rounded-2xl border border-[#e5484d22] bg-[#fff5f5] px-3.5 py-3 text-[12.5px] leading-relaxed text-[#8a3236]">
+        <p className="mx-4 mt-4 rounded-2xl border border-[#e5484d22] md:mx-0 bg-[#fff5f5] px-3.5 py-3 text-[12.5px] leading-relaxed text-[#8a3236]">
           자본보다{" "}
           <b className="font-bold">
             {Math.abs(remaining).toLocaleString("ko-KR")}만원

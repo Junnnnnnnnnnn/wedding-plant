@@ -2,7 +2,6 @@
 
 import {
   ArrowLeft,
-  Calendar,
   Check,
   ChevronRight,
   Clock,
@@ -12,7 +11,6 @@ import {
   Minimize2,
   MapPin,
   Star,
-  Tag,
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -33,6 +31,7 @@ import { useNotification } from "../contexts/NotificationContext";
 import CustomAlertModal from "../components/CustomAlertModal";
 import FeedPostModal, { FeedPostTarget } from "../components/FeedPostModal";
 import { useScrollDirection } from "../hooks/useScrollDirection";
+import { useScheduleStatusToggle } from "../hooks/useScheduleStatusToggle";
 import { getToken, getPlanUserIdFromToken } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
 import { formatKoreanTime, parseLocalDate } from "@/lib/utils";
@@ -343,6 +342,26 @@ export default function ScheduleDetailView({
   }, [detail?.payType]);
   const isCompleted = detail?.status === "COMPLETED";
 
+  /**
+   * 완료 여부를 이 화면에서 바꾼다.
+   *
+   * 예전에는 보드와 홈에서만 토글할 수 있었다. 그런데 "끝났나?"를 판단하는
+   * 정보(금액·장소·메모)는 전부 이 화면에 있어서, 확인하러 들어왔다가 다시
+   * 나가서 눌러야 했다.
+   *
+   * 낙관적으로 바꾸고 실패하면 되돌린다 — 훅이 같은 항목의 연타는 막는다.
+   */
+  const { setStatus, isPending } = useScheduleStatusToggle();
+  const statusPending = detail ? isPending(detail.id) : false;
+  const handleToggleStatus = useCallback(async () => {
+    if (!detail) return;
+    const next = detail.status === "COMPLETED" ? "NORMAL" : "COMPLETED";
+    const prev = detail.status;
+    setDetail((d) => (d ? { ...d, status: next } : d));
+    const ok = await setStatus(detail.id, next);
+    if (!ok) setDetail((d) => (d ? { ...d, status: prev } : d));
+  }, [detail, setStatus]);
+
   const mapLink = useMemo(() => {
     if (!detail?.location) return null;
     const lat = Number(detail.locationLat);
@@ -613,108 +632,84 @@ export default function ScheduleDetailView({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mt-10 mb-2 relative"
+            className="relative -mx-6 -mt-5 mb-2 md:-mx-8"
           >
-            <div className="bg-[#f14d8e] rounded-[32px] p-7 shadow-[0_8px_32px_rgba(238,43,140,0.25)] relative overflow-hidden">
+            {/*
+              떠 있는 카드가 아니라 **화면 머리 면**이다. 같은 색을 쓰지만
+              카드가 아니라 면이라 덩어리로 보이지 않고 배경으로 물러난다.
+              좌우 패딩(px-6 / md:px-8)을 음수 마진으로 상쇄해 가장자리까지
+              편다 — main 이 overflow-x-hidden 이라 넘치지 않는다.
+            */}
+            <div className="relative overflow-hidden rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-5 pt-4 md:px-8">
               {/* Background decoration */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
 
-              <div className="flex items-center gap-2 mb-1.5 relative z-10">
-                <Tag className="w-3 h-3 text-white/60" />
-                <span className="text-white/70 font-medium text-xs">
+              {/*
+                시안(C안 06)의 머리 줄이다 — **뒤로가기 · 카테고리 · 상태**가
+                한 줄에 앉는다. 예전에는 화살표만 한 줄을 다 쓰고 카테고리가
+                그 아래로 내려가, 면이 40px 쯤 더 길었다.
+              */}
+              <div className="relative z-10 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => (onClose ? onClose() : router.back())}
+                  className="-ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full text-white transition-colors hover:bg-white/20"
+                  aria-label="뒤로가기"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <span className="min-w-0 truncate text-[18px] font-bold tracking-[-0.02em] text-white">
                   {detail.categoryName}
                 </span>
-              </div>
-              <h2 className="font-user-content text-2xl font-black text-white mb-1.5 max-w-full leading-tight">
-                {detail.title}
-              </h2>
-              <div className="flex items-center gap-2 mb-3 text-white/90">
-                <Calendar className="w-3.5 h-3.5" />
-                <span className="font-medium text-xs">
-                  {formatDate(detail.startDate)}
-                  {formatKoreanTime(detail.startTime) ? (
-                    <>
-                      <span className="mx-1 opacity-60">·</span>
-                      {formatKoreanTime(detail.startTime)}
-                    </>
-                  ) : null}
+                {/*
+                  상태 표시. 예전에는 회전하는 주황 스티커였는데, 앱 어디에도
+                  없는 세 번째 색인 데다 담고 있는 건 "아직 안 끝났다"는 정보
+                  한 줄이었다. 정보에 조작만큼의 무게를 주면 정작 누를 것이
+                  안 보인다. 인스펙터 변형이 이미 쓰던 알약을 폰에도 쓴다.
+                  (`scripts/plan-board.cjs` 가 이 알약을 찾는다)
+                */}
+                <span
+                  data-status-pill={isCompleted ? "COMPLETED" : "NORMAL"}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[12px] font-bold text-white"
+                >
+                  {isCompleted ? (
+                    <Check className="h-3 w-3" strokeWidth={3} />
+                  ) : (
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  )}
+                  {isCompleted ? "완료" : "예정"}
                 </span>
               </div>
-              <div className="h-px bg-white/25 mb-3" />
-              <div className="flex items-end justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-white/80 text-xs mb-1.5">지출 금액</div>
-                  <div className="text-2xl font-black text-white leading-tight break-keep">
+              <h2 className="font-user-content relative z-10 mt-3 max-w-full text-[28px] font-bold leading-[1.15] tracking-[-0.03em] text-white">
+                {detail.title}
+              </h2>
+              <p className="relative z-10 mt-2 text-[14px] text-white/80">
+                {formatDate(detail.startDate)}
+                {formatKoreanTime(detail.startTime) ? (
+                  <>
+                    <span className="mx-1 opacity-60">·</span>
+                    {formatKoreanTime(detail.startTime)}
+                  </>
+                ) : null}
+              </p>
+              {/* 시안 .c-inset — 금액과 결제 방식이 한 상자에 든다 */}
+              <div className="relative z-10 mt-4 flex items-center gap-3 rounded-xl bg-white/15 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[12px] text-white/80">지출 금액</div>
+                  <div className="mt-0.5 break-keep text-[20px] font-bold leading-tight text-white">
                     {formattedAmount}
                   </div>
                 </div>
-                <div className="shrink-0 bg-white/20 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
-                  <div className="text-white/80 text-xs mb-0.5 whitespace-nowrap">
+                <div className="shrink-0 text-right">
+                  <div className="whitespace-nowrap text-[12px] text-white/80">
                     결제 방식
                   </div>
-                  <div className="text-white font-bold text-sm whitespace-nowrap">
+                  <div className="mt-0.5 whitespace-nowrap text-[14px] font-bold text-white">
                     {payTypeLabel}
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Status Sticker: COMPLETED = 완료, NORMAL = 예정 */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0, rotate: -20 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                rotate: isCompleted ? 12 : -12,
-              }}
-              transition={{
-                duration: 0.6,
-                delay: 0.3,
-                type: "spring",
-                bounce: 0.5,
-              }}
-              className={
-                isInspector
-                  ? "absolute -top-5 -right-1"
-                  : "absolute -top-8 -right-6"
-              }
-            >
-              {isCompleted ? (
-                <div className="relative">
-                  <div
-                    className={`bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-2xl border-4 border-white ${isInspector ? "w-[74px] h-[74px]" : "w-24 h-24"}`}
-                  >
-                    <div className="text-center">
-                      <Check
-                        className={`text-white mx-auto mb-1 ${isInspector ? "w-7 h-7" : "w-10 h-10"}`}
-                        strokeWidth={4}
-                      />
-                      <div className="text-white font-black text-sm tracking-wider">
-                        완료
-                      </div>
-                    </div>
-                  </div>
-                  <div className="absolute inset-0 bg-green-500/30 rounded-full blur-xl -z-10" />
-                </div>
-              ) : (
-                <div className="relative">
-                  <div
-                    className={`bg-gradient-to-br from-orange-300 to-orange-500 rounded-full flex items-center justify-center shadow-2xl border-4 border-white ${isInspector ? "w-[74px] h-[74px]" : "w-24 h-24"}`}
-                  >
-                    <div className="text-center">
-                      <Clock
-                        className={`text-white mx-auto mb-1 ${isInspector ? "w-7 h-7" : "w-10 h-10"}`}
-                        strokeWidth={3}
-                      />
-                      <div className="text-white font-black text-sm tracking-wider">
-                        예정
-                      </div>
-                    </div>
-                  </div>
-                  <div className="absolute inset-0 bg-orange-400/30 rounded-full blur-xl -z-10" />
-                </div>
-              )}
-            </motion.div>
           </motion.div>
         )}
 
@@ -768,22 +763,30 @@ export default function ScheduleDetailView({
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <div
-            className={`flex flex-col bg-white transition-shadow ${
+            /* 폰은 카드 껍데기를 벗고 구분선으로만 나눈다 — 그림자는
+               떠 있는 것에만 쓴다. 인스펙터는 대시보드 카드 언어 그대로. */
+            className={`flex flex-col bg-white ${
               isInspector
-                ? "rounded-[24px] border border-[#ee2b8c0f] p-4 shadow-sm"
-                : "rounded-2xl p-3 shadow-sm hover:shadow-md"
+                ? "rounded-[24px] border border-[#ee2b8c0f] p-4 shadow-sm transition-shadow"
+                : "-mx-6 border-b border-[#0000000c] px-6 py-4 md:-mx-8 md:px-8"
             } ${showMapOrCoordBox ? "h-[300px]" : ""}`}
           >
-            <div className="flex items-start gap-2.5 flex-1 min-h-0">
+            <div
+              className={`flex flex-1 items-start ${isInspector ? "min-h-0 gap-2.5" : "min-h-0 gap-3"}`}
+            >
               <div
                 className={
                   isInspector
                     ? "shrink-0 rounded-lg bg-[#fff2f6] p-2"
-                    : "bg-gradient-to-br from-[#E5F3FF] to-[#D0E7FF] rounded-lg p-2 shrink-0"
+                    : "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#eef4ff]"
                 }
               >
                 <MapPin
-                  className={`w-4 h-4 ${isInspector ? "text-[#ee2b8c]" : "text-[#4A90E2]"}`}
+                  className={
+                    isInspector
+                      ? "h-4 w-4 text-[#ee2b8c]"
+                      : "h-5 w-5 text-[#3b76f6]"
+                  }
                 />
               </div>
               <div className="flex-1 min-w-0 flex flex-col min-h-0">
@@ -791,14 +794,16 @@ export default function ScheduleDetailView({
                   className={
                     isInspector
                       ? "mb-1 text-[12.5px] text-gray-400"
-                      : "text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-0.5"
+                      : "text-[12px] font-bold text-[#868b94]"
                   }
                 >
                   장소
                 </div>
                 <div
-                  className={`font-user-content mb-1.5 shrink-0 font-bold text-[#1b0d14] ${
-                    isInspector ? "text-[13.5px]" : "text-sm"
+                  className={`font-user-content shrink-0 text-[#1a1c20] ${
+                    isInspector
+                      ? "mb-1.5 text-[13.5px] font-bold"
+                      : "mt-[3px] mb-3 text-[16px] font-medium"
                   }`}
                 >
                   {detail.location?.trim() || "장소 미정"}
@@ -821,7 +826,13 @@ export default function ScheduleDetailView({
                   >
                     <div
                       id="schedule-detail-map"
-                      className={`absolute inset-0 overflow-hidden border border-gray-200 transition-opacity duration-300 ${mapExpanded ? "rounded-2xl bg-white" : "rounded-lg"} ${mapLoaded ? "opacity-100" : "opacity-0"}`}
+                      className={`absolute inset-0 overflow-hidden border transition-opacity duration-300 ${
+                        mapExpanded
+                          ? "rounded-2xl border-gray-200 bg-white"
+                          : isInspector
+                            ? "rounded-lg border-gray-200"
+                            : "rounded-t-xl border-[#0000000f]"
+                      } ${mapLoaded ? "opacity-100" : "opacity-0"}`}
                     />
                     {!mapLoaded && (
                       <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200">
@@ -870,7 +881,12 @@ export default function ScheduleDetailView({
                     href={mapLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1.5 shrink-0 inline-flex items-center gap-1.5 rounded-full border border-[#ee2b8c] px-2.5 py-1 text-xs font-semibold text-[#ee2b8c] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                    className={
+                      isInspector
+                        ? "mt-1.5 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#ee2b8c] px-2.5 py-1 text-xs font-semibold text-[#ee2b8c] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                        : /* 시안 .map__a — 지도 상자에 이어 붙는 한 줄 */
+                          "block shrink-0 rounded-b-xl border border-t-0 border-[#0000000f] bg-white py-3 text-center text-[13px] font-bold text-[#ee2b8c]"
+                    }
                   >
                     카카오맵에서 보기
                   </a>
@@ -886,13 +902,13 @@ export default function ScheduleDetailView({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className={isInspector ? undefined : "mt-4"}
+            className={undefined}
           >
             <div
               className={
                 isInspector
                   ? "rounded-[24px] border border-[#ee2b8c0f] bg-white p-4 shadow-sm"
-                  : "bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                  : "-mx-6 border-b border-[#0000000c] bg-white px-6 py-4 md:-mx-8 md:px-8"
               }
             >
               <div className="flex items-start gap-3">
@@ -900,14 +916,14 @@ export default function ScheduleDetailView({
                   className={
                     isInspector
                       ? "rounded-xl bg-[#f4eff2] p-2"
-                      : "bg-gradient-to-br from-[#FFF3E0] to-[#FFE0B2] rounded-xl p-2.5"
+                      : "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#fff6e3]"
                   }
                 >
                   <FileText
                     className={
                       isInspector
-                        ? "w-4 h-4 text-[#7a6c74]"
-                        : "w-5 h-5 text-[#FF9800]"
+                        ? "h-4 w-4 text-[#7a6c74]"
+                        : "h-5 w-5 text-[#d99414]"
                     }
                   />
                 </div>
@@ -916,16 +932,16 @@ export default function ScheduleDetailView({
                     className={
                       isInspector
                         ? "mb-1 text-[12.5px] text-gray-400"
-                        : "text-xs font-bold text-[#ee2b8c88] uppercase tracking-wider mb-0.5"
+                        : "text-[12px] font-bold text-[#868b94]"
                     }
                   >
                     메모
                   </div>
                   <div
-                    className={`font-user-content whitespace-pre-wrap leading-relaxed text-[#1b0d14] ${
+                    className={`font-user-content whitespace-pre-wrap text-[#1a1c20] ${
                       isInspector
-                        ? "text-[13.5px] font-bold"
-                        : "text-base font-semibold"
+                        ? "text-[13.5px] font-bold leading-relaxed"
+                        : "mt-[3px] text-[16px] font-medium leading-normal"
                     }`}
                   >
                     {detail.memo}
@@ -999,21 +1015,7 @@ export default function ScheduleDetailView({
               <X className="h-5 w-5" />
             </button>
           </div>
-        ) : (
-          <div className="absolute top-0 left-0 right-0 z-50 w-full pointer-events-none">
-            <div className="px-6 py-4 pointer-events-auto">
-              <button
-                type="button"
-                onClick={() => (onClose ? onClose() : router.back())}
-                className="flex items-center gap-2 text-[#ee2b8c] hover:bg-[#ee2b8c11] px-3 py-1.5 rounded-full transition-colors w-fit backdrop-blur-sm bg-white/30 shadow-sm"
-                aria-label="뒤로가기"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-bold">뒤로가기</span>
-              </button>
-            </div>
-          </div>
-        )}
+        ) : null}
 
         <main
           ref={mainScrollRef}
@@ -1031,10 +1033,49 @@ export default function ScheduleDetailView({
             {content}
           </div>
 
+          {/*
+            완료로 바꾸는 자리. 예전에는 이 화면에 상태를 바꿀 방법이 아예
+            없어서, 금액·장소·메모를 확인하고도 보드나 홈으로 나가서 눌러야
+            했다. 인스펙터는 보드 옆에 붙어 있어 그쪽 토글이 바로 보이므로
+            폰(page 변형)에만 낸다.
+          */}
+          {isLoggedIn && detail && canEdit && !isInspector && (
+            <button
+              type="button"
+              onClick={handleToggleStatus}
+              disabled={statusPending}
+              className="mt-6 flex w-full items-center gap-3 rounded-xl bg-[#f7f8f9] px-4 py-3.5 text-left transition-colors hover:bg-[#edfaf6] disabled:opacity-60"
+            >
+              <span
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] ${
+                  isCompleted
+                    ? "border-[#079171] bg-[#079171] text-white"
+                    : "border-[#dcdee3] bg-white"
+                }`}
+              >
+                {isCompleted ? (
+                  <Check className="h-3.5 w-3.5" strokeWidth={3.5} />
+                ) : null}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[16px] font-bold text-[#1a1c20]">
+                  {isCompleted ? "예정으로 되돌리기" : "완료로 표시"}
+                </span>
+                <span className="mt-0.5 block text-[12px] text-[#868b94]">
+                  {isCompleted
+                    ? "아직 안 끝난 일이면 되돌릴 수 있어요"
+                    : "끝난 일이면 눌러 주세요 · 예산의 지출로 잡힙니다"}
+                </span>
+              </span>
+            </button>
+          )}
+
           {/* Action Buttons: 본문 하단 (로그인 + 쓰기 권한이 있을 때만) */}
           {isLoggedIn && detail && canEdit && (
             <div
-              className={`w-full max-w-full flex gap-3 pb-2 ${isInspector ? "" : "mt-4"}`}
+              className={`flex w-full max-w-full pb-2 ${
+                isInspector ? "gap-3" : "mt-2 flex-col gap-2"
+              }`}
             >
               <button
                 type="button"
@@ -1047,7 +1088,7 @@ export default function ScheduleDetailView({
                 className={
                   isInspector
                     ? "flex-1 rounded-[13px] bg-[#ee2b8c] py-2.5 text-[13.5px] font-bold text-white shadow-[0_8px_20px_-8px_rgba(238,43,140,0.75)] transition-transform hover:-translate-y-px active:scale-95"
-                    : "flex-1 bg-[#ee2b8c] hover:bg-[#d4237b] text-white py-3 rounded-2xl font-bold shadow-lg shadow-[#ee2b8c33] transition-all transform active:scale-95"
+                    : "w-full rounded-xl bg-[#ee2b8c] py-4 text-[16px] font-bold text-white transition-colors hover:bg-[#d4237b] active:scale-[0.99]"
                 }
               >
                 수정하기
@@ -1059,7 +1100,7 @@ export default function ScheduleDetailView({
                 className={
                   isInspector
                     ? "flex-1 rounded-[13px] border border-[#f0e3ea] bg-white py-2.5 text-[13.5px] text-[#6b6570] transition-colors hover:border-[#ee2b8c55] hover:text-[#ee2b8c] disabled:cursor-not-allowed disabled:opacity-60"
-                    : "flex-1 bg-white hover:bg-gray-50 text-[#1b0d14] py-3 rounded-2xl font-bold border-2 border-gray-100 hover:border-[#ee2b8c33] transition-all transform active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                    : "w-full rounded-xl bg-[#f7f8f9] py-4 text-[16px] font-bold text-[#555d6d] transition-colors hover:bg-[#edeef0] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                 }
               >
                 {deleting ? "삭제 중..." : "삭제하기"}
@@ -1144,7 +1185,6 @@ export default function ScheduleDetailView({
       activeTab="home"
       activeRailView={fromParam === "calendar" ? "board" : "home"}
       unreadCount={unreadCount}
-      gridBackground
       bottomBarSlot={
         <BottomTabBar
           scrollDirection={scrollDirection}

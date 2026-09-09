@@ -319,8 +319,13 @@ const snapshot = () => ({
   if (!filled) bad("플랜 추가: 제목 입력칸을 못 찾았다");
   await wait(1200);
 
-  const opened = await page.evaluate(clickText, "카테고리 선택");
-  if (!opened) bad("플랜 추가: 카테고리 선택 버튼이 안 나타났다");
+  /*
+    카테고리를 고르는 방법이 **폭마다 다르다.** 폰·pane 은 값 한 줄을 눌러
+    모달을 열고, 넓은 화면 시트는 추천 칩을 바로 누른다. 하네스는 1440 에서
+    도는데 예전에는 "카테고리 선택" 버튼만 찾아 매번 실패를 보고했다 —
+    실제로는 칩으로 잘 골라지고 있었다.
+  */
+  await page.evaluate(clickText, "카테고리 선택");
   await wait(1400);
   const picked = await page.evaluate(() => {
     const b = [...document.querySelectorAll("button")].find(
@@ -330,7 +335,7 @@ const snapshot = () => ({
     b.click();
     return true;
   });
-  if (!picked) bad("플랜 추가: 카테고리 목록이 안 열렸다");
+  if (!picked) bad("플랜 추가: 카테고리를 고를 방법이 없다 (모달·칩 둘 다 없음)");
   await wait(1500);
 
   const payType = await page.evaluate(clickText, "현금");

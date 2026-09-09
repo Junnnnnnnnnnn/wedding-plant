@@ -1,10 +1,10 @@
 import {
   Columns3,
   Home,
-  LayoutGrid,
   MessageCircle,
-  Search,
+  NotepadText,
   Settings,
+  Users,
 } from "lucide-react";
 
 /** 모바일 하단 탭바의 탭. 4개 그대로 유지한다 */
@@ -64,8 +64,13 @@ interface NavItem<T> {
 /** 하단 탭바 항목 (모바일) */
 export const TAB_ITEMS: Array<NavItem<TabType>> = [
   { id: "home", label: "홈", icon: Home },
-  { id: "feed", label: "피드", icon: Search },
-  { id: "rooms", label: "참여 플랜", icon: LayoutGrid },
+  /*
+    시안(C안)의 아이콘이다. 피드는 돋보기가 아니라 **글 목록**이다 — 이
+    화면은 검색하는 곳이 아니라 남이 올린 후기를 훑는 곳이라, 돋보기는
+    없는 기능을 약속한다. 참여 플랜은 격자가 아니라 **사람**이다.
+  */
+  { id: "feed", label: "피드", icon: NotepadText },
+  { id: "rooms", label: "참여 플랜", icon: Users },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -90,7 +95,7 @@ export const RAIL_GROUPS: Array<{
   {
     label: "둘러보기",
     items: [
-      { id: "feed", label: "피드", icon: Search },
+      { id: "feed", label: "피드", icon: NotepadText },
       { id: "settings", label: "Settings", icon: Settings },
     ],
   },

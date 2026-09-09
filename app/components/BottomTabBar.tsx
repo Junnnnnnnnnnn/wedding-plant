@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, MessageCircle } from "lucide-react";
+import { Home } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { TAB_ITEMS, TAB_ROUTES, TabType, pathnameToTab } from "./tabs";
 
@@ -72,45 +72,54 @@ export default function BottomTabBar({
           </button>
         </div>
       )}
-      <nav className="w-full flex justify-center bg-white">
-        <div className="flex w-full max-w-[500px] items-center justify-around px-6 py-2.5">
+      {/*
+        시안(C안)의 `.c-tabbar` 값 그대로다 —
+        위에 헤어라인(`stroke-neutral-muted`), 4등분 그리드,
+        패딩 8px / 아래 16px. 예전에는 `justify-around` 라 항목 폭이
+        글자 길이에 따라 들쭉날쭉했고("참여 플랜"만 넓었다), 위 경계선이
+        없어 목록이 탭바로 흘러 들어가는 것처럼 보였다.
+      */}
+      <nav className="w-full border-t border-[#00000010] bg-white">
+        <div className="mx-auto grid w-full max-w-[500px] grid-cols-4 pb-4 pt-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = resolvedActiveTab === tab.id;
-            const iconColor = isActive ? "#ffaab8" : "#99a1af";
-            const textColor = isActive ? "#ffaab8" : "#99a1af";
+            /*
+              활성 탭은 **브랜드 분홍**이다. 예전 `#ffaab8` 은 흰 바탕에서
+              비활성 회색과 명도가 비슷해, 지금 어느 탭에 있는지가 잘 안
+              보였다. 비활성은 SEED 중립 subtle.
+            */
+            const iconColor = isActive ? "#ee2b8c" : "#868b94";
+            const textColor = isActive ? "#ee2b8c" : "#868b94";
             const isDisabled = false;
 
             return (
               <button
                 key={tab.id}
                 type="button"
-                className={`flex flex-col items-center gap-0.5 px-4 py-1.5 -m-2 transition-all relative ${isDisabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                className={`relative grid justify-items-center gap-[3px] transition-colors ${isDisabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
                 onClick={() => handleClick(tab.id)}
                 aria-disabled={isDisabled}
               >
-                <div className="relative">
+                <div className="relative grid h-[22px] w-[22px] place-items-center">
                   <Icon
-                    className="h-6 w-6"
+                    className="h-[22px] w-[22px]"
                     style={{ color: iconColor }}
                     strokeWidth={2}
                   />
+                  {/*
+                    시안에는 배지가 없지만 미읽음은 알려 줘야 한다. 예전의
+                    말풍선 모양은 아이콘보다 커서 탭바에서 가장 눈에 띄었다 —
+                    **작은 원**으로 낮춘다.
+                  */}
                   {tab.id === "rooms" && (unreadCount ?? 0) > 0 && (
-                    <div className="absolute -top-3.5 -right-4 flex items-center justify-center animate-in zoom-in duration-300 pointer-events-none">
-                      <div className="relative w-5 h-5 flex items-center justify-center">
-                        <MessageCircle
-                          className="absolute inset-0 w-full h-full fill-[#ee2b8c] text-[#ee2b8c]"
-                          strokeWidth={1}
-                        />
-                        <span className="relative z-10 text-[9px] font-black text-white flex items-center justify-center leading-none -mt-[2px] ml-[0.5px]">
-                          {unreadCount! > 9 ? "9+" : unreadCount}
-                        </span>
-                      </div>
-                    </div>
+                    <span className="pointer-events-none absolute -right-1.5 -top-1 grid h-[15px] min-w-[15px] place-items-center rounded-full bg-[#ee2b8c] px-1 text-[9px] font-bold leading-none text-white">
+                      {unreadCount! > 9 ? "9+" : unreadCount}
+                    </span>
                   )}
                 </div>
                 <span
-                  className="text-[10px] leading-[15px]"
+                  className={`text-[11px] leading-none ${isActive ? "font-bold" : "font-medium"}`}
                   style={{ color: textColor }}
                 >
                   {tab.label}

@@ -1,21 +1,6 @@
 "use client";
 
-import {
-  ArrowDown,
-  ArrowUp,
-  Calendar,
-  Check,
-  CircleDollarSign,
-  CircleHelp,
-  CirclePlus,
-  Crown,
-  Heart,
-  Info,
-  LogOut,
-  Mail,
-  Pencil,
-  Plus,
-} from "lucide-react";
+import { Check, CircleHelp, ChevronRight, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -51,7 +36,6 @@ import { useNotification } from "../contexts/NotificationContext";
 import {
   getToken,
   getPlanUserIdFromToken,
-  getSubFromToken,
   clearAllStoredData,
   HAS_COMPLETED_GUEST_SETTING_KEY,
 } from "@/lib/api";
@@ -75,16 +59,23 @@ const MOBILE_GUIDE_STEPS: GuideStep[] = [
     description: "전체 예산 대비 현재까지의 지출 현황을 한눈에 파악하세요.",
   },
   {
-    id: "main-tabs",
-    title: "플랜 탭",
-    description: "계획 중인 플랜과 완료된 플랜을 나누어 볼 수 있어요.",
+    /*
+      예전에는 `main-tabs`(계획 중/완료 탭)를 짚었다. 탭을 없애고 목록을
+      **이번 달 / 그 다음** 두 묶음으로 가르면서, 짚을 대상도 그 묶음으로
+      옮겼다. 앵커가 사라지면 스팟라이트가 0×0 으로 붕괴해 화면만 까맣게
+      덮인다(넓은 화면에서 실제로 그랬다).
+    */
+    id: "main-this-month",
+    title: "이번 달에 할 일",
+    description:
+      "이번 달 안에 해야 할 일만 모아 둡니다. 지난 일정도 여기 맨 위에 남아요.",
     tooltipPosition: "above",
   },
   {
     id: "main-plan-list",
-    title: "플랜 리스트",
+    title: "그 다음",
     description:
-      "등록된 스케줄을 확인하고 체크하여 완료 상태로 변경할 수 있어요.",
+      "앞으로 할 일과 날짜를 안 정한 일이 이어집니다. 동그라미를 누르면 완료로 바뀌어요.",
     spotlightOffset: { left: 12 },
     tooltipPosition: "above",
   },
@@ -137,16 +128,37 @@ const DESKTOP_GUIDE_STEPS: GuideStep[] = [
   },
 ];
 
-/** 정렬 옵션 → 버튼 표시용 라벨(가격/날짜/이름) + 방향 */
-function getSortButtonLabel(opt: PlanSortOption): {
-  label: string;
-  isDesc: boolean;
-} {
-  const desc = opt.endsWith("_desc");
-  if (opt.startsWith("price_")) return { label: "가격", isDesc: desc };
-  if (opt.startsWith("date_")) return { label: "시작", isDesc: desc };
-  if (opt.startsWith("name_")) return { label: "제목", isDesc: desc };
-  return { label: "필터", isDesc: true };
+/**
+ * 홈 목록의 시간 묶음.
+ *
+ * 홈에서 사람이 하는 질문은 "무엇을"이 아니라 **"언제까지"** 다. 카테고리로
+ * 좁혀 보는 일은 플랜 보드가 이미 하고 있어서, 여기서는 날짜로만 나눈다.
+ *
+ * 새 조작을 만들지 않는다 — 세그먼트나 탭을 더하면 한 번에 한 묶음만 보이는데,
+ * 홈은 "다음에 뭐가 오나"를 한눈에 보는 자리다. 목록 안 머리글이면 전부
+ * 보이면서 경계만 생긴다.
+ */
+function getTimeBucket(
+  startDate: string | null | undefined,
+  today: Date,
+): { key: string; label: string } {
+  if (!startDate?.trim()) return { key: "none", label: "날짜 미정" };
+  const d = parseLocalDate(startDate);
+  if (!d) return { key: "none", label: "날짜 미정" };
+
+  const y = today.getFullYear();
+  const m = today.getMonth();
+  const startOfToday = new Date(y, m, today.getDate());
+  if (d < startOfToday) return { key: "past", label: "지났어요" };
+  if (d.getFullYear() === y && d.getMonth() === m)
+    return { key: "this", label: "이번 달" };
+  const next = new Date(y, m + 1, 1);
+  if (
+    d.getFullYear() === next.getFullYear() &&
+    d.getMonth() === next.getMonth()
+  )
+    return { key: "next", label: "다음 달" };
+  return { key: "later", label: "그 다음" };
 }
 
 /** 정렬 옵션 → API sortColumn, sort */
@@ -238,28 +250,6 @@ interface ScheduleListItem {
 }
 
 const SCHEDULE_FETCH_COUNT = 10000;
-/** 카테고리명으로 파스텔 색상 반환 (동일 이름 = 동일 색상) */
-function getCategoryColor(categoryName?: string | null): string {
-  const colors = [
-    "#FFE4E9",
-    "#E8DDF5",
-    "#D5F0E5",
-    "#FFF0D6",
-    "#D4EBF7",
-    "#FFE5D9",
-  ];
-  // 백엔드가 카테고리명을 비워 보내는 경우가 있어 방어한다 (없으면 첫 색상)
-  const name = typeof categoryName === "string" ? categoryName : "";
-  let hash = 0;
-
-  for (let i = 0; i < name.length; i += 1) {
-    hash = (hash << 5) - hash + name.charCodeAt(i);
-    hash |= 0;
-  }
-
-  return colors[Math.abs(hash) % colors.length];
-}
-
 /**
  * 정렬용 시각. 날짜가 없거나 파싱 불가면 null 을 돌려준다.
  * (빈 문자열을 new Date 에 넣으면 NaN 이 되어 정렬이 무너진다)
@@ -272,36 +262,6 @@ function getSortTime(item: {
   if (!raw) return null;
   const t = new Date(raw).getTime();
   return Number.isNaN(t) ? null : t;
-}
-
-/** startDate가 오늘보다 이전(지난 날짜)이면 true */
-function isStartDatePast(startDate: string | null): boolean {
-  if (!startDate?.trim()) return false;
-  const start = parseLocalDate(startDate);
-  if (!start) return false;
-  const today = getKstDate();
-  start.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-  return start.getTime() < today.getTime();
-}
-
-/** startDate와 오늘(KST) 비교 → 예정 | 임박 | D-day | 지남 */
-function getDateStatusLabel(
-  startDate: string | null,
-): "예정" | "임박" | "D-day" | "지남" {
-  if (!startDate?.trim()) return "예정";
-  const start = parseLocalDate(startDate);
-  if (!start) return "예정";
-  const today = getKstDate();
-  start.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-  const startMs = start.getTime();
-  const todayMs = today.getTime();
-  const diffDays = Math.floor((startMs - todayMs) / (24 * 60 * 60 * 1000));
-  if (diffDays < 0) return "지남";
-  if (diffDays === 0) return "D-day";
-  if (diffDays <= 5) return "임박";
-  return "예정";
 }
 
 /** 공유 방 호스트 정보 (public API 응답) */
@@ -318,68 +278,6 @@ interface RoomMember {
   name: string;
   image: string | null;
   permission: string;
-}
-
-/** 멤버별 아바타 그라데이션 (인덱스별 다른 색상) */
-const AVATAR_GRADIENTS = [
-  "linear-gradient(135deg, #ee2b8c 0%, #ff7eb3 100%)",
-  "linear-gradient(135deg, #6366f1 0%, #a5b4fc 100%)",
-  "linear-gradient(135deg, #059669 0%, #34d399 100%)",
-  "linear-gradient(135deg, #d97706 0%, #fbbf24 100%)",
-  "linear-gradient(135deg, #0ea5e9 0%, #7dd3fc 100%)",
-];
-
-const PAST_DATE_TOOLTIP = "예정된 날짜가 지났어요!";
-
-function PastDateIndicator() {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!showTooltip) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setShowTooltip(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showTooltip]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="absolute top-0 right-1 z-10"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setShowTooltip((prev) => !prev);
-        }}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-amber-500 hover:bg-amber-50 hover:text-amber-600 transition-colors"
-        aria-label="지난 날짜 안내"
-      >
-        <Info className="h-4 w-4" strokeWidth={2} />
-      </button>
-      {showTooltip && (
-        <div
-          className="absolute right-0 top-full mt-1 z-20 w-52 rounded-lg bg-[#1b0d14] text-white text-xs leading-relaxed px-3 py-2 shadow-lg"
-          role="tooltip"
-        >
-          {PAST_DATE_TOOLTIP}
-          <span className="absolute -top-1.5 right-4 w-2.5 h-2.5 bg-[#1b0d14] rotate-45" />
-        </div>
-      )}
-    </div>
-  );
 }
 
 function MainPageContent() {
@@ -425,13 +323,11 @@ function MainPageContent() {
   // 탭 및 카운트 상태
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [removedItems, setRemovedItems] = useState<Set<number>>(new Set());
-  const [activeTab, setActiveTab] = useState<"planned" | "completed">(
-    "planned",
-  );
+  const [activeTab] = useState<"planned" | "completed">("planned");
   const plannedListRef = useRef<ScheduleListItem[]>([]);
   const lastPlannedCountRef = useRef(0);
   const lastCompletedCountRef = useRef(0);
-  const [plannedTotal, setPlannedTotal] = useState(0);
+  const [, setPlannedTotal] = useState(0);
   const [completedTotal, setCompletedTotal] = useState(0);
 
   // 로그인 및 공유 모달 상태
@@ -444,9 +340,18 @@ function MainPageContent() {
   const [showGuestPlanLimitModal, setShowGuestPlanLimitModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  /*
+    기본은 **다가오는 순**(date_asc)이다. 예전 기본값은 최신순이라 목록 맨 위에
+    가장 먼 일정이 왔다 — 홈에서 사람이 보려는 건 "다음에 뭐가 오나"인데
+    정반대를 먼저 보여 주고 있었다. 시간 머리글(이번 달·다음 달)도 이 순서라야
+    말이 된다.
+  */
   const [sortOptions, setSortOptions] = useState<PlanSortOption[]>([
-    "date_desc",
+    "date_asc",
   ]);
+
+  /** 시간 묶음 기준일. 렌더마다 새로 만들면 묶음이 흔들린다 */
+  const todayForBuckets = useMemo(() => getKstDate(), []);
 
   // Guide Overlay State. 로그인 시: GET /plan/user 응답으로만 설정·참조( localStorage 미참조 )
   const [hasSeenMainGuide, setHasSeenMainGuide] = useState<boolean | null>(
@@ -1038,6 +943,41 @@ function MainPageContent() {
     return `D+${Math.abs(dDay)}`;
   })();
   const weddingDateText = formatWeddingDate(displayData.date);
+  /**
+   * 머리 면에 문장으로 쓰는 남은 날. 알약(dDayLabel)은 넓은 화면 대시보드가
+   * 계속 쓴다.
+   *
+   * 시안처럼 **두 줄**로 끊는다 — "결혼식까지 / 74일 남았어요". 한 줄로 두면
+   * 32px 에서 폰 폭을 넘겨 글자가 줄어들거나 어중간한 데서 꺾인다.
+   */
+  const ddaySentenceLines: [string, string?] = (() => {
+    if (dDay === null) return ["결혼식 날짜를", "정해 주세요"];
+    if (dDay > 0) return ["결혼식까지", `${dDay}일 남았어요`];
+    if (dDay === 0) return ["오늘이", "결혼식이에요"];
+    return ["결혼식이", `${Math.abs(dDay)}일 지났어요`];
+  })();
+
+  /**
+   * 머리 면의 작은 아바타. 최대 두 개.
+   *
+   * 공유 뷰면 방 멤버에서, 아니면 커플 이름에서 첫 글자를 딴다. 왕관·하트
+   * 배지는 달지 않는다 — 26px 위에서 읽히지 않고, 누가 방장인지는 멤버
+   * 목록이 말한다.
+   */
+  const headerAvatars = useMemo(() => {
+    if (isSharedView && roomMembers.length > 0) {
+      return roomMembers
+        .slice(0, 2)
+        .map((m) => (m.name ?? "?").trim().charAt(0) || "?");
+    }
+    const name = (displayData.name ?? "").trim();
+    if (!name) return [];
+    return name
+      .split(/\s*[·・,]\s*/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0));
+  }, [isSharedView, roomMembers, displayData.name]);
 
   const effectiveScheduleList = isSharedView
     ? sharedRoomScheduleList
@@ -1085,40 +1025,12 @@ function MainPageContent() {
       ? Math.round((usedBudget / initialBudget) * 100)
       : 0;
   })();
-  const budgetUsagePercentageForBar = Math.max(
-    0,
-    Math.min(100, budgetUsagePercentage),
-  );
 
-  // 예산 사용률에 따른 그라데이션 색상 계산
-  const getGradientColors = () => {
-    return `linear-gradient(135deg, #ee2b8c 0%, #ff5c95 100%)`;
-  };
-
-  const budgetGradient = getGradientColors();
-
-  // 날짜 포맷팅 함수 (YYYY년 MM월 DD일 + 요일, 로컬 파싱으로 타임존 오차 방지)
-  const formatDate = (dateString: string) => {
-    const date = parseLocalDate(dateString);
-    if (!date) return { dateText: "날짜 미정", weekday: "" };
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekdays = [
-      "일요일",
-      "월요일",
-      "화요일",
-      "수요일",
-      "목요일",
-      "금요일",
-      "토요일",
-    ];
-    const weekday = weekdays[date.getDay()];
-    return {
-      dateText: `${year}년 ${month}월 ${day}일`,
-      weekday,
-    };
-  };
+  /*
+    예전에는 예산 카드가 이 그라데이션을 직접 칠했다. 지금은 카드가 아니라
+    **화면 머리 면**이 그 색을 맡고, 카드는 면을 파낸 흰 반투명 상자다.
+    같은 색 덩어리가 면 위에 또 뜨면 어느 쪽을 봐야 할지 알 수 없어진다.
+  */
 
   const fetchScheduleList = useCallback(
     async (roomIdParam?: string, status?: "NORMAL" | "COMPLETED") => {
@@ -1239,17 +1151,6 @@ function MainPageContent() {
     fetchScheduleList,
   ]);
 
-  // 탭별 리스트 카운킹 (게스트 모드는 로컬 리스트 기준, 로그인 모드는 명시적 상태 활용)
-  const plannedCount = useMemo(() => {
-    if (!getToken()) {
-      return effectiveScheduleList.filter(
-        (p) => p.status === "NORMAL" && !removedItems.has(p.id),
-      ).length;
-    }
-    return plannedTotal;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveScheduleList.length, plannedTotal, removedItems.size]);
-
   const completedCount = useMemo(() => {
     if (!getToken()) {
       return effectiveScheduleList.filter(
@@ -1348,6 +1249,25 @@ function MainPageContent() {
     });
   }, [baseVisibleList, selectedCategory, sortOptions]);
 
+  /*
+    시안(C안 01)의 두 묶음.
+
+    **이번 달에 할 일** — 이번 달 안의 일과 **지난 일**. 지난 일을 따로 빼지
+    않는 이유는, 아직 안 끝났으므로 여전히 "해야 할 일"이고 가장 급하기
+    때문이다. 다가오는 순 정렬이라 자연히 맨 위에 온다.
+
+    **그 다음** — 다음 달 이후와 날짜를 안 정한 일.
+  */
+  const [thisMonthList, laterList] = useMemo(() => {
+    const now: ScheduleListItem[] = [];
+    const later: ScheduleListItem[] = [];
+    visibleScheduleList.forEach((plan) => {
+      const { key } = getTimeBucket(plan.startDate, todayForBuckets);
+      (key === "past" || key === "this" ? now : later).push(plan);
+    });
+    return [now, later] as const;
+  }, [visibleScheduleList, todayForBuckets]);
+
   if (!scheduleLoading && !isSharedLoading) {
     lastPlannedCountRef.current =
       activeTab === "planned"
@@ -1358,13 +1278,6 @@ function MainPageContent() {
         ? baseVisibleList.length
         : lastCompletedCountRef.current;
   }
-  const displayCount =
-    scheduleLoading || isSharedLoading
-      ? activeTab === "planned"
-        ? lastPlannedCountRef.current
-        : lastCompletedCountRef.current
-      : baseVisibleList.length;
-
   const mainScrollRef = useRef<HTMLElement>(null);
   const firstSectionRef = useRef<HTMLDivElement>(null);
   const secondSectionRef = useRef<HTMLDivElement>(null);
@@ -1781,7 +1694,6 @@ function MainPageContent() {
             }
           : null
       }
-      gridBackground
       /* 기본값(372/420px)은 목록 화면용이다. 대시보드는 남는 폭을 다 쓴다 */
       masterWidthClassName="lg:flex-1"
       detailWidthClassName="w-[392px] 2xl:w-[428px]"
@@ -1883,312 +1795,122 @@ function MainPageContent() {
         )}
         <motion.div
           ref={firstSectionRef}
-          className="w-full shrink-0 pt-8 pb-10 origin-top snap-start flex flex-col justify-start"
+          /*
+            첫 스냅 구간이 **화면 머리 면**이다. 예전에는 흰 바탕 위에
+            분홍 예산 카드가 떠 있어, 화면 3분의 1이 색 덩어리인데도 그 아래
+            일정이 부속처럼 보였다. 같은 색을 면으로 깔면 덩어리가 사라진다.
+
+            `-mx-4 sm:-mx-6` 은 main 의 좌우 패딩을 상쇄해 가장자리까지 펴기
+            위한 것이고, 안쪽에서 같은 만큼 다시 준다. 스냅 경계(340px)와
+            가이드 앵커(main-header-info · main-budget-card)는 그대로다.
+          */
+          /*
+            `w-full` + `-mx-4` 로는 안 된다 — 부모 main 이 `items-center` 라
+            좌우 음수 마진이 서로 상쇄되어 위치가 그대로다(면이 좌우 16px 씩
+            들어가 카드처럼 보였다). `self-stretch` 로 교차축을 채우게 한 뒤
+            음수 마진을 주면 그제야 **가장자리까지** 펴진다.
+          */
+          className="-mx-4 flex shrink-0 origin-top snap-start flex-col justify-start self-stretch rounded-b-[28px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-4 pb-5 pt-4 sm:-mx-6 sm:px-6"
           style={{
-            height: "340px",
+            /*
+              내용에 맞춰 줄인다. 예전에는 340px 로 고정돼 있었는데, 예산이
+              큰 카드에서 얇은 상자로 내려가면서 면 아래쪽에 100px 넘는 빈
+              분홍이 남았다. 스크롤 게이트는 `first.offsetHeight` 를 읽으므로
+              높이가 바뀌어도 따라온다.
+            */
             opacity: headerOpacity,
             scale: headerScale,
             transformPerspective: 1000,
           }}
         >
-          {/* 상단 영역: 1행=이름·초대(이름 우측), 2행=결혼식 날짜(좌측)·D-day(날짜 오른쪽), 오른쪽=프로필 */}
-          <div className="w-full flex items-start justify-between gap-4">
-            {/* 왼쪽: [이름(좌)·초대(우)] + [결혼식 날짜(좌)·D-day(우)] */}
-            <div
-              id="main-header-info"
-              className="flex flex-col items-start min-w-0 flex-1 p-2 -m-2 rounded-xl transition-colors"
-            >
-              {/* 1행: 이름(좌) · 초대(이름 바로 옆, 이름 길이에 따라 가변) */}
-              <div className="flex items-center gap-2 flex-nowrap min-w-0">
-                {isPlanLoading ? (
-                  <span
-                    className="skeleton-shimmer h-[42px] w-[120px] rounded-lg shrink-0"
-                    aria-hidden
-                  />
-                ) : (
-                  <span className="font-user-content text-3xl sm:text-[42px] font-semibold text-[#1b0d14] leading-tight shrink-0 min-w-0 break-keep line-clamp-2">
-                    {displayData.name || "이름"}
-                  </span>
-                )}
-                {isPlanLoading ? (
-                  <span
-                    className="skeleton-shimmer h-10 w-[88px] shrink-0 rounded-full"
-                    aria-hidden
-                  />
-                ) : isSharedView && roomMembers.length > 0 ? (
-                  <div
-                    className="flex shrink-0 -space-x-2 items-center"
-                    aria-label="함께하는 멤버"
-                  >
-                    {(() => {
-                      const planId = getPlanUserIdFromToken()
-                        ?.trim()
-                        .toLowerCase();
-                      const subId = getSubFromToken()?.trim().toLowerCase();
-                      const apiPlanId =
-                        apiPlanData && apiPlanData !== "none"
-                          ? String(apiPlanData.id).trim().toLowerCase()
-                          : "";
-                      const myIds = [planId, subId, apiPlanId].filter(
-                        (id): id is string => !!id,
-                      );
-                      const list = [...roomMembers];
-                      const idx = list.findIndex((m) => {
-                        const id = String(m.planUserId ?? "")
-                          .trim()
-                          .toLowerCase();
-                        return myIds.some((myId) => myId === id);
-                      });
-                      if (idx >= 0 && idx !== 0) {
-                        const [me] = list.splice(idx, 1);
-                        list.unshift(me);
-                      }
-                      return list.slice(0, 2);
-                    })().map((member, i) => (
-                      <div
-                        key={member.planUserId}
-                        className="relative flex-shrink-0"
-                        style={{ zIndex: i }}
-                      >
-                        {(String(member.permission ?? "").toUpperCase() ===
-                          "OWNER" ||
-                          String(member.planUserId ?? "")
-                            .trim()
-                            .toLowerCase() ===
-                            String(sharedRoomUser.id).trim().toLowerCase()) && (
-                          <span
-                            className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                            aria-hidden
-                          >
-                            <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
-                          </span>
-                        )}
-                        {/* 신랑·신부는 하트로 구분한다 */}
-                        {String(member.permission ?? "").toUpperCase() ===
-                          "SPOUSE" && (
-                          <span
-                            className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-[#ee2b8c] text-white shadow-sm"
-                            aria-hidden
-                          >
-                            <Heart className="w-2.5 h-2.5 fill-current" />
-                          </span>
-                        )}
-                        {String(member.permission ?? "").toUpperCase() ===
-                          "WRITE" &&
-                          String(member.permission ?? "").toUpperCase() !==
-                            "OWNER" && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
-                              aria-hidden
-                            >
-                              <Pencil
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
-                        <div
-                          className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
-                          style={{
-                            background: member.image
-                              ? undefined
-                              : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
-                          }}
-                          title={member.name}
-                        >
-                          {member.image ? (
-                            <img
-                              src={member.image}
-                              alt={member.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span>
-                              {member.name?.trim().charAt(0)?.toUpperCase() ||
-                                "?"}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {roomMembers.length === 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowShareModal(true)}
-                        className="relative flex-shrink-0 z-10 w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 bg-stone-50 hover:bg-stone-100 transition-colors shadow-sm"
-                        aria-label="멤버 초대하기"
-                      >
-                        <Plus className="w-5 h-5" strokeWidth={3} />
-                      </button>
-                    )}
-                  </div>
-                ) : apiPlanData &&
-                  apiPlanData !== "none" &&
-                  apiPlanData.members &&
-                  apiPlanData.members.length > 0 ? (
-                  <div
-                    className="flex shrink-0 -space-x-2 items-center"
-                    aria-label="함께하는 멤버"
-                  >
-                    {(() => {
-                      const list = [...apiPlanData.members];
-                      const ownerIdx = list.findIndex(
-                        (m) =>
-                          String(m.permission ?? "").toUpperCase() === "OWNER",
-                      );
-                      if (ownerIdx >= 0 && ownerIdx !== 0) {
-                        const [owner] = list.splice(ownerIdx, 1);
-                        list.unshift(owner);
-                      }
-                      return list.slice(0, 2);
-                    })().map((member, i) => (
-                      <div
-                        key={member.planUserId}
-                        className="relative flex-shrink-0"
-                        style={{ zIndex: i }}
-                      >
-                        {String(member.permission ?? "").toUpperCase() ===
-                          "OWNER" && (
-                          <span
-                            className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-amber-900 shadow-sm"
-                            aria-hidden
-                          >
-                            <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
-                          </span>
-                        )}
-                        {/* 신랑·신부는 하트로 구분한다 */}
-                        {String(member.permission ?? "").toUpperCase() ===
-                          "SPOUSE" && (
-                          <span
-                            className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-[#ee2b8c] text-white shadow-sm"
-                            aria-hidden
-                          >
-                            <Heart className="w-2.5 h-2.5 fill-current" />
-                          </span>
-                        )}
-                        {String(member.permission ?? "").toUpperCase() ===
-                          "WRITE" &&
-                          String(member.permission ?? "").toUpperCase() !==
-                            "OWNER" && (
-                            <span
-                              className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-slate-500 text-white shadow-sm"
-                              aria-hidden
-                            >
-                              <Pencil
-                                className="w-2.5 h-2.5"
-                                strokeWidth={2.5}
-                              />
-                            </span>
-                          )}
-                        <div
-                          className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-white text-sm font-black shadow-sm overflow-hidden"
-                          style={{
-                            background: member.image
-                              ? undefined
-                              : AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
-                          }}
-                          title={member.name}
-                        >
-                          {member.image ? (
-                            <img
-                              src={member.image}
-                              alt={member.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span>
-                              {member.name?.trim().charAt(0)?.toUpperCase() ||
-                                "?"}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {apiPlanData.members?.length === 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowShareModal(true)}
-                        className="relative flex-shrink-0 z-10 w-10 h-10 rounded-full border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 bg-stone-50 hover:bg-stone-100 transition-colors shadow-sm"
-                        aria-label="멤버 초대하기"
-                      >
-                        <Plus className="w-5 h-5" strokeWidth={3} />
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!getToken()) {
-                        setShowShareModal(false);
-                        setShowLoginRequiredModal(true);
-                        return;
-                      }
-                      setShowShareModal(true);
-                    }}
-                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-[#1b0d14] bg-stone-100 hover:bg-stone-200 transition-colors border border-stone-200"
-                    aria-label="플랜 초대하기"
-                  >
-                    <Mail className="h-4 w-4 text-stone-600" strokeWidth={2} />
-                    초대
-                  </button>
-                )}
-              </div>
-              {/* 2행: 결혼식 날짜(좌측) + D-day(날짜 오른쪽에 붙임) */}
-              <div className="mt-[5px] flex items-center gap-1.5 flex-nowrap min-w-0 max-w-[200px] sm:max-w-none">
-                {isPlanLoading ? (
-                  <>
-                    <span
-                      className="skeleton-shimmer h-3.5 w-[152px] rounded shrink-0"
-                      aria-hidden
-                    />
-                    <span
-                      className="skeleton-shimmer h-10 w-14 shrink-0 rounded-full"
-                      aria-hidden
-                    />
-                  </>
-                ) : (
-                  <>
-                    <span className="text-[12px] font-normal leading-tight text-gray-500 shrink-0">
-                      {weddingDateText
-                        ? `결혼식: ${weddingDateText}`
-                        : "\u00A0"}
-                    </span>
-                    <span
-                      className="flex h-5 shrink-0 items-center rounded-full px-4 py-2 text-sm font-semibold leading-none"
-                      style={{
-                        background: "#ee2b8c",
-                        color: "#fff",
-                        boxShadow: "0 2px 8px rgba(238, 43, 140, 0.35)",
-                      }}
-                    >
-                      {dDayLabel}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
+          {/*
+            시안(C안 01)의 머리 면이다. 기존 마크업을 손보지 않고 시안 값으로
+            새로 짰다.
+
+            예전에는 **이름이 42px** 로 화면에서 가장 컸고 D-day 는 그 아래
+            작은 알약이었다. 이 화면에서 이름은 "누구의 플랜인지"를 확인시키는
+            라벨이고, 사람이 실제로 보는 값은 **남은 날**이다. 시안대로
+            이름 18px / D-day 32px 두 줄로 뒤집는다.
+
+            멤버 배지(왕관·하트)는 걷어냈다 — 면 위에서 4px 짜리 아이콘은
+            읽히지 않고, 누가 방장인지는 멤버 목록(공유 모달)이 말한다.
+          */}
+          <div id="main-header-info" className="w-full">
             <div className="flex items-center gap-2">
+              {isPlanLoading ? (
+                <span
+                  className="skeleton-shimmer h-[22px] w-[110px] shrink-0 rounded"
+                  aria-hidden
+                />
+              ) : (
+                <span className="font-user-content min-w-0 truncate text-[18px] font-bold tracking-[-0.02em] text-white">
+                  {displayData.name || "이름"}
+                </span>
+              )}
+
+              {headerAvatars.length > 0 && (
+                <div className="flex shrink-0" aria-label="함께하는 멤버">
+                  {headerAvatars.map((label, i) => (
+                    <span
+                      key={`${label}-${i}`}
+                      className={`grid h-[26px] w-[26px] place-items-center rounded-full border-2 border-white/50 bg-white/20 text-[11px] font-bold text-white ${i > 0 ? "-ml-2" : ""}`}
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <span className="flex-1" />
+
               <button
                 type="button"
                 onClick={openGuide}
-                className="flex h-12 w-12 shrink-0 items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white transition-colors hover:bg-white/20"
                 aria-label="가이드 보기"
               >
-                <CircleHelp className="h-6 w-6" strokeWidth={2} />
+                <CircleHelp className="h-[22px] w-[22px]" strokeWidth={2} />
               </button>
-              {/* roomId 또는 shareCode일 때 우측 상단 나가기 버튼 */}
               {(shareCode || roomId) && (
                 <button
                   type="button"
                   onClick={() => router.push("/plan-list")}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-600 text-white cursor-pointer hover:bg-stone-700 transition-colors"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white transition-colors hover:bg-white/20"
                   aria-label="나가기"
                 >
-                  <LogOut className="h-6 w-6" strokeWidth={2} />
+                  <LogOut className="h-[22px] w-[22px]" strokeWidth={2} />
                 </button>
               )}
             </div>
+
+            {isPlanLoading ? (
+              <div className="mt-4 space-y-2">
+                <span
+                  className="skeleton-shimmer block h-[74px] w-[240px] rounded"
+                  aria-hidden
+                />
+                <span
+                  className="skeleton-shimmer block h-4 w-[190px] rounded"
+                  aria-hidden
+                />
+              </div>
+            ) : (
+              <>
+                <p className="mt-4 text-[32px] font-bold leading-[1.15] tracking-[-0.045em] text-white">
+                  {ddaySentenceLines[0]}
+                  {ddaySentenceLines[1] ? (
+                    <>
+                      <br />
+                      {ddaySentenceLines[1]}
+                    </>
+                  ) : null}
+                </p>
+                <p className="mt-2 truncate text-[14px] leading-tight text-white/80">
+                  {weddingDateText || " "}
+                  {displayData.venue ? ` · ${displayData.venue}` : ""}
+                </p>
+              </>
+            )}
           </div>
           {/* 온보딩에서 초대를 건너뛴 자리 — 배우자가 들어오면 사라진다 */}
           {showSoloBanner && !isPlanLoading && (
@@ -2242,61 +1964,35 @@ function MainPageContent() {
                       : "/budget-detail",
                   );
                 }}
-                className="flex w-full flex-col rounded-[24px] p-6 cursor-pointer hover:opacity-95 transition-opacity"
-                style={{
-                  background: budgetGradient,
-                }}
+                /*
+                  시안(C안 01)의 얇은 상자다. 면이 이미 분홍이므로 여기서는
+                  **한 줄 요약 + 부연**만 낸다 — 예전처럼 40px 아이콘 원과
+                  42px 숫자와 막대를 다 넣으면 면 위에 또 하나의 큰 덩어리가
+                  생겨, 머리 면으로 옮긴 뜻이 없어진다. 자세한 구성은 눌러서
+                  가는 예산 상세가 맡는다.
+                */
+                className="flex w-full cursor-pointer items-center gap-3 rounded-[12px] bg-white/20 px-4 py-3 text-left transition-colors hover:bg-white/25"
               >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/30">
-                    <CircleDollarSign
-                      className="h-5 w-5 text-white"
-                      strokeWidth={2}
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-bold text-white">
+                    남은 예산{" "}
+                    <CountUp
+                      to={remainingBudget}
+                      separator=","
+                      duration={0.1}
+                      className="inline"
                     />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold leading-5 text-white">
-                      남은 예산
-                    </p>
-                    <p
-                      className={
-                        Math.abs(remainingBudget) >= 1000
-                          ? "my-3 text-[32px] max-[350px]:text-[28px] font-semibold leading-7 text-white"
-                          : "my-3 text-[42px] max-[350px]:text-[37px] font-semibold leading-7 text-white"
-                      }
-                    >
-                      <span className="whitespace-nowrap">
-                        <CountUp
-                          to={remainingBudget}
-                          separator=","
-                          duration={0.1}
-                          className="inline"
-                        />
-                        만 원
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <p className="mt-1 pl-[52px] py-2 text-xl max-[350px]:text-[15px] font-semibold leading-none text-white">
-                  <CountUp
-                    to={usedBudget}
-                    separator=","
-                    duration={0.1}
-                    className="inline"
-                  />
-                  만 원 지출/예정
-                </p>
-                <div className="mt-4 flex items-center gap-2">
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/30">
-                    <div
-                      className="h-full rounded-full bg-white"
-                      style={{ width: `${budgetUsagePercentageForBar}%` }}
-                    />
-                  </div>
-                  <span className="shrink-0 text-sm font-normal leading-5 text-white">
-                    {budgetUsagePercentage}%
+                    만 원
                   </span>
-                </div>
+                  <span className="mt-0.5 block text-[12px] text-white/75">
+                    {initialBudget.toLocaleString("ko-KR")}만 원 중{" "}
+                    {usedBudget.toLocaleString("ko-KR")}만 원 지출·예정
+                  </span>
+                </span>
+                <ChevronRight
+                  className="h-4 w-4 shrink-0 text-white"
+                  strokeWidth={2.5}
+                />
               </div>
             )}
           </div>
@@ -2305,196 +2001,35 @@ function MainPageContent() {
           ref={secondSectionRef}
           className="w-full min-h-[100dvh] h-[100dvh] pt-4 snap-start bg-transparent relative flex flex-col shrink-0"
         >
-          {/* 하단 영역 */}
-          <div className="flex justify-between items-end gap-3">
-            <div className="flex flex-col items-start w-full overflow-hidden pt-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xl font-bold text-[#1b0d14] shrink-0">
-                  플랜 리스트
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    // 공유 뷰에서는 내 방 id 를 붙이지 않는다 (내 플랜에 저장되던 문제)
-                    const roomIdValue = isSharedView
-                      ? roomId
-                      : (roomId ??
-                        (apiPlanData &&
-                        apiPlanData !== "none" &&
-                        apiPlanData.roomId
-                          ? String(apiPlanData.roomId)
-                          : null));
-                    router.push(
-                      roomIdValue
-                        ? `/calendar?roomId=${roomIdValue}`
-                        : "/calendar",
-                    );
-                  }}
-                  className="p-1.5 text-gray-400 hover:text-[#ee2b8c] hover:bg-[#ee2b8c10] transition-all rounded-lg active:scale-95"
-                  aria-label="캘린더 보기"
-                >
-                  <Calendar className="h-5 w-5" strokeWidth={2.5} />
-                </button>
-              </div>
-              {/* 카테고리 필터 영역 (테스트) */}
-              <div
-                ref={categoryScrollRef}
-                className="flex w-full items-center gap-1.5 overflow-x-auto scrollbar-hide py-1.5 mt-0.5 mask-linear-right select-none cursor-grab active:cursor-grabbing"
-              >
-                {isPlanLoading ? (
-                  <span
-                    className="skeleton-shimmer block h-6 w-48 rounded"
-                    aria-hidden
-                  />
-                ) : displayCount > 0 ? (
-                  currentTabCategories.map((catName) => {
-                    const isSelected = selectedCategory === catName;
-                    return (
-                      <button
-                        key={catName}
-                        ref={isSelected ? selectedCategoryButtonRef : undefined}
-                        type="button"
-                        onClick={() => setSelectedCategory(catName)}
-                        className={`shrink-0 px-3 py-1 rounded-md text-[12px] font-bold transition-all flex items-center gap-1 ${
-                          isSelected
-                            ? "bg-[#ee2b8c] text-white shadow-sm"
-                            : "bg-gray-100/80 text-gray-600 hover:bg-gray-200 active:scale-95"
-                        }`}
-                      >
-                        {catName}
-                      </button>
-                    );
-                  })
-                ) : (
-                  <span className="text-[14px] text-gray-400 font-medium">
-                    플랜을 추가해볼까요?
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex shrink-0 pb-1.5 items-center gap-2">
+          {/*
+            시안(C안 01)의 머리글이다.
+
+            걷어낸 것: "플랜 리스트" 제목 + 달력 아이콘, 카테고리 칩 줄,
+            정렬 버튼, 계획 중/완료 탭. 홈에서 사람이 하는 질문은 "무엇을"이
+            아니라 **"언제까지"** 라, 목록을 시간 두 묶음으로만 가른다.
+            카테고리로 좁혀 보는 일과 완료한 것을 되짚는 일은 **플랜 보드**가
+            이미 한다 — 오른쪽 "전체"가 그리로 간다.
+          */}
+          <div id="main-this-month" className="flex items-baseline gap-2 px-1">
+            <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#1a1c20]">
+              이번 달에 할 일
+            </h2>
+            <span className="text-[13px] tabular-nums text-[#868b94]">
+              {thisMonthList.length}
+            </span>
+            <span className="flex-1" />
+            {!(
+              isRoomView &&
+              String(myRoomPermission ?? "").toUpperCase() === "READ"
+            ) && (
               <button
                 type="button"
-                onClick={() => setShowFilterModal(true)}
-                className="inline-flex items-center justify-center gap-1.5 h-[36px] px-3.5 py-0 rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 border-2 border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
-                aria-label="필터"
+                onClick={handleAddPlan}
+                className="text-[13px] font-bold text-[#ee2b8c] transition-colors hover:text-[#cc1873]"
               >
-                {(() => {
-                  const current = sortOptions[0] ?? "date_desc";
-                  const { label, isDesc } = getSortButtonLabel(current);
-                  return (
-                    <>
-                      <span>{label}</span>
-                      {isDesc ? (
-                        <ArrowDown
-                          className="h-3.5 w-3.5 shrink-0"
-                          strokeWidth={2.5}
-                        />
-                      ) : (
-                        <ArrowUp
-                          className="h-3.5 w-3.5 shrink-0"
-                          strokeWidth={2.5}
-                        />
-                      )}
-                    </>
-                  );
-                })()}
+                추가
               </button>
-              {!(
-                isRoomView &&
-                String(myRoomPermission ?? "").toUpperCase() === "READ"
-              ) && (
-                <button
-                  type="button"
-                  onClick={handleAddPlan}
-                  className="flex h-[36px] justify-center items-center gap-1.5 px-3.5 py-0 text-white rounded-lg font-bold text-xs whitespace-nowrap shrink-0 transition-colors hover:opacity-90 active:opacity-80 active:scale-95 transform transition-transform"
-                  style={{
-                    backgroundColor:
-                      !getToken() &&
-                      !isSharedView &&
-                      effectiveScheduleList.length >= 3
-                        ? "#cbd5e1"
-                        : "#ee2b8c",
-                  }}
-                >
-                  추가
-                  <CirclePlus
-                    className="h-4 w-4 shrink-0 text-white"
-                    strokeWidth={2.5}
-                  />
-                </button>
-              )}
-            </div>
-          </div>
-          {/* 탭 영역 - Sticky 고정 */}
-          <div
-            id="main-tabs"
-            className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm px-0 sm:px-2 py-2 -mx-4 sm:mx-0 px-4 sm:px-2 border-b border-gray-50/50"
-          >
-            <div className="flex bg-gray-100/50 p-1.5 rounded-2xl border border-gray-100">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("planned");
-                  setSelectedCategory("전체");
-                  if (shareCode?.trim()) {
-                    fetchSharedRoomScheduleList("NORMAL");
-                  } else if (getToken()) {
-                    const roomIdParam =
-                      roomId?.trim() ||
-                      (apiPlanData &&
-                      apiPlanData !== "none" &&
-                      apiPlanData.roomId
-                        ? String(apiPlanData.roomId)
-                        : null);
-                    fetchScheduleList(roomIdParam ?? undefined, "NORMAL");
-                  }
-                }}
-                className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
-                  activeTab === "planned"
-                    ? "bg-white text-[#ee2b8c] shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                <span>계획 중</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "planned" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}
-                >
-                  {plannedCount}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("completed");
-                  setSelectedCategory("전체");
-                  if (shareCode?.trim()) {
-                    fetchSharedRoomScheduleList("COMPLETED");
-                  } else if (getToken()) {
-                    const roomIdParam =
-                      roomId?.trim() ||
-                      (apiPlanData &&
-                      apiPlanData !== "none" &&
-                      apiPlanData.roomId
-                        ? String(apiPlanData.roomId)
-                        : null);
-                    fetchScheduleList(roomIdParam ?? undefined, "COMPLETED");
-                  }
-                }}
-                className={`flex-1 py-3 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${
-                  activeTab === "completed"
-                    ? "bg-white text-[#ee2b8c] shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                <span>완료</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === "completed" ? "bg-[#ee2b8c10] text-[#ee2b8c]" : "bg-gray-200 text-gray-500"}`}
-                >
-                  {completedCount}
-                </span>
-              </button>
-            </div>
+            )}
           </div>
           <div
             className={`flex-1 w-full pb-24 min-h-0 scrollbar-hide ${allowPlanListScroll ? "overflow-y-auto" : "overflow-hidden touch-pan-y"}`}
@@ -2539,21 +2074,25 @@ function MainPageContent() {
                 </li>
               ) : (
                 <AnimatePresence initial={false}>
-                  {visibleScheduleList.map((plan) => {
+                  {thisMonthList.map((plan) => {
                     const isChecked =
                       checkedItems.has(plan.id) || plan.status === "COMPLETED";
                     const amount = plan.amount ?? 0;
-                    const dateStatus = getDateStatusLabel(plan.startDate);
-                    const categoryColor = getCategoryColor(plan.categoryName);
                     const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
+                    /*
+                      묶음 머리글이 이미 "이번 달"을 말하므로 연도는 뺀다.
+                      "2026년 10월 10일 (토요일)" 은 목록에서 너무 길다.
+                    */
                     const dateLabel = plan.startDate?.trim()
                       ? (() => {
-                          const { dateText, weekday } = formatDate(
-                            plan.startDate as string,
-                          );
-                          return `${dateText} (${weekday})`;
+                          const d = parseLocalDate(plan.startDate as string);
+                          if (!d) return "날짜 미정";
+                          const w = ["일", "월", "화", "수", "목", "금", "토"][
+                            d.getDay()
+                          ];
+                          return `${d.getMonth() + 1}월 ${d.getDate()}일 (${w})`;
                         })()
-                      : "미정";
+                      : "날짜 미정";
 
                     return (
                       <motion.li
@@ -2579,83 +2118,76 @@ function MainPageContent() {
                           onClick={() => {
                             sessionStorage.setItem("returnToPlanList", "true");
                           }}
-                          className={`relative flex w-full items-center gap-4 bg-white p-4 rounded-3xl border border-[#ee2b8c0a] shadow-sm transition-transform active:scale-[0.98] ${isChecked ? "opacity-75" : ""}`}
+                          /*
+                              시안(C안 01)의 카드다. SEED 채움 카드
+                              (`bg-layer-fill`) + 구분선 없이 여백으로만 서고,
+                              그림자는 쓰지 않는다 — 그림자는 떠 있는 것에만.
+
+                              걷어낸 것: 56px 파스텔 아이콘 타일, "예정/임박"
+                              배지, 지난 날짜 ⓘ 표식. 카테고리는 칩이 말하고,
+                              언제인지는 날짜와 묶음 머리글이 말한다. 같은 것을
+                              세 번 말하던 자리였다.
+                            */
+                          className={`flex w-full items-start gap-3 rounded-2xl bg-[#f7f8f9] p-4 transition-colors active:bg-[#eeeff1] ${isChecked ? "opacity-70" : ""}`}
                           aria-label={`플랜 상세 보기: ${plan.title}`}
                         >
-                          {mounted &&
-                            activeTab === "planned" &&
-                            isStartDatePast(plan.startDate) && (
-                              <PastDateIndicator />
-                            )}
-                          <div
-                            className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                            style={{
-                              backgroundColor: `${categoryColor}`,
+                          <button
+                            type="button"
+                            id={String(plan.id)}
+                            disabled={togglingIds.has(plan.id)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleToggleCheck(plan.id);
                             }}
+                            className={`mt-0.5 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors disabled:pointer-events-none disabled:opacity-60 ${
+                              isChecked
+                                ? "border-[#079171] bg-[#079171]"
+                                : "border-[#ffc9e0] bg-white"
+                            }`}
+                            aria-label={
+                              isChecked ? "예정으로 되돌리기" : "완료로 표시"
+                            }
                           >
-                            <button
-                              type="button"
-                              id={String(plan.id)}
-                              disabled={togglingIds.has(plan.id)}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleToggleCheck(plan.id);
-                              }}
-                              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all hover:opacity-90 disabled:opacity-60 disabled:pointer-events-none ${
-                                isChecked
-                                  ? "bg-[#ee2b8c] border-[#ee2b8c]"
-                                  : "bg-white/80 border-[#ee2b8c]"
-                              }`}
-                            >
-                              {isChecked && (
-                                <Check
-                                  className="h-3 w-3 text-white"
-                                  strokeWidth={3}
-                                />
-                              )}
-                            </button>
-                          </div>
-                          <div className="flex-1 min-w-0">
+                            {isChecked && (
+                              <Check
+                                className="h-3 w-3 text-white"
+                                strokeWidth={3.5}
+                              />
+                            )}
+                          </button>
+
+                          <div className="min-w-0 flex-1">
                             <h4
                               // 색 클래스를 겹쳐 쓰면 생성된 CSS 순서가 승자를
                               // 정해 완료 표시가 흐려진다. 한쪽만 낸다.
-                              className={`font-user-content font-bold text-lg truncate ${isChecked ? "line-through text-gray-400" : "text-[#1b0d14]"}`}
+                              className={`font-user-content truncate text-[16px] font-bold tracking-[-0.01em] ${isChecked ? "text-[#868b94] line-through" : "text-[#1a1c20]"}`}
                             >
                               {plan.title}
                             </h4>
-                            <div className="font-user-content text-gray-400 text-xs font-semibold tracking-tight mt-0.5 space-y-0.5">
-                              <p className="truncate">{plan.categoryName}</p>
-                              <p className="truncate">{dateLabel}</p>
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[#555d6d]">
+                              <span className="rounded bg-[#fff1f7] px-1.5 py-px text-[11px] font-bold text-[#cc1873]">
+                                {plan.categoryName}
+                              </span>
+                              <span className="truncate">{dateLabel}</span>
+                              <span
+                                className={`ml-auto shrink-0 tabular-nums ${
+                                  amount > 0
+                                    ? "text-[14px] font-bold text-[#1a1c20]"
+                                    : "text-[13px] font-medium text-[#868b94]"
+                                }`}
+                              >
+                                {amount > 0
+                                  ? `${amount.toLocaleString("ko-KR")}만 원`
+                                  : "미정"}
+                              </span>
                             </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="text-lg font-extrabold text-[#1b0d14] mb-1">
-                              {amount > 0
-                                ? `${amount.toLocaleString("ko-KR")}만 원`
-                                : "미정"}
-                            </div>
-                            <span
-                              className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-black tracking-tight ${
-                                isChecked
-                                  ? "bg-emerald-50 text-emerald-600"
-                                  : dateStatus === "D-day"
-                                    ? "bg-[#ee2b8c] text-white shadow-xs"
-                                    : dateStatus === "임박"
-                                      ? "bg-orange-50 text-orange-600"
-                                      : dateStatus === "예정"
-                                        ? "bg-sky-50 text-sky-600"
-                                        : "bg-slate-100 text-slate-400"
-                              }`}
-                            >
-                              {isChecked ? "완료" : dateStatus}
-                            </span>
                           </div>
                         </Link>
                       </motion.li>
                     );
                   })}
-                  {visibleScheduleList.length === 0 && (
+                  {thisMonthList.length === 0 && (
                     <motion.li
                       key={`empty-${activeTab}`}
                       layout
@@ -2664,16 +2196,95 @@ function MainPageContent() {
                       exit={{ opacity: 0 }}
                       className="flex flex-1 flex-col items-center justify-center py-16"
                     >
-                      <p className="text-xl font-semibold text-stone-400 text-center w-full">
-                        {activeTab === "completed"
-                          ? "완료한 플랜이 없어요"
-                          : "모든 플랜을 완료했어요! 🎉"}
+                      <p className="w-full text-center text-[15px] font-medium text-[#868b94]">
+                        {laterList.length > 0
+                          ? "이번 달은 비어 있어요"
+                          : "할 일을 추가해 볼까요?"}
                       </p>
                     </motion.li>
                   )}
                 </AnimatePresence>
               )}
             </ul>
+
+            {/*
+              시안(C안 01)의 두 번째 묶음. 앞으로 할 일은 **구분선 목록**으로
+              낮춘다 — 지금 당장 할 일이 아니라서 카드만큼의 무게를 줄 필요가
+              없고, 같은 화면에 훨씬 많이 들어온다.
+              오른쪽 "전체"는 플랜 보드로 간다 — 카테고리로 좁혀 보는 일과
+              완료한 것을 되짚는 일은 거기가 맡는다.
+            */}
+            {laterList.length > 0 && (
+              <section className="mt-6">
+                <div className="flex items-baseline gap-2 px-1">
+                  <h2 className="text-[18px] font-bold tracking-[-0.02em] text-[#1a1c20]">
+                    그 다음
+                  </h2>
+                  <span className="text-[13px] tabular-nums text-[#868b94]">
+                    계획 중 {laterList.length}
+                    {completedCount > 0 ? ` · 완료 ${completedCount}` : ""}
+                  </span>
+                  <span className="flex-1" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const roomIdValue = isSharedView
+                        ? roomId
+                        : (roomId ??
+                          (apiPlanData &&
+                          apiPlanData !== "none" &&
+                          apiPlanData.roomId
+                            ? String(apiPlanData.roomId)
+                            : null));
+                      router.push(
+                        roomIdValue
+                          ? `/calendar?roomId=${roomIdValue}`
+                          : "/calendar",
+                      );
+                    }}
+                    className="text-[13px] font-bold text-[#ee2b8c] transition-colors hover:text-[#cc1873]"
+                  >
+                    전체
+                  </button>
+                </div>
+                <ul className="mt-3">
+                  {laterList.map((plan) => {
+                    const detailHref = `/schedule-detail?id=${plan.id}${roomIdForDetail ? `&roomId=${roomIdForDetail}` : ""}`;
+                    const dateLabel = plan.startDate?.trim()
+                      ? (() => {
+                          const d = parseLocalDate(plan.startDate as string);
+                          if (!d) return "날짜 미정";
+                          return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+                        })()
+                      : "날짜 미정";
+                    return (
+                      <li key={plan.id}>
+                        <Link
+                          href={detailHref}
+                          onClick={() => {
+                            sessionStorage.setItem("returnToPlanList", "true");
+                          }}
+                          className="flex w-full items-center gap-3 border-b border-[#0000000c] px-1 py-3.5 transition-colors active:bg-[#f7f8f9]"
+                        >
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[14px] font-medium text-[#1a1c20]">
+                              {plan.title}
+                            </span>
+                            <span className="mt-0.5 block truncate text-[12px] text-[#868b94]">
+                              {plan.categoryName}
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-[13px] text-[#868b94]">
+                            {dateLabel}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
+
             {tokenChecked &&
               !getToken() &&
               !showGuestPlanLimitModal &&
