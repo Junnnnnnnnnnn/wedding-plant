@@ -1,0 +1,500 @@
+/* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4
+ * Hallmark · 자랑하기 · 세 안이 공유하는 조각
+ * theme: 앱의 잠긴 시스템(main-mobile-tokens + c-tokens)을 그대로 잇는다.
+ *        hallmark 카탈로그 테마를 새로 고르지 않는다 — 기존 시각 체계가 있는
+ *        프로젝트에서는 그것이 권위다.
+ * paper: light · display: 둥근미소 · accent: warm-magenta
+ *
+ * ── 자랑하기가 뭔가 ───────────────────────────────────────────
+ * 대시보드에서 토글을 켜면 **내 플랜 한 장**이 자랑하기 목록에 올라간다.
+ *
+ *  · 올린 것은 **고칠 수 없다.** 올리는 순간의 스냅샷이다. 고치려면
+ *    내렸다가 다시 올린다. (토글이니 내리는 건 언제든 된다)
+ *  · 다른 사람은 **보기와 좋아요**만 한다. 댓글은 없다.
+ *  · **닉네임이 공개된다.** 피드(견적 후기)는 철저히 익명인데 자랑하기는
+ *    반대다 — 그래서 안내 모달이 무엇이 공개되는지 이름까지 적어 준다.
+ *
+ * 세 안이 다른 곳은 **목록 카드가 무엇으로 시작하느냐** 하나다.
+ *   A안 커플과 날짜 · B안 금액 · C안 진행률
+ * 나머지(토글·안내 모달·큰 모달의 크기 규칙)는 여기서 공유한다.
+ * ───────────────────────────────────────────────────────────── */
+
+/* ══ 대시보드의 자랑하기 토글 ═════════════════════════════════ */
+.bg-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--x3);
+  width: 100%;
+  text-align: left;
+  padding: var(--x3_5) var(--x4);
+  border-radius: var(--r3);
+  background: var(--bg-layer-fill);
+  transition: background var(--d3) var(--ease);
+}
+.bg-toggle:hover {
+  background: var(--bg-neutral-weak-pressed);
+}
+.bg-toggle__body {
+  flex: 1;
+  min-width: 0;
+}
+.bg-toggle__t {
+  display: block;
+  font-size: var(--t4);
+  font-weight: var(--w-bold);
+  color: var(--fg-neutral);
+}
+.bg-toggle__d {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--t2);
+  color: var(--fg-neutral-subtle);
+}
+/* 스위치. 껐다 켜는 것이지 "제출"이 아니라는 걸 모양으로 말한다 */
+.bg-switch {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--r-full);
+  background: var(--bg-neutral-solid-weak, #d1d3d8);
+  position: relative;
+  transition: background var(--d3) var(--ease);
+}
+.bg-switch i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-full);
+  background: #fff;
+  box-shadow: var(--s1);
+  transition: transform var(--d3) var(--ease);
+}
+.bg-switch[aria-checked="true"] {
+  background: var(--bg-brand-solid);
+}
+.bg-switch[aria-checked="true"] i {
+  transform: translateX(18px);
+}
+
+/* 올라가 있는 동안 토글 아래에 붙는 줄 */
+.bg-live {
+  display: flex;
+  align-items: center;
+  gap: var(--x2);
+  margin-top: var(--x2);
+  padding: var(--x2_5) var(--x4);
+  border-radius: var(--r3);
+  background: var(--bg-brand-weak);
+  font-size: var(--t2);
+  color: var(--fg-brand-contrast);
+}
+.bg-live b {
+  font-weight: var(--w-bold);
+}
+.bg-live__spacer {
+  margin-left: auto;
+}
+
+/* ══ 안내 모달 ════════════════════════════════════════════════
+ * 세 안이 같은 글을 쓴다. 여기서 정하는 건 **무엇을 말하느냐**이지
+ * 생김새가 아니다 — 생김새는 앱의 시트를 그대로 쓴다.
+ * ════════════════════════════════════════════════════════════ */
+.bg-scrim {
+  position: absolute;
+  inset: 0;
+  background: #1a1c2059;
+  display: grid;
+  place-items: center;
+  padding: var(--x4);
+}
+.bg-sheet {
+  width: 100%;
+  max-width: 340px;
+  background: var(--bg-layer-default);
+  border-radius: var(--r5);
+  padding: var(--x6) var(--x5) var(--x5);
+  box-shadow: var(--s3);
+}
+.bg-sheet__t {
+  font-size: var(--t8);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+}
+.bg-sheet__d {
+  margin-top: var(--x2);
+  font-size: var(--t4);
+  line-height: 1.6;
+  color: var(--fg-neutral-muted);
+}
+/* 규칙 세 줄. 아이콘 대신 **번호를 붙이지 않는다** — 순서가 아니라 성질이다 */
+.bg-rules {
+  margin-top: var(--x5);
+  display: grid;
+  gap: var(--x3_5);
+}
+.bg-rule {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: var(--x3);
+  align-items: start;
+}
+.bg-rule__i {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r2);
+  display: grid;
+  place-items: center;
+  background: var(--bg-brand-weak);
+  color: var(--fg-brand-contrast);
+}
+.bg-rule__t {
+  display: block;
+  font-size: var(--t4);
+  font-weight: var(--w-bold);
+  line-height: 1.4;
+}
+.bg-rule__d {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--t3);
+  line-height: 1.55;
+  color: var(--fg-neutral-muted);
+}
+/* 공개되는 것을 **글자 그대로** 적는다. "일부 정보" 같은 말은 쓰지 않는다 */
+.bg-open {
+  margin-top: var(--x5);
+  padding: var(--x3_5) var(--x4);
+  border-radius: var(--r3);
+  background: var(--bg-layer-fill);
+}
+.bg-open__l {
+  display: block;
+  font-size: var(--t2);
+  font-weight: var(--w-bold);
+  color: var(--fg-neutral-subtle);
+}
+.bg-open__v {
+  display: block;
+  margin-top: var(--x1_5);
+  font-size: var(--t3);
+  line-height: 1.6;
+  color: var(--fg-neutral);
+}
+.bg-sheet__btns {
+  margin-top: var(--x6);
+  display: grid;
+  gap: var(--x2);
+}
+
+/* ══ 큰 상세 모달 ═════════════════════════════════════════════
+ * 크기 규칙: **최대 1520x680, 남는 자리를 여백으로 쓰되 한 변 200px 을
+ * 넘지 않는다.** 1920x1080 에서 정확히 각 변 200px 이 남고(= 1520x680),
+ * 화면이 작아지면 여백이 16px 까지 줄었다가 그 아래로는 꽉 찬다.
+ * ════════════════════════════════════════════════════════════ */
+.bg-big {
+  position: absolute;
+  inset: clamp(16px, calc((100vh - 680px) / 2), 200px)
+    clamp(16px, calc((100vw - 1520px) / 2), 200px);
+  background: var(--bg-layer-default);
+  border-radius: var(--r6);
+  overflow: hidden;
+  box-shadow: var(--s3);
+  display: flex;
+  flex-direction: column;
+}
+/* 시안 안에서는 실제 뷰포트가 아니라 **틀** 기준으로 보여야 하므로
+   같은 규칙을 틀 크기(--frame-w/h)로 다시 쓴다 */
+.bg-big--demo {
+  inset: clamp(16px, calc((var(--frame-h) - 680px) / 2), 200px)
+    clamp(16px, calc((var(--frame-w) - 1520px) / 2), 200px);
+}
+/* 닫기. **바탕 색을 따라간다** — 흰 면 위에 흰 반투명 원을 얹으면
+   그냥 사라진다(실제로 안 보였다). 분홍 면 위에 놓을 때만 `--on-fill`. */
+.bg-big__close {
+  position: absolute;
+  top: var(--x4);
+  right: var(--x4);
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-full);
+  display: grid;
+  place-items: center;
+  background: var(--bg-layer-fill);
+  color: var(--fg-neutral-muted);
+  transition:
+    background var(--d3) var(--ease),
+    color var(--d3) var(--ease);
+}
+.bg-big__close:hover {
+  background: var(--bg-neutral-weak-pressed);
+  color: var(--fg-neutral);
+}
+.bg-big__close--on-fill {
+  background: #ffffff2e;
+  color: var(--c-on-fill);
+  backdrop-filter: blur(8px);
+}
+.bg-big__close--on-fill:hover {
+  background: #ffffff47;
+  color: var(--c-on-fill);
+}
+
+/* ══ 좋아요 ═══════════════════════════════════════════════════ */
+.bg-like {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--x1_5);
+  padding: var(--x1_5) var(--x3);
+  border-radius: var(--r-full);
+  background: var(--bg-layer-fill);
+  font-size: var(--t2);
+  font-weight: var(--w-bold);
+  color: var(--fg-neutral-muted);
+  font-variant-numeric: tabular-nums;
+  transition:
+    background var(--d3) var(--ease),
+    color var(--d3) var(--ease);
+}
+.bg-like:hover {
+  background: var(--bg-brand-weak);
+  color: var(--fg-brand-contrast);
+}
+.bg-like[aria-pressed="true"] {
+  background: var(--bg-brand-weak);
+  color: var(--fg-brand-contrast);
+}
+.bg-like[aria-pressed="true"] svg {
+  fill: currentColor;
+}
+/* 분홍 면 위에 얹힐 때 */
+.bg-like--on-fill {
+  background: var(--c-fill-inset);
+  color: var(--c-on-fill);
+}
+.bg-like--on-fill:hover {
+  background: var(--c-fill-inset-pressed);
+  color: var(--c-on-fill);
+}
+
+/* ══ 시안 문서용 틀 ═══════════════════════════════════════════ */
+.wf {
+  position: relative;
+  background: var(--bg-layer-default);
+  border: 1px solid var(--stroke-neutral-weak);
+  border-radius: var(--r4);
+  overflow: hidden;
+}
+/* 웹 틀. 실제 픽셀로 그린 뒤 문서 폭에 맞춰 줄인다 —
+   비율이 거짓말하지 않게 하려면 이 방법뿐이다 */
+.wf--web {
+  --frame-w: 1440px;
+  --frame-h: 900px;
+  width: var(--frame-w);
+  height: var(--frame-h);
+  flex: 0 0 auto;
+  display: flex;
+}
+.wf-scale {
+  overflow: hidden;
+  border-radius: var(--r4);
+}
+.wf-scale > .wf--web {
+  transform-origin: top left;
+}
+.wf--phone {
+  --frame-w: 390px;
+  --frame-h: 760px;
+  width: var(--frame-w);
+  height: var(--frame-h);
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.step {
+  margin-top: var(--x14);
+}
+.step__n {
+  font-size: var(--t2);
+  font-weight: var(--w-bold);
+  color: var(--fg-brand-contrast);
+}
+.step__t {
+  margin-top: var(--x1);
+  font-size: var(--t9);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.03em;
+}
+.step__d {
+  margin-top: var(--x2);
+  max-width: 62ch;
+  font-size: var(--t4);
+  line-height: 1.75;
+  color: var(--fg-neutral-muted);
+}
+.step__d b {
+  color: var(--fg-neutral);
+  font-weight: var(--w-bold);
+}
+.step__d code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--t2);
+  background: var(--bg-layer-fill);
+  border: 1px solid var(--stroke-neutral-muted);
+  border-radius: var(--r1);
+  padding: 1px 5px;
+}
+.pair {
+  margin-top: var(--x6);
+  display: grid;
+  gap: var(--x6);
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .pair {
+    grid-template-columns: minmax(0, 1fr) 390px;
+  }
+}
+.pair__cap {
+  display: flex;
+  align-items: baseline;
+  gap: var(--x2);
+  margin-bottom: var(--x2_5);
+}
+.pair__n {
+  font-size: var(--t2);
+  font-weight: var(--w-bold);
+  color: var(--fg-neutral);
+  background: var(--bg-layer-fill);
+  border-radius: var(--r-full);
+  padding: 2px 10px;
+}
+.pair__note {
+  font-size: var(--t2);
+  color: var(--fg-neutral-subtle);
+}
+
+/* ══ 웹 셸 (좌측 레일) ════════════════════════════════════════ */
+.rail {
+  width: 236px;
+  flex: 0 0 auto;
+  border-right: 1px solid var(--stroke-neutral-weak);
+  padding: var(--x5) var(--x3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--x1);
+  background: var(--bg-layer-default);
+}
+.rail__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--x2_5);
+  padding: 0 var(--x3) var(--x5);
+}
+.rail__logo {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r3);
+  background: var(--c-fill);
+  color: var(--c-on-fill);
+  display: grid;
+  place-items: center;
+  font-size: var(--t2);
+  font-weight: var(--w-bold);
+}
+.rail__name {
+  font-size: var(--t4);
+  font-weight: var(--w-bold);
+}
+.rail__group {
+  padding: var(--x4) var(--x3) var(--x2);
+  font-size: var(--t2);
+  color: var(--fg-neutral-subtle);
+}
+.rail__i {
+  display: flex;
+  align-items: center;
+  gap: var(--x3);
+  padding: var(--x2_5) var(--x3);
+  border-radius: var(--r3);
+  font-size: var(--t4);
+  color: var(--fg-neutral-muted);
+  transition: background var(--d3) var(--ease);
+}
+.rail__i:hover {
+  background: var(--bg-layer-fill);
+}
+.rail__i[aria-current="page"] {
+  background: var(--bg-brand-weak);
+  color: var(--fg-brand-contrast);
+  font-weight: var(--w-bold);
+}
+/* 새로 붙는 자리라는 표식. 시안에서만 쓰고 실제 화면에는 없다 */
+.rail__i--new::after {
+  content: "새로 붙는 자리";
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: var(--w-bold);
+  color: var(--fg-brand-contrast);
+  background: var(--bg-brand-weak);
+  border-radius: var(--r1);
+  padding: 1px 5px;
+}
+.web-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-layer-basement, #fcfbfc);
+}
+.web-head {
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--stroke-neutral-weak);
+  background: var(--bg-layer-default);
+  padding: var(--x5) var(--x8);
+  display: flex;
+  align-items: center;
+  gap: var(--x4);
+}
+.web-head__t {
+  font-size: var(--t10);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.03em;
+}
+.web-head__d {
+  margin-top: 2px;
+  font-size: var(--t3);
+  color: var(--fg-neutral-muted);
+}
+.web-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--x6) var(--x8);
+}
+
+/* ══ 폰 하단 탭바 (시안용) ════════════════════════════════════ */
+.tabbar {
+  margin-top: auto;
+  flex: 0 0 auto;
+  border-top: 1px solid #00000010;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: var(--x2) 0 var(--x4);
+  background: var(--bg-layer-default);
+}
+.tabbar span {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  font-size: var(--t1);
+  color: var(--fg-neutral-subtle);
+}
+.tabbar span[aria-current="page"] {
+  color: var(--fg-brand);
+  font-weight: var(--w-bold);
+}

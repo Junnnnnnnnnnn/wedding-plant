@@ -1,0 +1,447 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · 자랑하기 B안 "숫자 벽" · 앱의 잠긴 시스템을 잇는다 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>자랑하기 B안 · 숫자 벽</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<link rel="stylesheet" href="brag-tokens.css">
+<style>
+  /* ── B안: 카드가 **금액**으로 시작한다 ─────────────────────────
+     결혼 준비의 1번 질문이 "이게 비싼 건가" 라는 건 피드가 이미 답으로
+     삼은 전제다. 자랑하기도 같은 언어를 쓴다 — 카드에서 제일 큰 것이
+     총예산이고, 같은 x 좌표에 세로로 줄선다. 훑으면서 비교가 된다.
+     ──────────────────────────────────────────────────────────── */
+  .gb { display: grid; gap: var(--x4); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .gb--phone { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--x3); }
+
+  /* 카드가 **면**이다. 흰 카드가 아니라 분홍 채움 — 목록 전체가 벽이 된다 */
+  .nc { display: block; text-align: left; border-radius: var(--r5); overflow: hidden;
+        background: var(--c-fill); color: var(--c-on-fill); padding: var(--x5);
+        transition: transform var(--d3) var(--ease); }
+  .nc:hover { transform: translateY(-2px); }
+  .nc__num { display: block; font-size: var(--t13); font-weight: var(--w-bold);
+             letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .nc__num small { font-size: var(--t5); }
+  .nc__tr { display: block; margin-top: var(--x4); height: 8px; border-radius: var(--r-full);
+            background: #ffffff2e; overflow: hidden; }
+  .nc__bar { display: flex; height: 100%; }
+  .nc__used { background: #fff; }
+  .nc__plan { background: #ffffff6b; }
+  .nc__pct { display: block; margin-top: var(--x2); font-size: var(--t2);
+             color: var(--c-on-fill-muted); }
+  .nc__foot { margin-top: var(--x6); padding-top: var(--x3); display: flex; align-items: center;
+              gap: var(--x2); border-top: 1px solid var(--c-fill-line); }
+  .nc__who { display: block; font-size: var(--t3); font-weight: var(--w-bold);
+             min-width: 0; overflow-wrap: anywhere; }
+  .nc__when { display: block; margin-top: 1px; font-size: var(--t1);
+              color: var(--c-on-fill-faint); font-weight: var(--w-regular); }
+  /* 색을 한 단계씩 달리해 벽이 단조롭지 않게. 금액 크기와는 무관하다 */
+  .nc--2 { background: linear-gradient(135deg, #cc1873 0%, #ee2b8c 100%); }
+  /* 옅은 분홍에는 **잉크 글씨**를 얹는다. 흰 글씨는 2.2:1 이라 안 읽힌다 —
+     겸사겸사 벽에 밝은 칸이 하나 생겨 단조로움이 덜하다 */
+  .nc--3 { background: linear-gradient(135deg, #ff8fb8 0%, #ffb3ce 100%);
+           color: #5c0f36; }
+  .nc--3 .nc__pct, .nc--3 .nc__when { color: #5c0f36b8; }
+  .nc--3 .nc__tr { background: #5c0f3626; }
+  .nc--3 .nc__used { background: #5c0f36; }
+  .nc--3 .nc__plan { background: #5c0f3670; }
+  .nc--3 .nc__foot { border-color: #5c0f3630; }
+  .nc--3 .bg-like--on-fill { background: #5c0f3618; color: #5c0f36; }
+  .nc--4 { background: linear-gradient(135deg, #2a3038 0%, #454d59 100%); }
+  /* 내 카드는 벽에서 **하얗게** 빠진다 — 남의 것과 섞이면 못 찾는다 */
+  .nc--mine { background: var(--bg-layer-default); color: var(--fg-neutral);
+              border: 1.5px solid var(--stroke-brand-weak); }
+  .nc--mine .nc__tr { background: #f4eff2; }
+  .nc--mine .nc__used { background: var(--bg-brand-solid); }
+  .nc--mine .nc__plan { background: var(--fg-neutral-disabled); }
+  .nc--mine .nc__pct, .nc--mine .nc__when { color: var(--fg-neutral-subtle); }
+  .nc--mine .nc__foot { border-color: var(--stroke-neutral-subtle); }
+  .nc__tag { margin-left: auto; flex: 0 0 auto; font-size: var(--t1); font-weight: var(--w-bold);
+             color: var(--fg-brand-contrast); background: var(--bg-brand-weak);
+             border-radius: var(--r1); padding: 2px 6px; }
+
+  /* ── 큰 모달: 돈이 어디로 갔는지 **막대 하나**로 ──────────────── */
+  .rc { display: flex; flex-direction: column; height: 100%; }
+  .rc__head { flex: 0 0 auto; background: var(--c-fill); color: var(--c-on-fill);
+              padding: var(--x8) var(--x10) var(--x7); }
+  .rc__who { display: block; font-size: var(--t6); font-weight: var(--w-bold);
+             color: var(--c-on-fill-muted); }
+  .rc__num { margin-top: var(--x2); font-size: 72px; font-weight: var(--w-bold);
+             letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .rc__num small { font-size: var(--t9); }
+  .rc__when { margin-top: var(--x3); font-size: var(--t4); color: var(--c-on-fill-muted); }
+
+  /* 100% 스택 막대 하나. 표보다 먼저 "어디에 몰렸나"가 보인다 */
+  .stack { display: flex; height: 56px; border-radius: var(--r3); overflow: hidden;
+           margin-top: var(--x6); }
+  .stack i { display: grid; place-items: center; font-size: var(--t2);
+             font-weight: var(--w-bold); color: var(--c-on-fill); }
+  .stack i:nth-child(1) { background: #cc1873; }
+  .stack i:nth-child(2) { background: #ee2b8c; }
+  .stack i:nth-child(3) { background: #fa6bad; }
+  .stack i:nth-child(4) { background: #ffa2c9; color: #7a1147; }
+  .stack i:nth-child(5) { background: #ffd0e3; color: #7a1147; }
+  .stack i:nth-child(6) { background: #f0e3ea; color: #7a1147; }
+
+  .rc__body { flex: 1; min-height: 0; overflow: hidden; padding: var(--x7) var(--x10); }
+  .lg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--x3) var(--x8); }
+  .lg__i { display: flex; align-items: baseline; gap: var(--x2_5); padding: var(--x2_5) 0;
+           box-shadow: inset 0 -1px 0 var(--stroke-neutral-subtle); font-size: var(--t3); }
+  .lg__sw { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+  .lg__n { font-size: var(--t4); font-weight: var(--w-medium); color: var(--fg-neutral); }
+  .lg__v { margin-left: auto; font-variant-numeric: tabular-nums;
+           font-weight: var(--w-bold); color: var(--fg-neutral); }
+  .lg__p { width: 44px; text-align: right; color: var(--fg-neutral-subtle);
+           font-variant-numeric: tabular-nums; }
+
+  .rc__foot { flex: 0 0 auto; border-top: 1px solid var(--stroke-neutral-muted);
+              padding: var(--x4) var(--x10); display: flex; align-items: center; gap: var(--x4); }
+  .rc__sum { font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .rc__sum b { font-size: var(--t6); font-weight: var(--w-bold); color: var(--fg-neutral);
+               font-variant-numeric: tabular-nums; }
+
+  /* 폰 */
+  /* 오른쪽 위 닫기 버튼을 피한다 */
+  .rcp__head { background: var(--c-fill); color: var(--c-on-fill);
+               padding: var(--x6) var(--x12) var(--x5) var(--x5); }
+  .rcp__body { flex: 1; min-height: 0; overflow: hidden; padding: var(--x5); }
+  .lg--phone { grid-template-columns: minmax(0, 1fr); gap: 0; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">자랑하기 · B안</p>
+  <h1 class="page__title">숫자 벽</h1>
+  <p class="page__lede">
+    자랑 카드가 <b>금액</b>으로 시작합니다. 카드가 흰 상자가 아니라
+    <b>분홍 면</b>이라 목록 전체가 한 덩어리 벽으로 보이고, 총예산이 같은
+    자리에 세로로 줄서서 <b>훑으면서 비교</b>가 됩니다. 피드(견적 후기)와
+    같은 언어입니다.
+  </p>
+
+  <!-- ①② 공통 -->
+  <section class="step">
+    <p class="step__n">①② 대시보드 · 안내</p>
+    <h2 class="step__t">세 안이 똑같습니다</h2>
+    <p class="step__d">
+      토글의 자리와 안내 모달의 글은 <b>세 안이 같습니다</b> — 고르는 것은
+      목록 카드뿐입니다. 전체는 <a class="backlink" style="margin: 0; font-size: inherit" href="brag-a.html">A안 문서</a>에 있고, 여기서는
+      켜진 뒤의 모습만 짚습니다.
+    </p>
+    <div style="margin-top: var(--x6); display: flex; gap: var(--x6); flex-wrap: wrap; align-items: start">
+      <div class="wf wf--phone" style="height: 420px">
+        <div class="c-body" style="gap: var(--x4); padding-top: var(--x6)">
+          <button class="bg-toggle" type="button">
+            <span class="bg-toggle__body">
+              <span class="bg-toggle__t">자랑하기</span>
+              <span class="bg-toggle__d">우리 플랜을 자랑하기에 올려요</span>
+            </span>
+            <span class="bg-switch" role="switch" aria-checked="true"><i></i></span>
+          </button>
+          <div class="bg-live" style="margin-top: calc(var(--x2) * -1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>
+            좋아요 <b>24</b><span class="bg-live__spacer"></span><b>내려두기</b>
+          </div>
+        </div>
+      </div>
+      <p class="step__d" style="flex: 1; min-width: 260px">
+        스위치가 켜져 있는 동안에만 아래 분홍 줄이 붙습니다. <b>좋아요 수</b>와
+        <b>내려두기</b>가 여기 있어서, 자랑하기 목록까지 가지 않아도 반응이
+        보입니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- ③ 목록 -->
+  <section class="step">
+    <p class="step__n">③ 목록</p>
+    <h2 class="step__t">자랑하기</h2>
+    <p class="step__d">
+      웹 <b>4열</b>입니다. A안보다 카드가 작고 한 화면에 <b>12장</b>이
+      들어옵니다 — 128개를 훑는 화면이라 밀도가 곧 쓸모입니다. 카드 색은
+      네 가지를 돌려 씁니다. <b>금액과는 무관한 장식</b>이고, 벽이
+      단조로워지지 않게 하는 것이 전부입니다.
+    </p>
+
+    <div style="margin-top: var(--x6)">
+      <div class="pair__cap"><span class="pair__n">웹</span><span class="pair__note">1440 × 900 · 4열</span></div>
+      <div class="wf-scale" style="height: 708px; overflow-x: auto">
+        <div class="wf wf--web" style="transform: scale(0.786)">
+          <nav class="rail">
+            <div class="rail__brand"><span class="rail__logo">WP</span><span class="rail__name">웨딩 플랜트</span></div>
+            <p class="rail__group">우리 결혼 준비</p>
+            <a class="rail__i" href="#">홈</a>
+            <a class="rail__i" href="#">플랜 보드</a>
+            <a class="rail__i" href="#">참여 플랜 · 대화</a>
+            <p class="rail__group">둘러보기</p>
+            <a class="rail__i" href="#">피드</a>
+            <a class="rail__i" aria-current="page" href="#">자랑하기</a>
+            <a class="rail__i" href="#">Settings</a>
+          </nav>
+          <div class="web-main">
+            <header class="web-head">
+              <div><p class="web-head__t">자랑하기</p><p class="web-head__d">먼저 준비한 커플들의 플랜 128개</p></div>
+              <span style="margin-left: auto; display: flex; gap: var(--x2)">
+                <span class="c-chip" aria-pressed="true">최신</span>
+                <span class="c-chip">좋아요순</span>
+                <span class="c-chip">낮은 예산순</span>
+              </span>
+            </header>
+            <div class="web-body">
+              <div class="gb">
+                <button class="nc nc--mine">
+                  <span class="nc__num">4,200<small>만 원</small></span>
+                  <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 32%"></i><i class="nc__plan" style="width: 44%"></i></span></span>
+                  <span class="nc__pct">1,340만 원 썼어요 · 32%</span>
+                  <span class="nc__foot"><span class="nc__who">지수 · 현우<small class="nc__when">2026년 11월 14일 · D-66</small></span><i class="nc__tag">내 플랜</i></span>
+                </button>
+                <button class="nc">
+                  <span class="nc__num">3,600<small>만 원</small></span>
+                  <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 80%"></i><i class="nc__plan" style="width: 12%"></i></span></span>
+                  <span class="nc__pct">2,880만 원 썼어요 · 80%</span>
+                  <span class="nc__foot"><span class="nc__who">유진 · 태호<small class="nc__when">2026년 10월 3일 · D-24</small></span><span style="margin-left: auto"><span class="bg-like bg-like--on-fill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>41</span></span></span>
+                </button>
+                <button class="nc nc--2">
+                  <span class="nc__num">5,800<small>만 원</small></span>
+                  <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 20%"></i><i class="nc__plan" style="width: 30%"></i></span></span>
+                  <span class="nc__pct">1,160만 원 썼어요 · 20%</span>
+                  <span class="nc__foot"><span class="nc__who">하람 · 서준<small class="nc__when">2027년 4월 11일 · D-214</small></span><span style="margin-left: auto"><span class="bg-like bg-like--on-fill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>28</span></span></span>
+                </button>
+                <button class="nc nc--3">
+                  <span class="nc__num">2,900<small>만 원</small></span>
+                  <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 35%"></i><i class="nc__plan" style="width: 25%"></i></span></span>
+                  <span class="nc__pct">1,015만 원 썼어요 · 35%</span>
+                  <span class="nc__foot"><span class="nc__who">민서 · 도윤<small class="nc__when">2026년 12월 20일 · D-102</small></span><span style="margin-left: auto"><span class="bg-like bg-like--on-fill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>18</span></span></span>
+                </button>
+                <button class="nc nc--4">
+                  <span class="nc__num">4,450<small>만 원</small></span>
+                  <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 20%"></i><i class="nc__plan" style="width: 38%"></i></span></span>
+                  <span class="nc__pct">890만 원 썼어요 · 20%</span>
+                  <span class="nc__foot"><span class="nc__who">예린 · 우성<small class="nc__when">2027년 2월 14일 · D-158</small></span><span style="margin-left: auto"><span class="bg-like bg-like--on-fill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>12</span></span></span>
+                </button>
+                <button class="nc">
+                  <span class="nc__num">3,150<small>만 원</small></span>
+                  <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 90%"></i><i class="nc__plan" style="width: 6%"></i></span></span>
+                  <span class="nc__pct">2,835만 원 썼어요 · 90%</span>
+                  <span class="nc__foot"><span class="nc__who">소윤 · 재민<small class="nc__when">2026년 9월 26일 · D-17</small></span><span style="margin-left: auto"><span class="bg-like bg-like--on-fill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>9</span></span></span>
+                </button>
+                <button class="nc nc--3">
+                  <span class="nc__num">6,120<small>만 원</small></span>
+                  <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 45%"></i><i class="nc__plan" style="width: 20%"></i></span></span>
+                  <span class="nc__pct">2,754만 원 썼어요 · 45%</span>
+                  <span class="nc__foot"><span class="nc__who">아린 · 준호<small class="nc__when">2027년 1월 9일 · D-122</small></span><span style="margin-left: auto"><span class="bg-like bg-like--on-fill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>34</span></span></span>
+                </button>
+                <button class="nc nc--2">
+                  <span class="nc__num">2,480<small>만 원</small></span>
+                  <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 62%"></i><i class="nc__plan" style="width: 18%"></i></span></span>
+                  <span class="nc__pct">1,537만 원 썼어요 · 62%</span>
+                  <span class="nc__foot"><span class="nc__who">세연 · 민혁<small class="nc__when">2026년 11월 1일 · D-53</small></span><span style="margin-left: auto"><span class="bg-like bg-like--on-fill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>7</span></span></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: var(--x8); display: flex; gap: var(--x6); flex-wrap: wrap; align-items: start">
+      <div>
+        <div class="pair__cap"><span class="pair__n">모바일</span><span class="pair__note">2열 · 폰에서도 벽이 유지된다</span></div>
+        <div class="wf wf--phone">
+          <header class="c-head c-head--slim">
+            <div class="c-head__nav"><span class="c-head__title">자랑하기</span><span class="c-head__spacer"></span></div>
+            <p class="c-head__sub" style="margin-top: var(--x2)">먼저 준비한 커플들의 플랜 128개</p>
+          </header>
+          <div class="c-body" style="gap: var(--x3)">
+            <div class="c-chips">
+              <button class="c-chip" aria-pressed="true">최신</button>
+              <button class="c-chip">좋아요순</button>
+              <button class="c-chip">낮은 예산순</button>
+            </div>
+            <div class="gb gb--phone">
+              <button class="nc nc--mine" style="padding: var(--x4)">
+                <span class="nc__num" style="font-size: var(--t11)">4,200<small style="font-size: var(--t3)">만 원</small></span>
+                <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 32%"></i><i class="nc__plan" style="width: 44%"></i></span></span>
+                <span class="nc__pct">32% 썼어요</span>
+                <span class="nc__foot" style="margin-top: var(--x4)"><span class="nc__who">지수 · 현우<small class="nc__when">D-66</small></span><i class="nc__tag">내</i></span>
+              </button>
+              <button class="nc" style="padding: var(--x4)">
+                <span class="nc__num" style="font-size: var(--t11)">3,600<small style="font-size: var(--t3)">만 원</small></span>
+                <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 80%"></i><i class="nc__plan" style="width: 12%"></i></span></span>
+                <span class="nc__pct">80% 썼어요</span>
+                <span class="nc__foot" style="margin-top: var(--x4)"><span class="nc__who">유진 · 태호<small class="nc__when">D-24</small></span><span style="margin-left: auto"><span class="bg-like bg-like--on-fill" style="padding: 2px 8px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>41</span></span></span>
+              </button>
+              <button class="nc nc--2" style="padding: var(--x4)">
+                <span class="nc__num" style="font-size: var(--t11)">5,800<small style="font-size: var(--t3)">만 원</small></span>
+                <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 20%"></i><i class="nc__plan" style="width: 30%"></i></span></span>
+                <span class="nc__pct">20% 썼어요</span>
+                <span class="nc__foot" style="margin-top: var(--x4)"><span class="nc__who">하람 · 서준<small class="nc__when">D-214</small></span><span style="margin-left: auto"><span class="bg-like bg-like--on-fill" style="padding: 2px 8px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>28</span></span></span>
+              </button>
+              <button class="nc nc--3" style="padding: var(--x4)">
+                <span class="nc__num" style="font-size: var(--t11)">2,900<small style="font-size: var(--t3)">만 원</small></span>
+                <span class="nc__tr"><span class="nc__bar"><i class="nc__used" style="width: 35%"></i><i class="nc__plan" style="width: 25%"></i></span></span>
+                <span class="nc__pct">35% 썼어요</span>
+                <span class="nc__foot" style="margin-top: var(--x4)"><span class="nc__who">민서 · 도윤<small class="nc__when">D-102</small></span><span style="margin-left: auto"><span class="bg-like bg-like--on-fill" style="padding: 2px 8px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>18</span></span></span>
+              </button>
+            </div>
+          </div>
+          <nav class="tabbar"><span>홈</span><span>피드</span><span aria-current="page">자랑</span><span>참여</span><span>설정</span></nav>
+        </div>
+      </div>
+      <p class="step__d" style="flex: 1; min-width: 260px; margin-top: var(--x10)">
+        폰에서도 <b>2열</b>을 유지합니다. 1열로 내리면 카드가 가로로 길어져
+        큰 숫자가 왼쪽 끝에 혼자 남고, 벽이라는 성질이 사라집니다.
+        <br><br>
+        <b>내 카드만 흰색</b>입니다. 분홍 벽에서 하얗게 빠져야 내 것을
+        찾습니다 — 색으로 순위를 말하지는 않습니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- ④ 큰 모달 -->
+  <section class="step">
+    <p class="step__n">④ 상세</p>
+    <h2 class="step__t">돈이 어디로 갔나</h2>
+    <p class="step__d">
+      크기 규칙은 세 안이 같습니다 —
+      <code>최대 1520 × 680, 남는 자리를 여백으로 쓰되 한 변 200px 을 넘지
+      않는다</code>.
+      <br><br>
+      B안의 모달은 <b>표가 아니라 막대 하나</b>입니다. 카테고리별 지출을
+      100% 스택 막대로 눕히면 <b>어디에 몰렸는지</b>가 숫자를 읽기 전에
+      보입니다. 정확한 값은 그 아래 범례가 3열로 받습니다.
+    </p>
+
+    <div style="margin-top: var(--x6)">
+      <div class="pair__cap"><span class="pair__n">웹</span><span class="pair__note">1920 × 1080 틀 · 각 변 200px 이 정확히 남는다</span></div>
+      <div class="wf-scale" style="height: 637px; overflow-x: auto">
+        <div class="wf wf--web" style="--frame-w: 1920px; --frame-h: 1080px; transform: scale(0.5896)">
+          <nav class="rail">
+            <div class="rail__brand"><span class="rail__logo">WP</span><span class="rail__name">웨딩 플랜트</span></div>
+            <p class="rail__group">우리 결혼 준비</p>
+            <a class="rail__i" href="#">홈</a>
+            <a class="rail__i" href="#">플랜 보드</a>
+            <a class="rail__i" href="#">참여 플랜 · 대화</a>
+            <p class="rail__group">둘러보기</p>
+            <a class="rail__i" href="#">피드</a>
+            <a class="rail__i" aria-current="page" href="#">자랑하기</a>
+            <a class="rail__i" href="#">Settings</a>
+          </nav>
+          <div class="web-main">
+            <header class="web-head"><div><p class="web-head__t">자랑하기</p><p class="web-head__d">먼저 준비한 커플들의 플랜 128개</p></div></header>
+            <div class="web-body"><div class="gb" style="opacity: .35"><span class="nc" style="height: 210px"></span><span class="nc nc--2" style="height: 210px"></span><span class="nc nc--3" style="height: 210px"></span><span class="nc nc--4" style="height: 210px"></span></div></div>
+          </div>
+          <span style="position: absolute; inset: 0; background: #1a1c2059"></span>
+          <div class="bg-big bg-big--demo">
+            <button class="bg-big__close bg-big__close--on-fill" aria-label="닫기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+            <div class="rc">
+              <div class="rc__head">
+                <p class="rc__who">유진 · 태호 님의 플랜</p>
+                <p class="rc__num">3,600<small>만 원</small></p>
+                <p class="rc__when">2026년 10월 3일 토요일 · D-24 · 일정 22개 중 18개 완료</p>
+                <span class="stack">
+                  <i style="width: 34.4%">예식장 1,240</i>
+                  <i style="width: 25%">스드메 900</i>
+                  <i style="width: 17.2%">예물 620</i>
+                  <i style="width: 12.2%">신혼여행 440</i>
+                  <i style="width: 6.2%">혼수</i>
+                  <i style="width: 5%"></i>
+                </span>
+              </div>
+              <div class="rc__body">
+                <div class="lg">
+                  <span class="lg__i"><i class="lg__sw" style="background: #cc1873"></i><span class="lg__n">예식장</span><span class="lg__v">1,240</span><span class="lg__p">34%</span></span>
+                  <span class="lg__i"><i class="lg__sw" style="background: #ee2b8c"></i><span class="lg__n">스드메</span><span class="lg__v">900</span><span class="lg__p">25%</span></span>
+                  <span class="lg__i"><i class="lg__sw" style="background: #fa6bad"></i><span class="lg__n">예물 · 예단</span><span class="lg__v">620</span><span class="lg__p">17%</span></span>
+                  <span class="lg__i"><i class="lg__sw" style="background: #ffa2c9"></i><span class="lg__n">신혼여행</span><span class="lg__v">440</span><span class="lg__p">12%</span></span>
+                  <span class="lg__i"><i class="lg__sw" style="background: #ffd0e3"></i><span class="lg__n">혼수</span><span class="lg__v">220</span><span class="lg__p">6%</span></span>
+                  <span class="lg__i"><i class="lg__sw" style="background: #f0e3ea"></i><span class="lg__n">청첩장</span><span class="lg__v">180</span><span class="lg__p">5%</span></span>
+                </div>
+                <p style="margin-top: var(--x7); font-size: var(--t3); color: var(--fg-neutral-muted); line-height: 1.7; max-width: 62ch">
+                  일정 제목은 아래에서 볼 수 있습니다 — <b style="color: var(--fg-neutral)">본식 촬영 · 예식장 잔금 ·
+                  신혼여행 항공 · 청첩장 발송</b> 외 18개. 일정 하나하나의 금액은
+                  공개되지 않습니다.
+                </p>
+              </div>
+              <div class="rc__foot">
+                <span class="rc__sum">사용 <b>2,880만 원</b></span>
+                <span class="rc__sum">예정 <b>432만 원</b></span>
+                <span class="rc__sum">여유 <b>288만 원</b></span>
+                <span style="margin-left: auto"><button class="bg-like" style="font-size: var(--t4); padding: var(--x2_5) var(--x5)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>좋아요 41</button></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: var(--x8); display: flex; gap: var(--x6); flex-wrap: wrap; align-items: start">
+      <div>
+        <div class="pair__cap"><span class="pair__n">모바일</span><span class="pair__note">막대는 세로로 눕지 않는다 — 그대로 가로다</span></div>
+        <div class="wf wf--phone" style="background: var(--bg-layer-basement)">
+          <span style="position: absolute; inset: 0; background: #1a1c2059"></span>
+          <div class="bg-big bg-big--demo">
+            <button class="bg-big__close bg-big__close--on-fill" aria-label="닫기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+            <div class="rc">
+              <div class="rcp__head">
+                <p class="rc__who" style="font-size: var(--t3)">유진 · 태호 님의 플랜</p>
+                <p style="margin-top: var(--x1_5); font-size: var(--t13); font-weight: var(--w-bold); letter-spacing: -0.045em; line-height: 1">3,600<small style="font-size: var(--t5)">만 원</small></p>
+                <p style="margin-top: var(--x2); font-size: var(--t3); color: var(--c-on-fill-muted)">2026년 10월 3일 (토) · D-24</p>
+                <span class="stack" style="height: 40px; margin-top: var(--x4)">
+                  <i style="width: 34.4%">34%</i><i style="width: 25%">25%</i><i style="width: 17.2%">17%</i><i style="width: 12.2%"></i><i style="width: 6.2%"></i><i style="width: 5%"></i>
+                </span>
+              </div>
+              <div class="rcp__body">
+                <div class="lg lg--phone">
+                  <span class="lg__i"><i class="lg__sw" style="background: #cc1873"></i><span class="lg__n">예식장</span><span class="lg__v">1,240</span><span class="lg__p">34%</span></span>
+                  <span class="lg__i"><i class="lg__sw" style="background: #ee2b8c"></i><span class="lg__n">스드메</span><span class="lg__v">900</span><span class="lg__p">25%</span></span>
+                  <span class="lg__i"><i class="lg__sw" style="background: #fa6bad"></i><span class="lg__n">예물 · 예단</span><span class="lg__v">620</span><span class="lg__p">17%</span></span>
+                  <span class="lg__i"><i class="lg__sw" style="background: #ffa2c9"></i><span class="lg__n">신혼여행</span><span class="lg__v">440</span><span class="lg__p">12%</span></span>
+                  <span class="lg__i"><i class="lg__sw" style="background: #ffd0e3"></i><span class="lg__n">혼수</span><span class="lg__v">220</span><span class="lg__p">6%</span></span>
+                </div>
+              </div>
+              <div style="flex: 0 0 auto; border-top: 1px solid var(--stroke-neutral-muted); padding: var(--x3) var(--x5) var(--x4)">
+                <button class="c-btn c-btn--primary" style="display: flex; align-items: center; justify-content: center; gap: var(--x2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>좋아요 41</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="step__d" style="flex: 1; min-width: 260px; margin-top: var(--x10)">
+        폰에서는 막대 안의 글자가 <b>비율만</b> 남습니다. 390px 에서
+        "예식장 1,240" 을 다 넣으면 조각이 좁은 카테고리부터 글자가 잘립니다.
+        이름은 아래 범례가 말합니다.
+      </p>
+    </div>
+  </section>
+
+  <div class="changes">
+    <div class="change">
+      <h3>이 안이 잘하는 것</h3>
+      <p>한 화면에 <b>12장</b>이 들어오고 금액이 같은 자리에 세로로 줄서
+        <b>훑으면서 비교</b>가 됩니다. 모달의 스택 막대는 숫자를 읽기 전에
+        "어디에 몰렸나"를 먼저 말합니다.</p>
+    </div>
+    <div class="change">
+      <h3>이 안이 못하는 것</h3>
+      <p>카드가 <b>금액 말고는 거의 말하지 않습니다.</b> 커플 이름과 날짜가
+        작아서, "자랑" 이라기보다 <b>시세표</b>에 가깝게 읽힐 수 있습니다 —
+        피드와 성격이 겹칠 위험이 여기 있습니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>지키는 것</h3>
+      <p>카드 색은 <b>순위도 금액도 뜻하지 않습니다.</b> 벽이 단조로워지지
+        않게 하는 장식이라, 나중에 "비싼 게 진한 색" 같은 규칙을 얹지
+        마세요 — 금액으로 사람을 줄 세우는 화면이 됩니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="brag-index.html">← 자랑하기 세 안</a>
+</main>
+</body>
+</html>

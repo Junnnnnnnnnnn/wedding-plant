@@ -1,0 +1,524 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · 자랑하기 C안 "어디까지 왔나" · 앱의 잠긴 시스템을 잇는다 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>자랑하기 C안 · 어디까지 왔나</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<link rel="stylesheet" href="brag-tokens.css">
+<style>
+  /* ── C안: 카드가 **진행률**로 시작한다 ─────────────────────────
+     자랑거리를 금액이 아니라 **얼마나 준비했나**로 잡는다. 결혼 준비를
+     하는 사람이 실제로 불안해하는 건 "우리가 늦은 건가" 이고, 그 답은
+     남의 총예산이 아니라 남의 진행 상황에 있다. 그래서 카드가
+     **가로로 긴 직사각형**이고 왼쪽에 링이 앉는다.
+     ──────────────────────────────────────────────────────────── */
+  .gc { display: grid; gap: var(--x4); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gc--phone { grid-template-columns: minmax(0, 1fr); }
+
+  .tc { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: var(--x5);
+        align-items: center; text-align: left;
+        background: var(--bg-layer-default); border: 1px solid var(--stroke-neutral-weak);
+        border-radius: var(--r5); padding: var(--x5);
+        transition: border-color var(--d3) var(--ease); }
+  .tc:hover { border-color: var(--stroke-brand-weak); }
+  .tc__ring { position: relative; width: 84px; height: 84px; }
+  .tc__ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .tc__pct { position: absolute; inset: 0; display: grid; place-items: center;
+             font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.03em;
+             font-variant-numeric: tabular-nums; }
+  .tc__body { min-width: 0; }
+  /* `display:block` 이 없으면 이름과 날짜가 한 줄로 붙는다 (실제로 붙었다) */
+  .tc__who { display: block; font-size: var(--t6); font-weight: var(--w-bold);
+             letter-spacing: -0.02em; overflow-wrap: anywhere; }
+  .tc__when { display: block; margin-top: 2px; font-size: var(--t3);
+              color: var(--fg-neutral-muted); }
+  .tc__facts { margin-top: var(--x3); display: flex; align-items: baseline; gap: var(--x4);
+               font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .tc__facts b { display: block; font-size: var(--t5); font-weight: var(--w-bold);
+                 color: var(--fg-neutral); font-variant-numeric: tabular-nums; }
+  .tc__foot { margin-top: var(--x4); padding-top: var(--x3); display: flex; align-items: center;
+              border-top: 1px solid var(--stroke-neutral-subtle); }
+  .tc__mine { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-brand-contrast); }
+  /* 임박한 커플. D-30 안쪽이면 날짜가 브랜드 색이 된다 */
+  .tc__soon { color: var(--fg-brand-contrast); font-weight: var(--w-bold); }
+
+  /* ── 큰 모달: 위 링 · 아래 월별 타임라인 ─────────────────────── */
+  .tl { display: flex; flex-direction: column; height: 100%; }
+  .tl__head { flex: 0 0 auto; background: var(--c-fill); color: var(--c-on-fill);
+              padding: var(--x7) var(--x10);
+              display: grid; grid-template-columns: 132px minmax(0, 1fr) auto;
+              gap: var(--x7); align-items: center; }
+  .tl__ring { position: relative; width: 132px; height: 132px; }
+  .tl__ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .tl__rt { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .tl__rp { font-size: var(--t12); font-weight: var(--w-bold); letter-spacing: -0.04em;
+            line-height: 1; font-variant-numeric: tabular-nums; }
+  .tl__rl { display: block; margin-top: 3px; font-size: var(--t2); color: var(--c-on-fill-muted); }
+  /* span 은 그냥 두면 옆으로 붙는다 — 이름과 날짜가 한 줄이 됐었다 */
+  .tl__who { display: block; font-size: var(--t11); font-weight: var(--w-bold);
+             letter-spacing: -0.03em; }
+  .tl__when { display: block; margin-top: var(--x2); font-size: var(--t4);
+              color: var(--c-on-fill-muted); }
+  .tl__facts { margin-top: var(--x4); display: flex; gap: var(--x7); }
+  .tl__f { font-size: var(--t2); color: var(--c-on-fill-muted); }
+  .tl__f b { display: block; margin-top: 2px; font-size: var(--t7); font-weight: var(--w-bold);
+             color: var(--c-on-fill); font-variant-numeric: tabular-nums; }
+
+  .tl__body { flex: 1; min-height: 0; overflow: hidden; padding: var(--x7) var(--x10); }
+  .tl__st { font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.02em; }
+  /* 월별 축. 끝난 달은 채워지고 남은 달은 비어 있다 */
+  .months { margin-top: var(--x5); display: grid; grid-auto-flow: column;
+            grid-auto-columns: minmax(0, 1fr); gap: var(--x2); align-items: end; }
+  .mo { text-align: center; }
+  .mo__bar { display: block; border-radius: var(--r2) var(--r2) 0 0;
+             background: var(--bg-brand-solid); }
+  .mo__bar--todo { background: var(--bg-layer-fill); }
+  .mo__l { display: block; margin-top: var(--x2); font-size: var(--t2);
+           color: var(--fg-neutral-subtle); }
+  .mo__n { display: block; font-size: var(--t2); font-weight: var(--w-bold);
+           color: var(--fg-neutral); font-variant-numeric: tabular-nums; }
+  .mo--now .mo__l { color: var(--fg-brand-contrast); font-weight: var(--w-bold); }
+
+  .done { margin-top: var(--x7); display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--x8); }
+  .done__i { display: flex; align-items: center; gap: var(--x3); padding: var(--x2_5) 0;
+             box-shadow: inset 0 -1px 0 var(--stroke-neutral-subtle); font-size: var(--t3);
+             color: var(--fg-neutral-muted); }
+  .done__c { width: 18px; height: 18px; border-radius: var(--r-full); flex: 0 0 auto;
+             display: grid; place-items: center; background: #e6f6f1; color: #079171; }
+  .done__t { font-size: var(--t4); font-weight: var(--w-medium); color: var(--fg-neutral); }
+  .done__m { margin-left: auto; }
+
+  .tl__foot { flex: 0 0 auto; border-top: 1px solid var(--stroke-neutral-muted);
+              padding: var(--x4) var(--x10); display: flex; align-items: center; }
+
+  /* 폰 */
+  /* 오른쪽 위 닫기 버튼(36px + 여백)을 피한다 */
+  .tlp__head { background: var(--c-fill); color: var(--c-on-fill);
+               padding: var(--x6) var(--x12) var(--x5) var(--x5);
+               display: flex; gap: var(--x4); align-items: center; }
+  .tlp__body { flex: 1; min-height: 0; overflow: hidden; padding: var(--x5); }
+  .done--phone { grid-template-columns: minmax(0, 1fr); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">자랑하기 · C안</p>
+  <h1 class="page__title">어디까지 왔나</h1>
+  <p class="page__lede">
+    자랑 카드가 <b>진행률</b>로 시작합니다. 결혼 준비를 하는 사람이 실제로
+    불안해하는 건 <b>"우리가 늦은 건가"</b> 이고, 그 답은 남의 총예산이 아니라
+    <b>남이 어디까지 했는지</b>에 있습니다. 카드는 <b>가로로 긴 직사각형</b>
+    이고 왼쪽에 링이 앉습니다.
+  </p>
+
+  <!-- ①② 공통 -->
+  <section class="step">
+    <p class="step__n">①② 대시보드 · 안내</p>
+    <h2 class="step__t">세 안이 똑같습니다</h2>
+    <p class="step__d">
+      토글의 자리와 안내 모달의 글은 <b>세 안이 같습니다</b>. 전체는
+      <a class="backlink" style="margin: 0; font-size: inherit" href="brag-a.html">A안 문서</a>에 있습니다.
+    </p>
+    <div style="margin-top: var(--x6); display: flex; gap: var(--x6); flex-wrap: wrap; align-items: start">
+      <div class="wf wf--phone" style="height: 420px">
+        <div class="c-body" style="gap: var(--x4); padding-top: var(--x6)">
+          <button class="bg-toggle" type="button">
+            <span class="bg-toggle__body">
+              <span class="bg-toggle__t">자랑하기</span>
+              <span class="bg-toggle__d">우리 플랜을 자랑하기에 올려요</span>
+            </span>
+            <span class="bg-switch" role="switch" aria-checked="true"><i></i></span>
+          </button>
+          <div class="bg-live" style="margin-top: calc(var(--x2) * -1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>
+            좋아요 <b>24</b><span class="bg-live__spacer"></span><b>내려두기</b>
+          </div>
+        </div>
+      </div>
+      <p class="step__d" style="flex: 1; min-width: 260px">
+        C안에서는 토글 문구를 한 군데만 바꾸는 것도 생각할 만합니다 —
+        "우리 플랜을 자랑하기에 올려요" 대신 <b>"어디까지 왔는지 보여줘요"</b>.
+        무엇을 자랑하는 화면인지 토글에서부터 맞아떨어집니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- ③ 목록 -->
+  <section class="step">
+    <p class="step__n">③ 목록</p>
+    <h2 class="step__t">자랑하기</h2>
+    <p class="step__d">
+      웹 <b>2열</b>입니다. 카드가 가로로 길어서 열을 더 쪼개면 링과 글자가
+      같이 눌립니다. 대신 <b>결혼식이 가까운 순</b>으로 놓아서, 위쪽에
+      "곧 하는 커플" 이 모입니다 — 내가 지금 뭘 해야 하는지에 가장 가까운
+      사람들입니다.
+    </p>
+
+    <div style="margin-top: var(--x6)">
+      <div class="pair__cap"><span class="pair__n">웹</span><span class="pair__note">1440 × 900 · 2열 · 가로로 긴 카드</span></div>
+      <div class="wf-scale" style="height: 708px; overflow-x: auto">
+        <div class="wf wf--web" style="transform: scale(0.786)">
+          <nav class="rail">
+            <div class="rail__brand"><span class="rail__logo">WP</span><span class="rail__name">웨딩 플랜트</span></div>
+            <p class="rail__group">우리 결혼 준비</p>
+            <a class="rail__i" href="#">홈</a>
+            <a class="rail__i" href="#">플랜 보드</a>
+            <a class="rail__i" href="#">참여 플랜 · 대화</a>
+            <p class="rail__group">둘러보기</p>
+            <a class="rail__i" href="#">피드</a>
+            <a class="rail__i" aria-current="page" href="#">자랑하기</a>
+            <a class="rail__i" href="#">Settings</a>
+          </nav>
+          <div class="web-main">
+            <header class="web-head">
+              <div><p class="web-head__t">자랑하기</p><p class="web-head__d">먼저 준비한 커플들의 플랜 128개 · 결혼식이 가까운 순</p></div>
+              <span style="margin-left: auto; display: flex; gap: var(--x2)">
+                <span class="c-chip" aria-pressed="true">가까운 순</span>
+                <span class="c-chip">많이 준비한 순</span>
+                <span class="c-chip">좋아요순</span>
+              </span>
+            </header>
+            <div class="web-body">
+              <div class="gc">
+                <button class="tc">
+                  <span class="tc__ring">
+                    <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#f4eff2" stroke-width="5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ee2b8c" stroke-width="5" stroke-dasharray="82 18" pathLength="100" stroke-linecap="round"/></svg>
+                    <span class="tc__pct">82%</span>
+                  </span>
+                  <span class="tc__body">
+                    <span class="tc__who">소윤 · 재민</span>
+                    <span class="tc__when tc__soon">2026년 9월 26일 · D-17</span>
+                    <span class="tc__facts">
+                      <span>일정<b>24개 중 21개</b></span>
+                      <span>예산<b>3,150만 원</b></span>
+                    </span>
+                    <span class="tc__foot">일정 3개 남음 <span style="margin-left: auto"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>9</span></span></span>
+                  </span>
+                </button>
+                <button class="tc">
+                  <span class="tc__ring">
+                    <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#f4eff2" stroke-width="5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ee2b8c" stroke-width="5" stroke-dasharray="81 19" pathLength="100" stroke-linecap="round"/></svg>
+                    <span class="tc__pct">81%</span>
+                  </span>
+                  <span class="tc__body">
+                    <span class="tc__who">유진 · 태호</span>
+                    <span class="tc__when tc__soon">2026년 10월 3일 · D-24</span>
+                    <span class="tc__facts">
+                      <span>일정<b>22개 중 18개</b></span>
+                      <span>예산<b>3,600만 원</b></span>
+                    </span>
+                    <span class="tc__foot">일정 4개 남음 <span style="margin-left: auto"><span class="bg-like" aria-pressed="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>41</span></span></span>
+                  </span>
+                </button>
+                <button class="tc">
+                  <span class="tc__ring">
+                    <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#f4eff2" stroke-width="5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ee2b8c" stroke-width="5" stroke-dasharray="43 57" pathLength="100" stroke-linecap="round"/></svg>
+                    <span class="tc__pct">43%</span>
+                  </span>
+                  <span class="tc__body">
+                    <span class="tc__who">지수 · 현우</span>
+                    <span class="tc__when">2026년 11월 14일 · D-66</span>
+                    <span class="tc__facts">
+                      <span>일정<b>14개 중 6개</b></span>
+                      <span>예산<b>4,200만 원</b></span>
+                    </span>
+                    <span class="tc__foot">일정 8개 남음 <span style="margin-left: auto" class="tc__mine">내 플랜</span></span>
+                  </span>
+                </button>
+                <button class="tc">
+                  <span class="tc__ring">
+                    <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#f4eff2" stroke-width="5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ee2b8c" stroke-width="5" stroke-dasharray="44 56" pathLength="100" stroke-linecap="round"/></svg>
+                    <span class="tc__pct">44%</span>
+                  </span>
+                  <span class="tc__body">
+                    <span class="tc__who">민서 · 도윤</span>
+                    <span class="tc__when">2026년 12월 20일 · D-102</span>
+                    <span class="tc__facts">
+                      <span>일정<b>16개 중 7개</b></span>
+                      <span>예산<b>2,900만 원</b></span>
+                    </span>
+                    <span class="tc__foot">일정 9개 남음 <span style="margin-left: auto"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>18</span></span></span>
+                  </span>
+                </button>
+                <button class="tc">
+                  <span class="tc__ring">
+                    <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#f4eff2" stroke-width="5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ee2b8c" stroke-width="5" stroke-dasharray="27 73" pathLength="100" stroke-linecap="round"/></svg>
+                    <span class="tc__pct">27%</span>
+                  </span>
+                  <span class="tc__body">
+                    <span class="tc__who">예린 · 우성</span>
+                    <span class="tc__when">2027년 2월 14일 · D-158</span>
+                    <span class="tc__facts">
+                      <span>일정<b>11개 중 3개</b></span>
+                      <span>예산<b>4,450만 원</b></span>
+                    </span>
+                    <span class="tc__foot">일정 8개 남음 <span style="margin-left: auto"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>12</span></span></span>
+                  </span>
+                </button>
+                <button class="tc">
+                  <span class="tc__ring">
+                    <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#f4eff2" stroke-width="5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ee2b8c" stroke-width="5" stroke-dasharray="22 78" pathLength="100" stroke-linecap="round"/></svg>
+                    <span class="tc__pct">22%</span>
+                  </span>
+                  <span class="tc__body">
+                    <span class="tc__who">하람 · 서준</span>
+                    <span class="tc__when">2027년 4월 11일 · D-214</span>
+                    <span class="tc__facts">
+                      <span>일정<b>9개 중 2개</b></span>
+                      <span>예산<b>5,800만 원</b></span>
+                    </span>
+                    <span class="tc__foot">일정 7개 남음 <span style="margin-left: auto"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>28</span></span></span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: var(--x8); display: flex; gap: var(--x6); flex-wrap: wrap; align-items: start">
+      <div>
+        <div class="pair__cap"><span class="pair__n">모바일</span><span class="pair__note">1열 · 카드 모양이 그대로다</span></div>
+        <div class="wf wf--phone">
+          <header class="c-head c-head--slim">
+            <div class="c-head__nav"><span class="c-head__title">자랑하기</span><span class="c-head__spacer"></span></div>
+            <p class="c-head__sub" style="margin-top: var(--x2)">결혼식이 가까운 순 · 128개</p>
+          </header>
+          <div class="c-body" style="gap: var(--x3)">
+            <div class="c-chips">
+              <button class="c-chip" aria-pressed="true">가까운 순</button>
+              <button class="c-chip">많이 준비한 순</button>
+              <button class="c-chip">좋아요순</button>
+            </div>
+            <div class="gc gc--phone">
+              <button class="tc" style="grid-template-columns: 68px minmax(0,1fr); gap: var(--x4); padding: var(--x4)">
+                <span class="tc__ring" style="width: 68px; height: 68px">
+                  <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#f4eff2" stroke-width="5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ee2b8c" stroke-width="5" stroke-dasharray="82 18" pathLength="100" stroke-linecap="round"/></svg>
+                  <span class="tc__pct" style="font-size: var(--t4)">82%</span>
+                </span>
+                <span class="tc__body">
+                  <span class="tc__who" style="font-size: var(--t5)">소윤 · 재민</span>
+                  <span class="tc__when tc__soon">2026년 9월 26일 · D-17</span>
+                  <span class="tc__facts"><span>일정<b>24개 중 21개</b></span><span>예산<b>3,150만 원</b></span></span>
+                  <span class="tc__foot">일정 3개 남음 <span style="margin-left: auto"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>9</span></span></span>
+                </span>
+              </button>
+              <button class="tc" style="grid-template-columns: 68px minmax(0,1fr); gap: var(--x4); padding: var(--x4)">
+                <span class="tc__ring" style="width: 68px; height: 68px">
+                  <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#f4eff2" stroke-width="5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ee2b8c" stroke-width="5" stroke-dasharray="81 19" pathLength="100" stroke-linecap="round"/></svg>
+                  <span class="tc__pct" style="font-size: var(--t4)">81%</span>
+                </span>
+                <span class="tc__body">
+                  <span class="tc__who" style="font-size: var(--t5)">유진 · 태호</span>
+                  <span class="tc__when tc__soon">2026년 10월 3일 · D-24</span>
+                  <span class="tc__facts"><span>일정<b>22개 중 18개</b></span><span>예산<b>3,600만 원</b></span></span>
+                  <span class="tc__foot">일정 4개 남음 <span style="margin-left: auto"><span class="bg-like" aria-pressed="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>41</span></span></span>
+                </span>
+              </button>
+              <button class="tc" style="grid-template-columns: 68px minmax(0,1fr); gap: var(--x4); padding: var(--x4)">
+                <span class="tc__ring" style="width: 68px; height: 68px">
+                  <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#f4eff2" stroke-width="5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ee2b8c" stroke-width="5" stroke-dasharray="43 57" pathLength="100" stroke-linecap="round"/></svg>
+                  <span class="tc__pct" style="font-size: var(--t4)">43%</span>
+                </span>
+                <span class="tc__body">
+                  <span class="tc__who" style="font-size: var(--t5)">지수 · 현우</span>
+                  <span class="tc__when">2026년 11월 14일 · D-66</span>
+                  <span class="tc__facts"><span>일정<b>14개 중 6개</b></span><span>예산<b>4,200만 원</b></span></span>
+                  <span class="tc__foot">일정 8개 남음 <span style="margin-left: auto" class="tc__mine">내 플랜</span></span>
+                </span>
+              </button>
+            </div>
+          </div>
+          <nav class="tabbar"><span>홈</span><span>피드</span><span aria-current="page">자랑</span><span>참여</span><span>설정</span></nav>
+        </div>
+      </div>
+      <p class="step__d" style="flex: 1; min-width: 260px; margin-top: var(--x10)">
+        <b>D-30 안쪽이면 날짜가 브랜드 색</b>이 됩니다. 이 목록에서 가장
+        쓸모 있는 정보가 "곧 하는 사람" 이라, 정렬만으로 두지 않고 색으로도
+        말합니다.
+        <br><br>
+        금액은 <b>부제 자리</b>에 있습니다. 있긴 있지만 주인공이 아닙니다 —
+        금액이 주인공인 목록은 B안입니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- ④ 큰 모달 -->
+  <section class="step">
+    <p class="step__n">④ 상세</p>
+    <h2 class="step__t">언제 무엇을 끝냈나</h2>
+    <p class="step__d">
+      크기 규칙은 세 안이 같습니다 —
+      <code>최대 1520 × 680, 남는 자리를 여백으로 쓰되 한 변 200px 을 넘지
+      않는다</code>.
+      <br><br>
+      C안의 모달은 <b>월별 축</b>입니다. 완료한 일정이 어느 달에 몰렸는지를
+      보면 <b>"우리는 언제쯤 뭘 해야 하나"</b>가 그대로 읽힙니다 —
+      이 화면이 실제로 답해 주는 질문입니다. 금액은 위 면의 한 칸으로
+      물러납니다.
+    </p>
+
+    <div style="margin-top: var(--x6)">
+      <div class="pair__cap"><span class="pair__n">웹</span><span class="pair__note">1920 × 1080 틀 · 각 변 200px 이 정확히 남는다</span></div>
+      <div class="wf-scale" style="height: 637px; overflow-x: auto">
+        <div class="wf wf--web" style="--frame-w: 1920px; --frame-h: 1080px; transform: scale(0.5896)">
+          <nav class="rail">
+            <div class="rail__brand"><span class="rail__logo">WP</span><span class="rail__name">웨딩 플랜트</span></div>
+            <p class="rail__group">우리 결혼 준비</p>
+            <a class="rail__i" href="#">홈</a>
+            <a class="rail__i" href="#">플랜 보드</a>
+            <a class="rail__i" href="#">참여 플랜 · 대화</a>
+            <p class="rail__group">둘러보기</p>
+            <a class="rail__i" href="#">피드</a>
+            <a class="rail__i" aria-current="page" href="#">자랑하기</a>
+            <a class="rail__i" href="#">Settings</a>
+          </nav>
+          <div class="web-main">
+            <header class="web-head"><div><p class="web-head__t">자랑하기</p><p class="web-head__d">먼저 준비한 커플들의 플랜 128개 · 결혼식이 가까운 순</p></div></header>
+            <div class="web-body"><div class="gc" style="opacity: .35"><span class="tc" style="height: 168px"></span><span class="tc" style="height: 168px"></span></div></div>
+          </div>
+          <span style="position: absolute; inset: 0; background: #1a1c2059"></span>
+          <div class="bg-big bg-big--demo">
+            <button class="bg-big__close bg-big__close--on-fill" aria-label="닫기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+            <div class="tl">
+              <div class="tl__head">
+                <span class="tl__ring">
+                  <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#ffffff2e" stroke-width="4.5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-dasharray="81 19" pathLength="100" stroke-linecap="round"/></svg>
+                  <span class="tl__rt"><span><span class="tl__rp">81%</span><small class="tl__rl">준비했어요</small></span></span>
+                </span>
+                <span>
+                  <span class="tl__who">유진 · 태호</span>
+                  <span class="tl__when">2026년 10월 3일 토요일 · D-24</span>
+                  <span class="tl__facts">
+                    <span class="tl__f">끝낸 일정<b>18개</b></span>
+                    <span class="tl__f">남은 일정<b>4개</b></span>
+                    <span class="tl__f">총예산<b>3,600만 원</b></span>
+                    <span class="tl__f">쓴 돈<b>2,880만 원</b></span>
+                  </span>
+                </span>
+                <span></span>
+              </div>
+              <div class="tl__body">
+                <p class="tl__st">달마다 끝낸 일정</p>
+                <div class="months">
+                  <span class="mo"><i class="mo__bar" style="height: 18px"></i><small class="mo__n">1</small><small class="mo__l">2월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 36px"></i><small class="mo__n">2</small><small class="mo__l">3월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 18px"></i><small class="mo__n">1</small><small class="mo__l">4월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 54px"></i><small class="mo__n">3</small><small class="mo__l">5월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 36px"></i><small class="mo__n">2</small><small class="mo__l">6월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 72px"></i><small class="mo__n">4</small><small class="mo__l">7월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 54px"></i><small class="mo__n">3</small><small class="mo__l">8월</small></span>
+                  <span class="mo mo--now"><i class="mo__bar" style="height: 36px"></i><small class="mo__n">2</small><small class="mo__l">9월</small></span>
+                  <span class="mo"><i class="mo__bar mo__bar--todo" style="height: 72px"></i><small class="mo__n">4 남음</small><small class="mo__l">10월</small></span>
+                </div>
+
+                <p class="tl__st" style="margin-top: var(--x8)">최근에 끝낸 일</p>
+                <div class="done">
+                  <span class="done__i"><i class="done__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="done__t">예식장 잔금</span><span class="done__m">9월 2일</span></span>
+                  <span class="done__i"><i class="done__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="done__t">청첩장 발송</span><span class="done__m">9월 1일</span></span>
+                  <span class="done__i"><i class="done__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="done__t">본식 촬영</span><span class="done__m">8월 12일</span></span>
+                  <span class="done__i"><i class="done__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="done__t">드레스 피팅</span><span class="done__m">8월 5일</span></span>
+                </div>
+              </div>
+              <div class="tl__foot">
+                <span style="font-size: var(--t3); color: var(--fg-neutral-muted)">남은 일정 <b style="color: var(--fg-neutral); font-weight: var(--w-bold)">신혼여행 항공 · 답례품 · 헤어 리허설 · 잔금 정산</b></span>
+                <span style="margin-left: auto"><button class="bg-like" style="font-size: var(--t4); padding: var(--x2_5) var(--x5)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>좋아요 41</button></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: var(--x8); display: flex; gap: var(--x6); flex-wrap: wrap; align-items: start">
+      <div>
+        <div class="pair__cap"><span class="pair__n">모바일</span><span class="pair__note">링이 옆으로, 축은 그대로 가로</span></div>
+        <div class="wf wf--phone" style="background: var(--bg-layer-basement)">
+          <span style="position: absolute; inset: 0; background: #1a1c2059"></span>
+          <div class="bg-big bg-big--demo">
+            <button class="bg-big__close bg-big__close--on-fill" aria-label="닫기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+            <div class="tl">
+              <div class="tlp__head">
+                <span class="tl__ring" style="width: 84px; height: 84px; flex: 0 0 auto">
+                  <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#ffffff2e" stroke-width="4.5"/><circle cx="21" cy="21" r="16" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-dasharray="81 19" pathLength="100" stroke-linecap="round"/></svg>
+                  <span class="tl__rt"><span><span class="tl__rp" style="font-size: var(--t9)">81%</span><small class="tl__rl" style="font-size: 10px">준비했어요</small></span></span>
+                </span>
+                <span style="min-width: 0">
+                  <span class="tl__who" style="font-size: var(--t8)">유진 · 태호</span>
+                  <span class="tl__when" style="font-size: var(--t3); margin-top: var(--x1)">2026년 10월 3일 (토) · D-24</span>
+                  <span class="tl__facts" style="margin-top: var(--x3); gap: var(--x5)">
+                    <span class="tl__f">끝낸 일정<b style="font-size: var(--t5)">18개</b></span>
+                    <span class="tl__f">총예산<b style="font-size: var(--t5)">3,600</b></span>
+                  </span>
+                </span>
+              </div>
+              <div class="tlp__body">
+                <p class="tl__st">달마다 끝낸 일정</p>
+                <div class="months" style="margin-top: var(--x4)">
+                  <span class="mo"><i class="mo__bar" style="height: 14px"></i><small class="mo__l">2월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 28px"></i><small class="mo__l">3월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 14px"></i><small class="mo__l">4월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 42px"></i><small class="mo__l">5월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 28px"></i><small class="mo__l">6월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 56px"></i><small class="mo__l">7월</small></span>
+                  <span class="mo"><i class="mo__bar" style="height: 42px"></i><small class="mo__l">8월</small></span>
+                  <span class="mo mo--now"><i class="mo__bar" style="height: 28px"></i><small class="mo__l">9월</small></span>
+                  <span class="mo"><i class="mo__bar mo__bar--todo" style="height: 56px"></i><small class="mo__l">10월</small></span>
+                </div>
+                <p class="tl__st" style="margin-top: var(--x6)">최근에 끝낸 일</p>
+                <div class="done done--phone" style="margin-top: var(--x2)">
+                  <span class="done__i"><i class="done__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="done__t">예식장 잔금</span><span class="done__m">9월 2일</span></span>
+                  <span class="done__i"><i class="done__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="done__t">청첩장 발송</span><span class="done__m">9월 1일</span></span>
+                  <span class="done__i"><i class="done__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="done__t">본식 촬영</span><span class="done__m">8월 12일</span></span>
+                </div>
+              </div>
+              <div style="flex: 0 0 auto; border-top: 1px solid var(--stroke-neutral-muted); padding: var(--x3) var(--x5) var(--x4)">
+                <button class="c-btn c-btn--primary" style="display: flex; align-items: center; justify-content: center; gap: var(--x2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>좋아요 41</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="step__d" style="flex: 1; min-width: 260px; margin-top: var(--x10)">
+        폰에서도 <b>축은 가로 그대로</b>입니다. 세로로 눕히면 달의 순서가
+        위아래가 되는데, 시간은 왼쪽에서 오른쪽으로 읽는 게 몸에 배어
+        있습니다.
+        <br><br>
+        대신 폰에서는 막대 위의 <b>개수 숫자를 뺍니다.</b> 아홉 칸에 숫자까지
+        넣으면 390px 에서 글자가 겹칩니다 — 높이가 이미 개수를 말합니다.
+      </p>
+    </div>
+  </section>
+
+  <div class="changes">
+    <div class="change">
+      <h3>이 안이 잘하는 것</h3>
+      <p>이 앱을 쓰는 사람의 진짜 질문 — <b>"우리가 늦은 건가"</b> — 에
+        답합니다. 남의 총예산보다 남의 진행 상황이 쓸모 있고, 모달의 월별
+        축은 <b>언제쯤 뭘 해야 하는지</b>를 그대로 보여 줍니다.</p>
+    </div>
+    <div class="change">
+      <h3>이 안이 못하는 것</h3>
+      <p>진행률이 <b>일정 개수</b>로 계산됩니다. 일정을 잘게 쪼갠 사람이
+        높게 나오고, 크게 잡은 사람이 낮게 나옵니다. <b>"자랑" 이 아니라
+        경쟁</b>으로 읽힐 여지도 여기가 가장 큽니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>정하고 갈 것</h3>
+      <p>진행률을 <b>일정 개수</b>로 셀지 <b>금액</b>으로 셀지 정해야 합니다.
+        금액 기준이면 잘게 쪼갠 사람이 유리해지는 문제는 사라지지만, 예산을
+        안 적은 일정이 많은 사람은 영영 0%에 머뭅니다. 지금 시안은
+        <b>개수 기준</b>으로 그렸습니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="brag-index.html">← 자랑하기 세 안</a>
+</main>
+</body>
+</html>
