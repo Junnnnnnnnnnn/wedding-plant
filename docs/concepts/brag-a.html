@@ -19,7 +19,12 @@
      확정안이라 목록 문서와 같은 CSS 를 봐야 한다 */
 
   /* ── 큰 모달: 왼쪽 면 고정 · 오른쪽만 구른다 ─────────────────── */
-  .bd { display: grid; grid-template-columns: 380px minmax(0, 1fr); height: 100%; }
+  /* 행을 **명시**해야 한다. `height: 100%` 만 주면 암시 행이 `auto` 라
+     오른쪽 내용만큼 늘어나고, 왼쪽 면도 같이 늘어나 바닥의 좋아요가
+     모달 밖으로 밀려 잘린다 (실제로 잘렸다) */
+  .bd { display: grid; grid-template-columns: 380px minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr); height: 100%; }
+  .bd__side, .bd__main { min-height: 0; }
   .bd__side { background: var(--c-fill); color: var(--c-on-fill);
               padding: var(--x8) var(--x7); display: flex; flex-direction: column; }
   .bd__who { font-size: var(--t11); font-weight: var(--w-bold); letter-spacing: -0.03em;
@@ -41,6 +46,7 @@
   .bd__grow { flex: 1; min-height: var(--x8); }
 
   .bd__main { min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .bd__side p { margin-bottom: 0; }
   .bd__secs { flex: 1; min-height: 0; overflow: hidden; padding: var(--x7) var(--x8); }
   .bd__st { font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.02em; }
   .catrow { display: grid; grid-template-columns: minmax(0, 1fr) 76px 76px;

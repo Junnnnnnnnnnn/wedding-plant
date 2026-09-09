@@ -1,0 +1,415 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · 자랑하기 상세 모달 (확정안 A) · 앱의 잠긴 시스템을 잇는다 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>자랑하기 상세 모달 — 확정안 A</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<link rel="stylesheet" href="brag-tokens.css">
+<style>
+  /* 모달을 문서 안에서 **실제 크기**로 놓는다. 뷰포트가 아니라 이 상자를
+     기준으로 여백 규칙을 다시 쓴 것이 `.bg-big--demo` 다 */
+  .stage { position: relative; --frame-w: 1920px; --frame-h: 1080px;
+           width: 1520px; height: 680px; flex: 0 0 auto; }
+  .stage > .bg-big { inset: 0; }
+
+  /* ── 모달 속 ────────────────────────────────────────────────── */
+  /* 행을 **명시**해야 한다. `height: 100%` 만 주면 암시 행이 `auto` 라
+     오른쪽 내용만큼 늘어나고, 왼쪽 면도 같이 늘어나 바닥의 좋아요가
+     모달 밖으로 밀려 잘린다 (실제로 잘렸다) */
+  .bd { display: grid; grid-template-columns: 380px minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr); height: 100%; }
+  .bd__side, .bd__main { min-height: 0; }
+  .bd__side { background: var(--c-fill); color: var(--c-on-fill);
+              padding: var(--x8) var(--x7); display: flex; flex-direction: column; }
+  /* `<p>` 의 브라우저 기본 아래 마진(1em)이 그대로 살아 있다 — 토큰 CSS 에
+     전역 리셋이 없다. 세로가 680px 로 고정된 면이라 그것만으로 아래 버튼이
+     잘려 나갔다 */
+  .bd__side p { margin-bottom: 0; }
+  .bd__who { font-size: var(--t11); font-weight: var(--w-bold); letter-spacing: -0.03em;
+             line-height: 1.25; }
+  .bd__when { margin-top: var(--x2); font-size: var(--t4); color: var(--c-on-fill-muted); }
+  .bd__nl { margin-top: var(--x8); font-size: var(--t3); color: var(--c-on-fill-muted); }
+  .bd__num { margin-top: var(--x1_5); font-size: var(--t14); font-weight: var(--w-bold);
+             letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .bd__num small { font-size: var(--t7); }
+  .bd__tr { display: block; margin-top: var(--x5); height: 12px; border-radius: var(--r-full);
+            background: #ffffff2e; overflow: hidden; }
+  .bd__bar { display: flex; height: 100%; }
+  .bd__used { background: #fff; }
+  .bd__plan { background: #ffffff6b; }
+  .bd__legend { margin-top: var(--x3); display: flex; gap: var(--x4); font-size: var(--t2);
+                color: var(--c-on-fill-muted); }
+  .bd__legend span { display: inline-flex; align-items: center; gap: var(--x1_5); }
+  .bd__legend i { width: 8px; height: 8px; border-radius: 2px; }
+  .bd__grow { flex: 1; min-height: var(--x6); }
+
+  .bd__main { min-width: 0; display: flex; flex-direction: column; }
+  /* **오른쪽만 구른다.** 누구의 플랜인지와 총액이 스크롤해도 안 사라져야
+     아래쪽 카테고리 숫자를 보면서도 무엇에 대한 숫자인지를 놓치지 않는다 */
+  .bd__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--x7) var(--x8) var(--x8); }
+  .bd__st { display: flex; align-items: baseline; gap: var(--x2);
+            font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.02em; }
+  .bd__st span { font-size: var(--t3); font-weight: var(--w-regular);
+                 color: var(--fg-neutral-subtle); }
+
+  .catrow { display: grid; grid-template-columns: minmax(0, 1fr) 86px 86px 86px;
+            gap: var(--x3); align-items: center; padding: var(--x3) 0; font-size: var(--t3); }
+  .catrow + .catrow { box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .catrow__n { font-size: var(--t4); font-weight: var(--w-medium); }
+  .catrow__v { text-align: right; font-variant-numeric: tabular-nums; }
+  .catrow__v--left { font-weight: var(--w-bold); }
+  .catrow__h { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle); }
+
+  /* 플랜 목록 — 완료와 남은 것을 갈라 놓는다 */
+  .pl { margin-top: var(--x3); display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--x8); }
+  .pl__i { display: flex; align-items: center; gap: var(--x3); padding: var(--x2_5) 0;
+           box-shadow: inset 0 -1px 0 var(--stroke-neutral-subtle); font-size: var(--t3);
+           color: var(--fg-neutral-muted); }
+  .pl__c { width: 18px; height: 18px; border-radius: var(--r-full); flex: 0 0 auto;
+           display: grid; place-items: center; background: #e6f6f1; color: #079171; }
+  .pl__c--todo { background: var(--bg-layer-fill); color: var(--fg-neutral-disabled); }
+  .pl__t { font-size: var(--t4); font-weight: var(--w-medium); color: var(--fg-neutral); }
+  .pl__t--todo { color: var(--fg-neutral-muted); font-weight: var(--w-regular); }
+  .pl__m { margin-left: auto; white-space: nowrap; }
+
+  /* ── 폰 ────────────────────────────────────────────────────── */
+  .bdp { display: flex; flex-direction: column; height: 100%; }
+  .bdp__head { flex: 0 0 auto; background: var(--c-fill); color: var(--c-on-fill);
+               padding: var(--x6) var(--x12) var(--x5) var(--x5); }
+  .bdp__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--x5); }
+  .bdp__foot { flex: 0 0 auto; border-top: 1px solid var(--stroke-neutral-muted);
+               padding: var(--x3) var(--x5) var(--x4); background: var(--bg-layer-default); }
+  .pl--phone { grid-template-columns: minmax(0, 1fr); }
+  .catrow--phone { grid-template-columns: minmax(0, 1fr) 58px 58px 58px; gap: var(--x2); }
+
+  /* ── 상태 견본 ─────────────────────────────────────────────── */
+  .states { margin-top: var(--x6); display: grid; gap: var(--x5);
+            grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 900px) { .states { grid-template-columns: minmax(0, 1fr); } }
+  .state { border: 1px solid var(--stroke-neutral-weak); border-radius: var(--r4);
+           overflow: hidden; background: var(--bg-layer-default); }
+  .state__c { padding: var(--x3) var(--x4); border-bottom: 1px solid var(--stroke-neutral-weak);
+              font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-muted); }
+  .state__b { padding: var(--x5); background: var(--bg-layer-basement); }
+
+  .sk i { display: block; border-radius: var(--r1); background: var(--bg-layer-fill); }
+  @keyframes shim { 0% { opacity: .55 } 50% { opacity: 1 } 100% { opacity: .55 } }
+  .sk { animation: shim 1.4s var(--ease) infinite; }
+
+  .rules { margin-top: var(--x6); display: grid; gap: 0; }
+  .rule { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: var(--x5);
+          padding: var(--x4) 0; box-shadow: inset 0 -1px 0 var(--stroke-neutral-subtle); }
+  @media (max-width: 720px) { .rule { grid-template-columns: minmax(0, 1fr); gap: var(--x2); } }
+  .rule__k { font-size: var(--t3); font-weight: var(--w-bold); color: var(--fg-brand-contrast); }
+  .rule__v { font-size: var(--t4); line-height: 1.7; color: var(--fg-neutral-muted); }
+  .rule__v b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .rule__v code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                  font-size: var(--t2); background: var(--bg-layer-fill);
+                  border: 1px solid var(--stroke-neutral-muted); border-radius: var(--r1);
+                  padding: 1px 5px; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">자랑하기 · 확정안 A</p>
+  <h1 class="page__title">카드를 눌렀을 때</h1>
+  <p class="page__lede">
+    <b>페이지로 넘어가지 않고 모달이 뜹니다.</b> 목록을 잃지 않는 게 이 화면의
+    전부라, 닫으면 보던 자리 그대로 돌아옵니다. 아래는 <b>실제 크기</b>입니다 —
+    웹 1520 × 680, 폰 390.
+  </p>
+
+  <!-- ① 웹 -->
+  <section class="step">
+    <p class="step__n">웹</p>
+    <h2 class="step__t">왼쪽은 고정, 오른쪽만 구른다</h2>
+    <p class="step__d">
+      누구의 플랜인지와 총액이 <b>스크롤해도 안 사라져야</b> 합니다. 아래쪽
+      카테고리 숫자를 보면서도 "무엇에 대한 숫자인지"를 놓치지 않아야 하니까요.
+      왼쪽 380px 면은 붙박이고, <b>오른쪽만 구릅니다</b>.
+    </p>
+
+    <div class="bleed" style="margin-top: var(--x6)">
+      <div class="stage">
+        <span style="position: absolute; inset: -40px; background: #1a1c2059; border-radius: var(--r6)"></span>
+        <div class="bg-big">
+          <button class="bg-big__close" aria-label="닫기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+          <div class="bd">
+            <div class="bd__side">
+              <p class="bd__who">유진 · 태호</p>
+              <p class="bd__when">2026년 10월 3일 토요일 · D-24</p>
+
+              <p class="bd__nl">총예산</p>
+              <p class="bd__num">3,600<small>만 원</small></p>
+              <span class="bd__tr"><span class="bd__bar"><i class="bd__used" style="width: 80%"></i><i class="bd__plan" style="width: 12%"></i></span></span>
+              <div class="bd__legend">
+                <span><i style="background: #fff"></i>사용 2,880</span>
+                <span><i style="background: #ffffff6b"></i>예정 432</span>
+                <span><i style="background: #ffffff2e"></i>여유 288</span>
+              </div>
+
+              <span class="cnt cnt--on-fill" style="display: block; margin-top: var(--x7)">
+                <span class="cnt__l">플랜 <b>22개</b> · 완료 <b>18개</b></span>
+                <span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span>
+              </span>
+
+              <span class="bd__grow"></span>
+              <span><button class="bg-like bg-like--on-fill" aria-pressed="false" style="font-size: var(--t4); padding: var(--x3) var(--x5)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>좋아요 41</button></span>
+            </div>
+
+            <div class="bd__main">
+              <div class="bd__scroll">
+                <p class="bd__st">카테고리별</p>
+                <div style="margin-top: var(--x3)">
+                  <div class="catrow"><span class="catrow__n catrow__h">카테고리</span><span class="catrow__v catrow__h">예산</span><span class="catrow__v catrow__h">사용</span><span class="catrow__v catrow__h">남음</span></div>
+                  <div class="catrow"><span class="catrow__n">예식장</span><span class="catrow__v">1,240</span><span class="catrow__v">1,240</span><span class="catrow__v catrow__v--left">0</span></div>
+                  <div class="catrow"><span class="catrow__n">스드메</span><span class="catrow__v">900</span><span class="catrow__v">760</span><span class="catrow__v catrow__v--left">140</span></div>
+                  <div class="catrow"><span class="catrow__n">예물 · 예단</span><span class="catrow__v">620</span><span class="catrow__v">480</span><span class="catrow__v catrow__v--left">140</span></div>
+                  <div class="catrow"><span class="catrow__n">신혼여행</span><span class="catrow__v">440</span><span class="catrow__v">280</span><span class="catrow__v catrow__v--left">160</span></div>
+                  <div class="catrow"><span class="catrow__n">혼수</span><span class="catrow__v">220</span><span class="catrow__v">120</span><span class="catrow__v catrow__v--left">100</span></div>
+                  <div class="catrow"><span class="catrow__n">청첩장</span><span class="catrow__v">180</span><span class="catrow__v">0</span><span class="catrow__v catrow__v--left">180</span></div>
+                </div>
+
+                <p class="bd__st" style="margin-top: var(--x8)">끝낸 플랜 <span>18개</span></p>
+                <div class="pl">
+                  <span class="pl__i"><i class="pl__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="pl__t">예식장 잔금</span><span class="pl__m">9월 2일</span></span>
+                  <span class="pl__i"><i class="pl__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="pl__t">청첩장 발송</span><span class="pl__m">9월 1일</span></span>
+                  <span class="pl__i"><i class="pl__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="pl__t">본식 촬영</span><span class="pl__m">8월 12일</span></span>
+                  <span class="pl__i"><i class="pl__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="pl__t">드레스 피팅</span><span class="pl__m">8월 5일</span></span>
+                  <span class="pl__i"><i class="pl__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="pl__t">예물 상담</span><span class="pl__m">7월 28일</span></span>
+                  <span class="pl__i"><i class="pl__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="pl__t">스튜디오 계약</span><span class="pl__m">7월 20일</span></span>
+                </div>
+                <p style="margin-top: var(--x3); font-size: var(--t3); color: var(--fg-neutral-subtle)">외 12개</p>
+
+                <p class="bd__st" style="margin-top: var(--x8)">남은 플랜 <span>4개</span></p>
+                <div class="pl">
+                  <span class="pl__i"><i class="pl__c pl__c--todo"></i><span class="pl__t pl__t--todo">신혼여행 항공</span><span class="pl__m">9월 20일</span></span>
+                  <span class="pl__i"><i class="pl__c pl__c--todo"></i><span class="pl__t pl__t--todo">답례품</span><span class="pl__m">9월 24일</span></span>
+                  <span class="pl__i"><i class="pl__c pl__c--todo"></i><span class="pl__t pl__t--todo">헤어 리허설</span><span class="pl__m">9월 28일</span></span>
+                  <span class="pl__i"><i class="pl__c pl__c--todo"></i><span class="pl__t pl__t--todo">잔금 정산</span><span class="pl__m">10월 1일</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="step__d" style="margin-top: var(--x6)">
+      <b>플랜 이름은 나가고 금액은 안 나갑니다.</b> "본식 촬영" 은 보이지만
+      그게 얼마였는지는 안 보입니다 — 금액은 <b>카테고리 단위까지만</b>
+      공개하기로 안내 모달에서 약속했습니다. 표의 숫자가 그 약속의 경계입니다.
+      <br><br>
+      끝낸 플랜은 <b>여섯 개까지만</b> 내고 나머지는 "외 12개" 로 접습니다.
+      22개를 다 늘어놓으면 이 목록이 화면의 주인이 되는데, 여기서 볼 것은
+      <b>얼마를 어디에 썼나</b>지 <b>무엇을 했나</b>가 아닙니다.
+    </p>
+  </section>
+
+  <!-- ② 모바일 -->
+  <section class="step">
+    <p class="step__n">모바일</p>
+    <h2 class="step__t">면이 위로, 좋아요는 바닥으로</h2>
+    <p class="step__d">
+      390px 에 380px 짜리 면을 옆에 붙일 자리가 없어서 <b>면이 위로</b>
+      올라갑니다. 여백 규칙(<code>한 변 200px 을 넘지 않되 16px 까지 줄어든다</code>)이
+      폰에서는 16px 이라 <b>사실상 전체 화면</b>입니다.
+    </p>
+
+    <div style="margin-top: var(--x6); display: flex; gap: var(--x6); flex-wrap: wrap; align-items: start">
+      <div class="wf wf--phone" style="background: var(--bg-layer-basement)">
+        <span style="position: absolute; inset: 0; background: #1a1c2059"></span>
+        <div class="bg-big bg-big--demo">
+          <button class="bg-big__close bg-big__close--on-fill" aria-label="닫기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+          <div class="bdp">
+            <div class="bdp__head">
+              <p style="font-size: var(--t9); font-weight: var(--w-bold); letter-spacing: -0.03em">유진 · 태호</p>
+              <p style="margin-top: var(--x1_5); font-size: var(--t3); color: var(--c-on-fill-muted)">2026년 10월 3일 (토) · D-24</p>
+              <p style="margin-top: var(--x5); font-size: var(--t3); color: var(--c-on-fill-muted)">총예산</p>
+              <p style="margin-top: 2px; font-size: var(--t12); font-weight: var(--w-bold); letter-spacing: -0.04em; line-height: 1">3,600<small style="font-size: var(--t5)">만 원</small></p>
+              <span class="bd__tr" style="margin-top: var(--x4)"><span class="bd__bar"><i class="bd__used" style="width: 80%"></i><i class="bd__plan" style="width: 12%"></i></span></span>
+              <div class="bd__legend"><span><i style="background: #fff"></i>사용 2,880</span><span><i style="background: #ffffff6b"></i>예정 432</span></div>
+              <span class="cnt cnt--on-fill" style="display: block; margin-top: var(--x5)">
+                <span class="cnt__l">플랜 <b>22개</b> · 완료 <b>18개</b></span>
+                <span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span>
+              </span>
+            </div>
+            <div class="bdp__scroll">
+              <p class="bd__st">카테고리별</p>
+              <div style="margin-top: var(--x2)">
+                <div class="catrow catrow--phone"><span class="catrow__n catrow__h">카테고리</span><span class="catrow__v catrow__h">예산</span><span class="catrow__v catrow__h">사용</span><span class="catrow__v catrow__h">남음</span></div>
+                <div class="catrow catrow--phone"><span class="catrow__n">예식장</span><span class="catrow__v">1,240</span><span class="catrow__v">1,240</span><span class="catrow__v catrow__v--left">0</span></div>
+                <div class="catrow catrow--phone"><span class="catrow__n">스드메</span><span class="catrow__v">900</span><span class="catrow__v">760</span><span class="catrow__v catrow__v--left">140</span></div>
+                <div class="catrow catrow--phone"><span class="catrow__n">예물 · 예단</span><span class="catrow__v">620</span><span class="catrow__v">480</span><span class="catrow__v catrow__v--left">140</span></div>
+                <div class="catrow catrow--phone"><span class="catrow__n">신혼여행</span><span class="catrow__v">440</span><span class="catrow__v">280</span><span class="catrow__v catrow__v--left">160</span></div>
+              </div>
+              <p class="bd__st" style="margin-top: var(--x6)">끝낸 플랜 <span>18개</span></p>
+              <div class="pl pl--phone">
+                <span class="pl__i"><i class="pl__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="pl__t">예식장 잔금</span><span class="pl__m">9월 2일</span></span>
+                <span class="pl__i"><i class="pl__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="pl__t">청첩장 발송</span><span class="pl__m">9월 1일</span></span>
+                <span class="pl__i"><i class="pl__c"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 13 5 5L20 7"/></svg></i><span class="pl__t">본식 촬영</span><span class="pl__m">8월 12일</span></span>
+              </div>
+            </div>
+            <div class="bdp__foot">
+              <button class="c-btn c-btn--primary" style="display: flex; align-items: center; justify-content: center; gap: var(--x2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>좋아요 41</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="step__d" style="flex: 1; min-width: 260px">
+        좋아요는 <b>바닥에 붙는 바</b>로 내려갑니다 — 이 화면에서 할 수 있는
+        일이 그거 하나라, 스크롤 어디에 있든 닿아야 합니다. 앱의 다른 화면과
+        같은 규칙(<code>.pb-dock</code>)을 씁니다.
+        <br><br>
+        <b>탭바는 안 보입니다.</b> 모달이 전체 화면을 덮으므로 나가는 길은
+        오른쪽 위 <b>×</b> 하나입니다. 안드로이드 뒤로가기와 iOS 가장자리
+        스와이프로도 닫힙니다.
+        <br><br>
+        카테고리 표는 <b>폰에서도 세 열</b>을 세웁니다 — 예산 상세 화면에서
+        정한 것과 같습니다. 58px 짜리 숫자 열 셋은 375px 에서도 들어갑니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- ③ 상태 -->
+  <section class="step">
+    <p class="step__n">상태</p>
+    <h2 class="step__t">모달이 실제로 겪는 것</h2>
+
+    <div class="states">
+      <div class="state">
+        <p class="state__c">① 좋아요 — 누르기 전 · 누른 뒤</p>
+        <div class="state__b" style="background: var(--c-fill); display: flex; gap: var(--x4); align-items: center">
+          <button class="bg-like bg-like--on-fill" aria-pressed="false" style="font-size: var(--t4); padding: var(--x3) var(--x5)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>좋아요 41</button>
+          <span style="color: var(--c-on-fill-faint)">→</span>
+          <button class="bg-like" aria-pressed="true" style="font-size: var(--t4); padding: var(--x3) var(--x5); background: #fff; color: var(--fg-brand-contrast)"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>좋아요 42</button>
+        </div>
+      </div>
+
+      <div class="state">
+        <p class="state__c">② 내 플랜을 열었을 때 — 좋아요 대신</p>
+        <div class="state__b" style="background: var(--c-fill)">
+          <p style="font-size: var(--t3); color: var(--c-on-fill-muted)">받은 좋아요</p>
+          <p style="margin-top: 2px; font-size: var(--t9); font-weight: var(--w-bold); color: var(--c-on-fill); font-variant-numeric: tabular-nums">24</p>
+          <!-- 흰 반투명 면 위의 흰 글씨는 2.6:1 이라 안 읽힌다. 면을 비우고
+               테두리로 버튼임을 말하면 분홍 위 흰 글씨가 4.6:1 이 된다 -->
+          <button class="c-btn" style="margin-top: var(--x4); background: transparent; border: 1.5px solid #ffffff8a; color: var(--c-on-fill); padding: var(--x2_5) 0">자랑하기에서 내리기</button>
+        </div>
+      </div>
+
+      <div class="state">
+        <p class="state__c">③ 불러오는 중 — 오른쪽만</p>
+        <div class="state__b">
+          <div class="sk">
+            <i style="width: 22%; height: 18px"></i>
+            <i style="width: 100%; height: 11px; margin-top: 20px"></i>
+            <i style="width: 100%; height: 11px; margin-top: 14px"></i>
+            <i style="width: 100%; height: 11px; margin-top: 14px"></i>
+            <i style="width: 68%; height: 11px; margin-top: 14px"></i>
+          </div>
+          <p style="margin-top: var(--x4); font-size: var(--t2); color: var(--fg-neutral-subtle)">
+            왼쪽 면은 <b style="color: var(--fg-neutral)">목록 카드가 이미 아는 값</b>이라
+            바로 그린다. 상세 요청을 기다리는 건 오른쪽뿐이다.
+          </p>
+        </div>
+      </div>
+
+      <div class="state">
+        <p class="state__c">④ 내려간 플랜을 열었을 때</p>
+        <div class="state__b">
+          <div style="text-align: center; padding: var(--x8) var(--x4)">
+            <p style="font-size: var(--t6); font-weight: var(--w-bold)">내려간 플랜이에요</p>
+            <p style="margin-top: var(--x2); font-size: var(--t3); line-height: 1.7; color: var(--fg-neutral-muted)">
+              올린 사람이 자랑하기에서 내렸습니다.<br>목록으로 돌아가면 다른 플랜을 볼 수 있어요.
+            </p>
+            <span style="display: inline-block; margin-top: var(--x5)"><button class="c-btn c-btn--ghost" style="width: auto; padding: var(--x2_5) var(--x6)">목록으로</button></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="step__d" style="margin-top: var(--x6)">
+      ④가 필요한 이유 — <b>주소를 공유할 수 있게 하면</b> 내려간 뒤에 그 링크로
+      들어오는 사람이 생깁니다. 404 로 떨어뜨리지 않고 <b>무슨 일이 있었는지</b>를
+      말합니다.
+    </p>
+  </section>
+
+  <!-- ④ 규칙 -->
+  <section class="step">
+    <p class="step__n">규칙</p>
+    <h2 class="step__t">여는 법 · 닫는 법 · 크기</h2>
+
+    <div class="rules">
+      <div class="rule">
+        <span class="rule__k">크기</span>
+        <span class="rule__v"><code>최대 1520 × 680, 남는 자리를 여백으로 쓰되 한 변 200px 을 넘지 않는다.</code>
+          1920 × 1080 에서 정확히 각 변 200px, 1440 × 900 에서는 좌우 16px · 위아래 110px,
+          폰에서는 16px 로 사실상 꽉 찹니다.</span>
+      </div>
+      <div class="rule">
+        <span class="rule__k">여는 법</span>
+        <span class="rule__v">카드를 누르면 열립니다. <b>주소가 바뀝니다</b>
+          (<code>/brag?id=...</code>) — 뒤로가기로 닫히고, 링크를 공유할 수 있어야
+          자랑하기가 밖으로 나갑니다. 라우트를 <b>갈아 끼우지는 않습니다</b>:
+          뒤에 있던 목록이 통째로 다시 그려지면 스크롤 자리를 잃습니다.</span>
+      </div>
+      <div class="rule">
+        <span class="rule__k">닫는 법</span>
+        <span class="rule__v">오른쪽 위 <b>×</b> · <b>ESC</b> · <b>바깥 누르기</b> ·
+          <b>뒤로가기</b>. 넷 다 같은 곳으로 돌아갑니다 — <b>보던 스크롤 자리 그대로</b>.
+          목록을 잃지 않는 게 모달을 쓰는 이유 전부입니다.</span>
+      </div>
+      <div class="rule">
+        <span class="rule__k">키보드</span>
+        <span class="rule__v">열리면 <b>×</b> 에 초점이 갑니다. Tab 은 모달 안에서
+          돌고(focus trap) 닫으면 <b>눌렀던 카드로 초점이 돌아갑니다</b>. 안 그러면
+          키보드 사용자가 목록 맨 위로 튕깁니다.</span>
+      </div>
+      <div class="rule">
+        <span class="rule__k">뒤 스크롤</span>
+        <span class="rule__v">모달이 열려 있는 동안 <b>뒤 목록은 구르지 않습니다</b>.
+          폰에서 이게 빠지면 모달 안을 넘기다 끝에 닿는 순간 뒤 목록이 따라
+          움직입니다.</span>
+      </div>
+      <div class="rule">
+        <span class="rule__k">옆으로 넘기기</span>
+        <span class="rule__v"><b>넣지 않습니다.</b> 벽돌 배치는 "다음 카드" 가
+          시각적으로 오른쪽인지 아래인지 모호합니다 — 순서를 만들어 내면
+          목록에서 본 자리와 어긋납니다.</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="changes">
+    <div class="change change--keep">
+      <h3>안내 모달에서 한 약속</h3>
+      <p>공개되는 것은 <b>닉네임 · 결혼식 날짜 · 총예산 · 카테고리별 지출 ·
+        플랜 제목</b>입니다. 이 화면이 그 목록보다 더 보여 주면 약속이 깨집니다 —
+        <b>플랜 하나하나의 금액을 넣지 마세요.</b></p>
+    </div>
+    <div class="change">
+      <h3>고칠 수 없다는 뜻</h3>
+      <p>여기 보이는 값은 <b>올린 순간의 스냅샷</b>입니다. 올린 뒤에 예산을
+        고쳐도 이 화면은 안 바뀝니다. 실시간으로 따라가게 만들면 "고칠 수 없다"
+        는 안내가 거짓이 됩니다.</p>
+    </div>
+    <div class="change">
+      <h3>아직 안 정한 것</h3>
+      <p><b>신고 버튼이 필요할까요?</b> 닉네임이 공개되는 화면이라 언젠가는
+        필요합니다. 다만 1차에는 올릴 수 있는 게 <b>자기 플랜 데이터뿐</b>이라
+        (사진도 자유 글도 없습니다) 신고할 거리가 사실상 닉네임밖에 없습니다 —
+        넣는다면 <b>닉네임 신고</b>로 좁히는 게 맞습니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="brag-index.html">← 자랑하기 목차</a>
+</main>
+</body>
+</html>

@@ -399,6 +399,17 @@
             color: var(--fg-neutral-subtle); }
 .pc__mine { font-weight: var(--w-bold); color: var(--fg-brand-contrast); }
 
+/* ══ 문서 폭을 벗어나는 블록 ══════════════════════════════════
+ * 큰 모달은 1520px 이라 문서 폭(1132px)에 안 들어간다. 줄여서 보여
+ * 주면 14px 글자가 10px 이 돼 판단이 안 되므로, **그 블록만** 문서
+ * 밖으로 넓힌다. 화면이 좁으면 가로로 구른다.
+ * ════════════════════════════════════════════════════════════ */
+.bleed {
+  width: min(1568px, calc(100vw - 48px));
+  margin-inline: calc(50% - min(784px, 50vw - 24px));
+  overflow-x: auto;
+}
+
 /* ══ 시안 문서용 틀 ═══════════════════════════════════════════ */
 .wf {
   position: relative;
