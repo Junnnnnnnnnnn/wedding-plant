@@ -521,106 +521,116 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
         가이드 앵커 `#plan-list-header` 는 그대로 둔다 — 말풍선 좌표를 이
         rect 로 잡는다.
       */}
-      <header className="relative z-10 flex shrink-0 items-center justify-between gap-4 rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-5 pt-12 md:mb-0 md:rounded-none md:border-b md:border-stone-100 md:bg-white md:bg-none md:px-8 md:py-5">
-        <div id="plan-list-header" className="min-w-0">
-          {/* 시안 .c-head__title 18px bold · .c-head__sub 14px 보통 굵기 */}
-          <h2 className="text-[18px] font-bold tracking-[-0.02em] text-white md:text-[26px] md:font-semibold md:text-[#1b0d14]">
-            참여 플랜
-          </h2>
-          <p className="mt-2 text-[14px] font-normal text-white/80 md:mt-1.5 md:text-[13px] md:text-[#7a6c74]">
-            <span className="md:hidden">
-              함께 준비하는 플랜 {plans.length}개
-            </span>
-            <span className="hidden md:inline">
-              함께 가꾸는 소중한 결혼 준비 계획들
-            </span>
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowGuide(true)}
-          className="flex h-10 w-10 shrink-0 items-center justify-center text-white transition-colors hover:text-white/70 md:h-10 md:w-10 md:text-stone-400 md:hover:text-stone-600"
-          aria-label="가이드 보기"
-        >
-          <CircleHelp className="h-6 w-6" strokeWidth={2} />
-        </button>
-      </header>
 
       {/*
         @container: 카드 열 수를 뷰포트가 아니라 목록이 실제로 차지한 폭으로
         정한다. 오른쪽 대화 pane 이 400~520px 를 가져가므로 뷰포트만 보면
         늘 한 칸씩 어긋난다.
       */}
-      <div className="@container relative z-10 min-h-0 flex-1 overflow-y-auto no-scrollbar px-6 pb-24 pt-5 md:px-8 md:pb-8 md:pt-6 lg:px-8">
-        <div className="space-y-6 md:grid md:grid-cols-1 md:gap-6 md:space-y-0 md:content-start @[680px]:md:grid-cols-2 @[1060px]:md:grid-cols-3">
-          {listLoading ? (
-            <div className="space-y-6 md:col-span-full md:grid md:grid-cols-1 md:gap-6 md:space-y-0 @[680px]:md:grid-cols-2 @[1060px]:md:grid-cols-3">
-              {/* Skeleton Cards */}
-              {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="w-full bg-white rounded-[32px] p-6 border border-[#ee2b8c05] shadow-sm relative overflow-hidden animate-pulse"
-                >
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="space-y-2">
-                      <div className="w-20 h-4 bg-stone-50 rounded-full" />
-                      <div className="w-40 h-8 bg-stone-50 rounded-xl" />
+      <div className="@container relative z-10 min-h-0 flex-1 overflow-y-auto no-scrollbar">
+        {/*
+        머리 면은 **스크롤 영역 안**에 있다 — 폰에서는 내용과 함께 위로
+        올라간다. 고정해 두면 375x553(사파리 상하단 바가 다 나온 아이폰 SE)
+        에서 보이는 목록이 그만큼 줄어든다. 넓은 화면은 흰 머리글 띠라
+        `md:sticky` 로 자리를 지킨다.
+      */}
+        <header
+          data-mobile-head
+          className="md:sticky md:top-0 md:z-20 relative z-10 flex shrink-0 items-center justify-between gap-4 rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-5 pt-12 md:mb-0 md:rounded-none md:border-b md:border-stone-100 md:bg-white md:bg-none md:px-8 md:py-5"
+        >
+          <div id="plan-list-header" className="min-w-0">
+            {/* 시안 .c-head__title 18px bold · .c-head__sub 14px 보통 굵기 */}
+            <h2 className="text-[18px] font-bold tracking-[-0.02em] text-white md:text-[26px] md:font-semibold md:text-[#1b0d14]">
+              참여 플랜
+            </h2>
+            <p className="mt-2 text-[14px] font-normal text-white/80 md:mt-1.5 md:text-[13px] md:text-[#7a6c74]">
+              <span className="md:hidden">
+                함께 준비하는 플랜 {plans.length}개
+              </span>
+              <span className="hidden md:inline">
+                함께 가꾸는 소중한 결혼 준비 계획들
+              </span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowGuide(true)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center text-white transition-colors hover:text-white/70 md:h-10 md:w-10 md:text-stone-400 md:hover:text-stone-600"
+            aria-label="가이드 보기"
+          >
+            <CircleHelp className="h-6 w-6" strokeWidth={2} />
+          </button>
+        </header>
+        <div className="pb-tabbar px-6 pt-5 md:px-8 md:pb-8 md:pt-6 lg:px-8">
+          <div className="space-y-6 md:grid md:grid-cols-1 md:gap-6 md:space-y-0 md:content-start @[680px]:md:grid-cols-2 @[1060px]:md:grid-cols-3">
+            {listLoading ? (
+              <div className="space-y-6 md:col-span-full md:grid md:grid-cols-1 md:gap-6 md:space-y-0 @[680px]:md:grid-cols-2 @[1060px]:md:grid-cols-3">
+                {/* Skeleton Cards */}
+                {[1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="w-full bg-white rounded-[32px] p-6 border border-[#ee2b8c05] shadow-sm relative overflow-hidden animate-pulse"
+                  >
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="space-y-2">
+                        <div className="w-20 h-4 bg-stone-50 rounded-full" />
+                        <div className="w-40 h-8 bg-stone-50 rounded-xl" />
+                      </div>
+                      <div className="w-10 h-10 bg-stone-50 rounded-2xl" />
                     </div>
-                    <div className="w-10 h-10 bg-stone-50 rounded-2xl" />
-                  </div>
-                  <div className="space-y-3 mb-6">
-                    <div className="w-12 h-3 bg-stone-50 rounded-full" />
-                    <div className="flex gap-2">
-                      <div className="w-10 h-10 rounded-full bg-stone-50" />
-                      <div className="w-10 h-10 rounded-full bg-stone-50" />
+                    <div className="space-y-3 mb-6">
+                      <div className="w-12 h-3 bg-stone-50 rounded-full" />
+                      <div className="flex gap-2">
+                        <div className="w-10 h-10 rounded-full bg-stone-50" />
+                        <div className="w-10 h-10 rounded-full bg-stone-50" />
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between mb-1">
+                        <div className="w-24 h-3 bg-stone-50 rounded-full" />
+                      </div>
+                      <div className="w-full h-2 bg-stone-50 rounded-full" />
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between mb-1">
-                      <div className="w-24 h-3 bg-stone-50 rounded-full" />
-                    </div>
-                    <div className="w-full h-2 bg-stone-50 rounded-full" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : plans.length === 0 ? (
-            <div className="text-center py-20 text-gray-400 md:col-span-2">
-              <p>참여 중인 플랜이 없습니다.</p>
-            </div>
-          ) : (
-            plans.map((plan, index) => {
-              // 예산 0이면 나눗셈이 Infinity/NaN이 되고, 무효 CSS width는
-              // auto로 떨어져 막대가 꽉 찬 것처럼 보인다. 0~100으로 고정한다.
-              const pct = (v: number) => {
-                if (!(plan.budget > 0)) return 0;
-                const raw = (v / plan.budget) * 100;
-                return Number.isFinite(raw)
-                  ? Math.min(100, Math.max(0, raw))
-                  : 0;
-              };
-              const plannedUseAmount = plan.plannedUseAmount ?? 0;
-              // remainingBudget = budget - (예정 + 사용) 이므로
-              // 실제로 나간 돈은 그 차에서 예정을 뺀 값이다.
-              const usedAmount =
-                plan.budget - plan.remainingBudget - plannedUseAmount;
-              const usedPercent = pct(Math.max(0, usedAmount));
-              const plannedPercent = pct(plannedUseAmount);
-              const isFirst = index === 0;
+                ))}
+              </div>
+            ) : plans.length === 0 ? (
+              <div className="text-center py-20 text-gray-400 md:col-span-2">
+                <p>참여 중인 플랜이 없습니다.</p>
+              </div>
+            ) : (
+              plans.map((plan, index) => {
+                // 예산 0이면 나눗셈이 Infinity/NaN이 되고, 무효 CSS width는
+                // auto로 떨어져 막대가 꽉 찬 것처럼 보인다. 0~100으로 고정한다.
+                const pct = (v: number) => {
+                  if (!(plan.budget > 0)) return 0;
+                  const raw = (v / plan.budget) * 100;
+                  return Number.isFinite(raw)
+                    ? Math.min(100, Math.max(0, raw))
+                    : 0;
+                };
+                const plannedUseAmount = plan.plannedUseAmount ?? 0;
+                // remainingBudget = budget - (예정 + 사용) 이므로
+                // 실제로 나간 돈은 그 차에서 예정을 뺀 값이다.
+                const usedAmount =
+                  plan.budget - plan.remainingBudget - plannedUseAmount;
+                const usedPercent = pct(Math.max(0, usedAmount));
+                const plannedPercent = pct(plannedUseAmount);
+                const isFirst = index === 0;
 
-              return (
-                <div
-                  key={plan.roomId}
-                  id={isFirst ? "plan-card-0" : undefined}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleSelectPlan(plan.roomId)}
-                  onKeyDown={(e) => {
-                    if (e.key !== "Enter" && e.key !== " ") return;
-                    e.preventDefault();
-                    handleSelectPlan(plan.roomId);
-                  }}
-                  /*
+                return (
+                  <div
+                    key={plan.roomId}
+                    id={isFirst ? "plan-card-0" : undefined}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleSelectPlan(plan.roomId)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      handleSelectPlan(plan.roomId);
+                    }}
+                    /*
                     시안(C안 03)의 카드다. 폰은 SEED 채움(`layer-fill`) +
                     r5(20px), 그림자 없음 — 그림자는 떠 있는 것에만 쓴다.
                     ≥768 은 대시보드 카드 언어(흰 카드 + 헤어라인)를 유지한다.
@@ -628,38 +638,39 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
                     `transform`(active:scale)은 붙이지 않는다 — 안쪽 채팅방
                     줄을 누를 때 카드까지 같이 줄어든다. 누른 느낌은 배경색으로.
                   */
-                  className="group/card w-full cursor-pointer rounded-[20px] bg-[#f7f8f9] p-5 transition-colors active:bg-[#eeeff1] md:rounded-[28px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-6 md:shadow-sm md:transition-all md:hover:shadow-xl md:hover:shadow-[#ee2b8c11] md:active:bg-[#fffafc]"
-                >
-                  <CardHeader
-                    ownerName={plan.onwerName}
-                    weddingDate={plan.weddingDate}
-                    members={plan.members}
-                  />
-                  <CardBudget
-                    remainingBudget={plan.remainingBudget}
-                    budget={plan.budget}
-                    usedPercent={usedPercent}
-                    plannedPercent={plannedPercent}
-                    plannedUseAmount={plannedUseAmount}
-                  />
-                  {/*
+                    className="group/card w-full cursor-pointer rounded-[20px] bg-[#f7f8f9] p-5 transition-colors active:bg-[#eeeff1] md:rounded-[28px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-6 md:shadow-sm md:transition-all md:hover:shadow-xl md:hover:shadow-[#ee2b8c11] md:active:bg-[#fffafc]"
+                  >
+                    <CardHeader
+                      ownerName={plan.onwerName}
+                      weddingDate={plan.weddingDate}
+                      members={plan.members}
+                    />
+                    <CardBudget
+                      remainingBudget={plan.remainingBudget}
+                      budget={plan.budget}
+                      usedPercent={usedPercent}
+                      plannedPercent={plannedPercent}
+                      plannedUseAmount={plannedUseAmount}
+                    />
+                    {/*
                     가이드 앵커라 방이 없어도 이 div 는 남긴다
                     (GuideOverlay 가 이 rect 로 말풍선 좌표를 잡는다).
                   */}
-                  <div id={isFirst ? "plan-channels-0" : undefined}>
-                    {(plan.chatRooms?.length ?? 0) > 0 && (
-                      <hr className="my-5 border-0 border-t border-[#0000000c] md:border-dashed md:border-[#f2eaee]" />
-                    )}
-                    <CardChatRooms
-                      chatRooms={plan.chatRooms || []}
-                      onChatRoomClick={handleChatRoomClick}
-                      getRoomUnreadCount={getRoomUnreadCount}
-                    />
+                    <div id={isFirst ? "plan-channels-0" : undefined}>
+                      {(plan.chatRooms?.length ?? 0) > 0 && (
+                        <hr className="my-5 border-0 border-t border-[#0000000c] md:border-dashed md:border-[#f2eaee]" />
+                      )}
+                      <CardChatRooms
+                        chatRooms={plan.chatRooms || []}
+                        onChatRoomClick={handleChatRoomClick}
+                        getRoomUnreadCount={getRoomUnreadCount}
+                      />
+                    </div>
                   </div>
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
 

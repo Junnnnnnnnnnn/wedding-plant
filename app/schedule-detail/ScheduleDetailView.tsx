@@ -640,7 +640,10 @@ export default function ScheduleDetailView({
               좌우 패딩(px-6 / md:px-8)을 음수 마진으로 상쇄해 가장자리까지
               편다 — main 이 overflow-x-hidden 이라 넘치지 않는다.
             */}
-            <div className="relative overflow-hidden rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-5 pt-4 md:px-8">
+            <div
+              data-mobile-head
+              className="relative overflow-hidden rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-5 pt-4 md:px-8"
+            >
               {/* Background decoration */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
 
@@ -1022,7 +1025,7 @@ export default function ScheduleDetailView({
           className={
             isInspector
               ? "flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto overflow-x-hidden px-5 pb-6 pt-5"
-              : `flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-6 pt-5 min-w-0 w-full max-w-full box-border md:px-8 ${isLoggedIn ? "pb-36 md:pb-10" : "pb-24 md:pb-10"}`
+              : "pb-tabbar flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden box-border px-6 pt-5 md:px-8 md:pb-10"
           }
         >
           <div

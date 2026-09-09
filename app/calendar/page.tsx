@@ -573,7 +573,7 @@ function CalendarPageContent() {
       <div className="flex h-full min-h-0 w-full flex-col">
         {/* Main Content Scroll Area */}
         <div
-          className={`flex w-full flex-col pb-24 scrollbar-hide md:pb-0 ${
+          className={`pb-tabbar flex w-full flex-col scrollbar-hide md:pb-0 ${
             showBoard
               ? "min-h-0 flex-1 overflow-hidden"
               : "flex-1 overflow-y-auto"
@@ -693,6 +693,7 @@ function CalendarPageContent() {
                 ≥768 은 예전처럼 값이 있을 때만 한 줄로 보인다.
               */}
               <div
+                data-mobile-head
                 className={`rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-5 pt-3 md:rounded-none md:bg-none md:px-8 md:pb-3 md:pt-0 ${
                   monthTotals.spent > 0 || monthTotals.planned > 0
                     ? ""

@@ -1810,6 +1810,7 @@ function MainPageContent() {
             들어가 카드처럼 보였다). `self-stretch` 로 교차축을 채우게 한 뒤
             음수 마진을 주면 그제야 **가장자리까지** 펴진다.
           */
+          data-mobile-head
           className="-mx-4 flex shrink-0 origin-top snap-start flex-col justify-start self-stretch rounded-b-[28px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-4 pb-5 pt-4 sm:-mx-6 sm:px-6"
           style={{
             /*
@@ -1999,7 +2000,13 @@ function MainPageContent() {
         </motion.div>
         <motion.div
           ref={secondSectionRef}
-          className="w-full min-h-[100dvh] h-[100dvh] pt-4 snap-start bg-transparent relative flex flex-col shrink-0"
+          /*
+            스냅 한 칸은 화면 높이만큼이다. 하단 탭바가 `fixed` 로 덮으므로
+            **칸 자체가** 그만큼 아래 여백을 갖는다(`.pb-tabbar`) — 안쪽
+            목록에만 주면 목록이 안 구르는 동안(`overflow-hidden`) 마지막
+            카드가 탭바 밑에서 잘린다.
+          */
+          className="pb-tabbar w-full min-h-[100dvh] h-[100dvh] pt-4 snap-start bg-transparent relative flex flex-col shrink-0"
         >
           {/*
             시안(C안 01)의 머리글이다.
@@ -2032,7 +2039,7 @@ function MainPageContent() {
             )}
           </div>
           <div
-            className={`flex-1 w-full pb-24 min-h-0 scrollbar-hide ${allowPlanListScroll ? "overflow-y-auto" : "overflow-hidden touch-pan-y"}`}
+            className={`flex-1 w-full min-h-0 scrollbar-hide ${allowPlanListScroll ? "overflow-y-auto" : "overflow-hidden touch-pan-y"}`}
             style={{
               maskImage:
                 "linear-gradient(to bottom, transparent 0%, black 24px, black 100%)",

@@ -80,7 +80,16 @@ export default function BottomTabBar({
         없어 목록이 탭바로 흘러 들어가는 것처럼 보였다.
       */}
       <nav className="w-full border-t border-[#00000010] bg-white">
-        <div className="mx-auto grid w-full max-w-[500px] grid-cols-4 pb-4 pt-2">
+        {/*
+          아래 여백에 홈 인디케이터 몫을 더한다. `--app-tabbar-h` 를 쓰는
+          쪽(`.pb-tabbar`·`.pb-dock`)도 같은 값을 더하므로 어긋나지 않는다.
+        */}
+        <div
+          className="mx-auto grid w-full max-w-[500px] grid-cols-4 pt-2"
+          style={{
+            paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+          }}
+        >
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = resolvedActiveTab === tab.id;

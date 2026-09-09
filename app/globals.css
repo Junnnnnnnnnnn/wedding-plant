@@ -5,6 +5,18 @@
 
 :root {
   --font-sans: var(--font-dunggeunmiso), Arial, Helvetica, sans-serif;
+
+  /*
+   * 하단 탭바가 차지하는 높이. `BottomTabBar` 는 `fixed bottom-0` 라
+   * 내용 위에 **덮인다** — 스크롤 영역과 바닥에 붙는 바가 이 값을 알아야
+   * 마지막 줄이 탭바에 가리지 않는다.
+   *
+   * 계산: 위 경계선 1 + pt-2(8) + 아이콘 22 + 간격 3 + 라벨 11 + pb-4(16).
+   * 화면마다 `pb-24`·`pb-28`·`pb-32`·`pb-36` 을 눈대중으로 다르게 주다가
+   * 폰 높이가 작은 기기(예: 375x553 사파리)에서 저장 버튼이 탭바에 물렸다.
+   */
+  --app-tabbar-h: 61px;
+
   --rise-duration: 1600ms;
   --push-distance: 96px;
   --grow-distance: 140px;
@@ -330,6 +342,36 @@ main {
   animation: confetti-fall var(--confetti-duration) linear infinite;
   animation-delay: var(--confetti-delay);
   border-radius: var(--confetti-shape);
+}
+
+/*
+ * 하단 탭바를 피하는 여백.
+ *
+ * `.pb-tabbar` — 스크롤 영역의 바닥 여백. 마지막 줄과 탭바 사이에 24px 이
+ *   남는다. 탭바가 없는 폭(`≥768`, 좌측 레일)에서는 화면이 알아서 `md:pb-*`
+ *   로 덮어쓴다.
+ * `.pb-dock` — **바닥에 붙는 바**(`sticky bottom-0`)의 아래 여백. 바 자체는
+ *   스크롤 영역 맨 아래까지 내려가고, 이 여백이 탭바 뒤를 채운다. 그래야
+ *   바와 탭바 사이로 내용이 비쳐 보이지 않는다.
+ *
+ * **`env()` 를 커스텀 속성에 담아 쓰지 마세요.** `--app-safe-b: env(...)` 로
+ * 한 번 감싸 `calc()` 안에서 쓰면 선언 전체가 무효가 돼 여백이 0 이 됩니다 —
+ * 탭바 높이가 61px 에서 45px 로 줄고 저장 바가 탭바에 물렸습니다.
+ * `env()` 는 식 안에 직접 씁니다.
+ *
+ * **바닥에 붙는 바를 쓸 때 스크롤 영역에 `.pb-tabbar` 를 같이 주지 마세요.**
+ * `position: sticky` 는 부모의 **내용 상자**를 넘지 못해서, 바닥 여백이
+ * 있으면 바가 그만큼 위에 떠 멈추고 그 틈으로 내용이 지나갑니다.
+ */
+.pb-tabbar {
+  padding-bottom: calc(
+    var(--app-tabbar-h) + env(safe-area-inset-bottom, 0px) + 24px
+  );
+}
+.pb-dock {
+  padding-bottom: calc(
+    var(--app-tabbar-h) + env(safe-area-inset-bottom, 0px) + 12px
+  );
 }
 
 /*

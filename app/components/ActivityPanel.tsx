@@ -37,10 +37,19 @@ interface ActivityPanelProps {
 
 const AVATAR_COLORS = ["#ee2b8c", "#7c6cf0", "#f0a23c", "#059669", "#0ea5e9"];
 
-function avatarColor(planUserId: string): string {
+/**
+ * 사람마다 같은 색이 나오게 id 를 색으로 접는다.
+ *
+ * **id 가 없을 수도 있다고 보고 짠다.** 예전에는 `actorPlanUserId` 가 빠진
+ * 기록 한 건이 여기서 `undefined.length` 로 터졌고, 이 패널이 아니라
+ * **홈 화면 전체**가 오류 화면으로 떨어졌다 — 기록 한 줄 때문에 잃을
+ * 화면이 아니다.
+ */
+function avatarColor(planUserId?: string | null): string {
   let hash = 0;
-  for (let i = 0; i < planUserId.length; i += 1) {
-    hash = (hash * 31 + planUserId.charCodeAt(i)) >>> 0;
+  const key = planUserId ?? "";
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
   }
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }

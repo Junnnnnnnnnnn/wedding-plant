@@ -515,7 +515,10 @@ function BudgetDetailsPage() {
           예전에 `남은 금액`과 `사용 후 잔액`이 따로 놀아 물음표 툴팁으로
           해명하던 화면이라, 면에 잔액을 또 쓰면 그 문제가 되돌아온다.
         */}
-        <div className="rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-6 pt-4 md:hidden">
+        <div
+          data-mobile-head
+          className="rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-6 pt-4 md:hidden"
+        >
           <div className="flex items-center justify-between">
             <button
               type="button"
@@ -558,7 +561,7 @@ function BudgetDetailsPage() {
             차지한 폭으로 정한다. 셸의 레일이 768/1024 에서 폭을 크게
             바꾸므로 뷰포트 기준으로는 어긋난다.
           */}
-        <div className="@container pt-0 pb-32 md:mx-auto md:max-w-[1500px] md:pb-10">
+        <div className="@container pb-tabbar pt-0 md:mx-auto md:max-w-[1500px] md:pb-10">
           {detailLoading ? (
             <div className="px-4 py-4 space-y-6 animate-pulse">
               {/* Stats Skeleton */}

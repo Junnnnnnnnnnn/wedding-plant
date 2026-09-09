@@ -331,160 +331,171 @@ const FeedPageContent: React.FC = () => {
   return (
     <AppShell activeTab="feed" activeRailView="feed" unreadCount={unreadCount}>
       {/* 폰은 분홍 머리 면, ≥768 은 대시보드와 같은 흰 머리글 띠 */}
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 py-5 md:rounded-none md:border-b md:border-stone-100 md:bg-white md:bg-none md:px-8 md:py-5">
-        <div className="min-w-0">
-          <h1 className="truncate text-[20px] font-bold leading-tight tracking-[-0.02em] text-white md:text-[22px] md:text-[#1b0d14]">
-            피드
-          </h1>
-          <p className="mt-1 text-[12.5px] text-white/80 md:text-[#7a6c74]">
-            다른 커플은 얼마 썼을까
-          </p>
-        </div>
-        {/* 시안(C안 04)은 아이콘 하나다. 무엇을 올리는지는 아래 상자가 말한다 */}
-        <button
-          type="button"
-          onClick={openPostable}
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white transition-colors hover:bg-white/20 md:h-auto md:w-auto md:rounded-full md:border md:border-[#ee2b8c33] md:bg-white md:px-4 md:py-2 md:text-[#ee2b8c] md:hover:bg-[#fff2f6]"
-          aria-label="내 후기 올리기"
-        >
-          <Plus className="h-[22px] w-[22px] md:h-4 md:w-4" />
-          <span className="hidden md:inline">내 후기 올리기</span>
-        </button>
 
+      <div className="@container no-scrollbar flex-1 overflow-y-auto">
         {/*
-          안 올린 일정은 **면 안**으로 넣는다(시안 C안 04). 예전에는 목록 위
-          분홍 띠라, 보러 온 후기가 한 화면 아래로 밀렸다. 공급이 이 기능의
-          생사이므로 없애지는 않는다 — 자리만 옮긴다.
-        */}
-        {(myStatus?.postableScheduleCount ?? 0) > 0 && (
+        머리 면은 **스크롤 영역 안**에 있다 — 폰에서는 내용과 함께 위로
+        올라간다. 고정해 두면 375x553(사파리 상하단 바가 다 나온 아이폰 SE)
+        에서 보이는 목록이 그만큼 줄어든다. 넓은 화면은 흰 머리글 띠라
+        `md:sticky` 로 자리를 지킨다.
+      */}
+        <header
+          data-mobile-head
+          className="md:sticky md:top-0 md:z-20 flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 py-5 md:rounded-none md:border-b md:border-stone-100 md:bg-white md:bg-none md:px-8 md:py-5"
+        >
+          <div className="min-w-0">
+            <h1 className="truncate text-[20px] font-bold leading-tight tracking-[-0.02em] text-white md:text-[22px] md:text-[#1b0d14]">
+              피드
+            </h1>
+            <p className="mt-1 text-[12.5px] text-white/80 md:text-[#7a6c74]">
+              다른 커플은 얼마 썼을까
+            </p>
+          </div>
+          {/* 시안(C안 04)은 아이콘 하나다. 무엇을 올리는지는 아래 상자가 말한다 */}
           <button
             type="button"
             onClick={openPostable}
-            className="mt-4 flex w-full items-center gap-3 rounded-xl bg-white/20 px-4 py-3 text-left text-white transition-colors hover:bg-white/25 md:hidden"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white transition-colors hover:bg-white/20 md:h-auto md:w-auto md:rounded-full md:border md:border-[#ee2b8c33] md:bg-white md:px-4 md:py-2 md:text-[#ee2b8c] md:hover:bg-[#fff2f6]"
+            aria-label="내 후기 올리기"
           >
-            <span className="min-w-0 flex-1">
-              <span className="block text-[14px] font-bold">
-                완료한 일정 {myStatus?.postableScheduleCount}개를 아직 안
-                올렸어요
-              </span>
-              <span className="mt-0.5 block text-[12px] text-white/75">
-                올리면 다른 커플의 후기도 더 잘 보입니다
-              </span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+            <Plus className="h-[22px] w-[22px] md:h-4 md:w-4" />
+            <span className="hidden md:inline">내 후기 올리기</span>
           </button>
-        )}
-      </header>
 
-      <div className="@container no-scrollbar flex-1 overflow-y-auto px-4 pt-4 pb-28 md:mx-auto md:w-full md:max-w-[1400px] md:px-8 md:pt-5 md:pb-10">
-        {/* 카테고리 · 정렬 */}
-        <div className="mb-4 grid gap-3">
-          <div className="no-scrollbar -mx-1 flex max-w-full gap-1.5 overflow-x-auto px-1 py-0.5">
-            {chips.map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => setCategory(name)}
-                /* 시안(C안 04)의 채움 칩. 활성은 검정 solid — 분홍은 "누를 것"에만 쓴다 */
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] transition-colors ${
-                  category === name
-                    ? "bg-[#1a1c20] font-bold text-white"
-                    : "bg-[#f7f8f9] font-medium text-[#555d6d] hover:bg-[#eeeff1]"
-                }`}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
           {/*
+            안 올린 일정은 **면 안**으로 넣는다(시안 C안 04). 예전에는 목록 위
+            분홍 띠라, 보러 온 후기가 한 화면 아래로 밀렸다. 공급이 이 기능의
+            생사이므로 없애지는 않는다 — 자리만 옮긴다.
+          */}
+          {(myStatus?.postableScheduleCount ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={openPostable}
+              className="mt-4 flex w-full items-center gap-3 rounded-xl bg-white/20 px-4 py-3 text-left text-white transition-colors hover:bg-white/25 md:hidden"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-bold">
+                  완료한 일정 {myStatus?.postableScheduleCount}개를 아직 안
+                  올렸어요
+                </span>
+                <span className="mt-0.5 block text-[12px] text-white/75">
+                  올리면 다른 커플의 후기도 더 잘 보입니다
+                </span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+            </button>
+          )}
+        </header>
+        <div className="pb-tabbar px-4 pt-4 md:mx-auto md:w-full md:max-w-[1400px] md:px-8 md:pt-5 md:pb-10">
+          {/* 카테고리 · 정렬 */}
+          <div className="mb-4 grid gap-3">
+            <div className="no-scrollbar -mx-1 flex max-w-full gap-1.5 overflow-x-auto px-1 py-0.5">
+              {chips.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setCategory(name)}
+                  /* 시안(C안 04)의 채움 칩. 활성은 검정 solid — 분홍은 "누를 것"에만 쓴다 */
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] transition-colors ${
+                    category === name
+                      ? "bg-[#1a1c20] font-bold text-white"
+                      : "bg-[#f7f8f9] font-medium text-[#555d6d] hover:bg-[#eeeff1]"
+                  }`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+            {/*
             정렬은 **글자**다(시안 C안 04). 알약으로 두면 카테고리 칩과 같은
             층위로 보이는데, 카테고리는 "무엇을" 이고 정렬은 "어떻게" 라
             성격이 다르다.
           */}
-          <div className="flex w-full shrink-0 gap-3 px-1">
-            {SORTS.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setSort(item.key)}
-                aria-pressed={sort === item.key}
-                className={`text-[13px] transition-colors ${
-                  sort === item.key
-                    ? "font-bold text-[#1a1c20]"
-                    : "font-medium text-[#868b94] hover:text-[#555d6d]"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            <div className="flex w-full shrink-0 gap-3 px-1">
+              {SORTS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setSort(item.key)}
+                  aria-pressed={sort === item.key}
+                  className={`text-[13px] transition-colors ${
+                    sort === item.key
+                      ? "font-bold text-[#1a1c20]"
+                      : "font-medium text-[#868b94] hover:text-[#555d6d]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/*
+          {/*
           넓어지면 목록 | 사이드 2열. 기준을 뷰포트가 아니라 이 영역의 폭으로
           잡는 이유는 셸의 레일이 768/1024 에서 폭을 크게 바꾸기 때문이다.
         */}
-        {/*
+          {/*
           좁을 때의 공급 유도. 사이드 카드를 그대로 위에 얹으면 정작 보러 온
           후기가 한 화면 아래로 밀린다 — 한 줄로 줄이고 나머지는 목록 아래
           사이드에 둔다.
         */}
-        <div className="grid gap-4 @[900px]:grid-cols-[minmax(0,1fr)_300px] @[900px]:items-start @[900px]:gap-5">
-          <div>
-            {listLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((n) => (
-                  <div
-                    key={n}
-                    className="h-[120px] animate-pulse rounded-[24px] bg-white/70"
-                  />
-                ))}
-              </div>
-            ) : posts.length === 0 ? (
-              <div className="rounded-[24px] border border-[#ee2b8c0f] bg-white p-10 text-center shadow-sm">
-                <p className="text-[14px] font-bold text-[#1b0d14]">
-                  아직 후기가 없어요
-                </p>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-[#7a6c74]">
-                  완료한 일정을 올리면 다른 커플이 견적을 가늠할 수 있어요.
-                </p>
-                <button
-                  type="button"
-                  onClick={openPostable}
-                  className="mt-4 h-11 rounded-xl bg-[#ee2b8c] px-5 text-[13px] font-bold text-white transition-colors hover:bg-[#d4237b]"
-                >
-                  올릴 수 있는 일정 보기
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* 폰은 구분선 목록이라 간격을 두지 않는다. ≥768 은 카드 간격 유지 */}
-                <div className="md:space-y-2.5">
-                  {posts.map((post) => (
-                    <FeedCard
-                      key={post.id}
-                      post={post}
-                      onVote={handleVote}
-                      onAddToPlan={handleAddToPlan}
-                      votePending={votePendingId === post.id}
+          <div className="grid gap-4 @[900px]:grid-cols-[minmax(0,1fr)_300px] @[900px]:items-start @[900px]:gap-5">
+            <div>
+              {listLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((n) => (
+                    <div
+                      key={n}
+                      className="h-[120px] animate-pulse rounded-[24px] bg-white/70"
                     />
                   ))}
                 </div>
-                {hasMore && (
+              ) : posts.length === 0 ? (
+                <div className="rounded-[24px] border border-[#ee2b8c0f] bg-white p-10 text-center shadow-sm">
+                  <p className="text-[14px] font-bold text-[#1b0d14]">
+                    아직 후기가 없어요
+                  </p>
+                  <p className="mt-2 text-[12.5px] leading-relaxed text-[#7a6c74]">
+                    완료한 일정을 올리면 다른 커플이 견적을 가늠할 수 있어요.
+                  </p>
                   <button
                     type="button"
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    className="mt-4 h-12 w-full rounded-2xl border border-[#efe7eb] bg-white text-[13px] font-bold text-[#7a6c74] transition-colors hover:border-[#ee2b8c33] hover:text-[#ee2b8c] disabled:opacity-60"
+                    onClick={openPostable}
+                    className="mt-4 h-11 rounded-xl bg-[#ee2b8c] px-5 text-[13px] font-bold text-white transition-colors hover:bg-[#d4237b]"
                   >
-                    {loadingMore ? "불러오는 중..." : "더 보기"}
+                    올릴 수 있는 일정 보기
                   </button>
-                )}
-              </>
-            )}
-          </div>
+                </div>
+              ) : (
+                <>
+                  {/* 폰은 구분선 목록이라 간격을 두지 않는다. ≥768 은 카드 간격 유지 */}
+                  <div className="md:space-y-2.5">
+                    {posts.map((post) => (
+                      <FeedCard
+                        key={post.id}
+                        post={post}
+                        onVote={handleVote}
+                        onAddToPlan={handleAddToPlan}
+                        votePending={votePendingId === post.id}
+                      />
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <button
+                      type="button"
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                      className="mt-4 h-12 w-full rounded-2xl border border-[#efe7eb] bg-white text-[13px] font-bold text-[#7a6c74] transition-colors hover:border-[#ee2b8c33] hover:text-[#ee2b8c] disabled:opacity-60"
+                    >
+                      {loadingMore ? "불러오는 중..." : "더 보기"}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
 
-          <div>{sidePanel}</div>
+            <div>{sidePanel}</div>
+          </div>
         </div>
       </div>
 
