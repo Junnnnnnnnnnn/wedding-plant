@@ -280,6 +280,77 @@
   color: var(--c-on-fill);
 }
 
+/* ══ 핀터레스트식 벽돌 배치 ═══════════════════════════════════
+ * 카드 높이가 제각각이라 격자로 두면 아래가 톱니처럼 남는다. CSS 다단
+ * (`column-count`)으로 쌓으면 빈 자리가 메워진다.
+ *
+ * **JS 없이 되는 유일한 방법이다.** CSS Grid 의 `masonry` 는 아직
+ * 사파리에만 있고, 라이브러리로 하면 카드가 붙을 때마다 좌표를 다시
+ * 계산하느라 목록이 출렁인다.
+ *
+ * 대신 다단은 **위에서 아래로** 채운 뒤 다음 단으로 넘어간다 — 읽는
+ * 순서가 지그재그가 아니라 세로다. 최신순 목록에서 이건 오히려 맞다.
+ * ════════════════════════════════════════════════════════════ */
+.masonry {
+  column-gap: var(--x4);
+}
+.masonry > * {
+  /* 카드가 단 경계에서 반으로 잘리지 않게 */
+  break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: var(--x4);
+  display: block;
+  width: 100%;
+}
+
+/* ══ 플랜 개수 · 완료 개수 ════════════════════════════════════
+ * 자랑하기에서 금액 다음으로 궁금한 값이다 — "얼마나 했나".
+ * 숫자만 적지 않고 **눈금**으로도 낸다. 22개 중 18개가 찼다는 게
+ * 글자보다 먼저 읽히고, 커플마다 눈금 수가 달라 카드 높이가 갈린다
+ * (벽돌 배치가 살아나는 이유이기도 하다).
+ * ════════════════════════════════════════════════════════════ */
+.cnt__l {
+  display: flex;
+  align-items: baseline;
+  gap: var(--x2);
+  font-size: var(--t2);
+  color: var(--fg-neutral-subtle);
+}
+.cnt__l b {
+  font-size: var(--t3);
+  font-weight: var(--w-bold);
+  color: var(--fg-neutral);
+  font-variant-numeric: tabular-nums;
+}
+.cnt__ticks {
+  display: flex;
+  gap: 2px;
+  margin-top: var(--x2);
+}
+.cnt__ticks i {
+  flex: 1;
+  min-width: 0;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--bg-layer-fill);
+}
+.cnt__ticks i.on {
+  background: var(--bg-brand-solid);
+}
+/* 분홍 면 위에서 */
+.cnt--on-fill .cnt__l {
+  color: var(--c-on-fill-faint);
+}
+.cnt--on-fill .cnt__l b {
+  color: var(--c-on-fill);
+}
+.cnt--on-fill .cnt__ticks i {
+  background: #ffffff2e;
+}
+.cnt--on-fill .cnt__ticks i.on {
+  background: #fff;
+}
+
 /* ══ 시안 문서용 틀 ═══════════════════════════════════════════ */
 .wf {
   position: relative;

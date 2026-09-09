@@ -15,8 +15,12 @@
      "누구의 · 언제 → 얼마 → 무엇을" 이라, 자랑하기에서도 같은 순서를
      쓰면 새로 배울 것이 없다. 대신 한 장이 크다 — 웹 3열.
      ──────────────────────────────────────────────────────────── */
-  .ga { display: grid; gap: var(--x5); grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .ga--phone { grid-template-columns: minmax(0, 1fr); gap: var(--x4); }
+  /* 핀터레스트식 벽돌. 카테고리 칩이 한 줄이냐 두 줄이냐로 카드 높이가
+     갈리는데, 격자로 두면 그 차이만큼 아래가 톱니처럼 남는다 */
+  .ga { column-count: 3; column-gap: var(--x5); }
+  .ga > * { break-inside: avoid; margin-bottom: var(--x5); display: block; width: 100%; }
+  .ga--phone { column-count: 2; column-gap: var(--x3); }
+  .ga--phone > * { margin-bottom: var(--x3); }
 
   .pc { background: var(--bg-layer-default); border: 1px solid var(--stroke-neutral-weak);
         border-radius: var(--r5); padding: var(--x5); display: block; text-align: left;
@@ -31,11 +35,16 @@
            color: var(--c-on-fill); background: var(--palette-brand-500);
            border: 2px solid var(--bg-layer-default); }
   .pc__a + .pc__a { margin-left: -7px; background: var(--bg-neutral-inverted); }
-  .pc__d { margin-top: var(--x1_5); font-size: var(--t3); color: var(--fg-neutral-muted); }
-  .pc__num { margin-top: var(--x4); font-size: var(--t10); font-weight: var(--w-bold);
-             letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+  /* `display:block` 이 없으면 날짜·금액·부제가 한 줄로 흘러 붙는다.
+     span 은 기본이 인라인이라 세로 마진도 먹지 않는다 */
+  .pc__d { display: block; margin-top: var(--x1_5); font-size: var(--t3);
+           color: var(--fg-neutral-muted); }
+  .pc__num { display: block; margin-top: var(--x4); font-size: var(--t10);
+             font-weight: var(--w-bold); letter-spacing: -0.04em; line-height: 1;
+             font-variant-numeric: tabular-nums; }
   .pc__num small { font-size: var(--t4); }
-  .pc__sub { margin-top: var(--x1_5); font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .pc__sub { display: block; margin-top: var(--x1_5); font-size: var(--t3);
+             color: var(--fg-neutral-muted); }
   .pc__tr { display: block; margin-top: var(--x3); height: 10px; border-radius: var(--r-full);
             background: #f4eff2; overflow: hidden; }
   .pc__bar { display: flex; height: 100%; }
@@ -44,6 +53,7 @@
   .pc__cats { margin-top: var(--x4); display: flex; flex-wrap: wrap; gap: var(--x1_5); }
   .pc__cat { font-size: var(--t2); color: var(--fg-neutral-muted);
              background: var(--bg-layer-fill); border-radius: var(--r1); padding: 2px 7px; }
+  .pc .cnt { display: block; margin-top: var(--x4); }
   .pc__foot { margin-top: var(--x4); padding-top: var(--x3); display: flex; align-items: center;
               border-top: 1px solid var(--stroke-neutral-subtle); font-size: var(--t2);
               color: var(--fg-neutral-subtle); }
@@ -289,13 +299,18 @@
     <p class="step__n">③ 목록</p>
     <h2 class="step__t">자랑하기</h2>
     <p class="step__d">
-      좌측 레일의 <b>둘러보기</b> 묶음, 피드 아래에 붙습니다. 웹은 <b>3열</b>
-      이고 카드가 큽니다 — 한 장에 예산 막대와 카테고리까지 들어가야 해서
-      4열로 좁히면 막대가 뭉갭니다. 폰은 1열입니다.
+      좌측 레일의 <b>둘러보기</b> 묶음, 피드 아래에 붙습니다. 배치는
+      <b>핀터레스트식 벽돌</b>입니다 — 카테고리 칩이 한 줄이냐 두 줄이냐로
+      카드 높이가 갈리는데, 격자로 두면 그 차이만큼 아래가 톱니처럼 남습니다.
+      웹 <b>3열</b>, 폰 <b>2열</b>.
+      <br><br>
+      카드마다 <b>플랜 개수와 완료 개수</b>가 눈금으로 들어갑니다. 자랑하기에서
+      금액 다음으로 궁금한 값이고, 커플마다 눈금 수가 달라 <b>벽돌 배치가
+      살아나는 이유</b>이기도 합니다.
     </p>
 
     <div style="margin-top: var(--x6)">
-      <div class="pair__cap"><span class="pair__n">웹</span><span class="pair__note">3열 · 카드 한 장이 크다</span></div>
+      <div class="pair__cap"><span class="pair__n">웹</span><span class="pair__note">1440 × 900 · 3열 벽돌</span></div>
       <div class="wf-scale" style="height: 708px; overflow-x: auto">
         <div class="wf wf--web" style="transform: scale(0.786)">
           <nav class="rail">
@@ -320,10 +335,11 @@
                   <span class="pc__top"><span class="pc__who">지수 · 현우</span><span class="pc__av"><span class="pc__a">지</span><span class="pc__a">현</span></span></span>
                   <span class="pc__d">2026년 11월 14일 · D-66</span>
                   <span class="pc__num">4,200<small>만 원</small></span>
-                  <span class="pc__sub">1,340만 원 썼어요 · 32%</span>
+                  <span class="pc__sub">1,344만 원 썼어요 · 32%</span>
                   <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 32%"></i><i class="pc__plan" style="width: 44%"></i></span></span>
+                  <span class="cnt"><span class="cnt__l">플랜 <b>14개</b> · 완료 <b>6개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
                   <span class="pc__cats"><i class="pc__cat">예식장</i><i class="pc__cat">스드메</i><i class="pc__cat">예물 · 예단</i><i class="pc__cat">신혼여행</i></span>
-                  <span class="pc__foot">일정 14개 · 완료 6개 <span style="margin-left: auto" class="pc__mine">내 플랜</span></span>
+                  <span class="pc__foot"><i class="pc__mine">내 플랜</i></span>
                 </button>
                 <button class="pc">
                   <span class="pc__top"><span class="pc__who">유진 · 태호</span><span class="pc__av"><span class="pc__a">유</span><span class="pc__a">태</span></span></span>
@@ -331,8 +347,9 @@
                   <span class="pc__num">3,600<small>만 원</small></span>
                   <span class="pc__sub">2,880만 원 썼어요 · 80%</span>
                   <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 80%"></i><i class="pc__plan" style="width: 12%"></i></span></span>
+                  <span class="cnt"><span class="cnt__l">플랜 <b>22개</b> · 완료 <b>18개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span></span>
                   <span class="pc__cats"><i class="pc__cat">예식장</i><i class="pc__cat">스드메</i><i class="pc__cat">혼수</i></span>
-                  <span class="pc__foot">일정 22개 · 완료 18개 <span style="margin-left: auto"><span class="bg-like" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>41</span></span></span>
+                  <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>41</span></span>
                 </button>
                 <button class="pc">
                   <span class="pc__top"><span class="pc__who">하람 · 서준</span><span class="pc__av"><span class="pc__a">하</span><span class="pc__a">서</span></span></span>
@@ -340,8 +357,9 @@
                   <span class="pc__num">5,800<small>만 원</small></span>
                   <span class="pc__sub">1,160만 원 썼어요 · 20%</span>
                   <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 20%"></i><i class="pc__plan" style="width: 30%"></i></span></span>
+                  <span class="cnt"><span class="cnt__l">플랜 <b>9개</b> · 완료 <b>2개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
                   <span class="pc__cats"><i class="pc__cat">예식장</i><i class="pc__cat">신혼여행</i><i class="pc__cat">청첩장</i></span>
-                  <span class="pc__foot">일정 9개 · 완료 2개 <span style="margin-left: auto"><span class="bg-like" aria-pressed="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>28</span></span></span>
+                  <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>28</span></span>
                 </button>
                 <button class="pc">
                   <span class="pc__top"><span class="pc__who">민서 · 도윤</span><span class="pc__av"><span class="pc__a">민</span><span class="pc__a">도</span></span></span>
@@ -349,8 +367,9 @@
                   <span class="pc__num">2,900<small>만 원</small></span>
                   <span class="pc__sub">1,015만 원 썼어요 · 35%</span>
                   <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 35%"></i><i class="pc__plan" style="width: 25%"></i></span></span>
-                  <span class="pc__cats"><i class="pc__cat">스드메</i><i class="pc__cat">혼수</i><i class="pc__cat">청첩장</i></span>
-                  <span class="pc__foot">일정 16개 · 완료 7개 <span style="margin-left: auto"><span class="bg-like" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>18</span></span></span>
+                  <span class="cnt"><span class="cnt__l">플랜 <b>16개</b> · 완료 <b>7개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
+                  <span class="pc__cats"><i class="pc__cat">스드메</i><i class="pc__cat">혼수</i><i class="pc__cat">청첩장</i><i class="pc__cat">예물 · 예단</i><i class="pc__cat">예식장</i></span>
+                  <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>18</span></span>
                 </button>
                 <button class="pc">
                   <span class="pc__top"><span class="pc__who">예린 · 우성</span><span class="pc__av"><span class="pc__a">예</span><span class="pc__a">우</span></span></span>
@@ -358,8 +377,9 @@
                   <span class="pc__num">4,450<small>만 원</small></span>
                   <span class="pc__sub">890만 원 썼어요 · 20%</span>
                   <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 20%"></i><i class="pc__plan" style="width: 38%"></i></span></span>
+                  <span class="cnt"><span class="cnt__l">플랜 <b>11개</b> · 완료 <b>3개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
                   <span class="pc__cats"><i class="pc__cat">예식장</i><i class="pc__cat">예물 · 예단</i></span>
-                  <span class="pc__foot">일정 11개 · 완료 3개 <span style="margin-left: auto"><span class="bg-like" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>12</span></span></span>
+                  <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>12</span></span>
                 </button>
                 <button class="pc">
                   <span class="pc__top"><span class="pc__who">소윤 · 재민</span><span class="pc__av"><span class="pc__a">소</span><span class="pc__a">재</span></span></span>
@@ -367,8 +387,29 @@
                   <span class="pc__num">3,150<small>만 원</small></span>
                   <span class="pc__sub">2,835만 원 썼어요 · 90%</span>
                   <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 90%"></i><i class="pc__plan" style="width: 6%"></i></span></span>
+                  <span class="cnt"><span class="cnt__l">플랜 <b>24개</b> · 완료 <b>21개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></span>
+                  <span class="pc__cats"><i class="pc__cat">예식장</i><i class="pc__cat">스드메</i><i class="pc__cat">신혼여행</i><i class="pc__cat">혼수</i></span>
+                  <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>9</span></span>
+                </button>
+                <button class="pc">
+                  <span class="pc__top"><span class="pc__who">아린 · 준호</span><span class="pc__av"><span class="pc__a">아</span><span class="pc__a">준</span></span></span>
+                  <span class="pc__d">2027년 1월 9일 · D-122</span>
+                  <span class="pc__num">6,120<small>만 원</small></span>
+                  <span class="pc__sub">2,754만 원 썼어요 · 45%</span>
+                  <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 45%"></i><i class="pc__plan" style="width: 20%"></i></span></span>
+                  <span class="cnt"><span class="cnt__l">플랜 <b>19개</b> · 완료 <b>9개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
                   <span class="pc__cats"><i class="pc__cat">예식장</i><i class="pc__cat">스드메</i><i class="pc__cat">신혼여행</i></span>
-                  <span class="pc__foot">일정 24개 · 완료 21개 <span style="margin-left: auto"><span class="bg-like" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>9</span></span></span>
+                  <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>34</span></span>
+                </button>
+                <button class="pc">
+                  <span class="pc__top"><span class="pc__who">세연 · 민혁</span><span class="pc__av"><span class="pc__a">세</span><span class="pc__a">민</span></span></span>
+                  <span class="pc__d">2026년 11월 1일 · D-53</span>
+                  <span class="pc__num">2,480<small>만 원</small></span>
+                  <span class="pc__sub">1,538만 원 썼어요 · 62%</span>
+                  <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 62%"></i><i class="pc__plan" style="width: 18%"></i></span></span>
+                  <span class="cnt"><span class="cnt__l">플랜 <b>12개</b> · 완료 <b>8개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span></span>
+                  <span class="pc__cats"><i class="pc__cat">스드메</i><i class="pc__cat">청첩장</i></span>
+                  <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>7</span></span>
                 </button>
               </div>
             </div>
@@ -379,7 +420,7 @@
 
     <div style="margin-top: var(--x8); display: flex; gap: var(--x6); flex-wrap: wrap; align-items: start">
       <div>
-        <div class="pair__cap"><span class="pair__n">모바일</span><span class="pair__note">1열 · 카드가 그대로 내려온다</span></div>
+        <div class="pair__cap"><span class="pair__n">모바일</span><span class="pair__note">2열 벽돌 · 칩은 접는다</span></div>
         <div class="wf wf--phone">
           <header class="c-head c-head--slim">
             <div class="c-head__nav">
@@ -392,21 +433,63 @@
             <div class="ga ga--phone">
               <button class="pc">
                 <span class="pc__top"><span class="pc__who">유진 · 태호</span><span class="pc__av"><span class="pc__a">유</span><span class="pc__a">태</span></span></span>
-                <span class="pc__d">2026년 10월 3일 · D-24</span>
+                <span class="pc__d">10월 3일 · D-24</span>
                 <span class="pc__num">3,600<small>만 원</small></span>
                 <span class="pc__sub">2,880만 원 썼어요 · 80%</span>
                 <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 80%"></i><i class="pc__plan" style="width: 12%"></i></span></span>
-                <span class="pc__cats"><i class="pc__cat">예식장</i><i class="pc__cat">스드메</i><i class="pc__cat">혼수</i></span>
-                <span class="pc__foot">일정 22개 · 완료 18개 <span style="margin-left: auto"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>41</span></span></span>
+                <span class="cnt"><span class="cnt__l">플랜 <b>22개</b> · 완료 <b>18개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span></span>
+                
+                <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>41</span></span>
               </button>
               <button class="pc">
                 <span class="pc__top"><span class="pc__who">하람 · 서준</span><span class="pc__av"><span class="pc__a">하</span><span class="pc__a">서</span></span></span>
-                <span class="pc__d">2027년 4월 11일 · D-214</span>
+                <span class="pc__d">4월 11일 · D-214</span>
                 <span class="pc__num">5,800<small>만 원</small></span>
                 <span class="pc__sub">1,160만 원 썼어요 · 20%</span>
                 <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 20%"></i><i class="pc__plan" style="width: 30%"></i></span></span>
-                <span class="pc__cats"><i class="pc__cat">예식장</i><i class="pc__cat">신혼여행</i></span>
-                <span class="pc__foot">일정 9개 · 완료 2개 <span style="margin-left: auto"><span class="bg-like" aria-pressed="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>28</span></span></span>
+                <span class="cnt"><span class="cnt__l">플랜 <b>9개</b> · 완료 <b>2개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
+                
+                <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>28</span></span>
+              </button>
+              <button class="pc">
+                <span class="pc__top"><span class="pc__who">민서 · 도윤</span><span class="pc__av"><span class="pc__a">민</span><span class="pc__a">도</span></span></span>
+                <span class="pc__d">12월 20일 · D-102</span>
+                <span class="pc__num">2,900<small>만 원</small></span>
+                <span class="pc__sub">1,015만 원 썼어요 · 35%</span>
+                <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 35%"></i><i class="pc__plan" style="width: 25%"></i></span></span>
+                <span class="cnt"><span class="cnt__l">플랜 <b>16개</b> · 완료 <b>7개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
+                
+                <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>18</span></span>
+              </button>
+              <button class="pc">
+                <span class="pc__top"><span class="pc__who">예린 · 우성</span><span class="pc__av"><span class="pc__a">예</span><span class="pc__a">우</span></span></span>
+                <span class="pc__d">2월 14일 · D-158</span>
+                <span class="pc__num">4,450<small>만 원</small></span>
+                <span class="pc__sub">890만 원 썼어요 · 20%</span>
+                <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 20%"></i><i class="pc__plan" style="width: 38%"></i></span></span>
+                <span class="cnt"><span class="cnt__l">플랜 <b>11개</b> · 완료 <b>3개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
+                
+                <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>12</span></span>
+              </button>
+              <button class="pc">
+                <span class="pc__top"><span class="pc__who">소윤 · 재민</span><span class="pc__av"><span class="pc__a">소</span><span class="pc__a">재</span></span></span>
+                <span class="pc__d">9월 26일 · D-17</span>
+                <span class="pc__num">3,150<small>만 원</small></span>
+                <span class="pc__sub">2,835만 원 썼어요 · 90%</span>
+                <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 90%"></i><i class="pc__plan" style="width: 6%"></i></span></span>
+                <span class="cnt"><span class="cnt__l">플랜 <b>24개</b> · 완료 <b>21개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></span>
+                
+                <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>9</span></span>
+              </button>
+              <button class="pc">
+                <span class="pc__top"><span class="pc__who">아린 · 준호</span><span class="pc__av"><span class="pc__a">아</span><span class="pc__a">준</span></span></span>
+                <span class="pc__d">1월 9일 · D-122</span>
+                <span class="pc__num">6,120<small>만 원</small></span>
+                <span class="pc__sub">2,754만 원 썼어요 · 45%</span>
+                <span class="pc__tr"><span class="pc__bar"><i class="pc__used" style="width: 45%"></i><i class="pc__plan" style="width: 20%"></i></span></span>
+                <span class="cnt"><span class="cnt__l">플랜 <b>19개</b> · 완료 <b>9개</b></span><span class="cnt__ticks"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
+                
+                <span class="pc__foot"><span class="bg-like"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.3-7 10-7 10z"/></svg>34</span></span>
               </button>
             </div>
           </div>
@@ -416,6 +499,10 @@
         </div>
       </div>
       <p class="step__d" style="flex: 1; min-width: 260px; margin-top: var(--x10)">
+        폰에서는 <b>카테고리 칩을 접습니다.</b> 2열이면 카드 폭이 180px 쯤인데,
+        거기서 "예물 · 예단" 같은 칩은 한 줄에 하나씩 떨어져 카드가 칩 목록이
+        됩니다. 카테고리는 큰 모달에서 표로 봅니다.
+        <br><br>
         내 카드에는 좋아요 자리에 <b>"내 플랜"</b> 이 대신 들어갑니다. 내가
         내 것에 좋아요를 누를 수는 없으니, 그 자리를 비워 두느니 <b>어느 게
         내 것인지</b>를 말합니다.
