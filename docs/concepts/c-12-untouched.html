@@ -1,0 +1,117 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 -->
+<!-- Hallmark · C안 12 손대지 않는 화면 · studied: yes · DNA-source: url (seed-design.io) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C안 12 · 손대지 않는 두 화면 — / · /privacy</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .two { margin-top: var(--x8); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+         gap: var(--x8); align-items: start; }
+  .why { margin-top: var(--x4); }
+  .why h3 { margin: 0; font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.02em; }
+  .why p { margin: var(--x3) 0 0; font-size: var(--t4); line-height: 1.8; color: var(--fg-neutral-muted); }
+  .why p b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .why code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--t2);
+              background: var(--bg-layer-fill); border: 1px solid var(--stroke-neutral-muted);
+              border-radius: var(--r1); padding: 1px 5px; }
+  .stop { margin-top: var(--x4); padding: var(--x4) var(--x5);
+          background: var(--bg-critical-weak); border-radius: var(--r3);
+          font-size: var(--t3); line-height: 1.75; color: var(--fg-neutral-muted); }
+  .stop b { color: var(--fg-critical); font-weight: var(--w-bold); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">C안 · 12</p>
+  <h1 class="page__title">손대지 않는 두 화면</h1>
+  <p class="page__lede">
+    나머지 열두 화면과 달리 이 둘은 <b>C안을 적용하지 않습니다</b>. 빠뜨린 게
+    아니라, 각각 <b>손대면 안 되는 이유</b>가 따로 있습니다. 그 이유를 여기
+    적어 둡니다 — 나중에 "왜 이 두 개만 옛날 그대로지?" 라는 질문이 반드시
+    나옵니다.
+  </p>
+
+  <div class="two">
+    <div>
+      <div class="cmp__side">
+        <div class="cmp__cap"><span class="cmp__n">그대로 둠</span><span class="cmp__note">/ · 랜딩</span></div>
+        <figure class="cmp__shot"><img src="shots/now-landing.png" alt="지금의 랜딩 화면"></figure>
+      </div>
+      <div class="why">
+        <h3>랜딩 — 시안이 원본이고 CSS 는 생성물입니다</h3>
+        <p><code>app/landing.css</code> 는 손으로 고치는 파일이 아닙니다.
+          <code>node scripts/gen-landing-css.cjs</code> 가
+          <code>docs/concepts/landing-1a-final.html</code> 의 <code>&lt;style&gt;</code> 을
+          PostCSS 로 파싱해 선택자마다 <code>#lp</code> 를 붙여 만듭니다.
+          <b>직접 고치면 다음 생성 때 통째로 사라집니다</b> — 예산 막대 순서와
+          D-day 숫자 굵기를 그렇게 고쳤다가 두 번 다 되살아났습니다.</p>
+        <p>게다가 이 화면은 <b>로그인 전 화면</b>입니다. 앱 셸을 쓰지 않고,
+          하단 탭바도 없고, 다섯 장면이 전부
+          <b>CSS scroll-driven animation</b> 으로 짜여 있습니다. C안의 머리 면을
+          붙일 자리 자체가 없습니다.</p>
+        <div class="stop">
+          <b>고칠 일이 생기면</b> 시안(<code>landing-1a-final.html</code>)을 고치고
+          생성 스크립트를 다시 돌립니다. 그리고
+          <code>node scripts/landing-widths.cjs</code> 로 15개 뷰포트를 확인합니다.
+          헤드리스 크롬은 <code>prefers-reduced-motion</code> 이 기본
+          <code>reduce</code> 라, 그대로 검사하면 감속 폴백만 보게 됩니다.
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="cmp__side">
+        <div class="cmp__cap"><span class="cmp__n">그대로 둠</span><span class="cmp__note">/privacy · 개인정보처리방침</span></div>
+        <figure class="cmp__shot"><img src="shots/now-privacy.png" alt="지금의 개인정보처리방침 화면"></figure>
+      </div>
+      <div class="why">
+        <h3>방침 — 자바스크립트 없이 전문이 보여야 합니다</h3>
+        <p>서버 컴포넌트로 두어 <b>JS 없이도 전문이 렌더</b>됩니다.
+          스토어 심사자와 크롤러가 그렇게 접근하고, 구글 플레이는 스토어 등록
+          양식에서 이 <b>공개 URL</b> 을 요구합니다. 머리 면·탭바 같은
+          클라이언트 장식을 붙이면 그 성질이 깨집니다.</p>
+        <p>읽으러 들어오는 <b>문서</b>이기도 합니다. 앱을 안 쓰는 사람도 보는
+          화면이라 내비게이션이 방해가 됩니다. 지금의 검은 글씨 · 흰 바탕 ·
+          긴 본문이 이 화면에 맞는 모양입니다.</p>
+        <div class="stop">
+          <b>문구를 고칠 때는</b> <code>lib/legal.ts</code> 한 곳만 고칩니다.
+          동의서 4종과 방침 본문이 전부 거기 있습니다 — 예전에는 같은 문구가
+          두 군데 복사돼 있었고, <b>한쪽만 고치면 사용자가 동의한 문서와
+          화면에 보이는 문서가 달라집니다</b>. 위탁 표(5번)와
+          계정 삭제 방법(6번)은 비우지 마세요.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <h3>그래도 이어지는 것</h3>
+      <p>두 화면 모두 <b>글꼴은 이미 같습니다</b> — 앱 전체가 둥근미소를 쓰고,
+        랜딩은 <code>next/font</code> 가 붙여 둔 <code>--font-dunggeunmiso</code>
+        를 그대로 참조합니다. C안이 글꼴을 바꾸지 않으므로 이 둘도 함께
+        어긋나지 않습니다.</p>
+    </div>
+    <div class="change">
+      <h3>브랜드 색도 같습니다</h3>
+      <p>랜딩의 강조색과 C안의 면 색은 같은 <code>#ee2b8c</code> 입니다.
+        랜딩에서 앱으로 들어올 때 <b>색이 바뀌지 않습니다</b> — 오히려 지금보다
+        더 이어집니다(지금 앱은 분홍이 카드로만 나타나 랜딩과 결이 다릅니다).</p>
+    </div>
+    <div class="change change--keep">
+      <h3>랜딩 CSS 를 만질 일이 생기면</h3>
+      <p>모바일 리셋 선택자 목록 <b>가운데에 다른 규칙을 끼워 넣지 마세요</b>.
+        목록이 두 동강 나면서 제목·리드문이 통째로 투명해집니다 — 실제로 그래서
+        한 화면이 백지였습니다. 시안 파일은 <code>.prettierignore</code> 에
+        있습니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="c-index.html">← 전체 목차</a>
+</main>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H4 E4 S5 R4 V5 -->
+<!-- Hallmark · main 모바일 4안 · 타임라인 + FAB · tone: editorial
+     studied: yes · DNA-source: url (seed-design.io) · SEED FAB / 날짜 그룹 헤더 인용 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4안 · 타임라인 + FAB — main 모바일</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<style>
+  .app { display: flex; flex-direction: column; flex: 1; background: var(--bg-layer-default); position: relative; }
+
+  /* ── 머리글이 스크롤과 함께 줄어드는 자리 (여기서는 펼친 상태) ── */
+  .hero { padding: var(--x5) var(--gutter) var(--x6); }
+  .hero__row { display: flex; align-items: center; gap: var(--x2); }
+  .hero__couple { font-size: var(--t5); font-weight: var(--w-medium); color: var(--fg-neutral-muted); }
+  .hero__spacer { flex: 1; }
+  .avatars { display: flex; }
+  .avatar {
+    width: 26px; height: 26px; border-radius: var(--r-full); display: grid; place-items: center;
+    font-size: var(--t1); font-weight: var(--w-bold); color: var(--fg-neutral-inverted);
+    border: 2px solid var(--bg-layer-default);
+  }
+  .avatar--1 { background: var(--palette-brand-500); }
+  .avatar--2 { background: var(--bg-neutral-inverted); margin-left: -8px; }
+  .hero__big {
+    margin-top: var(--x4); font-size: var(--t13); font-weight: var(--w-bold);
+    letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .hero__big small { font-size: var(--t7); letter-spacing: -0.02em; }
+  .hero__sub { margin-top: var(--x2); font-size: var(--t4); color: var(--fg-neutral-muted); }
+  .hero__bar {
+    margin-top: var(--x5); display: flex; align-items: center; gap: var(--x3);
+    padding-top: var(--x4); border-top: 1px solid var(--stroke-neutral-muted);
+    font-size: var(--t3); color: var(--fg-neutral-muted);
+  }
+  .hero__bar b { font-size: var(--t5); color: var(--fg-neutral); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; }
+  .hero__bar .go { margin-left: auto; color: var(--fg-brand); font-weight: var(--w-bold); font-size: var(--t3); }
+
+  /* ── 타임라인 ── 날짜가 왼쪽 기둥, 일정이 오른쪽 */
+  .body { flex: 1; padding-bottom: 96px; }
+  .month {
+    position: sticky; top: 0; z-index: 2;
+    background: var(--bg-layer-default);
+    padding: var(--x3) var(--gutter) var(--x2);
+    font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle);
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--stroke-neutral-subtle);
+  }
+  .tl { padding: var(--x2) var(--gutter) var(--x5); display: grid; gap: var(--x1); }
+  .ev {
+    display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: var(--x3);
+    width: 100%; text-align: left; padding: var(--x3) var(--x2);
+    border-radius: var(--r3);
+    transition: background var(--d3) var(--ease);
+  }
+  .ev:hover, .ev.is-hover { background: var(--bg-layer-fill); }
+  .ev__day {
+    text-align: center; padding-top: 2px;
+  }
+  .ev__d { display: block; font-size: var(--t7); font-weight: var(--w-bold); letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .ev__w { display: block; margin-top: 2px; font-size: var(--t1); color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+  .ev__body { min-width: 0; padding-left: var(--x3); border-left: 2px solid var(--bg-neutral-weak); }
+  .ev--soon .ev__body { border-left-color: var(--bg-brand-solid); }
+  .ev--soon .ev__d { color: var(--fg-brand); }
+  .ev__t { display: block; font-size: var(--t5); font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .ev__m { margin-top: var(--gap-between-text); display: flex; align-items: center; gap: var(--x2); font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .tag { font-size: var(--t1); font-weight: var(--w-bold); border-radius: var(--r1); padding: 1px var(--x1_5); background: var(--bg-neutral-weak); }
+  .amt { margin-left: auto; font-weight: var(--w-bold); color: var(--fg-neutral); font-variant-numeric: tabular-nums; }
+  .amt--none { color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+
+  .undated { padding: var(--x2) var(--gutter) var(--x6); }
+  .undated__h { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle); letter-spacing: 0.04em; padding: var(--x3) var(--x2) var(--x2); }
+  .u-row {
+    display: flex; align-items: center; gap: var(--x3); width: 100%; text-align: left;
+    padding: var(--x3) var(--x2); border-radius: var(--r3);
+    font-size: var(--t4); color: var(--fg-neutral-muted);
+    transition: background var(--d3) var(--ease);
+  }
+  .u-row:hover { background: var(--bg-layer-fill); }
+  .u-row b { color: var(--fg-neutral); font-weight: var(--w-medium); }
+
+  /* ── SEED FAB ── 목록 위에 떠 있고, 탭바 바로 위에 앉는다 */
+  .fab {
+    position: absolute; right: var(--gutter); bottom: 84px;
+    height: 48px; padding: 0 var(--x5); border-radius: var(--r-full);
+    background: var(--bg-brand-solid); color: var(--fg-neutral-inverted);
+    font-size: var(--t4); font-weight: var(--w-bold);
+    display: inline-flex; align-items: center; gap: var(--x2);
+    box-shadow: var(--s3);
+    transition: background var(--d3) var(--ease), transform var(--d2) var(--ease-pressed);
+  }
+  .fab:hover, .fab.is-hover { background: var(--bg-brand-solid-pressed); }
+  .fab:active, .fab.is-active { transform: scale(0.96); }
+
+  .tabbar {
+    background: var(--bg-layer-floating); border-top: 1px solid var(--stroke-neutral-muted);
+    display: grid; grid-template-columns: repeat(4, 1fr); padding: var(--x2) 0 var(--x4);
+  }
+  .tab { display: grid; justify-items: center; font-size: var(--t1); color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+  .tab[aria-current="page"] { color: var(--fg-brand); font-weight: var(--w-bold); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">main 모바일 · 4안</p>
+  <h1 class="page__title">타임라인 + FAB</h1>
+  <p class="page__lede">
+    홈을 <b>목록이 아니라 시간축</b>으로 본다. 날짜가 왼쪽 기둥에 서고 일정이
+    거기 매달린다. 추가는 목록 위에 뜬 <b>SEED FAB</b> 가 맡아, 스크롤을 어디까지
+    내려도 손끝에 남는다.
+  </p>
+
+  <div class="page__cols">
+    <div class="screen">
+      <div class="app">
+        <header class="hero">
+          <div class="hero__row">
+            <span class="hero__couple">지수 · 현우</span>
+            <span class="hero__spacer"></span>
+            <div class="avatars">
+              <span class="avatar avatar--1">김</span>
+              <span class="avatar avatar--2">박</span>
+            </div>
+          </div>
+          <p class="hero__big">D-74</p>
+          <p class="hero__sub">2026년 11월 14일 토요일</p>
+          <div class="hero__bar">
+            <span>남은 예산</span>
+            <b>3,580만 원</b>
+            <button class="go">예산</button>
+          </div>
+        </header>
+
+        <div class="body">
+          <p class="month">2026년 9월</p>
+          <div class="tl">
+            <button class="ev ev--soon">
+              <span class="ev__day"><span class="ev__d">12</span><span class="ev__w">토</span></span>
+              <span class="ev__body">
+                <span class="ev__t">본식 촬영</span>
+                <span class="ev__m"><i class="tag">스드메</i> <b class="amt">185만 원</b></span>
+              </span>
+            </button>
+            <button class="ev">
+              <span class="ev__day"><span class="ev__d">27</span><span class="ev__w">일</span></span>
+              <span class="ev__body">
+                <span class="ev__t">예물 상담</span>
+                <span class="ev__m"><i class="tag">예물</i> <b class="amt amt--none">미정</b></span>
+              </span>
+            </button>
+          </div>
+
+          <p class="month">2026년 10월</p>
+          <div class="tl">
+            <button class="ev">
+              <span class="ev__day"><span class="ev__d">10</span><span class="ev__w">토</span></span>
+              <span class="ev__body">
+                <span class="ev__t">청첩장 발송</span>
+                <span class="ev__m"><i class="tag">청첩장</i> <b class="amt amt--none">미정</b></span>
+              </span>
+            </button>
+          </div>
+
+          <div class="undated">
+            <p class="undated__h">날짜 미정 2</p>
+            <button class="u-row"><b>신혼여행 예약</b> · 신혼여행</button>
+            <button class="u-row"><b>본식 헤어·메이크업</b> · 스드메</button>
+          </div>
+        </div>
+
+        <button class="fab">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+          플랜
+        </button>
+
+        <nav class="tabbar">
+          <a class="tab" aria-current="page" href="#">홈</a>
+          <a class="tab" href="#">피드</a>
+          <a class="tab" href="#">참여 플랜</a>
+          <a class="tab" href="#">Settings</a>
+        </nav>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="note note--cite">
+        <h3>SEED 에서 가져온 것</h3>
+        <ul>
+          <li><b>FAB</b> — <code>shadow s3</code> 를 쓰는 유일한 요소.
+            SEED 에서 가장 강한 그림자는 떠 있는 것에만 쓴다.</li>
+          <li><b>고정 그룹 헤더</b> — 월 머리글이 스크롤에 붙는다.
+            <code>bg-layer-default</code> 배경 + <code>stroke-neutral-subtle</code> 선.</li>
+          <li><b>radius r-full</b> — FAB 는 알약, 나머지는 r3/r4.
+            둥글기 차이가 "떠 있음"을 말한다.</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h3>지금과 무엇이 달라지나</h3>
+        <p>날짜가 <b>카드 안 회색 글씨에서 왼쪽 기둥</b>으로 나온다. 지금은
+          "2026년 9월 12일 (토요일)"이 제목 아래 세 번째 줄에 있어, 세로로 훑을
+          때 날짜끼리 비교가 안 된다.</p>
+      </div>
+      <div class="note">
+        <h3>날짜 미정을 아래로</h3>
+        <p>날짜가 없는 일정은 <b>시간축에 놓을 자리가 없다</b>. 맨 아래
+          별도 묶음으로 내리고, 거기가 "날짜를 정해야 할 것"의 목록이 된다.
+          플랜 보드의 <b>날짜 미정 컬럼</b>과 같은 취급이다.</p>
+      </div>
+      <div class="note">
+        <h3>가장 큰 위험</h3>
+        <p>일정이 <b>10개를 넘으면</b> 월 머리글이 자주 끼어들어 리듬이
+          끊긴다. 그리고 FAB 가 마지막 카드를 가리므로 목록 하단 여백을
+          <code>96px</code> 이상 잡아야 한다 — 이 시안에도 그렇게 넣었다.</p>
+      </div>
+    </div>
+  </div>
+
+  <a class="backlink" href="main-mobile-index.html">← 시안 5개 목차</a>
+</main>
+</body>
+</html>

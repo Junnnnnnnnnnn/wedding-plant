@@ -1,0 +1,190 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · C안 06 일정 상세 · studied: yes · DNA-source: url (seed-design.io) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C안 06 · 일정 상세 — /schedule-detail</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  /* 상태는 정보다 — 조작만큼의 무게를 주지 않는다.
+     웹(인스펙터) 변형이 이미 쓰는 알약을 폰에도 그대로 가져온다. */
+  .st { display: inline-flex; align-items: center; gap: var(--x1_5);
+        background: var(--c-fill-inset); border-radius: var(--r-full);
+        padding: var(--x1) var(--x2_5); font-size: var(--t2);
+        font-weight: var(--w-bold); color: var(--c-on-fill); }
+  .st__dot { width: 6px; height: 6px; border-radius: var(--r-full);
+             background: var(--c-on-fill); }
+
+  /* 완료로 바꾸는 길 — 이 화면에 지금은 없다 */
+  .done { display: flex; align-items: center; gap: var(--x3); width: 100%;
+          text-align: left; padding: var(--x3_5) var(--x4);
+          border-radius: var(--r3); background: var(--bg-layer-fill);
+          transition: background var(--d3) var(--ease); }
+  .done:hover { background: var(--bg-positive-weak); }
+  .done__c { width: 24px; height: 24px; border-radius: var(--r-full);
+             border: 1.5px solid var(--stroke-neutral-weak);
+             background: var(--bg-layer-default); flex: 0 0 auto; }
+  .done:hover .done__c { border-color: var(--fg-positive); }
+  .done__t { display: block; font-size: var(--t5); font-weight: var(--w-bold); }
+  .done__d { display: block; margin-top: 2px; font-size: var(--t2);
+             color: var(--fg-neutral-subtle); }
+  .tile { display: grid; grid-template-columns: 40px minmax(0,1fr); gap: var(--x3);
+          align-items: start; padding: var(--x4) var(--gutter); }
+  .tile + .tile { box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .tile__i { width: 40px; height: 40px; border-radius: var(--r3); display: grid; place-items: center; }
+  .tile__i--loc { background: #eef4ff; color: #3b76f6; }
+  .tile__i--memo { background: #fff6e3; color: #d99414; }
+  .tile__i--time { background: #f0f7f2; color: #2f9a6a; }
+  .tile__l { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle); }
+  .tile__v { display: block; margin-top: 3px; font-size: var(--t5); font-weight: var(--w-medium);
+             line-height: 1.5; }
+  .map { display: block; margin-top: var(--x3); border-radius: var(--r3); overflow: hidden;
+         border: 1px solid var(--stroke-neutral-weak); }
+  .map__c { height: 132px; background:
+      repeating-linear-gradient(45deg, #eef1ea 0 12px, #e7ebe3 12px 24px);
+      display: grid; place-items: center; color: #7d8a76; font-size: var(--t3); }
+  .map__a { display: block; width: 100%; padding: var(--x3) 0; text-align: center;
+            font-size: var(--t3); font-weight: var(--w-bold); color: var(--fg-brand);
+            background: var(--bg-layer-default); border-top: 1px solid var(--stroke-neutral-weak); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">C안 · 06</p>
+  <h1 class="page__title">일정 상세</h1>
+  <p class="page__lede">
+    <b>이미 분홍 히어로가 있는 화면</b>이라 C안과 가장 가깝습니다. 바뀌는 건
+    히어로가 <b>떠 있는 카드에서 화면 머리 면</b>이 되는 것뿐이고,
+    <b>컬러 아이콘 타일은 그대로</b> 두되, <b>회전 주황 스티커는 걷어냅니다</b>.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">지금</span><span class="cmp__note">/schedule-detail · 실제 캡처</span></div>
+      <figure class="cmp__shot"><img src="shots/now-schedule-detail.png" alt="지금의 일정 상세 화면"></figure>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">C안</span><span class="cmp__note">히어로가 면으로</span></div>
+      <div class="c-screen c-screen--tall">
+        <div class="head-wrap">
+          <header class="c-head">
+            <div class="c-head__nav">
+              <button class="c-head__back" aria-label="뒤로가기">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 6-6 6 6 6"/></svg>
+              </button>
+              <span class="c-head__title">스드메</span>
+              <span class="st"><i class="st__dot"></i>예정</span>
+            </div>
+            <p class="c-head__big" style="font-size: var(--t11); margin-top: var(--x3)">본식 촬영</p>
+            <p class="c-head__sub">2026년 9월 12일 (토) · 오전 9:00</p>
+            <div class="c-inset">
+              <span class="c-inset__body">
+                <span class="c-inset__d">지출 금액</span>
+                <span class="c-inset__t" style="font-size: var(--t7); margin-top: 2px">185만 원</span>
+              </span>
+              <span style="text-align:right">
+                <span class="c-inset__d">결제 방식</span>
+                <span class="c-inset__t">카드</span>
+              </span>
+            </div>
+          </header>
+        </div>
+
+        <div class="c-body c-body--flush" style="gap: 0; padding-top: var(--x2)">
+          <div class="tile">
+            <span class="tile__i tile__i--loc"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+            <span>
+              <span class="tile__l">장소</span>
+              <span class="tile__v">아모레 스튜디오</span>
+              <span class="tile__v" style="font-size: var(--t3); color: var(--fg-neutral-muted); font-weight: var(--w-regular)">서울 강남구 논현로 132</span>
+              <span class="map">
+                <span class="map__c">지도</span>
+                <button class="map__a">카카오맵에서 보기</button>
+              </span>
+            </span>
+          </div>
+
+          <div class="tile">
+            <span class="tile__i tile__i--memo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l5 5v13H6z"/><path d="M9 12h7M9 16h5"/></svg></span>
+            <span>
+              <span class="tile__l">메모</span>
+              <span class="tile__v">드레스 2벌 포함. 원본 파일 별도 문의.</span>
+            </span>
+          </div>
+
+          <div class="c-btnrow" style="margin-top: var(--x6)">
+            <button class="done">
+              <span class="done__c"></span>
+              <span>
+                <span class="done__t">완료로 표시</span>
+                <span class="done__d">끝난 일이면 눌러 주세요 · 예산의 지출로 잡힙니다</span>
+              </span>
+            </button>
+            <button class="c-btn c-btn--primary" style="margin-top: var(--x2)">수정하기</button>
+            <button class="c-btn c-btn--ghost">삭제하기</button>
+          </div>
+        </div>
+
+        <nav class="c-tabbar">
+          <a class="c-tab" aria-current="page" href="#">홈</a>
+          <a class="c-tab" href="#">피드</a>
+          <a class="c-tab" href="#">참여 플랜</a>
+          <a class="c-tab" href="#">Settings</a>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <h3>회전 스티커를 걷어냅니다</h3>
+      <p>주황 그라데이션 원은 <b>앱 어디에도 없는 세 번째 색</b>이고, 회전과
+        글로우까지 얹혀 있어 화면에서 가장 강한 요소가 됩니다. 그런데 담고 있는
+        건 <b>"아직 안 끝났다"</b>는 정보 한 줄입니다. 정보에 조작만큼의 무게를
+        주면 정작 누를 것이 안 보입니다.</p>
+      <p>대신 <b>웹(인스펙터) 변형이 이미 쓰고 있는 알약</b>을 폰에도 씁니다 —
+        <code>ScheduleDetailView</code> L570 의 그 알약입니다. 폰만 옛 스티커를
+        들고 있었습니다.</p>
+    </div>
+    <div class="change">
+      <h3>완료로 바꾸는 길을 냅니다</h3>
+      <p>지금 이 화면에는 <b>상태를 바꾸는 방법이 없습니다</b>. 보드나 홈에서만
+        토글할 수 있는데, 정작 "끝났나?"를 판단하는 정보(금액·장소·메모)는 전부
+        여기 있습니다. <code>PATCH /plan/schedule/status/{id}</code> 는 이미
+        있으니 <b>부르는 자리만</b> 만들면 됩니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>하네스를 함께 고쳐야 합니다</h3>
+      <p><code>scripts/plan-board.cjs</code> 가 <code>from-orange-300</code> /
+        <code>from-green-400</code> 클래스로 스티커를 찾습니다. 스티커를 바꾸면
+        <b>이 검사도 같이 바꿔야</b> 합니다 — 그냥 지우지 말고
+        <b>상태 알약을 찾도록</b> 옮깁니다. 검사가 지키려던 것은 스티커의 그라데이션이
+        아니라 <b>"폰 변형에 상태 표시가 남아 있는가"</b> 입니다.
+        <code>isInspector</code> 분기 자체는 그대로 둡니다.</p>
+    </div>
+    <div class="change">
+      <h3>히어로 → 면</h3>
+      <p>지금은 분홍 카드가 화면 안에 <b>떠 있고</b>, 그 위에 흰 "뒤로가기"
+        알약이 또 겹쳐 있습니다. 면으로 올리면 뒤로가기가 면 안으로 들어가고
+        겹침이 사라집니다.</p>
+    </div>
+    <div class="change">
+      <h3>장소·메모</h3>
+      <p>카드 두 장이 <b>구분선 타일</b>이 됩니다. 컬러 아이콘 타일(파랑 장소 ·
+        노랑 메모)은 이 화면의 성격이라 <b>색까지 그대로</b> 둡니다.</p>
+    </div>
+    <div class="change">
+      <h3>완료 상태일 때</h3>
+      <p>알약이 <b>초록 체크 · 완료</b>로 바뀌고, 면 안에 <b>후기 올리기</b> 진입점이
+        하나 붙습니다 — 피드 공급의 두 진입점 중 하나입니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="c-index.html">← 전체 목차</a>
+</main>
+</body>
+</html>

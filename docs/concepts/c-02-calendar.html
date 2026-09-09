@@ -1,0 +1,193 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · C안 02 캘린더 · studied: yes · DNA-source: url (seed-design.io) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C안 02 · 캘린더 — /calendar</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .cal { padding: var(--x2) var(--x2) 0; }
+  .cal__w { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal__wd { text-align: center; font-size: var(--t2); font-weight: var(--w-bold);
+             color: var(--fg-neutral-subtle); padding: var(--x2) 0; }
+  .cal__wd--sun { color: var(--fg-critical); }
+  .cal__wd--sat { color: var(--fg-informative); }
+  .cal__g { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .d { min-height: 54px; padding: var(--x1) 3px 0; text-align: center;
+       border-radius: var(--r2); transition: background var(--d3) var(--ease); }
+  .d:hover { background: var(--bg-layer-fill); }
+  .d__n { font-size: var(--t3); font-weight: var(--w-medium); font-variant-numeric: tabular-nums; }
+  .d--out .d__n { color: var(--fg-neutral-disabled); }
+  .d--sun .d__n { color: var(--fg-critical); }
+  .d--sat .d__n { color: var(--fg-informative); }
+  .d--today .d__n { display: inline-grid; place-items: center; width: 22px; height: 22px;
+                    border-radius: var(--r-full); background: var(--bg-brand-solid);
+                    color: var(--c-on-fill); font-weight: var(--w-bold); }
+  .d__e { display: block; margin-top: 2px; font-size: 9.5px; line-height: 1.3;
+          background: var(--bg-brand-weak); color: var(--fg-brand-contrast);
+          border-radius: 3px; padding: 1px 2px;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .d__e--done { background: var(--bg-neutral-weak); color: var(--fg-neutral-subtle); }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: var(--x0_5);
+         background: var(--c-fill-inset); border-radius: var(--r2_5); padding: 3px; margin-top: var(--x4); }
+  .seg__b { font-size: var(--t3); font-weight: var(--w-medium); color: var(--c-on-fill-muted);
+            padding: var(--x1_5) 0; border-radius: var(--r2); }
+  .seg__b[aria-selected="true"] { background: var(--c-on-fill); color: var(--fg-brand);
+                                  font-weight: var(--w-bold); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">C안 · 02</p>
+  <h1 class="page__title">캘린더</h1>
+  <p class="page__lede">
+    달 이동과 <b>이번 달 지출·예정</b>이 면으로 올라가고, 달력과 그날 목록이
+    흰 본문을 씁니다. 지금은 달 제목·합계·달력이 모두 같은 흰 바탕에 있어
+    <b>어디까지가 머리글인지</b>가 선 하나로만 갈립니다.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">지금</span><span class="cmp__note">/calendar · 실제 캡처</span></div>
+      <figure class="cmp__shot"><img src="shots/now-calendar.png" alt="지금의 캘린더 화면"></figure>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">C안</span><span class="cmp__note">면에 달 + 합계</span></div>
+      <div class="c-screen">
+        <header class="c-head">
+          <div class="c-head__nav">
+            <button class="c-head__back" aria-label="이전 달">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 6-6 6 6 6"/></svg>
+            </button>
+            <span class="c-head__title">2026년 9월</span>
+            <button class="c-head__act" aria-label="다음 달">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
+            </button>
+            <span class="c-head__spacer"></span>
+            <button class="c-head__act" aria-label="닫기">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+          </div>
+          <div class="c-inset" style="margin-top: var(--x3)">
+            <span class="c-inset__body">
+              <span class="c-inset__t">이번 달 예정 185만 원</span>
+              <span class="c-inset__d">지출 0원 · 일정 2개</span>
+            </span>
+          </div>
+          <div class="seg" role="tablist">
+            <button class="seg__b" role="tab" aria-selected="true">달력</button>
+            <button class="seg__b" role="tab" aria-selected="false">목록</button>
+          </div>
+        </header>
+
+        <div class="c-body c-body--flush" style="padding-top: var(--x2)">
+          <div class="cal">
+            <div class="cal__w">
+              <span class="cal__wd cal__wd--sun">일</span><span class="cal__wd">월</span>
+              <span class="cal__wd">화</span><span class="cal__wd">수</span>
+              <span class="cal__wd">목</span><span class="cal__wd">금</span>
+              <span class="cal__wd cal__wd--sat">토</span>
+            </div>
+            <div class="cal__g">
+              <button class="d d--out d--sun"><span class="d__n">30</span></button>
+              <button class="d d--out"><span class="d__n">31</span></button>
+              <button class="d"><span class="d__n">1</span></button>
+              <button class="d d--today"><span class="d__n">2</span></button>
+              <button class="d"><span class="d__n">3</span></button>
+              <button class="d"><span class="d__n">4</span></button>
+              <button class="d d--sat"><span class="d__n">5</span></button>
+
+              <button class="d d--sun"><span class="d__n">6</span></button>
+              <button class="d"><span class="d__n">7</span></button>
+              <button class="d"><span class="d__n">8</span></button>
+              <button class="d"><span class="d__n">9</span></button>
+              <button class="d"><span class="d__n">10</span></button>
+              <button class="d"><span class="d__n">11</span></button>
+              <button class="d d--sat"><span class="d__n">12</span><span class="d__e">본식 촬영</span></button>
+
+              <button class="d d--sun"><span class="d__n">13</span></button>
+              <button class="d"><span class="d__n">14</span></button>
+              <button class="d"><span class="d__n">15</span></button>
+              <button class="d"><span class="d__n">16</span></button>
+              <button class="d"><span class="d__n">17</span></button>
+              <button class="d"><span class="d__n">18</span></button>
+              <button class="d d--sat"><span class="d__n">19</span></button>
+
+              <button class="d d--sun"><span class="d__n">20</span></button>
+              <button class="d"><span class="d__n">21</span></button>
+              <button class="d"><span class="d__n">22</span></button>
+              <button class="d"><span class="d__n">23</span></button>
+              <button class="d"><span class="d__n">24</span></button>
+              <button class="d"><span class="d__n">25</span></button>
+              <button class="d d--sat"><span class="d__n">26</span></button>
+
+              <button class="d d--sun"><span class="d__n">27</span><span class="d__e">예물 상담</span></button>
+              <button class="d"><span class="d__n">28</span></button>
+              <button class="d"><span class="d__n">29</span></button>
+              <button class="d"><span class="d__n">30</span></button>
+              <button class="d d--out"><span class="d__n">1</span></button>
+              <button class="d d--out"><span class="d__n">2</span></button>
+              <button class="d d--out d--sat"><span class="d__n">3</span></button>
+            </div>
+          </div>
+
+          <div class="c-sec" style="margin-top: var(--x5)">
+            <h3 class="c-sec__t">9월 12일 (토)</h3>
+            <span class="c-sec__spacer"></span>
+            <button class="c-sec__a">추가</button>
+          </div>
+          <div class="c-cards">
+            <button class="c-card c-card--check">
+              <span class="c-check"></span>
+              <span>
+                <span class="c-card__t">본식 촬영</span>
+                <span class="c-card__row"><i class="c-tag">스드메</i> 오전 9:00 · 아모레 스튜디오 <b class="c-amt">185만 원</b></span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <nav class="c-tabbar">
+          <a class="c-tab" aria-current="page" href="#">홈</a>
+          <a class="c-tab" href="#">피드</a>
+          <a class="c-tab" href="#">참여 플랜</a>
+          <a class="c-tab" href="#">Settings</a>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <h3>합계가 면으로</h3>
+      <p>지금은 달 제목 아래 <b>작은 회색 줄</b>입니다. 면으로 올리면 달을 넘길
+        때마다 그 달의 규모가 먼저 눈에 들어옵니다 — 달력을 넘기는 이유가
+        대개 그것입니다.</p>
+    </div>
+    <div class="change">
+      <h3>떠 있는 + 버튼 제거</h3>
+      <p>지금은 오른쪽 아래 분홍 FAB 가 <b>마지막 주를 가립니다</b>. 추가는
+        선택한 날짜 줄의 <b>추가</b> 로 옮깁니다 — 어느 날에 넣을지가 이미
+        정해진 상태에서 누르게 됩니다.</p>
+    </div>
+    <div class="change">
+      <h3>달력 / 목록</h3>
+      <p>면 안에 세그먼트를 둡니다. 넓은 화면의 <b>보드 ↔ 캘린더</b> 전환과
+        같은 자리이고, 폰에서는 보드 대신 목록이 들어갑니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>지키는 것</h3>
+      <p>셀 안 <b>금액은 ≥768 에서만</b> 보입니다 — 폰에서는 제목이 먼저입니다.
+        완료 표시는 <b>색 클래스를 겹쳐 쓰지 않고</b> 한쪽만 냅니다
+        (겹치면 생성된 CSS 순서가 승자를 정해 회색이 흐려집니다).</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="c-index.html">← 전체 목차</a>
+</main>
+</body>
+</html>

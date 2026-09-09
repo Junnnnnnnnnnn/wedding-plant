@@ -1,0 +1,212 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · C안 05 예산 상세 · studied: yes · DNA-source: url (seed-design.io) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C안 05 · 예산 상세 — /budget-detail</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .donut { display: grid; place-items: center; padding: var(--x5) 0 var(--x2); }
+  .donut__c { position: relative; width: 190px; height: 190px; }
+  .donut__t { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .donut__l { font-size: var(--t2); color: var(--fg-neutral-muted); }
+  .donut__v { font-size: var(--t12); font-weight: var(--w-bold); letter-spacing: -0.04em;
+              line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .donut__u { font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .legend { display: flex; justify-content: center; gap: var(--x4); flex-wrap: wrap;
+            font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .legend span { display: inline-flex; align-items: center; gap: var(--x1_5); }
+  .legend i { width: 9px; height: 9px; border-radius: 3px; }
+  .facts { margin: var(--x5) var(--gutter) 0; }
+  .fact { display: flex; align-items: baseline; padding: var(--x3) 0; font-size: var(--t4); }
+  .fact + .fact { box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .fact__l { color: var(--fg-neutral-muted); }
+  .fact__v { margin-left: auto; font-weight: var(--w-bold); font-variant-numeric: tabular-nums; }
+  .catrow { display: grid; grid-template-columns: minmax(0,1fr) auto auto auto; gap: var(--x3);
+            align-items: center; width: 100%; text-align: left;
+            padding: var(--x3) var(--gutter); font-size: var(--t3);
+            transition: background var(--d3) var(--ease); }
+  .catrow + .catrow { box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .catrow:hover { background: var(--bg-layer-fill); }
+  .catrow__n { font-size: var(--t4); font-weight: var(--w-medium); }
+  .catrow__v { font-variant-numeric: tabular-nums; text-align: right; min-width: 58px; }
+  .catrow__v--left { font-weight: var(--w-bold); }
+  .catrow__h { color: var(--fg-neutral-subtle); font-size: var(--t2); font-weight: var(--w-bold); }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: var(--x0_5);
+         background: var(--bg-layer-fill); border-radius: var(--r2_5); padding: 3px;
+         margin: 0 var(--gutter); }
+  .seg__b { font-size: var(--t3); font-weight: var(--w-medium); color: var(--fg-neutral-muted);
+            padding: var(--x1_5) 0; border-radius: var(--r2); }
+  .seg__b[aria-selected="true"] { background: var(--bg-layer-default); color: var(--fg-neutral);
+                                  font-weight: var(--w-bold); box-shadow: var(--s1); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">C안 · 05</p>
+  <h1 class="page__title">예산 상세</h1>
+  <p class="page__lede">
+    면에는 <b>초기 자본만</b> 올립니다. 남은 금액은 도넛이 계속 맡습니다 —
+    <b>두 번째 잔액 숫자를 만들지 않는 것</b>이 이 화면의 규칙이고, 면에 남은
+    금액을 또 쓰면 예전에 없앤 문제가 그대로 돌아옵니다.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">지금</span><span class="cmp__note">/budget-detail · 실제 캡처</span></div>
+      <figure class="cmp__shot"><img src="shots/now-budget.png" alt="지금의 예산 상세 화면"></figure>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">C안</span><span class="cmp__note">면에는 자본만</span></div>
+      <div class="c-screen c-screen--tall">
+        <header class="c-head c-head--slim">
+          <div class="c-head__nav">
+            <button class="c-head__back" aria-label="뒤로가기">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 6-6 6 6 6"/></svg>
+            </button>
+            <span class="c-head__title">예산</span>
+            <span class="c-head__spacer"></span>
+            <button class="c-head__act" aria-label="가이드 보기">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3 2.45V14"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>
+            </button>
+          </div>
+          <p class="c-head__label" style="margin-top: var(--x3)">초기 자본</p>
+          <p class="c-head__num">4,200<small>만 원</small></p>
+        </header>
+
+        <div class="c-body c-body--flush" style="gap: var(--x5)">
+          <section>
+            <div class="donut">
+              <div class="donut__c">
+                <svg width="190" height="190" viewBox="0 0 42 42" aria-hidden="true">
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#f4eff2" stroke-width="6"/>
+                  <!-- 사용 1,340 / 4,200 = 31.9% -->
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#ee2b8c" stroke-width="6"
+                          stroke-dasharray="31.9 68.1" stroke-dashoffset="25" stroke-linecap="butt"/>
+                  <!-- 예정 1,850 / 4,200 = 44.0% -->
+                  <circle cx="21" cy="21" r="15.9" fill="none" stroke="#cdbfc7" stroke-width="6"
+                          stroke-dasharray="44 56" stroke-dashoffset="-6.9" stroke-linecap="butt"/>
+                </svg>
+                <div class="donut__t">
+                  <div>
+                    <p class="donut__l">남은 금액</p>
+                    <p class="donut__v">1,010</p>
+                    <p class="donut__u">만 원</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="legend">
+              <span><i style="background:#ee2b8c"></i>사용 1,340</span>
+              <span><i style="background:#cdbfc7"></i>예정 1,850</span>
+              <span><i style="background:#f4eff2"></i>여유 1,010</span>
+            </div>
+            <div class="facts">
+              <div class="fact"><span class="fact__l">사용률</span><span class="fact__v">32%</span></div>
+              <div class="fact"><span class="fact__l">사용 후 잔액</span><span class="fact__v">2,860만 원</span></div>
+            </div>
+          </section>
+
+          <section>
+            <div class="c-sec">
+              <h3 class="c-sec__t">카테고리별</h3>
+              <span class="c-sec__spacer"></span>
+              <button class="c-sec__a">필터 해제</button>
+            </div>
+            <div style="margin-top: var(--gap-component)">
+              <div class="catrow">
+                <span class="catrow__n" style="color: var(--fg-neutral-subtle); font-size: var(--t2); font-weight: var(--w-bold)">카테고리</span>
+                <span class="catrow__v catrow__h">예산</span>
+                <span class="catrow__v catrow__h">사용</span>
+                <span class="catrow__v catrow__h">남음</span>
+              </div>
+              <button class="catrow">
+                <span class="catrow__n">예식장</span>
+                <span class="catrow__v">620</span>
+                <span class="catrow__v">620</span>
+                <span class="catrow__v catrow__v--left">0</span>
+              </button>
+              <button class="catrow">
+                <span class="catrow__n">스드메</span>
+                <span class="catrow__v">900</span>
+                <span class="catrow__v">385</span>
+                <span class="catrow__v catrow__v--left">515</span>
+              </button>
+              <button class="catrow">
+                <span class="catrow__n">예물 · 예단</span>
+                <span class="catrow__v">700</span>
+                <span class="catrow__v">335</span>
+                <span class="catrow__v catrow__v--left">365</span>
+              </button>
+            </div>
+          </section>
+
+          <section>
+            <div class="c-sec" style="margin-bottom: var(--gap-component)">
+              <h3 class="c-sec__t">항목</h3>
+              <span class="c-sec__n">6</span>
+            </div>
+            <div class="seg" role="tablist">
+              <button class="seg__b" role="tab" aria-selected="true">예정</button>
+              <button class="seg__b" role="tab" aria-selected="false">사용</button>
+            </div>
+            <div class="c-rows" style="margin-top: var(--x3)">
+              <button class="c-row"><span><span class="c-row__t">드레스 투어</span><span class="c-row__m">스드메 · 8월 23일</span></span><span class="c-row__d">미정</span></button>
+              <button class="c-row"><span><span class="c-row__t">예식장 2차 미팅</span><span class="c-row__m">예식장 · 9월 5일</span></span><span class="c-row__d">미정</span></button>
+              <button class="c-row"><span><span class="c-row__t">본식 촬영</span><span class="c-row__m">스드메 · 9월 12일</span></span><span class="c-row__d">185만 원</span></button>
+            </div>
+          </section>
+        </div>
+
+        <nav class="c-tabbar">
+          <a class="c-tab" aria-current="page" href="#">홈</a>
+          <a class="c-tab" href="#">피드</a>
+          <a class="c-tab" href="#">참여 플랜</a>
+          <a class="c-tab" href="#">Settings</a>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change change--keep">
+      <h3>면에 남은 금액을 쓰지 않는 이유</h3>
+      <p>예전에 <b>남은 금액(자본−예정−사용)</b>과 <b>사용 후 잔액(자본−사용)</b>이
+        따로 놀아서 물음표 툴팁으로 해명하던 화면입니다. 지금은 둘 다 도넛의
+        구간이라 툴팁이 필요 없습니다. <b>면에 잔액을 또 쓰면 그 문제가
+        되돌아옵니다.</b> 그래서 면에는 <b>초기 자본</b>만 둡니다.</p>
+    </div>
+    <div class="change">
+      <h3>뒤로가기</h3>
+      <p>떠 있는 흰 알약이 <b>면 안의 화살표</b>로 들어갑니다. 지금은 알약이
+        도넛 카드 위에 겹쳐 있어 스크롤하면 카드와 섞입니다.</p>
+    </div>
+    <div class="change">
+      <h3>카테고리 표</h3>
+      <p>지금 폰은 <b>사용 / 예산</b> 한 덩어리라 "얼마 남았나"를 암산해야
+        합니다. 웹처럼 <b>예산 · 사용 · 남음</b> 세 열로 세웁니다 — 폰 폭에서도
+        숫자 세 개는 들어갑니다.</p>
+    </div>
+    <div class="change">
+      <h3>항목 목록</h3>
+      <p>카드에서 <b>구분선 목록</b>으로. 항목이 20개를 넘는 화면이라 카드
+        여백이 그대로 스크롤 길이가 됩니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>지키는 것</h3>
+      <p>도넛의 <b>자본 초과 표현</b>(분모 = max(자본, 사용+예정), 자본 위치에
+        검은 눈금, 그 너머 빨간 구간)을 그대로 둡니다.
+        <b>AI 조언 버튼은 되살리지 않습니다.</b> 가이드 앵커
+        <code>#budget-stat-grid</code>·<code>#budget-analysis</code>·
+        <code>#budget-tab</code>·<code>#budget-list</code> 도 그대로입니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="c-index.html">← 전체 목차</a>
+</main>
+</body>
+</html>

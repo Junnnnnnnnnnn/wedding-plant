@@ -1,0 +1,274 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · main 모바일 시안 목차 + SEED DNA 진단
+     studied: yes · DNA-source: url (https://seed-design.io/) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>main 모바일 시안 5개 — SEED 인용</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<style>
+  .lead { max-width: 68ch; }
+  .dna {
+    margin-top: var(--x10); background: var(--bg-layer-default);
+    border: 1px solid var(--stroke-neutral-weak); border-radius: var(--r5);
+    padding: var(--x7) var(--x8);
+  }
+  .dna h2 { margin: 0; font-size: var(--t8); font-weight: var(--w-bold); letter-spacing: -0.03em; }
+  .dna__sub { margin: var(--x2) 0 0; font-size: var(--t4); color: var(--fg-neutral-muted); }
+  .grid {
+    margin-top: var(--x6); display: grid; gap: var(--x5);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  }
+  .f h3 { margin: 0; font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle); letter-spacing: 0.04em; }
+  .f p { margin: var(--x2) 0 0; font-size: var(--t4); line-height: 1.7; color: var(--fg-neutral-muted); }
+  .f p b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+
+  .swatches { margin-top: var(--x6); display: flex; flex-wrap: wrap; gap: var(--x2); }
+  .sw {
+    display: flex; align-items: center; gap: var(--x2);
+    font-size: var(--t2); color: var(--fg-neutral-muted);
+    background: var(--bg-layer-fill); border-radius: var(--r-full);
+    padding: var(--x1) var(--x3) var(--x1) var(--x1);
+  }
+  .sw i { width: 20px; height: 20px; border-radius: var(--r-full); border: 1px solid var(--stroke-neutral-muted); }
+
+  .tbl { margin-top: var(--x6); width: 100%; border-collapse: collapse; font-size: var(--t3); }
+  .tbl th, .tbl td { text-align: left; padding: var(--x2_5) var(--x3); border-bottom: 1px solid var(--stroke-neutral-subtle); }
+  .tbl th { font-size: var(--t2); color: var(--fg-neutral-subtle); font-weight: var(--w-bold); letter-spacing: 0.03em; }
+  .tbl td:first-child { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--t2); color: var(--fg-neutral); }
+  .tbl td b { font-weight: var(--w-bold); }
+  .scrollx { overflow-x: auto; }
+
+  .blind {
+    margin-top: var(--x6); padding: var(--x4) var(--x5);
+    background: var(--bg-warning-weak); border-radius: var(--r3);
+    font-size: var(--t3); line-height: 1.75; color: var(--fg-neutral-muted);
+  }
+  .blind b { color: var(--fg-warning); font-weight: var(--w-bold); }
+
+  .cards { margin-top: var(--x10); display: grid; gap: var(--x4); }
+  .card {
+    display: grid; grid-template-columns: 52px minmax(0, 1fr) minmax(0, 280px);
+    gap: var(--x5); align-items: start;
+    background: var(--bg-layer-default); border: 1px solid var(--stroke-neutral-weak);
+    border-radius: var(--r5); padding: var(--x6);
+    text-decoration: none; color: inherit;
+    transition: border-color var(--d3) var(--ease), transform var(--d2) var(--ease);
+  }
+  .card { cursor: pointer; }
+  .card:hover { border-color: var(--stroke-brand-weak); background: var(--bg-brand-weak);
+                transform: translateY(-2px); }
+  .card:active { transform: translateY(0); }
+  /* 카드가 링크임을 제목 옆 화살표로 알린다 */
+  .card__t::after { content: " A"; color: var(--fg-neutral-disabled);
+                    font-weight: var(--w-bold); }
+  .card:hover .card__t::after { color: var(--fg-brand); }
+  @media (max-width: 780px) {
+    .card { grid-template-columns: 44px minmax(0, 1fr); }
+    .card__m { grid-column: 1 / -1; }
+  }
+  .card__n {
+    width: 52px; height: 52px; border-radius: var(--r4);
+    background: var(--bg-brand-weak); color: var(--fg-brand);
+    display: grid; place-items: center; font-size: var(--t7); font-weight: var(--w-bold);
+  }
+  .card__t { display: block; font-size: var(--t7); font-weight: var(--w-bold); letter-spacing: -0.025em; }
+  .card__one { display: block; margin-top: var(--x1); font-size: var(--t3); font-weight: var(--w-bold); color: var(--fg-brand); }
+  .card__d { display: block; margin-top: var(--x3); font-size: var(--t4); line-height: 1.7; color: var(--fg-neutral-muted); }
+  .card__d b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .card__m { font-size: var(--t3); line-height: 1.75; color: var(--fg-neutral-muted); }
+  .card__m dt { font-size: var(--t2); color: var(--fg-neutral-subtle); font-weight: var(--w-bold); }
+  .card__m dd { margin: 2px 0 var(--x3); }
+  .card__m dd b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+
+  .close {
+    margin-top: var(--x10); padding-top: var(--x6);
+    border-top: 1px solid var(--stroke-neutral-weak);
+    font-size: var(--t4); line-height: 1.8; color: var(--fg-neutral-muted); max-width: 72ch;
+  }
+  .close b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">study · seed-design.io</p>
+  <h1 class="page__title">main 모바일 시안 5개</h1>
+  <p class="page__lede lead">
+    웹은 셸·대시보드·보드로 다시 지었는데 폰은 예전 언어 그대로다. 당근의
+    <b>SEED</b> 를 읽어 <b>역할 기반 토큰·레이어·스케일</b>을 가져오고, 브랜드
+    hue 만 우리 마젠타로 바꿔 다섯 가지 구조를 세웠다.
+  </p>
+
+  <section class="dna">
+    <h2>SEED 에서 읽은 것</h2>
+    <p class="dna__sub">
+      seed-design.io 를 실제로 렌더해 <code>--seed-*</code> 토큰 330개와
+      foundations 문서 8편을 읽고, 모바일 화면을 캡처해 리듬까지 확인했다.
+    </p>
+
+    <div class="grid">
+      <div class="f">
+        <h3>표면</h3>
+        <p>흰 <b>layer-default</b> 를 기본으로, 회색 <b>fill(#f7f8f9)</b> ·
+          <b>basement(#f3f4f5)</b> 두 단계만 더 쓴다. 그라데이션이 없다.</p>
+      </div>
+      <div class="f">
+        <h3>글꼴</h3>
+        <p><b>시스템 폰트 스택</b>. 기기·언어권이 달라도 같은 읽는 경험을
+          주려는 선택이고, 앱이 폰트 파일을 지고 다니지 않는다.</p>
+      </div>
+      <div class="f">
+        <h3>색 이름</h3>
+        <p>값이 아니라 역할로 부른다 — <b>bg / fg / stroke</b> ×
+          <b>neutral · brand · positive · critical</b> ×
+          <b>weak · solid · pressed</b>.</p>
+      </div>
+      <div class="f">
+        <h3>강조</h3>
+        <p>당근 주황 <b>#f60</b> 하나. 면적이 작고, 나머지는 전부 중립.
+          색이 정보를 나르지 장식하지 않는다.</p>
+      </div>
+      <div class="f">
+        <h3>간격</h3>
+        <p>4의 배수 스케일 위에 <b>이름 있는 간격</b>을 따로 둔다 —
+          global-gutter 16 · component-default 12 · nav-to-title 20 ·
+          screen-bottom 56.</p>
+      </div>
+      <div class="f">
+        <h3>모션</h3>
+        <p>마이크로 <b>≤0.2s</b> / 매크로 <b>&gt;0.2s</b> 로 가른다.
+          easing · enter · exit · pressed-scale 네 종류뿐.</p>
+      </div>
+    </div>
+
+    <div class="swatches">
+      <span class="sw"><i style="background:#1a1c20"></i>fg-neutral #1a1c20</span>
+      <span class="sw"><i style="background:#555d6d"></i>muted #555d6d</span>
+      <span class="sw"><i style="background:#868b94"></i>subtle #868b94</span>
+      <span class="sw"><i style="background:#f3f4f5"></i>basement #f3f4f5</span>
+      <span class="sw"><i style="background:#f7f8f9"></i>fill #f7f8f9</span>
+      <span class="sw"><i style="background:#dcdee3"></i>stroke-weak #dcdee3</span>
+      <span class="sw"><i style="background:#ff6600"></i>SEED brand #f60</span>
+      <span class="sw"><i style="background:#ee2b8c"></i>우리 brand #ee2b8c</span>
+    </div>
+
+    <div class="scrollx">
+      <table class="tbl">
+        <thead>
+          <tr><th>SEED 토큰</th><th>값</th><th>이 시안에서 쓴 곳</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>bg-layer-basement</td><td>#f3f4f5</td><td>1안 화면 바탕 · 5안 섹션 구분 띠</td></tr>
+          <tr><td>bg-layer-fill</td><td>#f7f8f9</td><td>2안 할 일 카드 · 3안 세그먼트 트랙</td></tr>
+          <tr><td>stroke-neutral-subtle</td><td>#0000000c</td><td>3·5안 목록 구분선</td></tr>
+          <tr><td>spacing-x-global-gutter</td><td>16px</td><td>다섯 안 전부의 좌우 여백</td></tr>
+          <tr><td>spacing-y-nav-to-title</td><td>20px</td><td>1안 머리글 → 첫 카드</td></tr>
+          <tr><td>spacing-y-screen-bottom</td><td>56px</td><td>목록 하단 여백</td></tr>
+          <tr><td>radius r3 / r4 / r5</td><td>12 / 16 / 20px</td><td>콜아웃 · 카드 · 예산 패널</td></tr>
+          <tr><td>shadow s1 / s3</td><td>1px4px / 4px16px</td><td>카드 / <b>FAB 만</b></td></tr>
+          <tr><td>font-size t1 … t13</td><td>11 … 40px</td><td>라벨 → D-day 큰 숫자</td></tr>
+          <tr><td>fg-positive</td><td>#079171</td><td>5안 완료 체크</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="blind">
+      <b>가져오지 않은 것.</b> 당근의 브랜드 표현 — 주황 플러드, 일러스트,
+      감탄 이모지 — 은 당근의 목소리지 이 앱의 목소리가 아니다. 가져온 것은
+      <b>구조와 이름</b>이고, hue 는 우리 <code>#ee2b8c</code> 를 SEED 램프
+      구조(100~900 · weak/solid/pressed)에 그대로 씌웠다.
+    </p>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="main-mobile-1-layer.html">
+      <span class="card__n">1</span>
+      <span>
+        <span class="card__t">레이어</span>
+        <span class="card__one">그라데이션을 걷어내고 흰 카드로</span>
+        <span class="card__d">SEED 의 <b>레이어 3단</b>을 그대로. 지금 구조는 유지한 채
+          표면 언어만 바꾼다. <b>가장 안전하고 가장 밋밋하다.</b></span>
+      </span>
+      <dl class="card__m">
+        <dt>바뀌는 것</dt><dd>예산 카드 <b>분홍 그라데이션 → 흰 카드 + 막대</b></dd>
+        <dt>위험</dt><dd>앱의 정서가 차분해진다</dd>
+      </dl>
+    </a>
+
+    <a class="card" href="main-mobile-2-callout.html">
+      <span class="card__n">2</span>
+      <span>
+        <span class="card__t">콜아웃</span>
+        <span class="card__one">예산을 한 줄로 낮추고 할 일에 화면을 준다</span>
+        <span class="card__d">SEED <b>ActionableCallout</b> 인용. D-day 를 알약에서
+          <b>문장으로</b> 올리고, 목록은 카테고리가 아니라 <b>시간</b>으로 가른다.</span>
+      </span>
+      <dl class="card__m">
+        <dt>바뀌는 것</dt><dd>예산이 <b>주인공에서 링크</b>로</dd>
+        <dt>위험</dt><dd>이번 달이 비면 화면 위가 빈다</dd>
+      </dl>
+    </a>
+
+    <a class="card" href="main-mobile-3-segmented.html">
+      <span class="card__n">3</span>
+      <span>
+        <span class="card__t">스탯 행 + 세그먼트</span>
+        <span class="card__one">웹 대시보드를 폰 폭으로 접는다</span>
+        <span class="card__d">D-day 와 예산을 <b>같은 크기 두 칸</b>으로. SEED
+          <b>SegmentedControl</b> 이 계획 중 / 완료 카드 두 장을 대신해 세로를 아낀다.</span>
+      </span>
+      <dl class="card__m">
+        <dt>바뀌는 것</dt><dd>D-day 와 예산이 <b>같은 층위</b>로</dd>
+        <dt>위험</dt><dd>계기판처럼 읽힌다</dd>
+      </dl>
+    </a>
+
+    <a class="card" href="main-mobile-4-timeline.html">
+      <span class="card__n">4</span>
+      <span>
+        <span class="card__t">타임라인 + FAB</span>
+        <span class="card__one">목록이 아니라 시간축으로 본다</span>
+        <span class="card__d">날짜가 <b>왼쪽 기둥</b>에 서고 일정이 매달린다.
+          날짜 미정은 맨 아래 묶음 — 플랜 보드의 <b>날짜 미정 컬럼</b>과 같은 취급.</span>
+      </span>
+      <dl class="card__m">
+        <dt>바뀌는 것</dt><dd>날짜가 <b>세 번째 줄에서 기둥</b>으로</dd>
+        <dt>위험</dt><dd>일정이 많으면 월 머리글이 리듬을 끊는다</dd>
+      </dl>
+    </a>
+
+    <a class="card" href="main-mobile-5-listitem.html">
+      <span class="card__n">5</span>
+      <span>
+        <span class="card__t">구분선 리스트</span>
+        <span class="card__one">카드 껍데기를 전부 걷어낸다</span>
+        <span class="card__d">SEED <b>ListItem</b> 처럼 구분선만으로 선다.
+          같은 화면에 <b>일정이 두 배</b> 들어가고, 완료 묶음도 같은 화면에 남는다.</span>
+      </span>
+      <dl class="card__m">
+        <dt>바뀌는 것</dt><dd>한 화면 <b>3개 → 6개</b></dd>
+        <dt>위험</dt><dd>가장 사무적 — 할 일 앱처럼 읽힌다</dd>
+      </dl>
+    </a>
+  </div>
+
+  <p style="margin-top: var(--x6); font-size: var(--t4); line-height: 1.8; color: var(--fg-neutral-muted);">
+    2안을 고른 뒤 색을 얼마나 넣을지는 따로 봅니다 —
+    <a href="main-mobile-2-color.html" style="color: var(--fg-brand); font-weight: var(--w-bold);">2안 색 변형 3개 →</a>
+  </p>
+
+  <p class="close">
+    <b>다섯 안은 표면이 아니라 구조가 다르다.</b> 1안은 지금 순서를 그대로 두고
+    표면만 바꾸고, 2안은 무엇이 주인공인지를 바꾸고, 3안은 웹과 순서를 맞추고,
+    4안은 축을 시간으로 갈고, 5안은 밀도를 택한다. 섞어도 된다 — 예컨대
+    <b>1안의 표면 + 4안의 타임라인</b>, 또는 <b>3안의 스탯 행 + 5안의 목록</b>.
+    <br><br>
+    화면에 적힌 값(지수·현우 / D-74 / 3,580만 원 / 185만 원)은
+    <b><code>scripts/main-dashboard.cjs</code> 가 쓰는 하네스 픽스처</b> 그대로다.
+    지어낸 숫자가 아니다.
+  </p>
+</main>
+</body>
+</html>

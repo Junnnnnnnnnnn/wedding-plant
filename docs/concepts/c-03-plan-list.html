@@ -1,0 +1,158 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · C안 03 참여 플랜 · studied: yes · DNA-source: url (seed-design.io) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C안 03 · 참여 플랜 — /plan-list</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .plan { display: block; width: 100%; text-align: left;
+          background: var(--bg-layer-fill); border-radius: var(--r5);
+          padding: var(--x5); transition: background var(--d3) var(--ease); }
+  .plan:hover { background: var(--bg-neutral-weak-pressed); }
+  .plan__top { display: flex; align-items: center; gap: var(--x2); }
+  .plan__t { font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.02em; min-width: 0; }
+  .plan__sp { flex: 1; }
+  .plan__av { display: flex; }
+  .plan__a { width: 24px; height: 24px; border-radius: var(--r-full); display: grid;
+             place-items: center; font-size: 10px; font-weight: var(--w-bold);
+             color: var(--c-on-fill); background: var(--palette-brand-500);
+             border: 2px solid var(--bg-layer-fill); }
+  .plan__a + .plan__a { margin-left: -7px; background: var(--bg-neutral-inverted); }
+  .plan__a--3 { background: var(--fg-positive) !important; }
+  .plan__d { margin-top: var(--x1_5); font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .plan__num { margin-top: var(--x4); font-size: var(--t10); font-weight: var(--w-bold);
+               letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .plan__num small { font-size: var(--t4); }
+  .plan__sub { margin-top: var(--x1_5); font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .plan__tr { display: block; margin-top: var(--x3); height: 12px; border-radius: var(--r-full);
+              background: #f4eff2; overflow: hidden; }
+  .plan__bar { display: flex; height: 100%; }
+  .plan__used { width: 22%; background: var(--bg-brand-solid); }
+  .plan__plan { width: 15%; background: var(--fg-neutral-disabled); }
+  .plan__ch { margin-top: var(--x4); padding-top: var(--x4);
+              border-top: 1px solid var(--stroke-neutral-weak); }
+  .plan__chl { font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .ch { display: flex; align-items: center; gap: var(--x2); width: 100%; text-align: left;
+        margin-top: var(--x2); padding: var(--x2_5) var(--x3);
+        background: var(--bg-layer-default); border-radius: var(--r3);
+        transition: background var(--d3) var(--ease); }
+  .ch:hover { background: var(--bg-brand-weak); }
+  .ch__t { font-size: var(--t4); font-weight: var(--w-medium); min-width: 0; }
+  .ch__b { font-size: var(--t1); font-weight: var(--w-bold); color: var(--fg-brand-contrast);
+           background: var(--bg-brand-weak); border-radius: var(--r1); padding: 1px 5px; }
+  .ch__n { margin-left: auto; min-width: 18px; height: 18px; border-radius: var(--r-full);
+           background: var(--bg-brand-solid); color: var(--c-on-fill);
+           font-size: 10px; font-weight: var(--w-bold); display: grid; place-items: center; padding: 0 5px; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">C안 · 03</p>
+  <h1 class="page__title">참여 플랜</h1>
+  <p class="page__lede">
+    큰 제목과 부제가 면으로 올라가 <b>카드가 첫 화면에 두 장</b> 보입니다.
+    지금은 "참여 플랜 리스트 / 함께 가꾸는 소중한 결혼 준비 계획을" 이
+    화면의 4분의 1을 쓰고, 카드는 <b>한 장 반</b>만 보입니다.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">지금</span><span class="cmp__note">/plan-list · 실제 캡처</span></div>
+      <figure class="cmp__shot"><img src="shots/now-plan-list.png" alt="지금의 참여 플랜 화면"></figure>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">C안</span><span class="cmp__note">제목이 면으로</span></div>
+      <div class="c-screen">
+        <header class="c-head c-head--slim">
+          <div class="c-head__nav">
+            <span class="c-head__title">참여 플랜</span>
+            <span class="c-head__spacer"></span>
+            <button class="c-head__act" aria-label="가이드 보기">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3 2.45V14"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>
+            </button>
+          </div>
+          <p class="c-head__sub" style="margin-top: var(--x2)">함께 준비하는 플랜 2개 · 대화 5</p>
+        </header>
+
+        <div class="c-body">
+          <div class="c-cards" style="margin-top: 0; gap: var(--x3)">
+            <div class="plan">
+              <div class="plan__top">
+                <span class="plan__t">김지수의 웨딩 플랜</span>
+                <span class="plan__sp"></span>
+                <span class="plan__av"><span class="plan__a">김</span><span class="plan__a">박</span><span class="plan__a plan__a--3">엄</span></span>
+              </div>
+              <p class="plan__d">2026년 12월 31일 · D-120</p>
+              <p class="plan__num">2,860<small>만 원</small></p>
+              <p class="plan__sub">4,200만 원 중 남음</p>
+              <span class="plan__tr"><span class="plan__bar"><i class="plan__used"></i><i class="plan__plan"></i></span></span>
+              <div class="plan__ch">
+                <span class="plan__chl">대화 3</span>
+                <button class="ch"><span class="ch__t">스드메</span><span class="ch__b">신랑·신부</span><span class="ch__n">2</span></button>
+                <button class="ch"><span class="ch__t">본식 준비</span></button>
+                <button class="ch"><span class="ch__t">예물 · 예단</span></button>
+              </div>
+            </div>
+
+            <div class="plan">
+              <div class="plan__top">
+                <span class="plan__t">박현우의 웨딩 플랜</span>
+                <span class="plan__sp"></span>
+                <span class="plan__av"><span class="plan__a">박</span><span class="plan__a">김</span></span>
+              </div>
+              <p class="plan__d">2027년 3월 20일 · D-199</p>
+              <p class="plan__num">410<small>만 원</small></p>
+              <p class="plan__sub">900만 원 중 남음</p>
+              <span class="plan__tr"><span class="plan__bar"><i class="plan__used" style="width:40%"></i><i class="plan__plan" style="width:14%"></i></span></span>
+            </div>
+          </div>
+        </div>
+
+        <nav class="c-tabbar">
+          <a class="c-tab" href="#">홈</a>
+          <a class="c-tab" href="#">피드</a>
+          <a class="c-tab" aria-current="page" href="#">참여 플랜</a>
+          <a class="c-tab" href="#">Settings</a>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <h3>가장 큰 변화</h3>
+      <p>제목 블록이 <b>210px 에서 88px</b> 로 줄어듭니다. 부제
+        "함께 가꾸는 소중한 결혼 준비 계획을"은 화면이 뭘 하는지 이미
+        제목이 말하고 있어 <b>플랜 수·대화 수</b>로 바꿉니다.</p>
+    </div>
+    <div class="change">
+      <h3>이름 줄바꿈</h3>
+      <p>지금은 "김지수의 웨딩 / 플랜" 과 "2026년 12월 31일 · D- / 120" 이
+        <b>둘 다 두 줄로 끊깁니다</b>. 아바타를 제목 오른쪽으로 올리고 카드
+        여백을 줄이면 한 줄에 들어갑니다.</p>
+    </div>
+    <div class="change">
+      <h3>막대의 뜻</h3>
+      <p><b>분홍 = 실제 지출, 회색 = 아직 안 쓴 예정, 남은 트랙 = 여유.</b>
+        홈·웹과 같습니다. 예정 몫은 <code>/plan/room/list</code> 의
+        <code>plannedUseAmount</code> 를 씁니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>지키는 것</h3>
+      <p>카드에 <code>transform</code>(<code>active:scale</code>)을 붙이지
+        않습니다 — 안쪽 채팅방 줄을 누를 때 카드까지 줄어듭니다. 누른 느낌은
+        배경색으로 냅니다. 가이드 앵커
+        <code>#plan-list-header</code>·<code>#plan-card-0</code>·
+        <code>#plan-channels-0</code> 도 그대로 둡니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="c-index.html">← 전체 목차</a>
+</main>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · C안 10 온보딩 · studied: yes · DNA-source: url (seed-design.io) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C안 10 · 온보딩 — /setting</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .onb { display: flex; flex-direction: column; flex: 1; padding: var(--x5) var(--gutter) var(--x6); }
+  .prog { display: flex; align-items: center; gap: var(--x3); }
+  .prog__t { flex: 1; height: 4px; border-radius: var(--r-full); background: var(--bg-neutral-weak); overflow: hidden; }
+  .prog__f { display: block; height: 100%; width: 25%; background: var(--bg-brand-solid); }
+  .prog__n { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle);
+             font-variant-numeric: tabular-nums; }
+  .q { margin-top: var(--x10); }
+  .q__t { font-size: var(--t11); font-weight: var(--w-bold); letter-spacing: -0.04em; line-height: 1.3;
+          overflow-wrap: anywhere; min-width: 0; }
+  .q__d { margin-top: var(--x3); font-size: var(--t4); color: var(--fg-neutral-muted); line-height: 1.7; }
+  .wheel { margin-top: var(--x10); display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--x3); }
+  .wcol { text-align: center; }
+  .wcol__l { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle); }
+  .wcol__b { margin-top: var(--x2); background: var(--bg-layer-fill); border-radius: var(--r3);
+             overflow: hidden; }
+  .wv { padding: var(--x2_5) 0; font-size: var(--t5); color: var(--fg-neutral-disabled);
+        font-variant-numeric: tabular-nums; }
+  .wv--on { background: var(--bg-layer-default); color: var(--fg-neutral);
+            font-size: var(--t7); font-weight: var(--w-bold);
+            box-shadow: inset 0 0 0 1px var(--stroke-brand-weak); }
+  .grow { flex: 1; min-height: var(--x8); }
+  .hint { margin-top: var(--x3); text-align: center; font-size: var(--t3); color: var(--fg-neutral-subtle); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">C안 · 10</p>
+  <h1 class="page__title">온보딩</h1>
+  <p class="page__lede">
+    <b>면을 달지 않습니다.</b> 이 화면은 한 번에 하나씩 묻는 연출이고, 위에
+    분홍 덩어리가 붙으면 질문이 화면의 주인이 아니게 됩니다. 대신
+    <b>몇 개나 더 묻는지</b>를 진행 막대로 보여 주고, 입력 칸만 SEED 로 맞춥니다.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">지금</span><span class="cmp__note">/setting 1단계 · 실제 캡처</span></div>
+      <figure class="cmp__shot"><img src="shots/now-setting-date.png" alt="지금의 온보딩 날짜 단계"></figure>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">C안</span><span class="cmp__note">면 없음 · 진행 막대만</span></div>
+      <div class="c-screen c-screen--tall">
+        <div class="onb">
+          <div class="prog">
+            <span class="prog__t"><i class="prog__f"></i></span>
+            <span class="prog__n">1 / 4</span>
+          </div>
+
+          <div class="q">
+            <h2 class="q__t">결혼 날짜가<br>언제인가요</h2>
+            <p class="q__d">예신, 예랑님. 가장 빛날 그날까지 함께해요.</p>
+          </div>
+
+          <div class="wheel">
+            <div class="wcol">
+              <p class="wcol__l">년</p>
+              <div class="wcol__b">
+                <p class="wv">2025</p>
+                <p class="wv wv--on">2026</p>
+                <p class="wv">2027</p>
+              </div>
+            </div>
+            <div class="wcol">
+              <p class="wcol__l">월</p>
+              <div class="wcol__b">
+                <p class="wv">10</p>
+                <p class="wv wv--on">11</p>
+                <p class="wv">12</p>
+              </div>
+            </div>
+            <div class="wcol">
+              <p class="wcol__l">일</p>
+              <div class="wcol__b">
+                <p class="wv">13</p>
+                <p class="wv wv--on">14</p>
+                <p class="wv">15</p>
+              </div>
+            </div>
+          </div>
+
+          <p class="hint">2026년 11월 14일 토요일 · D-74</p>
+
+          <div class="grow"></div>
+
+          <button class="c-btn c-btn--primary">다음</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <h3>진행 막대를 답니다</h3>
+      <p>지금 폰에는 <b>몇 단계가 남았는지 아무 표시가 없습니다</b>. 웹은
+        <code>≥1024</code> 에서 좌측 패널에 남은 질문을 보여 주는데, 폰에서는
+        묻는 대로 따라가는 수밖에 없습니다. 4px 막대 하나면 <b>이탈이
+        줄어듭니다</b>.</p>
+    </div>
+    <div class="change">
+      <h3>다음 버튼</h3>
+      <p>지금은 값을 고르기 전에도 <b>흐린 분홍</b>으로 눌리게 보입니다.
+        고르기 전에는 회색(<code>disabled</code>), 고른 뒤에 진한 분홍으로
+        바꿉니다.</p>
+    </div>
+    <div class="change">
+      <h3>고른 값을 문장으로</h3>
+      <p>휠 아래에 <b>"2026년 11월 14일 토요일 · D-74"</b> 한 줄을 냅니다.
+        숫자 세 칸만 보고 요일과 남은 날을 머릿속에서 계산하게 두지 않습니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>지키는 것 — 단계 수</h3>
+      <p><b>회원은 5단계, 게스트는 4단계</b>입니다. 게스트는 방이 없어 공유
+        코드가 안 나오므로 <b>함께할 사람</b> 단계를 아예 내지 않습니다.
+        진행 막대의 분모도 여기서 갈립니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>지키는 것 — 초대는 약관 다음</h3>
+      <p>초대를 <b>약관 앞으로 옮기지 마세요.</b> 날짜·예산·이름은
+        <code>handleGoToMain</code> 의 <code>POST /plan/setting</code> 에서만
+        저장되고 그건 약관 다음입니다. 앞에 두면 초대받은 사람이 <b>빈 플랜</b>에
+        들어오고, 제3자 제공 동의 전에 접근 링크가 나갑니다.
+        하네스가 두 요청의 <b>순서</b>를 봅니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>지키는 것 — 연출 화면</h3>
+      <p>축하·환영·<b>출입증(Lanyard)</b> 은 전체 화면 연출이라 진행 막대를
+        달지 않고 단계로 세지도 않습니다. <code>components/Lanyard.tsx</code> 의
+        <code>window.innerWidth</code> 는 그대로 둡니다 —
+        <code>useMediaQuery</code> 로 바꾸면 모바일에서 물리 월드가 다시 잡힙니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="c-index.html">← 전체 목차</a>
+</main>
+</body>
+</html>

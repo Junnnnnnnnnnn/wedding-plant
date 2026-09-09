@@ -1,0 +1,188 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · C안 04 피드 · studied: yes · DNA-source: url (seed-design.io) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C안 04 · 피드 — /feed</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .post { display: block; width: 100%; text-align: left; padding: var(--x5) var(--gutter);
+          transition: background var(--d3) var(--ease); }
+  .post + .post { box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .post:hover { background: var(--bg-layer-fill); }
+  .post__amt { font-size: var(--t11); font-weight: var(--w-bold); letter-spacing: -0.045em;
+               line-height: 1; font-variant-numeric: tabular-nums; }
+  .post__amt--hidden { font-size: var(--t6); color: var(--fg-neutral-subtle); letter-spacing: -0.02em; }
+  .post__cat { margin-top: var(--x1_5); font-size: var(--t3); color: var(--fg-neutral-subtle); }
+  .post__biz { margin-top: var(--x3); display: flex; align-items: center; gap: var(--x2); flex-wrap: wrap; }
+  .post__name { font-size: var(--t5); font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .stars { font-size: var(--t3); color: #f5a623; letter-spacing: 1px; }
+  .post__loc { margin-top: var(--x1_5); display: flex; align-items: center; gap: var(--x1_5);
+               font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .post__map { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-brand); }
+  .post__txt { margin-top: var(--x3); font-size: var(--t4); line-height: 1.65; color: var(--fg-neutral); }
+  .post__by { margin-top: var(--x3); font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .post__acts { margin-top: var(--x3); display: flex; align-items: center; gap: var(--x2); }
+  .vote { display: inline-flex; align-items: center; gap: var(--x1_5);
+          font-size: var(--t3); font-weight: var(--w-bold); color: var(--fg-neutral-muted);
+          background: var(--bg-layer-fill); border-radius: var(--r-full);
+          padding: var(--x1_5) var(--x3); transition: background var(--d3) var(--ease); }
+  .vote:hover { background: var(--bg-neutral-weak-pressed); }
+  .vote--on { background: var(--bg-brand-weak); color: var(--fg-brand-contrast); }
+  .take { margin-left: auto; font-size: var(--t3); font-weight: var(--w-bold);
+          color: var(--fg-brand); }
+  .sorts { display: flex; gap: var(--gap-between-chips); padding: var(--x3) var(--gutter) 0; }
+  .sort { font-size: var(--t3); color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+  .sort[aria-pressed="true"] { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .strip { margin: var(--x4) var(--gutter) 0; display: flex; align-items: center; gap: var(--x3);
+           background: var(--bg-layer-fill); border-radius: var(--r3); padding: var(--x3) var(--x4);
+           font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .strip b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .strip__a { margin-left: auto; font-size: var(--t3); font-weight: var(--w-bold); color: var(--fg-brand); white-space: nowrap; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">C안 · 04</p>
+  <h1 class="page__title">피드</h1>
+  <p class="page__lede">
+    제목과 <b>내 후기 올리기</b>가 면으로 올라갑니다. 금액을 세로로 훑는
+    <b>한 줄 카드 설계(시안 D)는 그대로</b> 둡니다 — 이 화면에서 사람이 실제로
+    하는 일이 금액 비교라, 금액이 같은 x 좌표에 줄서야 합니다.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">지금</span><span class="cmp__note">/feed · 실제 캡처</span></div>
+      <figure class="cmp__shot"><img src="shots/now-feed.png" alt="지금의 피드 화면"></figure>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">C안</span><span class="cmp__note">카드 껍데기 제거</span></div>
+      <div class="c-screen">
+        <header class="c-head c-head--slim">
+          <div class="c-head__nav">
+            <span class="c-head__title">피드</span>
+            <span class="c-head__spacer"></span>
+            <button class="c-head__act" aria-label="내 후기 올리기">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+          <p class="c-head__sub" style="margin-top: var(--x2)">다른 커플은 얼마 썼을까</p>
+          <div class="c-inset">
+            <span class="c-inset__body">
+              <span class="c-inset__t">완료한 일정 1개를 아직 안 올렸어요</span>
+              <span class="c-inset__d">올리면 다른 커플의 후기도 더 잘 보입니다</span>
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
+          </div>
+        </header>
+
+        <div class="c-body c-body--flush" style="padding-top: var(--x4); gap: 0">
+          <div class="c-chips">
+            <button class="c-chip" aria-pressed="true">전체</button>
+            <button class="c-chip" aria-pressed="false">스드메</button>
+            <button class="c-chip" aria-pressed="false">웨딩홀</button>
+            <button class="c-chip" aria-pressed="false">예물 · 예단</button>
+            <button class="c-chip" aria-pressed="false">신혼여행</button>
+          </div>
+          <div class="sorts">
+            <button class="sort" aria-pressed="true">최신순</button>
+            <button class="sort" aria-pressed="false">도움순</button>
+            <button class="sort" aria-pressed="false">낮은 금액순</button>
+          </div>
+
+          <div style="margin-top: var(--x4)">
+            <article class="post">
+              <p class="post__amt">1,111만 원</p>
+              <p class="post__cat">웨딩홀</p>
+              <div class="post__biz"><span class="post__name">SG 웨딩홀</span><span class="stars">★★★★☆</span></div>
+              <p class="post__loc">서울 강남구 테헤란로 152 <span class="post__map">카카오맵</span></p>
+              <p class="post__txt">하객 200명 기준 식대 포함. 주차가 넉넉해요.</p>
+              <p class="post__by">D-131 신부 · 3일 전</p>
+              <div class="post__acts">
+                <button class="vote">도움이 돼요 24</button>
+                <button class="vote" aria-label="도움이 안 돼요">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 14V3M3 12.5 4.8 18a2 2 0 0 0 1.9 1.4H13l-.6 3a1.6 1.6 0 0 0 2.9 1.2"/></svg>
+                </button>
+                <button class="take">내 플랜에 담기</button>
+              </div>
+            </article>
+
+            <article class="post">
+              <p class="post__amt">385만 원</p>
+              <p class="post__cat">스드메</p>
+              <div class="post__biz"><span class="post__name">아뜰리에 진</span><span class="stars">★★★★★</span></div>
+              <p class="post__loc">서울 강남구 도산대로 430 <span class="post__map">카카오맵</span></p>
+              <p class="post__txt">드레스 3벌 + 본식 스냅. 헬퍼비 25만원은 따로입니다.</p>
+              <p class="post__by">D-88 신랑 · 1주 전</p>
+              <div class="post__acts">
+                <button class="vote vote--on">도움이 돼요 61</button>
+                <button class="vote" aria-label="도움이 안 돼요">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 14V3M3 12.5 4.8 18a2 2 0 0 0 1.9 1.4H13l-.6 3a1.6 1.6 0 0 0 2.9 1.2"/></svg>
+                </button>
+                <button class="take">내 플랜에 담기</button>
+              </div>
+            </article>
+
+            <article class="post">
+              <p class="post__amt post__amt--hidden">금액 비공개</p>
+              <p class="post__cat">예물 · 예단</p>
+              <div class="post__biz"><span class="post__name">종로 3가 귀금속</span><span class="stars">★★★☆☆</span></div>
+              <p class="post__txt">가격은 밝히기 어렵지만 세 군데 비교하고 가면 다릅니다.</p>
+              <p class="post__by">결혼식 12일 뒤 예비부부 · 2026. 7. 24.</p>
+            </article>
+          </div>
+        </div>
+
+        <nav class="c-tabbar">
+          <a class="c-tab" href="#">홈</a>
+          <a class="c-tab" aria-current="page" href="#">피드</a>
+          <a class="c-tab" href="#">참여 플랜</a>
+          <a class="c-tab" href="#">Settings</a>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <h3>카드 껍데기 제거</h3>
+      <p>지금은 후기마다 흰 카드 + 그림자 + 16px 여백이 붙어, 한 화면에
+        <b>후기 두 개 반</b>만 들어갑니다. 구분선으로 바꾸면 <b>네 개</b>가
+        보이고, 금액을 위아래로 훑기가 쉬워집니다.</p>
+    </div>
+    <div class="change">
+      <h3>안 올린 일정 띠</h3>
+      <p>지금은 목록 위 분홍 띠라 <b>보러 온 후기가 한 화면 아래로 밀립니다</b>.
+        면 안으로 넣으면 계속 상기시키면서도 목록을 밀지 않습니다 —
+        공급이 이 기능의 생사입니다.</p>
+    </div>
+    <div class="change">
+      <h3>정렬</h3>
+      <p>알약 세 개를 <b>글자</b>로 낮춥니다. 카테고리 칩과 같은 모양이라
+        지금은 둘이 같은 층위로 보이는데, 카테고리는 <b>무엇을</b>,
+        정렬은 <b>어떻게</b> 라 성격이 다릅니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>절대 지키는 것</h3>
+      <p><b>"도움이 안 돼요" 수는 화면에 내지 않습니다.</b> 정직하게 올린 후기에
+        숫자가 박히면 다음 사람이 안 올립니다. 정렬과 어뷰징 감지에만 씁니다.
+        <b>비공개 금액은 <code>amount</code> 필드 자체가 없습니다</b> —
+        <code>?? 0</code> 으로 채우면 "0원"으로 그려집니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>목록에 지도를 깔지 않습니다</h3>
+      <p>장소 줄은 <b>도로명 주소 한 줄 + 카카오맵 링크</b>입니다. 카드마다
+        작은 지도를 붙이면 금액을 세로로 훑는 설계가 깨지고 staticmap 쿼터가
+        붙습니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="c-index.html">← 전체 목차</a>
+</main>
+</body>
+</html>

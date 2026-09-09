@@ -1,0 +1,248 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P4 H5 E4 S5 R5 V5 -->
+<!-- Hallmark · main 모바일 3안 · 스탯 행 + 세그먼트 · tone: technical
+     studied: yes · DNA-source: url (seed-design.io) · SEED SegmentedControl 인용 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3안 · 스탯 행 + 세그먼트 — main 모바일</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<style>
+  .app { display: flex; flex-direction: column; flex: 1; background: var(--bg-layer-default); }
+  .nav {
+    padding: var(--x4) var(--gutter); display: flex; align-items: center; gap: var(--x2);
+    border-bottom: 1px solid var(--stroke-neutral-muted);
+  }
+  .nav__couple { font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.02em; }
+  .nav__date { font-size: var(--t2); color: var(--fg-neutral-subtle); margin-left: var(--x2); }
+  .nav__spacer { flex: 1; }
+  .avatars { display: flex; }
+  .avatar {
+    width: 26px; height: 26px; border-radius: var(--r-full); display: grid; place-items: center;
+    font-size: var(--t1); font-weight: var(--w-bold); color: var(--fg-neutral-inverted);
+    border: 2px solid var(--bg-layer-default);
+  }
+  .avatar--1 { background: var(--palette-brand-500); }
+  .avatar--2 { background: var(--bg-neutral-inverted); margin-left: -8px; }
+
+  /* ── 스탯 두 칸 ── 웹 대시보드 상단 바를 폰 폭으로 접은 것 */
+  .stats {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-bottom: 1px solid var(--stroke-neutral-muted);
+  }
+  .stat { padding: var(--x5) var(--gutter); }
+  .stat + .stat { border-left: 1px solid var(--stroke-neutral-muted); }
+  .stat__l { font-size: var(--t2); color: var(--fg-neutral-muted); font-weight: var(--w-medium); }
+  .stat__v {
+    margin-top: var(--x1); font-size: var(--t11); font-weight: var(--w-bold);
+    letter-spacing: -0.04em; line-height: 1.05; font-variant-numeric: tabular-nums;
+  }
+  .stat__v small { font-size: var(--t4); font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .stat__d { margin-top: var(--x1_5); font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .stat--brand .stat__v { color: var(--fg-brand); }
+  .stat__track {
+    display: block; margin-top: var(--x2); height: 4px; border-radius: var(--r-full);
+    background: var(--bg-neutral-weak); overflow: hidden;
+  }
+  .stat__fill { display: block; height: 100%; width: 15%; background: var(--bg-brand-solid); }
+
+  /* ── SEED SegmentedControl ── fill 트랙 위에 흰 알약이 미끄러진다 */
+  .seg-wrap { padding: var(--x4) var(--gutter) 0; }
+  .seg {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--x0_5);
+    background: var(--bg-layer-fill); border-radius: var(--r2_5); padding: 3px;
+  }
+  .seg__b {
+    font-size: var(--t4); font-weight: var(--w-medium); color: var(--fg-neutral-muted);
+    padding: var(--x1_5) 0; border-radius: var(--r2);
+    transition: background var(--d3) var(--ease), color var(--d3) var(--ease);
+  }
+  .seg__b[aria-selected="true"] {
+    background: var(--bg-layer-default); color: var(--fg-neutral); font-weight: var(--w-bold);
+    box-shadow: var(--s1);
+  }
+  .seg__n { font-variant-numeric: tabular-nums; color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+  .seg__b[aria-selected="true"] .seg__n { color: var(--fg-brand); }
+
+  .toolbar {
+    display: flex; align-items: center; gap: var(--gap-between-chips);
+    padding: var(--x4) var(--gutter) var(--x3); overflow-x: auto; scrollbar-width: none;
+  }
+  .toolbar::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; font-size: var(--t3); font-weight: var(--w-medium); color: var(--fg-neutral-muted);
+    background: var(--bg-layer-fill); border-radius: var(--r-full); padding: var(--x1_5) var(--x3);
+    transition: background var(--d3) var(--ease), color var(--d3) var(--ease);
+  }
+  .chip[aria-pressed="true"] { background: var(--bg-neutral-solid); color: var(--fg-neutral-inverted); font-weight: var(--w-bold); }
+  .chip:hover:not([aria-pressed="true"]) { background: var(--bg-neutral-weak-pressed); }
+
+  .body { flex: 1; padding-bottom: var(--pad-screen-bottom); }
+  .item {
+    display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: var(--x3);
+    align-items: center; width: 100%; text-align: left;
+    padding: var(--x4) var(--gutter);
+    border-bottom: 1px solid var(--stroke-neutral-subtle);
+    transition: background var(--d3) var(--ease);
+  }
+  .item:hover, .item.is-hover { background: var(--bg-layer-fill); }
+  .check { width: 20px; height: 20px; border-radius: var(--r-full); border: 1.5px solid var(--stroke-neutral-weak); }
+  .item__t { display: block; font-size: var(--t5); font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .item__m { display: block; margin-top: 3px; font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .item__amt { font-size: var(--t5); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; text-align: right; }
+  .item__amt small { display: block; font-size: var(--t1); font-weight: var(--w-medium); color: var(--fg-neutral-subtle); }
+  .item__amt--none { color: var(--fg-neutral-subtle); font-size: var(--t4); font-weight: var(--w-medium); }
+
+  .fabrow { padding: var(--x4) var(--gutter); }
+  .cta {
+    display: flex; align-items: center; justify-content: center; gap: var(--x2); width: 100%;
+    background: var(--bg-brand-solid); color: var(--fg-neutral-inverted);
+    font-size: var(--t5); font-weight: var(--w-bold); border-radius: var(--r3);
+    padding: var(--x4) 0;
+    transition: background var(--d3) var(--ease), transform var(--d2) var(--ease-pressed);
+  }
+  .cta:hover, .cta.is-hover { background: var(--bg-brand-solid-pressed); }
+  .cta:active, .cta.is-active { transform: scale(0.985); }
+
+  .tabbar {
+    background: var(--bg-layer-floating); border-top: 1px solid var(--stroke-neutral-muted);
+    display: grid; grid-template-columns: repeat(4, 1fr); padding: var(--x2) 0 var(--x4);
+  }
+  .tab { display: grid; justify-items: center; font-size: var(--t1); color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+  .tab[aria-current="page"] { color: var(--fg-brand); font-weight: var(--w-bold); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">main 모바일 · 3안</p>
+  <h1 class="page__title">스탯 행 + 세그먼트</h1>
+  <p class="page__lede">
+    웹 대시보드의 <b>상단 바 + 3열</b>을 폰 폭으로 접은 안이다. D-day 와 남은
+    예산을 <b>같은 크기의 두 칸</b>으로 나란히 세우고, 그 아래는 SEED 의
+    <b>SegmentedControl</b> 로 계획 중 / 완료를 가른다. 폰과 웹이 같은 정보를
+    같은 순서로 낸다.
+  </p>
+
+  <div class="page__cols">
+    <div class="screen">
+      <div class="app">
+        <header class="nav">
+          <h2 class="nav__couple">지수 · 현우</h2>
+          <span class="nav__date">11월 14일 (토)</span>
+          <span class="nav__spacer"></span>
+          <div class="avatars">
+            <span class="avatar avatar--1">김</span>
+            <span class="avatar avatar--2">박</span>
+          </div>
+        </header>
+
+        <div class="stats">
+          <div class="stat">
+            <p class="stat__l">결혼식까지</p>
+            <p class="stat__v">74<small>일</small></p>
+            <p class="stat__d">2026. 11. 14</p>
+          </div>
+          <div class="stat stat--brand">
+            <p class="stat__l">남은 예산</p>
+            <p class="stat__v">3,580<small>만</small></p>
+            <span class="stat__track"><i class="stat__fill"></i></span>
+            <p class="stat__d">4,200만 중 620만 씀</p>
+          </div>
+        </div>
+
+        <div class="seg-wrap">
+          <div class="seg" role="tablist">
+            <button class="seg__b" role="tab" aria-selected="true">계획 중 <span class="seg__n">5</span></button>
+            <button class="seg__b" role="tab" aria-selected="false">완료 <span class="seg__n">1</span></button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="chip" aria-pressed="true">전체</button>
+          <button class="chip" aria-pressed="false">스드메</button>
+          <button class="chip" aria-pressed="false">예물</button>
+          <button class="chip" aria-pressed="false">청첩장</button>
+          <button class="chip" aria-pressed="false">신혼여행</button>
+        </div>
+
+        <div class="body">
+          <button class="item">
+            <span class="check"></span>
+            <span>
+              <span class="item__t">본식 촬영</span>
+              <span class="item__m">스드메 · 9월 12일 (토)</span>
+            </span>
+            <span class="item__amt">185<small>만 원</small></span>
+          </button>
+          <button class="item">
+            <span class="check"></span>
+            <span>
+              <span class="item__t">예물 상담</span>
+              <span class="item__m">예물 · 9월 27일 (일)</span>
+            </span>
+            <span class="item__amt item__amt--none">미정</span>
+          </button>
+          <button class="item">
+            <span class="check"></span>
+            <span>
+              <span class="item__t">청첩장 발송</span>
+              <span class="item__m">청첩장 · 10월 10일 (토)</span>
+            </span>
+            <span class="item__amt item__amt--none">미정</span>
+          </button>
+
+          <div class="fabrow">
+            <button class="cta">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+              플랜 추가
+            </button>
+          </div>
+        </div>
+
+        <nav class="tabbar">
+          <a class="tab" aria-current="page" href="#">홈</a>
+          <a class="tab" href="#">피드</a>
+          <a class="tab" href="#">참여 플랜</a>
+          <a class="tab" href="#">Settings</a>
+        </nav>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="note note--cite">
+        <h3>SEED 에서 가져온 것</h3>
+        <ul>
+          <li><b>SegmentedControl</b> — <code>bg-layer-fill</code> 트랙 안에
+            흰 알약. 지금의 큼직한 흰 카드 두 장(계획 중 / 완료)보다 세로를
+            60px 가까이 아낀다.</li>
+          <li><b>stroke-neutral-subtle</b> — 목록 구분선. 카드 사이 여백 대신
+            <code>#0000000c</code> 헤어라인 하나로 끊는다.</li>
+          <li><b>t11 / t1</b> 대비 — 숫자는 28px, 단위는 11px. SEED 의 스케일이
+            이런 큰 낙차를 이미 갖고 있다.</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h3>지금과 무엇이 달라지나</h3>
+        <p>D-day 와 예산이 <b>같은 층위</b>가 된다. 지금은 D-74 가 작은 알약,
+          예산이 화면 3분의 1이라 크기 차이가 20배쯤 난다. 둘 다 "지금 상태"를
+          말하는 값인데 한쪽만 소리치고 있다.</p>
+      </div>
+      <div class="note">
+        <h3>웹과 이어지는 지점</h3>
+        <p>5안 중 <b>웹 대시보드와 가장 닮은</b> 안이다. 폰에서 이 순서에
+          익숙해진 사람이 태블릿을 열면 같은 것이 옆으로 펼쳐진다.</p>
+      </div>
+      <div class="note">
+        <h3>가장 큰 위험</h3>
+        <p>상단이 <b>계기판처럼</b> 읽힌다. 실용적이지만 결혼 준비 앱의 정서와
+          가장 먼 쪽이고, 숫자 두 개가 나란히 서면 어느 쪽을 봐야 하는지
+          잠깐 망설이게 된다.</p>
+      </div>
+    </div>
+  </div>
+
+  <a class="backlink" href="main-mobile-index.html">← 시안 5개 목차</a>
+</main>
+</body>
+</html>

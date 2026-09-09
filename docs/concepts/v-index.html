@@ -1,0 +1,261 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · 검증 목차 · 시안 ↔ 실제 구현 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C안 구현 검증 — 시안 ↔ 실제</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .row { margin-top: var(--x8); display: grid; gap: var(--x6);
+         grid-template-columns: 375px minmax(0, 1fr); align-items: start; }
+  @media (max-width: 860px) { .row { grid-template-columns: minmax(0, 1fr); } }
+  .row + .row { padding-top: var(--x8); border-top: 1px solid var(--stroke-neutral-weak); }
+  .shot { width: 375px; max-width: 100%; border: 1px solid var(--stroke-neutral-weak);
+          border-radius: var(--r6); overflow: hidden; background: var(--bg-layer-default); }
+  .shot img { display: block; width: 100%; height: auto; }
+  .meta__n { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle);
+             letter-spacing: 0.04em; }
+  .meta__t { margin-top: var(--x1); font-size: var(--t8); font-weight: var(--w-bold);
+             letter-spacing: -0.03em; }
+  .meta__r { margin-top: 2px; font-size: var(--t2); color: var(--fg-neutral-subtle);
+             font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .meta__d { margin-top: var(--x4); font-size: var(--t4); line-height: 1.75; color: var(--fg-neutral-muted); }
+  .meta__d b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .meta__links { margin-top: var(--x4); display: flex; flex-wrap: wrap; gap: var(--x2); }
+  .lk { font-size: var(--t3); font-weight: var(--w-bold); color: var(--fg-brand);
+        background: var(--bg-brand-weak); border-radius: var(--r-full);
+        padding: var(--x1_5) var(--x3); }
+  .lk:hover { background: var(--bg-brand-weak-pressed); }
+  .lk--n { color: var(--fg-neutral-muted); background: var(--bg-layer-fill); }
+  .tags { margin-top: var(--x4); display: flex; flex-wrap: wrap; gap: var(--x2); }
+  .tag2 { font-size: var(--t2); font-weight: var(--w-bold); border-radius: var(--r1);
+          padding: 2px var(--x2); background: var(--bg-positive-weak); color: var(--fg-positive); }
+  .tag2--open { background: var(--bg-warning-weak); color: var(--fg-warning); }
+
+  .banner { margin-top: var(--x8); padding: var(--x5) var(--x6);
+            background: var(--bg-layer-default); border: 1px solid var(--stroke-neutral-weak);
+            border-radius: var(--r4); font-size: var(--t4); line-height: 1.8;
+            color: var(--fg-neutral-muted); }
+  .banner b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .banner code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--t2);
+                 background: var(--bg-layer-fill); border: 1px solid var(--stroke-neutral-muted);
+                 border-radius: var(--r1); padding: 1px 5px; }
+  .banner--warn { background: var(--bg-warning-weak); border-color: #f0e2b4; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">검증 · 시안 ↔ 실제</p>
+  <h1 class="page__title">C안을 실제로 적용했습니다</h1>
+  <p class="page__lede">
+    아래 캡처는 전부 <b>고친 앱을 375px 에서 실제로 찍은 것</b>입니다
+    (시안 그림이 아닙니다). 화면마다 <b>그 화면의 하네스를 돌려</b> 가이드
+    앵커·요청·분기가 그대로인지 확인했습니다.
+  </p>
+
+  <div class="banner">
+    <b>전체에 걸린 결정 — 점 패턴을 뺐습니다.</b> SEED 기준으로 표면은
+    <code>layer-default</code>(흰) · <code>fill</code> · <code>basement</code>
+    세 단계뿐이라, 셸을 쓰는 여섯 화면과 온보딩·로그인에서
+    <code>grid-bg</code> 를 걷어냈습니다. 점이 깔리면 카드와 바탕의 층 차이가
+    흐려져 무엇이 위에 있는지 안 보입니다.
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-main.png"><img src="shots/real-main.png" alt="홈"></a>
+    <div>
+      <p class="meta__n">01</p>
+      <p class="meta__t">홈</p>
+      <p class="meta__r">/main</p>
+      <p class="meta__d">첫 스냅 구간이 통째로 <b>화면 머리 면</b>이 됐습니다.
+        예산 카드가 칠하던 그라데이션을 면이 맡고, 카드는 <b>면을 파낸 흰 반투명
+        상자</b>가 됩니다 — 같은 색 덩어리가 면 위에 또 뜨면 어느 쪽을 봐야 할지
+        알 수 없어집니다. D-day 알약도 분홍 위 분홍이라 흰 반투명으로 바꿨습니다.</p>
+      <p class="meta__d"><b>목록을 시간으로 나눴습니다.</b> 카테고리 칩 대신
+        목록 안에 <b>지났어요 · 이번 달 · 다음 달 · 그 다음 · 날짜 미정</b>
+        머리글을 냅니다 — 새 조작을 만들지 않아 한 번에 다 보입니다.
+        그리고 기본 정렬을 <b>다가오는 순</b>으로 바꿨습니다. 예전 기본값은
+        최신순이라 <b>지난 일정이 목록 맨 아래에 묻혀</b> 있었습니다(캡처의
+        "지났어요 · 확인해 주세요" 두 건이 그것입니다).</p>
+      <div class="tags"><span class="tag2">가이드 앵커 5폭 전부 정상</span><span class="tag2">스냅 경계·초대 띠 유지</span><span class="tag2">시간 머리글 · 다가오는 순</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-01-main.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-schedule-detail.png"><img src="shots/real-schedule-detail.png" alt="일정 상세"></a>
+    <div>
+      <p class="meta__n">06</p>
+      <p class="meta__t">일정 상세</p>
+      <p class="meta__r">/schedule-detail</p>
+      <p class="meta__d">히어로가 <b>떠 있는 카드에서 화면 머리 면</b>으로.
+        회전 주황 스티커 → <b>상태 알약</b>. 없던 <b>완료로 표시</b>를 냈습니다 —
+        "끝났나?"를 판단할 정보가 다 여기 있는데 상태는 여기서 못 바꿨습니다.</p>
+      <div class="tags"><span class="tag2">plan-board.cjs 통과</span><span class="tag2">상태 표시=NORMAL</span></div>
+      <div class="meta__links">
+        <a class="lk" href="v-06-schedule-detail.html">시안 ↔ 실제 자세히</a>
+        <a class="lk lk--n" href="c-06-schedule-detail.html">시안</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-user.png"><img src="shots/real-user.png" alt="프로필"></a>
+    <div>
+      <p class="meta__n">09</p>
+      <p class="meta__t">프로필</p>
+      <p class="meta__r">/user</p>
+      <p class="meta__d">폰만 <b>분홍 머리 면</b>, ≥768 은 흰 머리글 띠 그대로.
+        갈 곳 없던 <b>X 제거</b>, D-day 를 문장으로, 입력 칸을
+        <b>SEED 채움 필드</b>로.</p>
+      <div class="tags"><span class="tag2">misc-pages.cjs 통과</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-09-user.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-login.png"><img src="shots/real-login.png" alt="로그인"></a>
+    <div>
+      <p class="meta__n">11a</p>
+      <p class="meta__t">로그인</p>
+      <p class="meta__r">/login</p>
+      <p class="meta__d">문이라 면을 <b>화면 전체로</b> 폈습니다. 점 패턴과
+        뿌연 원 두 개를 걷어냈습니다. 카카오 노랑은 그대로 — 카카오가 정한 색입니다.</p>
+      <div class="tags"><span class="tag2">session-entry.cjs 통과</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-11-doors.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-share.png"><img src="shots/real-share.png" alt="초대 수락"></a>
+    <div>
+      <p class="meta__n">11b</p>
+      <p class="meta__t">초대 수락</p>
+      <p class="meta__r">/share/[code]</p>
+      <p class="meta__d"><b>가장 크게 바뀐 화면입니다.</b> 회색 위 "로그인해
+        주세요" 모달 하나에서, <b>누가 왜 불렀는지</b>를 먼저 보여 주는 화면으로.
+        <code>?as=spouse</code> 는 URL 에 있으니 로그인 전에도 역할을 말할 수
+        있습니다. 나가는 길(<b>지금은 그냥 둘러볼게요</b>)도 냈습니다.</p>
+      <div class="tags"><span class="tag2">GuestGate 통과 유지</span><span class="tag2--open tag2">초대자 이름·날짜는 공개 API 필요</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-11-doors.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-plan-list.png"><img src="shots/real-plan-list.png" alt="참여 플랜"></a>
+    <div>
+      <p class="meta__n">03</p>
+      <p class="meta__t">참여 플랜</p>
+      <p class="meta__r">/plan-list</p>
+      <p class="meta__d">제목 블록이 <b>210px → 88px</b>. 부제를
+        <b>함께 준비하는 플랜 N개</b>로 바꿔 카드가 첫 화면에 더 들어옵니다.</p>
+      <div class="tags"><span class="tag2">가이드 앵커 4폭 정상</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-03-plan-list.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-budget.png"><img src="shots/real-budget.png" alt="예산 상세"></a>
+    <div>
+      <p class="meta__n">05</p>
+      <p class="meta__t">예산 상세</p>
+      <p class="meta__r">/budget-detail</p>
+      <p class="meta__d">면에는 <b>초기 자본만</b>. 남은 금액은 도넛이 계속
+        맡습니다 — <b>두 번째 잔액 숫자를 만들지 않습니다</b>. 카드 위에 떠 있던
+        뒤로가기 알약이 면 안으로 들어갔습니다.</p>
+      <div class="tags"><span class="tag2">앵커 4개 · 2열 분기 정상</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-05-budget.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-calendar.png"><img src="shots/real-calendar.png" alt="캘린더"></a>
+    <div>
+      <p class="meta__n">02</p>
+      <p class="meta__t">캘린더</p>
+      <p class="meta__r">/calendar</p>
+      <p class="meta__d">달 이동과 <b>이번 달 합계</b>가 한 덩이 면으로.
+        합계는 값이 없어도 폰에서 <b>면의 아래 끝</b>을 맡습니다 — 조건부로 빼면
+        각진 이음매가 생깁니다(한 번 그렇게 나와 고쳤습니다).</p>
+      <div class="tags"><span class="tag2">plan-board.cjs 통과</span><span class="tag2">FAB → 머리 면 +</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-02-calendar.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-feed.png"><img src="shots/real-feed.png" alt="피드"></a>
+    <div>
+      <p class="meta__n">04</p>
+      <p class="meta__t">피드</p>
+      <p class="meta__r">/feed</p>
+      <p class="meta__d">제목과 <b>내 후기 올리기</b>가 면으로. 금액을 세로로
+        훑는 <b>한 줄 카드 설계는 손대지 않았습니다</b>.</p>
+      <div class="tags"><span class="tag2">투표·프리필·비공개 금액 통과</span><span class="tag2">카드 → 구분선</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-04-feed.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-add-plen.png"><img src="shots/real-add-plen.png" alt="플랜 추가"></a>
+    <div>
+      <p class="meta__n">07</p>
+      <p class="meta__t">플랜 추가</p>
+      <p class="meta__r">/add-plen</p>
+      <p class="meta__d">떠 있던 뒤로가기 알약 + 32px/42px 두 줄 제목이
+        <b>면 하나</b>로 합쳐졌습니다. 화면 위쪽 200px 가까이를 벌어 첫 입력 칸이
+        올라옵니다. <b>단계형 흐름은 그대로</b>입니다.</p>
+      <div class="tags"><span class="tag2">단계형 흐름 유지</span><span class="tag2">카드 8장 → 시트 한 장</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-07-add-plen.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-chat.png"><img src="shots/real-chat.png" alt="채팅방"></a>
+    <div>
+      <p class="meta__n">08</p>
+      <p class="meta__t">채팅방</p>
+      <p class="meta__r">/chat/[id]</p>
+      <p class="meta__d">머리글이 면으로. <b>말풍선은 손대지 않았습니다</b> —
+        지금도 내 것만 분홍입니다. pane(웹)은 옆 목록이 흰 바탕이라
+        예전 흰 머리글을 유지합니다.</p>
+      <div class="tags"><span class="tag2">pane 분기 유지</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-08-chat.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a class="shot" href="shots/real-setting.png"><img src="shots/real-setting.png" alt="온보딩"></a>
+    <div>
+      <p class="meta__n">10</p>
+      <p class="meta__t">온보딩</p>
+      <p class="meta__r">/setting</p>
+      <p class="meta__d"><b>면을 달지 않았습니다</b> — 한 번에 하나씩 묻는
+        연출이라 위에 분홍 덩어리가 붙으면 질문이 화면의 주인이 아니게 됩니다.
+        대신 폰에 없던 <b>진행 막대</b>를 냈습니다(질문 단계에만, 연출 화면 제외).</p>
+      <div class="tags"><span class="tag2">회원 5단계 · 게스트 4단계</span><span class="tag2">요청 순서 · ?as=spouse 통과</span></div>
+      <div class="meta__links"><a class="lk lk--n" href="c-10-setting.html">시안</a></div>
+    </div>
+  </div>
+
+  <div class="banner">
+    <b>본문 시각 언어까지 시안에 맞췄습니다.</b> 머리 면·구조에 이어
+    카드 속까지 SEED 로 바꿨습니다 — 흰 카드+그림자 → <code>#f7f8f9</code>
+    채움, 파스텔 아이콘 타일 제거, 카테고리를 분홍 칩으로, 중립색을
+    <code>#1a1c20 / #555d6d / #868b94</code> 로, 그림자는 떠 있는 것에만.
+    쓰지 않게 된 헬퍼 5개(<code>getCategoryColor</code>·
+    <code>getDateStatusLabel</code>·<code>PastDateIndicator</code> 등)도
+    지웠습니다.
+    <br><br>
+    <b>검증 중에 기존 문제도 하나 찾았습니다.</b>
+    <code>scripts/guest-flow.cjs</code> 의 "카테고리 선택" 단계가 실패하는데,
+    <b>제 변경 전 깨끗한 트리에서도 똑같이 실패</b>합니다(확인함). 하네스가
+    지금 폼과 어긋난 것으로 보이며, 리디자인과는 별개 건입니다.
+  </div>
+
+  <a class="backlink" href="c-index.html">← 시안 전체 목차</a>
+</main>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V5 -->
+<!-- Hallmark · main 모바일 2안 · 콜아웃 · tone: utilitarian
+     studied: yes · DNA-source: url (seed-design.io) · SEED Callout / ActionableCallout 인용 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2안 · 콜아웃 — main 모바일</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<style>
+  .app { display: flex; flex-direction: column; flex: 1; background: var(--bg-layer-default); }
+  .nav {
+    padding: var(--x4) var(--gutter) var(--x3);
+    display: flex; align-items: center; gap: var(--x2);
+  }
+  .nav__couple { font-size: var(--t7); font-weight: var(--w-bold); letter-spacing: -0.03em; }
+  .nav__spacer { flex: 1; }
+  .avatars { display: flex; }
+  .avatar {
+    width: 26px; height: 26px; border-radius: var(--r-full); display: grid; place-items: center;
+    font-size: var(--t1); font-weight: var(--w-bold); color: var(--fg-neutral-inverted);
+    border: 2px solid var(--bg-layer-default);
+  }
+  .avatar--1 { background: var(--palette-brand-500); }
+  .avatar--2 { background: var(--bg-neutral-inverted); margin-left: -8px; }
+
+  /* ── 제목이 이 화면의 주인 ── 남은 날짜를 문장으로 말한다 */
+  .lede { padding: var(--x2) var(--gutter) var(--x6); }
+  .lede__big {
+    font-size: var(--t12); font-weight: var(--w-bold); letter-spacing: -0.045em; line-height: 1.15;
+    overflow-wrap: anywhere; min-width: 0;
+  }
+  .lede__big em { font-style: normal; color: var(--fg-brand); }
+  .lede__sub { margin-top: var(--x2); font-size: var(--t4); color: var(--fg-neutral-muted); }
+
+  /* ── SEED ActionableCallout ── 약한 배경 + 아이콘 + 한 줄 + 화살표 */
+  .callout {
+    display: flex; align-items: center; gap: var(--x3); width: 100%; text-align: left;
+    margin: 0 var(--gutter); width: calc(100% - var(--gutter) * 2);
+    background: var(--bg-brand-weak); border-radius: var(--r3);
+    padding: var(--x3) var(--x4);
+    transition: background var(--d3) var(--ease);
+  }
+  .callout:hover, .callout.is-hover { background: var(--bg-brand-weak-pressed); }
+  .callout__ico { color: var(--fg-brand); display: grid; place-items: center; flex: 0 0 auto; }
+  .callout__body { min-width: 0; flex: 1; }
+  .callout__t { display: block; font-size: var(--t4); font-weight: var(--w-bold); color: var(--fg-neutral); }
+  .callout__t b { color: var(--fg-brand-contrast); font-variant-numeric: tabular-nums; }
+  .callout__d { display: block; margin-top: 2px; font-size: var(--t2); color: var(--fg-neutral-muted); }
+  .callout__arrow { color: var(--fg-brand); flex: 0 0 auto; }
+
+  /* ── 이번 주 ── 화면의 대부분을 여기에 준다 */
+  .body { flex: 1; padding: var(--x6) 0 var(--pad-screen-bottom); display: grid; gap: var(--x6); align-content: start; }
+  .sec__head {
+    padding: 0 var(--gutter); display: flex; align-items: baseline; gap: var(--x2);
+  }
+  .sec__t { font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.02em; }
+  .sec__n { font-size: var(--t3); color: var(--fg-neutral-subtle); font-variant-numeric: tabular-nums; }
+  .sec__spacer { flex: 1; }
+  .sec__more { font-size: var(--t3); color: var(--fg-neutral-muted); font-weight: var(--w-medium); }
+
+  /* 큰 할 일 카드 — fill 레이어 위에 */
+  .big { margin: var(--gap-component) var(--gutter) 0; display: grid; gap: var(--x2); }
+  .task {
+    display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: var(--x3); align-items: start;
+    width: 100%; text-align: left;
+    background: var(--bg-layer-fill); border-radius: var(--r4); padding: var(--x4);
+    transition: background var(--d3) var(--ease), transform var(--d2) var(--ease-pressed);
+  }
+  .task:hover, .task.is-hover { background: var(--bg-neutral-weak-pressed); }
+  .task:active, .task.is-active { transform: scale(0.99); }
+  .check {
+    width: 22px; height: 22px; border-radius: var(--r-full);
+    border: 1.5px solid var(--stroke-neutral-weak); background: var(--bg-layer-default);
+  }
+  .task__t { display: block; font-size: var(--t5); font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .task__row {
+    margin-top: var(--gap-between-text); display: flex; align-items: center; gap: var(--x2);
+    font-size: var(--t3); color: var(--fg-neutral-muted); flex-wrap: wrap;
+  }
+  .tag {
+    font-size: var(--t1); font-weight: var(--w-bold); border-radius: var(--r1);
+    padding: 1px var(--x1_5); background: var(--bg-neutral-weak); color: var(--fg-neutral-muted);
+  }
+  .amt { margin-left: auto; font-size: var(--t4); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; }
+  .amt--none { color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+
+  /* 나머지 — 한 줄 요약으로 접는다 */
+  .rest { border-top: 1px solid var(--stroke-neutral-muted); margin-top: var(--x2); padding-top: var(--x5); }
+  .rows { margin-top: var(--gap-component); }
+  .row {
+    display: flex; align-items: center; gap: var(--x3); width: 100%; text-align: left;
+    padding: var(--x3) var(--gutter);
+    transition: background var(--d3) var(--ease);
+  }
+  .row:hover, .row.is-hover { background: var(--bg-layer-fill); }
+  .row__t { display: block; font-size: var(--t4); font-weight: var(--w-medium); min-width: 0; }
+  .row__d { font-size: var(--t3); color: var(--fg-neutral-subtle); margin-left: auto; white-space: nowrap; }
+
+  .tabbar {
+    background: var(--bg-layer-floating); border-top: 1px solid var(--stroke-neutral-muted);
+    display: grid; grid-template-columns: repeat(4, 1fr); padding: var(--x2) 0 var(--x4);
+  }
+  .tab { display: grid; justify-items: center; gap: 3px; font-size: var(--t1); color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+  .tab[aria-current="page"] { color: var(--fg-brand); font-weight: var(--w-bold); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">main 모바일 · 2안</p>
+  <h1 class="page__title">콜아웃</h1>
+  <p class="page__lede">
+    예산을 카드에서 <b>SEED 의 ActionableCallout 한 줄</b>로 낮추고, 그 자리를
+    <b>이번 주에 할 일</b>에 준다. 홈에 들어오는 이유가 "얼마 남았나"보다
+    "이번 주에 뭘 해야 하나"라면, 화면의 크기 순서도 그래야 한다.
+  </p>
+
+  <div class="page__cols">
+    <div class="screen">
+      <div class="app">
+        <header class="nav">
+          <h2 class="nav__couple">지수 · 현우</h2>
+          <div class="avatars">
+            <span class="avatar avatar--1">김</span>
+            <span class="avatar avatar--2">박</span>
+          </div>
+          <span class="nav__spacer"></span>
+        </header>
+
+        <div class="lede">
+          <p class="lede__big">결혼식까지<br><em>74일</em> 남았어요</p>
+          <p class="lede__sub">2026년 11월 14일 토요일</p>
+        </div>
+
+        <button class="callout">
+          <span class="callout__ico">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18v12H3z"/><path d="M3 11h18"/></svg>
+          </span>
+          <span class="callout__body">
+            <span class="callout__t">남은 예산 <b>3,580만 원</b></span>
+            <span class="callout__d">4,200만 원 중 620만 원 지출·예정</span>
+          </span>
+          <span class="callout__arrow">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
+          </span>
+        </button>
+
+        <div class="body">
+          <section>
+            <div class="sec__head">
+              <h3 class="sec__t">이번 달에 할 일</h3>
+              <span class="sec__n">2</span>
+              <span class="sec__spacer"></span>
+              <button class="sec__more">추가</button>
+            </div>
+            <div class="big">
+              <button class="task">
+                <span class="check"></span>
+                <span>
+                  <span class="task__t">본식 촬영</span>
+                  <span class="task__row">
+                    <i class="tag">스드메</i> 9월 12일 (토)
+                    <b class="amt">185만 원</b>
+                  </span>
+                </span>
+              </button>
+              <button class="task">
+                <span class="check"></span>
+                <span>
+                  <span class="task__t">예물 상담</span>
+                  <span class="task__row">
+                    <i class="tag">예물</i> 9월 27일 (일)
+                    <b class="amt amt--none">미정</b>
+                  </span>
+                </span>
+              </button>
+            </div>
+          </section>
+
+          <section class="rest">
+            <div class="sec__head">
+              <h3 class="sec__t">그 다음</h3>
+              <span class="sec__n">계획 중 3 · 완료 1</span>
+              <span class="sec__spacer"></span>
+              <button class="sec__more">전체</button>
+            </div>
+            <div class="rows">
+              <button class="row"><span class="row__t">청첩장 발송</span><span class="row__d">10월 10일</span></button>
+              <button class="row"><span class="row__t">신혼여행 예약</span><span class="row__d">10월 하순</span></button>
+              <button class="row"><span class="row__t">본식 헤어·메이크업</span><span class="row__d">날짜 미정</span></button>
+            </div>
+          </section>
+        </div>
+
+        <nav class="tabbar">
+          <a class="tab" aria-current="page" href="#">홈</a>
+          <a class="tab" href="#">피드</a>
+          <a class="tab" href="#">참여 플랜</a>
+          <a class="tab" href="#">Settings</a>
+        </nav>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="note note--cite">
+        <h3>SEED 에서 가져온 것</h3>
+        <ul>
+          <li><b>ActionableCallout</b> — <code>bg-brand-weak</code> 배경 +
+            아이콘 + 두 줄 + 화살표. SEED 가 "지금 화면의 주제는 아니지만
+            눌러서 갈 수 있는 것"을 담는 그릇이다. 예산이 정확히 그 성격이다.</li>
+          <li><b>between-text 6px</b> — 제목과 부연 사이 간격.</li>
+          <li><b>bg-layer-fill</b> — 할 일 카드는 흰 바탕 위 회색 채움.
+            그림자를 아예 쓰지 않는다.</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h3>지금과 무엇이 달라지나</h3>
+        <p>D-day 가 <b>알약에서 문장으로</b> 올라온다. 지금은 작은 분홍 알약
+          안에 D-74 가 들어 있어 날짜 옆 장식처럼 읽힌다. 이 화면에서 가장
+          변하지 않는 사실이자 모든 일정의 기준인데도 그렇다.</p>
+      </div>
+      <div class="note">
+        <h3>이번 달 / 그 다음</h3>
+        <p>목록을 <b>시간으로 두 덩이</b>로 가른다. 카테고리 칩을 지운
+          자리다 — 칩은 "무엇을"로 가르는데, 홈에서 사람이 실제로 하는 질문은
+          "언제까지"다. 카테고리로 좁혀 보는 일은 플랜 보드가 이미 한다.</p>
+      </div>
+      <div class="note">
+        <h3>가장 큰 위험</h3>
+        <p>"이번 달"이 <b>비는 달</b>이 생긴다. 그때 화면 위쪽이 통째로
+          빈칸이 되므로, 빈 상태 문구를 함께 설계해야 쓸 수 있는 안이다.</p>
+      </div>
+    </div>
+  </div>
+
+  <a class="backlink" href="main-mobile-index.html">← 시안 5개 목차</a>
+</main>
+</body>
+</html>

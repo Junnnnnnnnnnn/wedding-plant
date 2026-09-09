@@ -1,0 +1,365 @@
+/* Hallmark · main 모바일 시안 공통 토큰
+ * studied: yes · DNA-source: url (https://seed-design.io/ — 당근 SEED)
+ * paper: light(#fff / #f3f4f5) · display: system-sans · accent: warm-magenta
+ *
+ * ── 무엇을 인용했나 ──────────────────────────────────────────────
+ * SEED 에서 그대로 가져온 것: 역할 기반 색 이름(bg/fg/stroke · layer ·
+ * weak/solid/pressed), 레이어 3단(default·fill·basement), 중립 램프의 실제
+ * 값, radius 스케일(r1~r6), dimension 스케일(x0_5~x16)과 이름 있는 간격
+ * (global-gutter 16 · component-default 12 · nav-to-title 20 ·
+ * screen-bottom 56 · between-chips 8), font-size 스케일(t1~t14),
+ * weight 3단(400/500/700), shadow s1~s3, duration d1~d6, 4종 easing,
+ * 그리고 **시스템 폰트 스택**.
+ *
+ * 바꾼 것 하나: 브랜드 hue. SEED 의 당근 주황(#f60)을 쓸 수는 없으므로
+ * 같은 램프 구조(100~1000, weak/solid/pressed)를 우리 마젠타 #ee2b8c 에
+ * 그대로 씌웠다. 색만 우리 것이고 **이름과 층위는 SEED 의 것**이다.
+ *
+ * 안 가져온 것: 당근의 브랜드 표현(주황 플러드·일러스트·감탄 이모지).
+ * 그건 당근의 목소리지 이 앱의 목소리가 아니다.
+ * ─────────────────────────────────────────────────────────────── */
+
+/* 앱이 실제로 쓰는 파일을 그대로 본다 (app/layout.tsx 의 next/font 와 같은 woff2).
+   경로는 docs/concepts 기준 상대 경로라, 시안 HTML 을 파일로 열어도 뜬다. */
+@font-face {
+  font-family: "Hakgyoansim Dunggeunmiso";
+  src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-R.woff2")
+    format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hakgyoansim Dunggeunmiso";
+  src: url("../../public/font/woff2/Hakgyoansim-Dunggeunmiso-TTF-B.woff2")
+    format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ── 레이어 (SEED bg-layer-*) ── 화면은 이 셋으로만 쌓는다 */
+  --bg-layer-default: #ffffff;
+  --bg-layer-fill: #f7f8f9;
+  --bg-layer-basement: #f3f4f5;
+  --bg-layer-floating: #ffffff;
+  --bg-layer-default-pressed: #f7f8f9;
+
+  /* ── 중립 (SEED 값 그대로) ── */
+  --fg-neutral: #1a1c20;
+  --fg-neutral-muted: #555d6d;
+  --fg-neutral-subtle: #868b94;
+  --fg-neutral-disabled: #d1d3d8;
+  --fg-neutral-inverted: #ffffff;
+  --bg-neutral-weak: #f3f4f5;
+  --bg-neutral-weak-pressed: #eeeff1;
+  --bg-neutral-solid: #1a1c20;
+  --bg-neutral-inverted: #2a3038;
+  --stroke-neutral-weak: #dcdee3;
+  --stroke-neutral-muted: #00000010;
+  --stroke-neutral-subtle: #0000000c;
+  --stroke-neutral-contrast: #1a1c20;
+
+  /* ── 브랜드 (SEED 램프 구조 · 우리 hue) ── */
+  --palette-brand-100: #fff1f7;
+  --palette-brand-200: #ffe3ef;
+  --palette-brand-300: #ffc9e0;
+  --palette-brand-400: #ffa3cb;
+  --palette-brand-500: #fa6bad;
+  --palette-brand-600: #ee2b8c;
+  --palette-brand-700: #cc1873;
+  --palette-brand-800: #a5105c;
+  --palette-brand-900: #7a0b43;
+
+  --bg-brand-solid: var(--palette-brand-600);
+  --bg-brand-solid-pressed: var(--palette-brand-700);
+  --bg-brand-weak: var(--palette-brand-100);
+  --bg-brand-weak-pressed: var(--palette-brand-200);
+  --fg-brand: var(--palette-brand-600);
+  --fg-brand-contrast: var(--palette-brand-700);
+  --stroke-brand-weak: var(--palette-brand-300);
+  --stroke-brand-solid: var(--palette-brand-700);
+
+  /* ── 상태 (SEED 값 그대로) ── */
+  --fg-positive: #079171;
+  --bg-positive-weak: #edfaf6;
+  --fg-critical: #fa342c;
+  --bg-critical-weak: #fdf0f0;
+  --fg-informative: #217cf9;
+  --bg-informative-weak: #eff6ff;
+  --fg-warning: #9b7821;
+  --bg-warning-weak: #fff7de;
+
+  /* ── 글꼴 ── 지금 앱이 쓰는 **학교안심 둥근미소** 그대로다.
+     `app/layout.tsx` 가 next/font 로 붙이는 파일과 같은 woff2 를 본다.
+
+     SEED 는 시스템 폰트를 쓰라고 한다(기기·언어권이 달라도 같은 읽는 경험,
+     폰트 파일을 지고 다니지 않음). 그 권고를 따르려면 아래 `--font-app` 의
+     값을 `var(--font-system)` 으로 바꾸면 된다 — **이 토큰 한 줄이 전부다.**
+
+     주의: 둥근미소는 **400 과 700 두 벌뿐**이다. SEED 는 400/500/700 세 단으로
+     위계를 짜는데, 여기서는 500 이 400 으로 떨어져 중간 단이 사라진다.
+     그래서 이 글꼴에서는 위계를 **굵기보다 크기와 색**으로 내야 한다. */
+  --font-system:
+    -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans KR", "Malgun Gothic",
+    sans-serif;
+  --font-app: "Hakgyoansim Dunggeunmiso", var(--font-system);
+
+  /* ── 글자 크기 (SEED t1~t14) ── */
+  --t1: 11px;
+  --t2: 12px;
+  --t3: 13px;
+  --t4: 14px;
+  --t5: 16px;
+  --t6: 18px;
+  --t7: 20px;
+  --t8: 22px;
+  --t9: 24px;
+  --t10: 26px;
+  --t11: 28px;
+  --t12: 32px;
+  --t13: 40px;
+  --t14: 48px;
+
+  --w-regular: 400;
+  --w-medium: 500;
+  --w-bold: 700;
+
+  /* ── 간격 (SEED dimension) ── */
+  --x0_5: 2px;
+  --x1: 4px;
+  --x1_5: 6px;
+  --x2: 8px;
+  --x2_5: 10px;
+  --x3: 12px;
+  --x3_5: 14px;
+  --x4: 16px;
+  --x5: 20px;
+  --x6: 24px;
+  --x7: 28px;
+  --x8: 32px;
+  --x10: 40px;
+  --x12: 48px;
+  --x14: 56px;
+  --x16: 64px;
+
+  /* 이름 있는 간격 — SEED 가 값이 아니라 뜻으로 부르는 자리들 */
+  --gutter: 16px; /* spacing-x-global-gutter */
+  --gap-component: 12px; /* spacing-y-component-default */
+  --gap-nav-to-title: 20px; /* spacing-y-nav-to-title */
+  --gap-between-text: 6px; /* spacing-y-between-text */
+  --gap-between-chips: 8px; /* spacing-x-between-chips */
+  --pad-screen-bottom: 56px; /* spacing-y-screen-bottom */
+
+  /* ── 모서리 (SEED radius) ── */
+  --r1: 4px;
+  --r2: 8px;
+  --r2_5: 10px;
+  --r3: 12px;
+  --r4: 16px;
+  --r5: 20px;
+  --r6: 24px;
+  --r-full: 9999px;
+
+  /* ── 그림자 (SEED shadow s1~s3) ── */
+  --s1: 0px 1px 4px 0px #00000014;
+  --s2: 0px 2px 10px 0px #0000001a;
+  --s3: 0px 4px 16px 0px #0000001f;
+
+  /* ── 모션 (SEED duration · timing-function) ──
+     마이크로 모션 ≤0.2s, 매크로 모션 >0.2s 라는 SEED 의 구분을 지킨다 */
+  --d1: 50ms;
+  --d2: 0.1s;
+  --d3: 0.15s;
+  --d4: 0.2s;
+  --d5: 0.25s;
+  --d6: 0.3s;
+  --ease: cubic-bezier(0.35, 0, 0.35, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.15, 1);
+  --ease-exit: cubic-bezier(0.35, 0, 1, 1);
+  --ease-pressed: cubic-bezier(0, 0, 0.15, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-layer-basement);
+  color: var(--fg-neutral);
+  font-family: var(--font-app);
+  font-size: var(--t5);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* <i> 는 칩·점 같은 스타일 고리로만 쓴다. UI 라벨이 기울면 안 된다. */
+i {
+  font-style: normal;
+}
+
+/* 시안 안의 링크는 앱 화면의 요소다 — 문서 링크처럼 밑줄을 긋지 않는다.
+   문서 쪽 링크(.backlink)는 자기 밑줄을 따로 갖는다. */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--fg-brand);
+  outline-offset: 2px;
+  border-radius: var(--r1);
+}
+
+/* ── 시안 페이지 껍데기 ─────────────────────────────────────────
+   화면은 375 폭 한 칸으로 그대로 렌더한다. 가짜 폰 프레임(노치·상태바·
+   홈 인디케이터)은 그리지 않는다 — 실제 기기가 이미 그걸 갖고 있고,
+   그려 넣으면 시안이 목업 그림처럼 보여 판단이 흐려진다.
+   ────────────────────────────────────────────────────────────── */
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--x12) var(--x6) var(--x16);
+}
+.page__kick {
+  font-size: var(--t3);
+  font-weight: var(--w-bold);
+  color: var(--fg-brand);
+  letter-spacing: 0.02em;
+}
+.page__title {
+  margin: var(--x2) 0 0;
+  font-size: var(--t12);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.page__lede {
+  margin: var(--x4) 0 0;
+  max-width: 62ch;
+  font-size: var(--t6);
+  line-height: 1.7;
+  color: var(--fg-neutral-muted);
+}
+.page__lede b {
+  color: var(--fg-neutral);
+  font-weight: var(--w-bold);
+}
+.page__cols {
+  margin-top: var(--x10);
+  display: grid;
+  gap: var(--x10);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .page__cols {
+    grid-template-columns: 375px minmax(0, 1fr);
+  }
+}
+
+/* 375 한 칸. 테두리는 헤어라인 하나뿐 */
+.screen {
+  width: 375px;
+  max-width: 100%;
+  min-height: 760px;
+  margin: 0 auto;
+  background: var(--bg-layer-default);
+  border: 1px solid var(--stroke-neutral-weak);
+  border-radius: var(--r6);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.notes {
+  display: grid;
+  gap: var(--x5);
+}
+.note {
+  background: var(--bg-layer-default);
+  border: 1px solid var(--stroke-neutral-weak);
+  border-radius: var(--r4);
+  padding: var(--x5) var(--x6);
+}
+.note h3 {
+  margin: 0;
+  font-size: var(--t5);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.01em;
+}
+.note p {
+  margin: var(--x2) 0 0;
+  font-size: var(--t4);
+  line-height: 1.75;
+  color: var(--fg-neutral-muted);
+}
+.note p b {
+  color: var(--fg-neutral);
+  font-weight: var(--w-bold);
+}
+.note ul {
+  margin: var(--x2) 0 0;
+  padding-left: 1.1em;
+  font-size: var(--t4);
+  line-height: 1.75;
+  color: var(--fg-neutral-muted);
+}
+.note li + li {
+  margin-top: var(--x1_5);
+}
+.note code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--t2);
+  background: var(--bg-layer-fill);
+  border: 1px solid var(--stroke-neutral-muted);
+  border-radius: var(--r1);
+  padding: 1px 5px;
+}
+.note--cite {
+  background: var(--bg-brand-weak);
+  border-color: var(--stroke-brand-weak);
+}
+.note--cite h3 {
+  color: var(--fg-brand-contrast);
+}
+
+.backlink {
+  display: inline-block;
+  margin-top: var(--x10);
+  font-size: var(--t4);
+  color: var(--fg-neutral-muted);
+  text-decoration: none;
+  border-bottom: 1px solid var(--stroke-neutral-weak);
+  padding-bottom: 2px;
+}
+.backlink:hover {
+  color: var(--fg-brand);
+  border-color: var(--stroke-brand-weak);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,163 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · C안 07 플랜 추가 · studied: yes · DNA-source: url (seed-design.io) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C안 07 · 플랜 추가 — /add-plen</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .r { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: var(--x3);
+       align-items: center; padding: var(--x3) var(--gutter); }
+  .r + .r { box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .r__l { font-size: var(--t3); font-weight: var(--w-bold); color: var(--fg-neutral-muted); }
+  .r__v { font-size: var(--t5); }
+  .r__v--empty { color: var(--fg-neutral-disabled); }
+  .r--stack { grid-template-columns: minmax(0, 1fr); gap: var(--x2); align-items: start; }
+  .picks { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--x2); }
+  .pick { font-size: var(--t4); font-weight: var(--w-medium); color: var(--fg-neutral-muted);
+          background: var(--bg-layer-fill); border-radius: var(--r2_5); padding: var(--x3) 0;
+          transition: background var(--d3) var(--ease), color var(--d3) var(--ease); }
+  .pick[aria-pressed="true"] { background: var(--bg-neutral-solid); color: var(--c-on-fill);
+                               font-weight: var(--w-bold); }
+  .pick:hover:not([aria-pressed="true"]) { background: var(--bg-neutral-weak-pressed); }
+  .amt { display: flex; align-items: baseline; justify-content: flex-end; gap: var(--x1_5);
+         background: var(--bg-layer-fill); border-radius: var(--r3); padding: var(--x3) var(--x4); }
+  .amt__n { font-size: var(--t9); font-weight: var(--w-bold); font-variant-numeric: tabular-nums;
+            letter-spacing: -0.03em; }
+  .amt__u { font-size: var(--t4); color: var(--fg-neutral-muted); }
+  .memo { background: var(--bg-layer-fill); border-radius: var(--r3); padding: var(--x3) var(--x4);
+          min-height: 76px; font-size: var(--t4); color: var(--fg-neutral-disabled); position: relative; }
+  .memo__c { position: absolute; right: var(--x4); bottom: var(--x2);
+             font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .save { position: sticky; bottom: 0; background: var(--bg-layer-default);
+          border-top: 1px solid var(--stroke-neutral-muted);
+          padding: var(--x3) var(--gutter) var(--x4); }
+  .search { display: grid; grid-template-columns: minmax(0,1fr) 44px; gap: var(--x2); }
+  .search__b { background: var(--bg-layer-fill); border-radius: var(--r3);
+               display: grid; place-items: center; color: var(--fg-neutral-muted); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">C안 · 07</p>
+  <h1 class="page__title">플랜 추가</h1>
+  <p class="page__lede">
+    카드 8장을 <b>시트 한 장</b>으로 합칩니다. 웹은 이미 그렇게 바꿨고
+    (<code>docs/concepts/add-plen-a1-sheet.html</code>) <b>폰만 뒤처져
+    있습니다</b>. 지금은 카드마다 테두리·그림자·여백이 붙어 실제로 채우는
+    칸보다 껍데기가 더 큽니다.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">지금</span><span class="cmp__note">/add-plen · 실제 캡처</span></div>
+      <figure class="cmp__shot"><img src="shots/now-add-plen.png" alt="지금의 플랜 추가 화면"></figure>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">C안</span><span class="cmp__note">시트 한 장</span></div>
+      <div class="c-screen c-screen--tall">
+        <header class="c-head c-head--slim">
+          <div class="c-head__nav">
+            <button class="c-head__back" aria-label="뒤로가기">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 6-6 6 6 6"/></svg>
+            </button>
+            <span class="c-head__title">플랜 추가</span>
+          </div>
+          <p class="c-head__big" style="font-size: var(--t9); margin-top: var(--x3)">본식 촬영</p>
+          <p class="c-head__sub">제목을 누르면 고칠 수 있어요</p>
+        </header>
+
+        <div class="c-body c-body--flush" style="gap: 0; padding-top: var(--x2)">
+          <div class="r">
+            <span class="r__l">카테고리</span>
+            <span class="r__v">스드메</span>
+          </div>
+
+          <div class="r r--stack">
+            <span class="r__l">결제 유형</span>
+            <div class="picks">
+              <button class="pick" aria-pressed="false">현금</button>
+              <button class="pick" aria-pressed="true">카드</button>
+              <button class="pick" aria-pressed="false">기타</button>
+            </div>
+          </div>
+
+          <div class="r r--stack">
+            <span class="r__l">금액</span>
+            <div class="amt"><span class="amt__n">185</span><span class="amt__u">만 원</span></div>
+          </div>
+
+          <div class="r">
+            <span class="r__l">일자</span>
+            <span class="r__v">2026년 9월 12일 (토)</span>
+          </div>
+          <div class="r">
+            <span class="r__l">시각</span>
+            <span class="r__v r__v--empty">선택 안 함</span>
+          </div>
+
+          <div class="r r--stack">
+            <span class="r__l">위치</span>
+            <div class="search">
+              <span class="c-field__i" style="padding: var(--x3) var(--x4)">아모레 스튜디오</span>
+              <button class="search__b" aria-label="장소 검색">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="r r--stack">
+            <span class="r__l">메모</span>
+            <div class="memo">드레스 2벌 포함. 원본 파일 별도 문의.<span class="memo__c">28/500</span></div>
+          </div>
+
+          <div class="save">
+            <button class="c-btn c-btn--primary">저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <h3>제목이 면으로</h3>
+      <p>지금은 첫 카드가 "제목" 입력입니다. 이 화면에서 <b>가장 먼저 정해지고
+        끝까지 안 바뀌는 값</b>이라 면에 올립니다 — 아래로 스크롤해도 무엇을
+        만들고 있는지 보입니다.</p>
+    </div>
+    <div class="change">
+      <h3>카드 8장 → 시트</h3>
+      <p>구분선과 <b>84px 라벨 열</b>로 짭니다. 세로가 <b>절반 가까이</b>
+        줄어, 지금은 두 번 스크롤해야 닿는 저장 버튼이 한 화면 안으로
+        들어옵니다.</p>
+    </div>
+    <div class="change">
+      <h3>저장 버튼 고정</h3>
+      <p>지금은 목록 맨 끝에 있어 <b>탭바에 가려집니다</b>. 시트 아래에
+        <code>sticky</code> 로 붙입니다.</p>
+    </div>
+    <div class="change change--keep">
+      <h3>지키는 것</h3>
+      <p><b>단계형 흐름은 그대로</b>입니다 — 결제 유형을 고르기 전에는 금액·장소
+        칸이 나오지 않습니다(<code>scripts/feed.cjs</code> 의 프리필 확인이 이
+        순서를 전제합니다). <b>날짜 미정이면 시각 입력을 감춥니다.</b>
+        시각을 지울 때는 필드를 빼지 말고 <b>빈 문자열</b>을 보냅니다 —
+        PATCH 시맨틱상 빼면 "변경 없음"입니다.</p>
+    </div>
+    <div class="change">
+      <h3>카테고리 검색</h3>
+      <p>지금의 하드코딩 substring 매칭은 그대로 둡니다. OpenSearch 연동은
+        미래 작업이고(<code>docs/OPENSEARCH_INTEGRATION.md</code>) 화면 구조와
+        무관합니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="c-index.html">← 전체 목차</a>
+</main>
+</body>
+</html>

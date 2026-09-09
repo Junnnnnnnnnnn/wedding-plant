@@ -1,0 +1,200 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · 검증 06 일정 상세 · 시안 ↔ 실제 구현 대조 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>검증 06 · 일정 상세 — 시안 ↔ 실제</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .st { display: inline-flex; align-items: center; gap: var(--x1_5);
+        background: var(--c-fill-inset); border-radius: var(--r-full);
+        padding: var(--x1) var(--x2_5); font-size: var(--t2);
+        font-weight: var(--w-bold); color: var(--c-on-fill); }
+  .st__dot { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--c-on-fill); }
+  .tile { display: grid; grid-template-columns: 40px minmax(0,1fr); gap: var(--x3);
+          align-items: start; padding: var(--x4) var(--gutter); }
+  .tile + .tile { box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .tile__i { width: 40px; height: 40px; border-radius: var(--r3); display: grid; place-items: center; }
+  .tile__i--loc { background: #eef4ff; color: #3b76f6; }
+  .tile__i--memo { background: #fff6e3; color: #d99414; }
+  .tile__l { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle); }
+  .tile__v { display: block; margin-top: 3px; font-size: var(--t5); font-weight: var(--w-medium); line-height: 1.5; }
+  .map { display: block; margin-top: var(--x3); border-radius: var(--r3); overflow: hidden;
+         border: 1px solid var(--stroke-neutral-weak); }
+  .map__c { height: 132px; background: repeating-linear-gradient(45deg, #eef1ea 0 12px, #e7ebe3 12px 24px);
+            display: grid; place-items: center; color: #7d8a76; font-size: var(--t3); }
+  .map__a { display: block; width: 100%; padding: var(--x3) 0; text-align: center;
+            font-size: var(--t3); font-weight: var(--w-bold); color: var(--fg-brand);
+            background: var(--bg-layer-default); border-top: 1px solid var(--stroke-neutral-weak); }
+  .done { display: flex; align-items: center; gap: var(--x3); width: 100%; text-align: left;
+          padding: var(--x3_5) var(--x4); border-radius: var(--r3); background: var(--bg-layer-fill); }
+  .done__c { width: 24px; height: 24px; border-radius: var(--r-full);
+             border: 1.5px solid var(--stroke-neutral-weak); background: var(--bg-layer-default); flex: 0 0 auto; }
+  .done__t { display: block; font-size: var(--t5); font-weight: var(--w-bold); }
+  .done__d { display: block; margin-top: 2px; font-size: var(--t2); color: var(--fg-neutral-subtle); }
+
+  .verdict { margin-top: var(--x8); display: grid; gap: var(--x3); }
+  .v { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: var(--x4);
+       align-items: start; background: var(--bg-layer-default);
+       border: 1px solid var(--stroke-neutral-weak); border-radius: var(--r4);
+       padding: var(--x4) var(--x5); }
+  @media (max-width: 640px) { .v { grid-template-columns: minmax(0, 1fr); gap: var(--x2); } }
+  .v__b { justify-self: start; font-size: var(--t2); font-weight: var(--w-bold);
+          border-radius: var(--r-full); padding: var(--x1) var(--x3); white-space: nowrap; }
+  .v--ok .v__b { background: var(--bg-positive-weak); color: var(--fg-positive); }
+  .v--diff .v__b { background: var(--bg-warning-weak); color: var(--fg-warning); }
+  .v--todo .v__b { background: var(--bg-neutral-weak); color: var(--fg-neutral-muted); }
+  .v__t { font-size: var(--t5); font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .v__d { margin-top: var(--x1_5); font-size: var(--t4); line-height: 1.7; color: var(--fg-neutral-muted); }
+  .v__d b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .v__d code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--t2);
+               background: var(--bg-layer-fill); border: 1px solid var(--stroke-neutral-muted);
+               border-radius: var(--r1); padding: 1px 5px; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">검증 · 06</p>
+  <h1 class="page__title">일정 상세 — 시안 ↔ 실제</h1>
+  <p class="page__lede">
+    왼쪽은 <b>C안 시안</b>, 오른쪽은 <b>실제로 고친 앱을 375px 에서 찍은 것</b>입니다
+    (<code>scripts/mobile-screens.cjs</code>). 다른 곳은 아래에 이유와 함께
+    적어 두었습니다 — <b>다르면 다르다고 적는 것</b>이 이 문서의 목적입니다.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">시안</span><span class="cmp__note">C안 06</span></div>
+      <div class="c-screen c-screen--tall">
+        <header class="c-head">
+          <div class="c-head__nav">
+            <button class="c-head__back" aria-label="뒤로가기">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 6-6 6 6 6"/></svg>
+            </button>
+            <span class="c-head__title">스드메</span>
+            <span class="st"><i class="st__dot"></i>예정</span>
+          </div>
+          <p class="c-head__big" style="font-size: var(--t11); margin-top: var(--x3)">본식 촬영</p>
+          <p class="c-head__sub">2026년 9월 12일 (토) · 오전 9:00</p>
+          <div class="c-inset">
+            <span class="c-inset__body">
+              <span class="c-inset__d">지출 금액</span>
+              <span class="c-inset__t" style="font-size: var(--t7); margin-top: 2px">185만 원</span>
+            </span>
+            <span style="text-align:right">
+              <span class="c-inset__d">결제 방식</span>
+              <span class="c-inset__t">카드</span>
+            </span>
+          </div>
+        </header>
+
+        <div class="c-body c-body--flush" style="gap: 0; padding-top: var(--x2)">
+          <div class="tile">
+            <span class="tile__i tile__i--loc"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+            <span>
+              <span class="tile__l">장소</span>
+              <span class="tile__v">아모레 스튜디오</span>
+              <span class="map"><span class="map__c">지도</span><button class="map__a">카카오맵에서 보기</button></span>
+            </span>
+          </div>
+          <div class="tile">
+            <span class="tile__i tile__i--memo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l5 5v13H6z"/><path d="M9 12h7M9 16h5"/></svg></span>
+            <span>
+              <span class="tile__l">메모</span>
+              <span class="tile__v">드레스 2벌 포함. 원본 파일 별도 문의.</span>
+            </span>
+          </div>
+          <div class="c-btnrow" style="margin-top: var(--x6)">
+            <button class="done">
+              <span class="done__c"></span>
+              <span>
+                <span class="done__t">완료로 표시</span>
+                <span class="done__d">끝난 일이면 눌러 주세요 · 예산의 지출로 잡힙니다</span>
+              </span>
+            </button>
+            <button class="c-btn c-btn--primary" style="margin-top: var(--x2)">수정하기</button>
+            <button class="c-btn c-btn--ghost">삭제하기</button>
+          </div>
+        </div>
+
+        <nav class="c-tabbar">
+          <a class="c-tab" aria-current="page" href="#">홈</a>
+          <a class="c-tab" href="#">피드</a>
+          <a class="c-tab" href="#">참여 플랜</a>
+          <a class="c-tab" href="#">Settings</a>
+        </nav>
+      </div>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">실제</span><span class="cmp__note">/schedule-detail · 375px 캡처</span></div>
+      <figure class="cmp__shot"><img src="shots/real-schedule-detail.png" alt="C안을 적용한 실제 일정 상세 화면"></figure>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <div class="v v--ok">
+      <span class="v__b">같음</span>
+      <div>
+        <p class="v__t">머리 면</p>
+        <p class="v__d">떠 있는 카드가 <b>가장자리까지 펴진 면</b>이 됐습니다.
+          좌우 패딩(<code>px-6 md:px-8</code>)을 음수 마진으로 상쇄하고 아래
+          모서리만 둥글립니다. 뒤로가기가 <b>면 안</b>으로 들어가 겹침이 사라졌습니다.</p>
+      </div>
+    </div>
+    <div class="v v--ok">
+      <span class="v__b">같음</span>
+      <div>
+        <p class="v__t">상태 표시</p>
+        <p class="v__d">회전 주황 스티커를 걷어내고 <b>카테고리 옆 알약</b>으로
+          바꿨습니다. <code>data-status-pill</code> 로 표시해
+          <code>scripts/plan-board.cjs</code> 가 이걸 찾도록 옮겼습니다 —
+          검사가 지키려던 건 그라데이션이 아니라 "상태 표시가 남아 있는가" 였습니다.</p>
+      </div>
+    </div>
+    <div class="v v--ok">
+      <span class="v__b">같음</span>
+      <div>
+        <p class="v__t">완료로 표시</p>
+        <p class="v__d">없던 기능을 냈습니다. <code>useScheduleStatusToggle</code> 로
+          <b>낙관적으로 바꾸고 실패하면 되돌립니다</b>. 인스펙터(웹)에는 붙이지
+          않았습니다 — 보드 옆에 붙어 있어 그쪽 토글이 이미 보입니다.</p>
+      </div>
+    </div>
+    <div class="v v--diff">
+      <span class="v__b">다름</span>
+      <div>
+        <p class="v__t">장소·메모가 아직 카드입니다</p>
+        <p class="v__d">시안은 <b>구분선 타일</b>인데 실제는 흰 카드 두 장
+          그대로입니다. 이 화면에서 남은 마지막 항목이고, 컬러 아이콘 타일은
+          어느 쪽이든 유지됩니다.</p>
+      </div>
+    </div>
+    <div class="v v--diff">
+      <span class="v__b">다름</span>
+      <div>
+        <p class="v__t">바탕의 점 패턴</p>
+        <p class="v__d">실제 화면에는 앱 전역 배경의 <b>연분홍 점 패턴</b>이
+          깔려 있습니다. 시안에는 넣지 않았습니다 — 이건 이 화면이 아니라
+          <b>앱 전체가 정할 문제</b>라, C안 전체를 적용할 때 한 번에 정해야
+          합니다(점을 남길지, SEED 처럼 민 바탕으로 갈지).</p>
+      </div>
+    </div>
+    <div class="v v--ok">
+      <span class="v__b">시안 쪽이 임시</span>
+      <div>
+        <p class="v__t">지도</p>
+        <p class="v__d">시안의 회색 상자는 <b>플레이스홀더</b>였고 실제는 카카오
+          지도가 그대로 뜹니다. 지도 DOM 은 옮기면 인스턴스가 죽으므로
+          건드리지 않았습니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <a class="backlink" href="c-index.html">← 전체 목차</a>
+</main>
+</body>
+</html>

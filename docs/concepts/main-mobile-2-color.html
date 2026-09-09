@@ -1,0 +1,344 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V4 -->
+<!-- Hallmark · 2안 색 변형 3개 · 브랜드 색 면적을 늘려 가며 비교
+     studied: yes · DNA-source: url (seed-design.io) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2안 색 변형 3개 — main 모바일</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<style>
+  .row {
+    margin-top: var(--x10);
+    display: grid; gap: var(--x8);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    align-items: start;
+  }
+  .col { display: grid; gap: var(--x4); justify-items: center; }
+  .cap { max-width: 375px; width: 100%; }
+  .cap__n { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle); letter-spacing: 0.04em; }
+  .cap__t { margin-top: var(--x1); font-size: var(--t7); font-weight: var(--w-bold); letter-spacing: -0.025em; }
+  .cap__d { margin-top: var(--x2); font-size: var(--t4); line-height: 1.7; color: var(--fg-neutral-muted); }
+  .cap__d b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .cap__where {
+    margin-top: var(--x3); font-size: var(--t3); line-height: 1.7;
+    color: var(--fg-neutral-muted);
+    background: var(--bg-layer-fill); border-radius: var(--r3); padding: var(--x3) var(--x4);
+  }
+  .cap__where b { color: var(--fg-brand-contrast); font-weight: var(--w-bold); }
+
+  /* ── 2안 화면 (세 변형이 같은 마크업을 쓴다) ───────────────────── */
+  .app { display: flex; flex-direction: column; flex: 1; background: var(--bg-layer-default); }
+  .nav { padding: var(--x4) var(--gutter) var(--x3); display: flex; align-items: center; gap: var(--x2); }
+  .nav__couple { font-size: var(--t7); font-weight: var(--w-bold); letter-spacing: -0.03em; }
+  .nav__spacer { flex: 1; }
+  .avatars { display: flex; }
+  .avatar {
+    width: 26px; height: 26px; border-radius: var(--r-full); display: grid; place-items: center;
+    font-size: var(--t1); font-weight: var(--w-bold); color: var(--fg-neutral-inverted);
+    border: 2px solid var(--bg-layer-default);
+  }
+  .avatar--1 { background: var(--palette-brand-500); }
+  .avatar--2 { background: var(--bg-neutral-inverted); margin-left: -8px; }
+
+  .lede { padding: var(--x2) var(--gutter) var(--x6); }
+  .lede__big {
+    font-size: var(--t12); font-weight: var(--w-bold); letter-spacing: -0.045em; line-height: 1.15;
+    overflow-wrap: anywhere; min-width: 0;
+  }
+  .lede__big em { font-style: normal; color: var(--fg-brand); }
+  .lede__sub { margin-top: var(--x2); font-size: var(--t4); color: var(--fg-neutral-muted); }
+
+  .callout {
+    display: flex; align-items: center; gap: var(--x3); text-align: left;
+    margin: 0 var(--gutter); width: calc(100% - var(--gutter) * 2);
+    background: var(--bg-brand-weak); border-radius: var(--r3); padding: var(--x3) var(--x4);
+    transition: background var(--d3) var(--ease);
+  }
+  .callout:hover { background: var(--bg-brand-weak-pressed); }
+  .callout__ico { color: var(--fg-brand); display: grid; place-items: center; flex: 0 0 auto; }
+  .callout__body { min-width: 0; flex: 1; }
+  .callout__t { display: block; font-size: var(--t4); font-weight: var(--w-bold); color: var(--fg-neutral); }
+  .callout__t b { color: var(--fg-brand-contrast); font-variant-numeric: tabular-nums; }
+  .callout__d { display: block; margin-top: 2px; font-size: var(--t2); color: var(--fg-neutral-muted); }
+  .callout__arrow { color: var(--fg-brand); flex: 0 0 auto; }
+
+  .body { flex: 1; padding: var(--x6) 0 var(--pad-screen-bottom); display: grid; gap: var(--x6); align-content: start; }
+  .sec__head { padding: 0 var(--gutter); display: flex; align-items: baseline; gap: var(--x2); }
+  .sec__t { font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.02em; }
+  .sec__n { font-size: var(--t3); color: var(--fg-neutral-subtle); font-variant-numeric: tabular-nums; }
+  .sec__spacer { flex: 1; }
+  .sec__more { font-size: var(--t3); color: var(--fg-neutral-muted); font-weight: var(--w-medium); }
+
+  .big { margin: var(--gap-component) var(--gutter) 0; display: grid; gap: var(--x2); }
+  .task {
+    display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: var(--x3); align-items: start;
+    width: 100%; text-align: left;
+    background: var(--bg-layer-fill); border-radius: var(--r4); padding: var(--x4);
+    transition: background var(--d3) var(--ease);
+  }
+  .task:hover { background: var(--bg-neutral-weak-pressed); }
+  .check {
+    width: 22px; height: 22px; border-radius: var(--r-full);
+    border: 1.5px solid var(--stroke-neutral-weak); background: var(--bg-layer-default);
+  }
+  .task__t { display: block; font-size: var(--t5); font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .task__row {
+    margin-top: var(--gap-between-text); display: flex; align-items: center; gap: var(--x2);
+    font-size: var(--t3); color: var(--fg-neutral-muted); flex-wrap: wrap;
+  }
+  .tag {
+    font-size: var(--t1); font-weight: var(--w-bold); border-radius: var(--r1);
+    padding: 1px var(--x1_5); background: var(--bg-neutral-weak); color: var(--fg-neutral-muted);
+  }
+  .amt { margin-left: auto; font-size: var(--t4); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; }
+  .amt--none { color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+
+  .rest { border-top: 1px solid var(--stroke-neutral-muted); margin-top: var(--x2); padding-top: var(--x5); }
+  .rows { margin-top: var(--gap-component); }
+  .rw { display: flex; align-items: center; gap: var(--x3); width: 100%; text-align: left; padding: var(--x3) var(--gutter); }
+  .rw:hover { background: var(--bg-layer-fill); }
+  .rw__t { display: block; font-size: var(--t4); font-weight: var(--w-medium); min-width: 0; }
+  .rw__d { font-size: var(--t3); color: var(--fg-neutral-subtle); margin-left: auto; white-space: nowrap; }
+
+  .tabbar {
+    background: var(--bg-layer-floating); border-top: 1px solid var(--stroke-neutral-muted);
+    display: grid; grid-template-columns: repeat(4, 1fr); padding: var(--x2) 0 var(--x4);
+  }
+  .tab { display: grid; justify-items: center; font-size: var(--t1); color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+  .tab[aria-current="page"] { color: var(--fg-brand); font-weight: var(--w-bold); }
+
+  /* ══ B · 분홍 종이 ═══════════════════════════════════════════════
+     바탕을 아주 옅은 분홍으로 깐다. 색이 정보를 나르는 규칙은 그대로 두고
+     "종이"만 우리 색으로 바꾸는 것이라, 강조의 뜻이 흐려지지 않는다. */
+  .v-b .app { background: #fff7fa; }
+  .v-b .callout { background: var(--bg-layer-default); box-shadow: var(--s1); }
+  .v-b .task { background: var(--bg-layer-default); box-shadow: var(--s1); }
+  .v-b .task:hover { background: var(--bg-brand-weak); }
+  .v-b .tag { background: var(--bg-brand-weak); color: var(--fg-brand-contrast); }
+  .v-b .check { border-color: var(--palette-brand-300); }
+  .v-b .tabbar { background: var(--bg-layer-default); }
+  .v-b .rw:hover { background: var(--bg-brand-weak); }
+  .v-b .rest { border-top-color: var(--palette-brand-200); }
+
+  /* ══ C · 분홍 머리 ═══════════════════════════════════════════════
+     지금 앱의 그라데이션 카드를 화면 머리로 올린다. 카드가 아니라 면이라
+     같은 색인데도 "덩어리 하나"로 안 보이고 배경으로 물러난다. */
+  .v-c .app { background: var(--bg-layer-default); }
+  .v-c .head-fill {
+    background: linear-gradient(135deg, #ee2b8c 0%, #ff5c95 100%);
+    color: var(--fg-neutral-inverted);
+    border-radius: 0 0 var(--r6) var(--r6);
+    padding-bottom: var(--x5);
+  }
+  .v-c .nav__couple { color: var(--fg-neutral-inverted); }
+  .v-c .avatar { border-color: #ffffff55; }
+  .v-c .avatar--2 { background: #ffffff33; }
+  .v-c .lede__big { color: var(--fg-neutral-inverted); }
+  .v-c .lede__big em { color: var(--fg-neutral-inverted); }
+  .v-c .lede__sub { color: #ffffffcc; }
+  .v-c .callout { background: #ffffff26; }
+  .v-c .callout__ico, .v-c .callout__arrow { color: var(--fg-neutral-inverted); }
+  .v-c .callout__t { color: var(--fg-neutral-inverted); }
+  .v-c .callout__t b { color: var(--fg-neutral-inverted); }
+  .v-c .callout__d { color: #ffffffcc; }
+  .v-c .check { border-color: var(--palette-brand-300); }
+  .v-c .tag { background: var(--bg-brand-weak); color: var(--fg-brand-contrast); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">main 모바일 · 2안 색 변형</p>
+  <h1 class="page__title">색을 얼마나 넣을까</h1>
+  <p class="page__lede">
+    2안의 구조는 그대로 두고 <b>브랜드 색의 면적만</b> 세 단계로 늘려 봤다.
+    구조가 아니라 색만 다르므로, 셋 중 하나를 고르는 게 아니라
+    <b>어디까지 갈지</b>를 고르는 문제다.
+  </p>
+
+  <div class="row">
+    <!-- ── A ────────────────────────────────────────────────── -->
+    <div class="col">
+      <div class="cap">
+        <p class="cap__n">A</p>
+        <p class="cap__t">지금 시안</p>
+        <p class="cap__d">색이 <b>정보를 나를 때만</b> 나온다. SEED 의 규칙 그대로.</p>
+        <p class="cap__where">분홍이 있는 곳 — <b>74일</b> · 예산 콜아웃 · 홈 탭</p>
+      </div>
+      <div class="screen">
+        <div class="app">
+          <header class="nav">
+            <h2 class="nav__couple">지수 · 현우</h2>
+            <div class="avatars"><span class="avatar avatar--1">김</span><span class="avatar avatar--2">박</span></div>
+            <span class="nav__spacer"></span>
+          </header>
+          <div class="lede">
+            <p class="lede__big">결혼식까지<br><em>74일</em> 남았어요</p>
+            <p class="lede__sub">2026년 11월 14일 토요일</p>
+          </div>
+          <button class="callout">
+            <span class="callout__ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18v12H3z"/><path d="M3 11h18"/></svg></span>
+            <span class="callout__body">
+              <span class="callout__t">남은 예산 <b>3,580만 원</b></span>
+              <span class="callout__d">4,200만 원 중 620만 원 지출·예정</span>
+            </span>
+            <span class="callout__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+          </button>
+          <div class="body">
+            <section>
+              <div class="sec__head"><h3 class="sec__t">이번 달에 할 일</h3><span class="sec__n">2</span><span class="sec__spacer"></span><button class="sec__more">추가</button></div>
+              <div class="big">
+                <button class="task"><span class="check"></span><span><span class="task__t">본식 촬영</span><span class="task__row"><i class="tag">스드메</i> 9월 12일 (토) <b class="amt">185만 원</b></span></span></button>
+                <button class="task"><span class="check"></span><span><span class="task__t">예물 상담</span><span class="task__row"><i class="tag">예물</i> 9월 27일 (일) <b class="amt amt--none">미정</b></span></span></button>
+              </div>
+            </section>
+            <section class="rest">
+              <div class="sec__head"><h3 class="sec__t">그 다음</h3><span class="sec__n">계획 중 3</span><span class="sec__spacer"></span><button class="sec__more">전체</button></div>
+              <div class="rows">
+                <button class="rw"><span class="rw__t">청첩장 발송</span><span class="rw__d">10월 10일</span></button>
+                <button class="rw"><span class="rw__t">신혼여행 예약</span><span class="rw__d">10월 하순</span></button>
+              </div>
+            </section>
+          </div>
+          <nav class="tabbar"><a class="tab" aria-current="page" href="#">홈</a><a class="tab" href="#">피드</a><a class="tab" href="#">참여 플랜</a><a class="tab" href="#">Settings</a></nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── B ────────────────────────────────────────────────── -->
+    <div class="col v-b">
+      <div class="cap">
+        <p class="cap__n">B · 권합니다</p>
+        <p class="cap__t">분홍 종이</p>
+        <p class="cap__d">바탕을 <b>아주 옅은 분홍(#fff7fa)</b>으로 깔고 카드는 흰색.
+          색의 뜻은 안 건드리고 <b>종이만</b> 우리 것이 된다.</p>
+        <p class="cap__where">더해진 곳 — <b>화면 바탕</b> · 카테고리 칩 · 체크 테두리</p>
+      </div>
+      <div class="screen">
+        <div class="app">
+          <header class="nav">
+            <h2 class="nav__couple">지수 · 현우</h2>
+            <div class="avatars"><span class="avatar avatar--1">김</span><span class="avatar avatar--2">박</span></div>
+            <span class="nav__spacer"></span>
+          </header>
+          <div class="lede">
+            <p class="lede__big">결혼식까지<br><em>74일</em> 남았어요</p>
+            <p class="lede__sub">2026년 11월 14일 토요일</p>
+          </div>
+          <button class="callout">
+            <span class="callout__ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18v12H3z"/><path d="M3 11h18"/></svg></span>
+            <span class="callout__body">
+              <span class="callout__t">남은 예산 <b>3,580만 원</b></span>
+              <span class="callout__d">4,200만 원 중 620만 원 지출·예정</span>
+            </span>
+            <span class="callout__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+          </button>
+          <div class="body">
+            <section>
+              <div class="sec__head"><h3 class="sec__t">이번 달에 할 일</h3><span class="sec__n">2</span><span class="sec__spacer"></span><button class="sec__more">추가</button></div>
+              <div class="big">
+                <button class="task"><span class="check"></span><span><span class="task__t">본식 촬영</span><span class="task__row"><i class="tag">스드메</i> 9월 12일 (토) <b class="amt">185만 원</b></span></span></button>
+                <button class="task"><span class="check"></span><span><span class="task__t">예물 상담</span><span class="task__row"><i class="tag">예물</i> 9월 27일 (일) <b class="amt amt--none">미정</b></span></span></button>
+              </div>
+            </section>
+            <section class="rest">
+              <div class="sec__head"><h3 class="sec__t">그 다음</h3><span class="sec__n">계획 중 3</span><span class="sec__spacer"></span><button class="sec__more">전체</button></div>
+              <div class="rows">
+                <button class="rw"><span class="rw__t">청첩장 발송</span><span class="rw__d">10월 10일</span></button>
+                <button class="rw"><span class="rw__t">신혼여행 예약</span><span class="rw__d">10월 하순</span></button>
+              </div>
+            </section>
+          </div>
+          <nav class="tabbar"><a class="tab" aria-current="page" href="#">홈</a><a class="tab" href="#">피드</a><a class="tab" href="#">참여 플랜</a><a class="tab" href="#">Settings</a></nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── C ────────────────────────────────────────────────── -->
+    <div class="col v-c">
+      <div class="cap">
+        <p class="cap__n">C</p>
+        <p class="cap__t">분홍 머리</p>
+        <p class="cap__d">지금 앱의 <b>그라데이션</b>을 카드가 아니라 <b>화면 머리 면</b>으로
+          올린다. 색은 지금만큼 쓰면서 "떠 있는 덩어리"는 사라진다.</p>
+        <p class="cap__where">더해진 곳 — <b>상단 면 전체</b>(커플·D-day·예산)</p>
+      </div>
+      <div class="screen">
+        <div class="app">
+          <div class="head-fill">
+            <header class="nav">
+              <h2 class="nav__couple">지수 · 현우</h2>
+              <div class="avatars"><span class="avatar avatar--1">김</span><span class="avatar avatar--2">박</span></div>
+              <span class="nav__spacer"></span>
+            </header>
+            <div class="lede">
+              <p class="lede__big">결혼식까지<br><em>74일</em> 남았어요</p>
+              <p class="lede__sub">2026년 11월 14일 토요일</p>
+            </div>
+            <button class="callout">
+              <span class="callout__ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18v12H3z"/><path d="M3 11h18"/></svg></span>
+              <span class="callout__body">
+                <span class="callout__t">남은 예산 <b>3,580만 원</b></span>
+                <span class="callout__d">4,200만 원 중 620만 원 지출·예정</span>
+              </span>
+              <span class="callout__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+            </button>
+          </div>
+          <div class="body">
+            <section>
+              <div class="sec__head"><h3 class="sec__t">이번 달에 할 일</h3><span class="sec__n">2</span><span class="sec__spacer"></span><button class="sec__more">추가</button></div>
+              <div class="big">
+                <button class="task"><span class="check"></span><span><span class="task__t">본식 촬영</span><span class="task__row"><i class="tag">스드메</i> 9월 12일 (토) <b class="amt">185만 원</b></span></span></button>
+                <button class="task"><span class="check"></span><span><span class="task__t">예물 상담</span><span class="task__row"><i class="tag">예물</i> 9월 27일 (일) <b class="amt amt--none">미정</b></span></span></button>
+              </div>
+            </section>
+            <section class="rest">
+              <div class="sec__head"><h3 class="sec__t">그 다음</h3><span class="sec__n">계획 중 3</span><span class="sec__spacer"></span><button class="sec__more">전체</button></div>
+              <div class="rows">
+                <button class="rw"><span class="rw__t">청첩장 발송</span><span class="rw__d">10월 10일</span></button>
+                <button class="rw"><span class="rw__t">신혼여행 예약</span><span class="rw__d">10월 하순</span></button>
+              </div>
+            </section>
+          </div>
+          <nav class="tabbar"><a class="tab" aria-current="page" href="#">홈</a><a class="tab" href="#">피드</a><a class="tab" href="#">참여 플랜</a><a class="tab" href="#">Settings</a></nav>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes" style="margin-top: var(--x10); max-width: 78ch;">
+    <div class="note note--cite">
+      <h3>왜 A 는 회색이었나</h3>
+      <p>SEED 가 그렇게 짜여 있어서다. 당근도 브랜드 색이 주황 하나인데
+        <b>화면에서 차지하는 면적은 아주 작다</b> — 색이 "우리 브랜드입니다"가
+        아니라 "여기를 보세요"를 말하도록 아껴 둔다. 토큰을 가져오면서 그 규칙도
+        같이 따라왔다.</p>
+      <p>실용적인 이유도 있다. 지금 앱에서 분홍은 <b>다섯 가지 뜻</b>을 동시에
+        진다 — 예산 카드, 추가 버튼, 선택된 칩, D-day 알약, 활성 탭.
+        한 색이 다섯 가지를 말하면 <b>어느 것도 가리키지 못한다.</b>
+        바탕을 중립으로 내리면 분홍이 다시 "지금 볼 것"이라는 한 가지 뜻이 된다.</p>
+    </div>
+    <div class="note">
+      <h3>그래도 A 는 대가가 있다</h3>
+      <p>맞게 보신 겁니다. <b>앱이 우리 앱처럼 안 보입니다.</b> 1안 설명에
+        "가장 안전하고 가장 밋밋하다"고 적어 둔 게 이 얘기고, 2안도 같은 대가를
+        나눠 집니다. 분홍은 이 앱이 결혼 준비 앱이라는 걸 말하는 거의 유일한
+        신호인데, 강조에만 남기면 그 신호가 너무 얇아집니다.</p>
+    </div>
+    <div class="note">
+      <h3>그래서 B 를 권합니다</h3>
+      <p><b>바탕만 우리 색으로 바꾸고 강조 규칙은 건드리지 않습니다.</b>
+        화면을 열자마자 분홍이 눈에 들어오지만, 분홍이 "여기를 보세요"를
+        말하는 자리(74일 · 예산 · 홈 탭)는 여전히 바탕보다 진해서 구분됩니다.
+        색을 얻으면서 위계를 잃지 않는 유일한 지점입니다.</p>
+      <p>C 는 지금 앱에 가장 가깝고 가장 화려하지만, <b>상단 면이 커서
+        "이번 달에 할 일"이 다시 아래로 밀립니다</b> — 2안을 고른 이유였던
+        순서 바꾸기가 절반쯤 되돌아갑니다.</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="main-mobile-index.html">← 시안 5개 목차</a>
+</main>
+</body>
+</html>

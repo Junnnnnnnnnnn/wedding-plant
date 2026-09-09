@@ -1,0 +1,207 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · C안 모바일 전면 적용 · 화면별 대조 목차
+     studied: yes · DNA-source: url (seed-design.io) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C안 모바일 리디자인 — 화면별 대조</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .rules { margin-top: var(--x10); display: grid; gap: var(--x4);
+           grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .rule { background: var(--bg-layer-default); border: 1px solid var(--stroke-neutral-weak);
+          border-radius: var(--r4); padding: var(--x5); }
+  .rule__n { width: 28px; height: 28px; border-radius: var(--r-full);
+             background: var(--bg-brand-weak); color: var(--fg-brand);
+             display: grid; place-items: center; font-size: var(--t3); font-weight: var(--w-bold); }
+  .rule h3 { margin: var(--x3) 0 0; font-size: var(--t5); font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .rule p { margin: var(--x2) 0 0; font-size: var(--t4); line-height: 1.75; color: var(--fg-neutral-muted); }
+  .rule p b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+
+  .list { margin-top: var(--x10); display: grid; gap: var(--x3); }
+  /* 행 전체가 링크다. 밑줄 없이 카드로 두면 눌리는 줄 모르므로
+     오른쪽 화살표로 알린다 — 이 목록에서 유일한 조작이다. */
+  .it { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 300px) 20px;
+        gap: var(--x5); align-items: center; background: var(--bg-layer-default);
+        border: 1px solid var(--stroke-neutral-weak); border-radius: var(--r4);
+        padding: var(--x5) var(--x6); color: inherit; cursor: pointer;
+        transition: border-color var(--d3) var(--ease), background var(--d3) var(--ease),
+                    transform var(--d2) var(--ease); }
+  .it:hover { border-color: var(--stroke-brand-weak); background: var(--bg-brand-weak);
+              transform: translateY(-1px); }
+  .it:active { transform: translateY(0); }
+  .it__go { color: var(--fg-neutral-disabled); display: grid; place-items: center;
+            transition: color var(--d3) var(--ease), transform var(--d3) var(--ease); }
+  .it:hover .it__go { color: var(--fg-brand); transform: translateX(2px); }
+  @media (max-width: 760px) {
+    .it { grid-template-columns: 32px minmax(0, 1fr) 20px; }
+    .it__m { grid-column: 1 / -1; }
+  }
+  .it__n { font-size: var(--t3); font-weight: var(--w-bold); color: var(--fg-neutral-subtle);
+           font-variant-numeric: tabular-nums; }
+  .it__t { display: block; font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.02em; }
+  .it__r { display: block; margin-top: 2px; font-size: var(--t2); color: var(--fg-neutral-subtle);
+           font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .it__m { font-size: var(--t3); line-height: 1.7; color: var(--fg-neutral-muted); }
+  .it__m b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .it--skip { background: var(--bg-layer-fill); }
+  .it--skip .it__t { color: var(--fg-neutral-muted); }
+
+  .close { margin-top: var(--x10); padding-top: var(--x6);
+           border-top: 1px solid var(--stroke-neutral-weak);
+           font-size: var(--t4); line-height: 1.8; color: var(--fg-neutral-muted); max-width: 74ch; }
+  .close b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">C안 · 분홍 머리</p>
+  <h1 class="page__title">모바일 전 화면 대조</h1>
+  <p class="page__lede">
+    지금 앱은 분홍을 <b>떠 있는 카드</b>로 씁니다. C안은 같은 색을
+    <b>화면 머리 면</b>으로 올립니다. 색의 양은 지금과 비슷한데, 카드가 아니라
+    면이라 덩어리로 보이지 않고 배경으로 물러납니다. 아래는
+    <b>왼쪽 = 지금 앱의 실제 캡처, 오른쪽 = C안</b> 입니다.
+  </p>
+
+  <section class="rules">
+    <div class="rule">
+      <span class="rule__n">1</span>
+      <h3>면은 하나뿐</h3>
+      <p>분홍 면은 <b>화면 맨 위 한 덩이</b>입니다. 본문에 분홍 면을 또 두지
+        않습니다. 두 개가 되는 순간 어느 쪽을 봐야 할지 알 수 없어집니다.</p>
+    </div>
+    <div class="rule">
+      <span class="rule__n">2</span>
+      <h3>면에는 변하지 않는 것만</h3>
+      <p>누구의 플랜인지, 언제인지, 지금 얼마인지. <b>목록·입력·선택은 흰
+        본문</b>이 받습니다. 면 위에서 무언가를 고르게 하지 않습니다.</p>
+    </div>
+    <div class="rule">
+      <span class="rule__n">3</span>
+      <h3>본문의 분홍은 누를 것에만</h3>
+      <p>주 버튼, 활성 탭, 선택된 칩. 그 밖의 분홍은 <b>전부 뺍니다</b> —
+        지금은 한 색이 다섯 가지 뜻을 지고 있습니다.</p>
+    </div>
+    <div class="rule">
+      <span class="rule__n">4</span>
+      <h3>나머지는 SEED 중립</h3>
+      <p>회색 채움 카드(<code>#f7f8f9</code>)와 헤어라인으로 짭니다.
+        그림자는 <b>떠 있는 것</b>에만 씁니다.</p>
+    </div>
+  </section>
+
+  <div class="list">
+    <a class="it" href="c-01-main.html">
+      <span class="it__n">01</span>
+      <span><span class="it__t">홈</span><span class="it__r">/main</span></span>
+      <span class="it__m">예산 카드가 <b>머리 면</b>이 되고, 그 자리를
+        <b>이번 달에 할 일</b>이 받습니다 (2안 구조).</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it" href="c-02-calendar.html">
+      <span class="it__n">02</span>
+      <span><span class="it__t">캘린더</span><span class="it__r">/calendar</span></span>
+      <span class="it__m">달 이동과 <b>이번 달 지출·예정</b>이 면으로 올라가고,
+        달력과 그날 목록이 흰 본문을 씁니다.</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it" href="c-03-plan-list.html">
+      <span class="it__n">03</span>
+      <span><span class="it__t">참여 플랜</span><span class="it__r">/plan-list</span></span>
+      <span class="it__m">큰 제목·부제가 면으로 올라가 <b>카드가 첫 화면에 두 장</b>
+        보입니다. 지금은 한 장 반입니다.</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it" href="c-04-feed.html">
+      <span class="it__n">04</span>
+      <span><span class="it__t">피드</span><span class="it__r">/feed</span></span>
+      <span class="it__m">제목과 <b>내 후기 올리기</b>가 면으로. 금액을 세로로
+        훑는 <b>한 줄 카드 설계는 그대로</b> 둡니다.</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it" href="c-05-budget.html">
+      <span class="it__n">05</span>
+      <span><span class="it__t">예산 상세</span><span class="it__r">/budget-detail</span></span>
+      <span class="it__m">면에는 <b>초기 자본만</b> 올립니다. 남은 금액은 도넛이
+        계속 맡습니다 — 두 번째 잔액 숫자를 만들지 않습니다.</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it" href="c-06-schedule-detail.html">
+      <span class="it__n">06</span>
+      <span><span class="it__t">일정 상세</span><span class="it__r">/schedule-detail</span></span>
+      <span class="it__m">회전 주황 스티커를 <b>상태 알약</b>으로 바꾸고
+        <b>완료로 표시</b>를 냅니다. <b style="color:var(--fg-positive)">구현됨 —
+        시안↔실제 대조 있음</b></span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it" href="c-07-add-plen.html">
+      <span class="it__n">07</span>
+      <span><span class="it__t">플랜 추가</span><span class="it__r">/add-plen</span></span>
+      <span class="it__m">카드 8장을 <b>시트 한 장</b>으로. 웹에서 이미 그렇게
+        바꾼 화면이라 폰만 뒤처져 있습니다.</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it" href="c-08-chat.html">
+      <span class="it__n">08</span>
+      <span><span class="it__t">채팅방</span><span class="it__r">/chat/[id]</span></span>
+      <span class="it__m">방 이름·커플 배지가 면으로. 말풍선은 <b>내 것만 분홍</b>,
+        상대는 회색으로 내립니다.</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it" href="c-09-user.html">
+      <span class="it__n">09</span>
+      <span><span class="it__t">프로필</span><span class="it__r">/user</span></span>
+      <span class="it__m">이미 분홍 머리가 있는 화면. <b>가장 적게 바뀝니다</b> —
+        면 규격과 입력 칸만 맞춥니다.</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it" href="c-10-setting.html">
+      <span class="it__n">10</span>
+      <span><span class="it__t">온보딩</span><span class="it__r">/setting</span></span>
+      <span class="it__m">한 번에 하나씩 묻는 연출이라 <b>면을 달지 않습니다</b>.
+        진행 막대만 분홍으로 두고 입력 칸을 맞춥니다.</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it" href="c-11-doors.html">
+      <span class="it__n">11</span>
+      <span><span class="it__t">로그인 · 초대 수락</span><span class="it__r">/login · /share/[code]</span></span>
+      <span class="it__m">둘 다 <b>들어오는 문</b>입니다. 면을 화면 전체로 펴고
+        흰 카드 한 장을 얹습니다.</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+    <a class="it it--skip" href="c-12-untouched.html">
+      <span class="it__n">12</span>
+      <span><span class="it__t">랜딩 · 개인정보처리방침</span><span class="it__r">/ · /privacy</span></span>
+      <span class="it__m"><b>손대지 않습니다.</b> 둘 다 손대면 안 되는 이유가
+        따로 있습니다 — 그 이유를 적어 두었습니다.</span>
+      <span class="it__go" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg></span>
+    </a>
+  </div>
+
+  <p style="margin-top: var(--x6); font-size: var(--t4); line-height: 1.8; color: var(--fg-neutral-muted);">
+    구현이 끝난 화면은 <b style="color:var(--fg-neutral)">시안 ↔ 실제</b> 대조를
+    따로 둡니다 —
+    <a href="v-06-schedule-detail.html" style="color: var(--fg-brand); font-weight: var(--w-bold);">검증 06 · 일정 상세 →</a>
+  </p>
+
+  <p class="close">
+    <b>왼쪽은 전부 실제 캡처입니다.</b> 지금 화면을 손으로 다시 그리면 사실과
+    어긋나므로, <code>scripts/misc-pages.cjs</code>·<code>plan-board.cjs</code>·
+    <code>budget-detail.cjs</code>·<code>feed.cjs</code>·<code>plan-list-panes.cjs</code>·
+    <code>main-dashboard.cjs</code> 와 새로 만든 <code>scripts/mobile-screens.cjs</code>
+    가 375px 에서 찍은 것을 그대로 씁니다.
+    <br><br>
+    화면에 적힌 값은 각 하네스의 픽스처 그대로입니다. 지어낸 숫자가 아닙니다.
+    <br><br>
+    <b>캡처 몇 장의 좌하단에 보이는 빨간 <code>N · Issues</code> 알약은
+    Next 개발 서버가 띄우는 표시입니다 — 앱 UI 가 아닙니다.</b>
+    새로 만든 <code>scripts/mobile-screens.cjs</code> 는 이 배지를 가리고 찍지만,
+    먼저 만들어져 있던 하네스들은 그대로 찍습니다.
+  </p>
+</main>
+</body>
+</html>

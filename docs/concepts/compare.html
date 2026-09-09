@@ -1,0 +1,384 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · 확인 페이지 · 시안 캡처 ↔ 실제 앱 캡처 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시안 ↔ 실제 — 한눈에</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .bar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--bg-layer-default);
+    border-bottom: 1px solid var(--stroke-neutral-weak);
+    padding: var(--x4) var(--x6);
+    display: flex; align-items: center; gap: var(--x4); flex-wrap: wrap;
+  }
+  .bar__t { font-size: var(--t5); font-weight: var(--w-bold); letter-spacing: -0.02em; }
+  .bar__d { font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .bar__sp { flex: 1; }
+  .jump { display: flex; gap: var(--x1_5); flex-wrap: wrap; }
+  .jump a {
+    font-size: var(--t2); font-weight: var(--w-bold);
+    background: var(--bg-layer-fill); color: var(--fg-neutral-muted);
+    border-radius: var(--r-full); padding: var(--x1) var(--x2_5);
+  }
+  .jump a:hover { background: var(--bg-brand-weak); color: var(--fg-brand); }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: var(--x8) var(--x6) var(--x16); }
+
+  .pair { padding-top: var(--x10); scroll-margin-top: 90px; }
+  .pair + .pair { margin-top: var(--x8); border-top: 1px solid var(--stroke-neutral-weak); }
+  .pair__head { display: flex; align-items: baseline; gap: var(--x3); flex-wrap: wrap; }
+  .pair__n { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-neutral-subtle); letter-spacing: 0.04em; }
+  .pair__t { font-size: var(--t8); font-weight: var(--w-bold); letter-spacing: -0.03em; }
+  .pair__r { font-size: var(--t2); color: var(--fg-neutral-subtle);
+             font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .pair__note { margin-top: var(--x2); font-size: var(--t4); line-height: 1.7; color: var(--fg-neutral-muted); max-width: 70ch; }
+  .pair__note b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+
+  .shots {
+    margin-top: var(--x5);
+    display: grid; gap: var(--x5);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 375px));
+    justify-content: start;
+  }
+  .shot { display: grid; gap: var(--x2); }
+  .shot__cap { display: flex; align-items: center; gap: var(--x2); }
+  .shot__b {
+    font-size: var(--t2); font-weight: var(--w-bold);
+    border-radius: var(--r-full); padding: 2px var(--x2_5);
+  }
+  .shot__b--plan { background: var(--bg-brand-weak); color: var(--fg-brand-contrast); }
+  .shot__b--real { background: var(--bg-positive-weak); color: var(--fg-positive); }
+  .shot__d { font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .shot__f {
+    margin: 0; border: 1px solid var(--stroke-neutral-weak);
+    border-radius: var(--r6); overflow: hidden; background: var(--bg-layer-default);
+  }
+  .shot__f img { display: block; width: 100%; height: auto; }
+  .shot__miss {
+    display: grid; place-items: center; min-height: 220px; padding: var(--x8);
+    border: 1px dashed var(--stroke-neutral-weak); border-radius: var(--r6);
+    font-size: var(--t3); color: var(--fg-neutral-subtle); text-align: center; line-height: 1.7;
+  }
+
+  .todo { background: var(--bg-warning-weak); border-radius: var(--r3);
+          padding: var(--x3) var(--x4); margin-top: var(--x3);
+          font-size: var(--t3); line-height: 1.7; color: var(--fg-neutral-muted); }
+  .todo b { color: var(--fg-warning); font-weight: var(--w-bold); }
+  .done { background: var(--bg-positive-weak); border-radius: var(--r3);
+          padding: var(--x3) var(--x4); margin-top: var(--x3);
+          font-size: var(--t3); line-height: 1.7; color: var(--fg-neutral-muted); }
+  .done b { color: var(--fg-positive); font-weight: var(--w-bold); }
+
+  .how { margin-top: var(--x6); background: var(--bg-layer-default);
+         border: 1px solid var(--stroke-neutral-weak); border-radius: var(--r4);
+         padding: var(--x5) var(--x6); font-size: var(--t4); line-height: 1.8;
+         color: var(--fg-neutral-muted); }
+  .how b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .how code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--t2);
+              background: var(--bg-layer-fill); border: 1px solid var(--stroke-neutral-muted);
+              border-radius: var(--r1); padding: 1px 5px; }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div>
+    <div class="bar__t">시안 ↔ 실제</div>
+    <div class="bar__d">왼쪽이 시안, 오른쪽이 지금 앱을 375px 에서 찍은 것</div>
+  </div>
+  <span class="bar__sp"></span>
+  <nav class="jump">
+    <a href="#s01">01 홈</a>
+    <a href="#s02">02 캘린더</a>
+    <a href="#s03">03 참여 플랜</a>
+    <a href="#s04">04 피드</a>
+    <a href="#s05">05 예산</a>
+    <a href="#s06">06 일정 상세</a>
+    <a href="#s07">07 플랜 추가</a>
+    <a href="#s08">08 채팅</a>
+    <a href="#s09">09 프로필</a>
+    <a href="#s10">10 온보딩</a>
+    <a href="#s11">11 로그인</a>
+    <a href="#s12">12 초대</a>
+  </nav>
+</div>
+
+<main class="wrap">
+  <p class="page__kick">확인 페이지</p>
+  <h1 class="page__title">시안대로 됐는지 보는 곳</h1>
+  <p class="page__lede">
+    오른쪽 캡처는 <b>그림이 아니라 실제로 도는 앱</b>을 375px 에서 찍은 것입니다.
+    화면을 고칠 때마다 이 캡처가 갱신되므로, <b>새로고침하면 진행 상황이
+    그대로 보입니다.</b>
+  </p>
+
+  <div class="how">
+    <b>직접 눌러 보시려면</b> — 이 PC 는 <code>http://localhost:3000</code>,
+    폰은 같은 와이파이에서 <code>http://192.168.0.245:3000</code> 입니다.
+    <code>/</code> → "로그인 없이 둘러보기" → 온보딩 4단계를 지나면
+    <code>/main</code> 에 닿습니다. 다만 게스트로 들어가면 플랜이 비어 있어,
+    데이터가 찬 상태는 아래 캡처가 더 정확합니다.
+  </div>
+
+  <!-- 01 -->
+  <section class="pair" id="s01">
+    <div class="pair__head">
+      <span class="pair__n">01</span><span class="pair__t">홈</span><span class="pair__r">/main</span>
+    </div>
+    <p class="pair__note">머리 면 · D-day 두 줄 · 회색 채움 카드 · 이번 달 / 그 다음 두 묶음.
+      카테고리 칩과 계획 중·완료 탭은 시안대로 <b>걷어냈습니다</b>.</p>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 01</span></div>
+        <figure class="shot__f"><img src="shots/plan-main.png" alt="홈 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-main.png" alt="홈 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>맞춤 완료.</b> 커플명 42px→18px, D-day 22px 한 줄→32px 두 줄,
+      아바타 40px 컬러→26px 반투명. <b>머리 면이 가장자리까지</b> 펴집니다
+      (<code>items-center</code> 때문에 음수 마진이 상쇄되던 것을
+      <code>self-stretch</code> 로 해결).</p>
+    <p class="done"><b>탭바(공용)도 시안 값으로.</b> 4등분 그리드 · 위 헤어라인 ·
+      아이콘 22px · 라벨 11px · 활성색 <code>#ee2b8c</code> ·
+      미읽음 배지를 말풍선에서 <b>작은 원</b>으로. 12개 화면에 한 번에 적용됩니다.</p>
+  </section>
+
+  <!-- 02 -->
+  <section class="pair" id="s02">
+    <div class="pair__head">
+      <span class="pair__n">02</span><span class="pair__t">캘린더</span><span class="pair__r">/calendar</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 02</span></div>
+        <figure class="shot__f"><img src="shots/plan-calendar.png" alt="캘린더 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-calendar.png" alt="캘린더 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>맞춤 완료.</b> 머리 구성(<code>‹ 달 ›</code> · 닫기),
+      합계를 얇은 상자 2줄로, <code>달력 / 목록</code> 세그먼트, 격자 선 제거,
+      그날 일정을 <b>바텀 시트에서 달력 아래 목록으로</b>. <code>+</code> 는
+      머리에서 빼고 그날 목록의 <b>추가</b>가 맡습니다.</p>
+    <p class="todo">캡처가 오늘(9/4) 기준이라 "이 날은 비어 있어요" 입니다 —
+      시안은 일정이 있는 12일을 골라 둔 예시라 <b>데이터 차이</b>입니다.</p>
+  </section>
+
+  <!-- 03 -->
+  <section class="pair" id="s03">
+    <div class="pair__head">
+      <span class="pair__n">03</span><span class="pair__t">참여 플랜</span><span class="pair__r">/plan-list</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 03</span></div>
+        <figure class="shot__f"><img src="shots/plan-plan-list.png" alt="참여 플랜 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-plan-list.png" alt="참여 플랜 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>머리 면 · 회색 채움 카드 완료.</b></p>
+    <p class="todo"><b>아직 다름</b> — 아바타가 크고 컬러입니다(시안은 24px 회색톤).
+      제목이 두 줄로 끊기고, 채팅방 줄의 아이콘 타일도 시안보다 큽니다.</p>
+  </section>
+
+  <!-- 04 -->
+  <section class="pair" id="s04">
+    <div class="pair__head">
+      <span class="pair__n">04</span><span class="pair__t">피드</span><span class="pair__r">/feed</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 04</span></div>
+        <figure class="shot__f"><img src="shots/plan-feed.png" alt="피드 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-feed.png" alt="피드 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>머리 면 · 카드→구분선 완료.</b></p>
+    <p class="todo"><b>아직 다름</b> — 카테고리 칩이 알약 테두리형이고 정렬이 알약입니다
+      (시안은 채움 칩 + 글자 정렬). "안 올린 일정" 띠가 아직 목록 위에 있습니다.</p>
+  </section>
+
+  <!-- 05 -->
+  <section class="pair" id="s05">
+    <div class="pair__head">
+      <span class="pair__n">05</span><span class="pair__t">예산 상세</span><span class="pair__r">/budget-detail</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 05</span></div>
+        <figure class="shot__f"><img src="shots/plan-budget.png" alt="예산 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-budget.png" alt="예산 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>머리 면 · 항목 목록 구분선 완료.</b></p>
+    <p class="todo"><b>아직 다름</b> — 도넛이 카드 안에 있고, 카테고리가
+      <b>사용 / 예산 한 덩어리</b>입니다. 시안은 카드 없이 도넛 + <b>예산·사용·남음 3열 표</b>입니다.</p>
+  </section>
+
+  <!-- 06 -->
+  <section class="pair" id="s06">
+    <div class="pair__head">
+      <span class="pair__n">06</span><span class="pair__t">일정 상세</span><span class="pair__r">/schedule-detail</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 06</span></div>
+        <figure class="shot__f"><img src="shots/plan-schedule-detail.png" alt="일정 상세 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-schedule-detail.png" alt="일정 상세 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>거의 일치.</b> 머리 면 · 상태 알약 · 완료로 표시 · 구분선 타일까지 끝났습니다.</p>
+  </section>
+
+  <!-- 07 -->
+  <section class="pair" id="s07">
+    <div class="pair__head">
+      <span class="pair__n">07</span><span class="pair__t">플랜 추가</span><span class="pair__r">/add-plen</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 07</span></div>
+        <figure class="shot__f"><img src="shots/plan-add-plen.png" alt="플랜 추가 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-add-plen.png" alt="플랜 추가 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>머리 면 · 시트 한 장 완료.</b></p>
+    <p class="todo"><b>아직 다름</b> — 입력 칸이 시안의 <b>84px 라벨 열</b> 짜임이 아니라
+      위아래로 쌓입니다. 저장 버튼도 아직 시트 아래 고정이 아닙니다.</p>
+  </section>
+
+  <!-- 08 -->
+  <section class="pair" id="s08">
+    <div class="pair__head">
+      <span class="pair__n">08</span><span class="pair__t">채팅방</span><span class="pair__r">/chat/[id]</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 08</span></div>
+        <figure class="shot__f"><img src="shots/plan-chat.png" alt="채팅 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-chat.png" alt="채팅 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>머리 면 완료.</b> 말풍선은 원래도 내 것만 분홍이라 손대지 않았습니다.</p>
+    <p class="todo"><b>아직 다름</b> — 입력창이 시안보다 큽니다.</p>
+  </section>
+
+  <!-- 09 -->
+  <section class="pair" id="s09">
+    <div class="pair__head">
+      <span class="pair__n">09</span><span class="pair__t">프로필</span><span class="pair__r">/user</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 09</span></div>
+        <figure class="shot__f"><img src="shots/plan-user.png" alt="프로필 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-user.png" alt="프로필 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>머리 면 · X 제거 · 채움 필드 완료.</b></p>
+    <p class="todo"><b>아직 다름</b> — 폼이 아직 <b>흰 카드 두 장</b> 안에 들어 있습니다.
+      시안은 카드 없이 필드가 바로 놓입니다.</p>
+  </section>
+
+  <!-- 10 -->
+  <section class="pair" id="s10">
+    <div class="pair__head">
+      <span class="pair__n">10</span><span class="pair__t">온보딩</span><span class="pair__r">/setting</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 10</span></div>
+        <figure class="shot__f"><img src="shots/plan-setting.png" alt="온보딩 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-setting.png" alt="온보딩 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>점 패턴 제거 · 진행 막대 신설 완료.</b> 면은 시안대로 달지 않습니다.</p>
+    <p class="todo"><b>아직 다름</b> — 날짜 휠이 시안의 <b>채움 상자 3열</b>이 아니고,
+      고른 값을 문장으로 보여 주는 줄이 없습니다.</p>
+  </section>
+
+  <!-- 11 -->
+  <section class="pair" id="s11">
+    <div class="pair__head">
+      <span class="pair__n">11</span><span class="pair__t">로그인</span><span class="pair__r">/login</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 11</span></div>
+        <figure class="shot__f"><img src="shots/plan-login.png" alt="로그인 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-login.png" alt="로그인 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>거의 일치.</b> 면을 화면 전체로 편 것까지 끝났습니다.</p>
+  </section>
+
+  <!-- 12 -->
+  <section class="pair" id="s12">
+    <div class="pair__head">
+      <span class="pair__n">12</span><span class="pair__t">초대 수락</span><span class="pair__r">/share/[code]</span>
+    </div>
+    <div class="shots">
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--plan">시안</span><span class="shot__d">C안 11</span></div>
+        <figure class="shot__f"><img src="shots/plan-share.png" alt="초대 시안"></figure>
+      </div>
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__b shot__b--real">실제</span><span class="shot__d">375px 캡처</span></div>
+        <figure class="shot__f"><img src="shots/real-share.png" alt="초대 실제"></figure>
+      </div>
+    </div>
+    <p class="done"><b>머리 면 · 역할 안내 · 빠져나갈 길 완료.</b></p>
+    <p class="todo"><b>아직 다름</b> — 시안의 <b>흰 초대 카드</b>(결혼식 날짜·D-day·인원)가
+      없습니다. 초대한 사람의 정보를 로그인 전에 읽을 <b>공개 API 가 없어서</b>,
+      지어내지 않고 비워 뒀습니다.</p>
+  </section>
+
+  <p class="how" style="margin-top: var(--x10)">
+    <b>이 페이지는 자동으로 갱신됩니다.</b> 화면을 고칠 때마다 하네스가
+    <code>docs/concepts/shots/real-*.png</code> 를 다시 찍으므로, 브라우저에서
+    <b>새로고침(Ctrl+R)</b> 만 하면 최신 상태가 보입니다. 시안 쪽
+    (<code>plan-*.png</code>)은 <code>c-*.html</code> 을 렌더해 뽑은 것이라
+    시안을 고치면 같이 갱신됩니다.
+  </p>
+
+  <a class="backlink" href="c-index.html">← 시안 전체 목차</a>
+</main>
+</body>
+</html>

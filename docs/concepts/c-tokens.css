@@ -1,0 +1,577 @@
+/* Hallmark · C안(분홍 머리) 모바일 시스템 · 화면별 대조 문서 공통
+ * studied: yes · DNA-source: url (seed-design.io)
+ * paper: light · display: 둥근미소 · accent: warm-magenta (면으로)
+ *
+ * ── C안이 뭔가 ────────────────────────────────────────────────
+ * 지금 앱은 분홍을 **떠 있는 카드**로 쓴다(홈의 예산 카드). C안은 같은
+ * 색을 **화면 머리 면**으로 올린다. 색의 양은 지금과 비슷한데,
+ * 카드가 아니라 면이라 "덩어리 하나"로 보이지 않고 배경으로 물러난다.
+ *
+ * 규칙 넷.
+ *  1. 분홍 면은 **화면 맨 위 한 덩이**뿐이다. 본문에 분홍 면을 또 두지 않는다.
+ *  2. 면에는 **그 화면에서 변하지 않는 사실**만 올린다 — 누구의 플랜인지,
+ *     언제인지, 지금 얼마인지. 목록·입력·선택은 흰 본문이 받는다.
+ *  3. 본문의 분홍은 **누를 것**에만 — 주 버튼, 활성 탭, 선택된 칩.
+ *  4. 나머지는 전부 SEED 중립. 회색 카드(fill)와 헤어라인으로 짠다.
+ *
+ * 값·간격·라운드·타이포는 `main-mobile-tokens.css` 를 그대로 잇는다.
+ * 이 파일은 그 위에 **C안 컴포넌트**만 얹는다.
+ * ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* 지금 앱의 예산 카드에서 그대로 가져온 값 (app/main/page.tsx) */
+  --c-fill: linear-gradient(135deg, #ee2b8c 0%, #ff5c95 100%);
+  --c-on-fill: #ffffff;
+  --c-on-fill-muted: #ffffffcc;
+  --c-on-fill-faint: #ffffff99;
+  --c-fill-inset: #ffffff26;
+  --c-fill-inset-pressed: #ffffff38;
+  --c-fill-line: #ffffff3d;
+}
+
+/* ══ 화면 틀 ══════════════════════════════════════════════════ */
+.c-screen {
+  width: 375px;
+  max-width: 100%;
+  min-height: 760px;
+  background: var(--bg-layer-default);
+  border: 1px solid var(--stroke-neutral-weak);
+  border-radius: var(--r6);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.c-screen--tall {
+  min-height: 812px;
+}
+
+/* ══ 분홍 머리 면 ═════════════════════════════════════════════ */
+.c-head {
+  background: var(--c-fill);
+  color: var(--c-on-fill);
+  border-radius: 0 0 var(--r6) var(--r6);
+  padding: var(--x4) var(--gutter) var(--x5);
+  flex: 0 0 auto;
+}
+/* 상세·입력 화면처럼 머리에 담을 게 제목뿐일 때 */
+.c-head--slim {
+  padding-bottom: var(--x4);
+}
+.c-head__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--x2);
+  min-height: 32px;
+}
+.c-head__back,
+.c-head__act {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  color: var(--c-on-fill);
+  transition: background var(--d3) var(--ease);
+}
+.c-head__back:hover,
+.c-head__act:hover {
+  background: var(--c-fill-inset);
+}
+.c-head__title {
+  font-size: var(--t6);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.02em;
+  min-width: 0;
+}
+.c-head__spacer {
+  flex: 1;
+}
+.c-head__big {
+  margin-top: var(--x4);
+  font-size: var(--t12);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.c-head__sub {
+  margin-top: var(--x2);
+  font-size: var(--t4);
+  color: var(--c-on-fill-muted);
+}
+.c-head__label {
+  font-size: var(--t3);
+  color: var(--c-on-fill-muted);
+  font-weight: var(--w-medium);
+}
+.c-head__num {
+  margin-top: var(--x1);
+  font-size: var(--t13);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.05em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.c-head__num small {
+  font-size: var(--t7);
+  letter-spacing: -0.02em;
+}
+
+/* 면 위에 얹는 얇은 상자 — 카드가 아니라 면을 파낸 자리처럼 보이게 */
+.c-inset {
+  display: flex;
+  align-items: center;
+  gap: var(--x3);
+  width: 100%;
+  text-align: left;
+  margin-top: var(--x4);
+  background: var(--c-fill-inset);
+  border-radius: var(--r3);
+  padding: var(--x3) var(--x4);
+  color: var(--c-on-fill);
+  transition: background var(--d3) var(--ease);
+}
+.c-inset:hover {
+  background: var(--c-fill-inset-pressed);
+}
+.c-inset__t {
+  display: block;
+  font-size: var(--t4);
+  font-weight: var(--w-bold);
+}
+.c-inset__d {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--t2);
+  color: var(--c-on-fill-muted);
+}
+.c-inset__body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 면 위 진행 막대 */
+.c-head__track {
+  display: block;
+  margin-top: var(--x4);
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--c-fill-line);
+  overflow: hidden;
+}
+.c-head__fill {
+  display: block;
+  height: 100%;
+  background: var(--c-on-fill);
+}
+
+/* 아바타 */
+.c-avatars {
+  display: flex;
+}
+.c-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-full);
+  display: grid;
+  place-items: center;
+  font-size: var(--t1);
+  font-weight: var(--w-bold);
+  color: var(--c-on-fill);
+  background: var(--c-fill-inset);
+  border: 2px solid #ffffff55;
+}
+.c-avatar + .c-avatar {
+  margin-left: -8px;
+}
+
+/* ══ 본문 ═════════════════════════════════════════════════════ */
+.c-body {
+  flex: 1;
+  padding: var(--x5) 0 var(--pad-screen-bottom);
+  display: grid;
+  gap: var(--x5);
+  align-content: start;
+}
+.c-body--flush {
+  padding-top: 0;
+}
+
+.c-sec {
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: baseline;
+  gap: var(--x2);
+}
+.c-sec__t {
+  font-size: var(--t6);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.02em;
+}
+.c-sec__n {
+  font-size: var(--t3);
+  color: var(--fg-neutral-subtle);
+  font-variant-numeric: tabular-nums;
+}
+.c-sec__spacer {
+  flex: 1;
+}
+.c-sec__a {
+  font-size: var(--t3);
+  font-weight: var(--w-bold);
+  color: var(--fg-brand);
+}
+
+/* 카드 — 흰 바탕 위 회색 채움. 그림자를 쓰지 않는다 */
+.c-cards {
+  margin: var(--gap-component) var(--gutter) 0;
+  display: grid;
+  gap: var(--x2);
+}
+.c-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--bg-layer-fill);
+  border-radius: var(--r4);
+  padding: var(--x4);
+  transition: background var(--d3) var(--ease);
+}
+.c-card:hover {
+  background: var(--bg-neutral-weak-pressed);
+}
+.c-card--check {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--x3);
+  align-items: start;
+}
+.c-card__t {
+  display: block;
+  font-size: var(--t5);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.01em;
+}
+.c-card__row {
+  margin-top: var(--gap-between-text);
+  display: flex;
+  align-items: center;
+  gap: var(--x2);
+  font-size: var(--t3);
+  color: var(--fg-neutral-muted);
+  flex-wrap: wrap;
+}
+
+.c-check {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-full);
+  border: 1.5px solid var(--palette-brand-300);
+  background: var(--bg-layer-default);
+}
+.c-check--done {
+  background: var(--fg-positive);
+  border-color: var(--fg-positive);
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
+.c-tag {
+  font-size: var(--t1);
+  font-weight: var(--w-bold);
+  border-radius: var(--r1);
+  padding: 1px var(--x1_5);
+  background: var(--bg-brand-weak);
+  color: var(--fg-brand-contrast);
+}
+.c-amt {
+  margin-left: auto;
+  font-size: var(--t4);
+  font-weight: var(--w-bold);
+  font-variant-numeric: tabular-nums;
+}
+.c-amt--none {
+  color: var(--fg-neutral-subtle);
+  font-weight: var(--w-medium);
+}
+
+/* 구분선 목록 */
+.c-rows {
+  display: grid;
+}
+.c-row {
+  display: flex;
+  align-items: center;
+  gap: var(--x3);
+  width: 100%;
+  text-align: left;
+  padding: var(--x3_5) var(--gutter);
+  transition: background var(--d3) var(--ease);
+}
+.c-row + .c-row {
+  box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle);
+}
+.c-row:hover {
+  background: var(--bg-layer-fill);
+}
+.c-row__t {
+  display: block;
+  font-size: var(--t4);
+  font-weight: var(--w-medium);
+  min-width: 0;
+}
+.c-row__m {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--t2);
+  color: var(--fg-neutral-subtle);
+}
+.c-row__d {
+  font-size: var(--t3);
+  color: var(--fg-neutral-subtle);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* 칩 */
+.c-chips {
+  display: flex;
+  gap: var(--gap-between-chips);
+  overflow-x: auto;
+  padding: 0 var(--gutter);
+  scrollbar-width: none;
+}
+.c-chips::-webkit-scrollbar {
+  display: none;
+}
+.c-chip {
+  flex: 0 0 auto;
+  font-size: var(--t3);
+  font-weight: var(--w-medium);
+  color: var(--fg-neutral-muted);
+  background: var(--bg-layer-fill);
+  border-radius: var(--r-full);
+  padding: var(--x1_5) var(--x3);
+  transition:
+    background var(--d3) var(--ease),
+    color var(--d3) var(--ease);
+}
+.c-chip[aria-pressed="true"] {
+  background: var(--bg-brand-solid);
+  color: var(--c-on-fill);
+  font-weight: var(--w-bold);
+}
+.c-chip:hover:not([aria-pressed="true"]) {
+  background: var(--bg-neutral-weak-pressed);
+}
+
+/* 버튼 */
+.c-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--x2);
+  width: 100%;
+  border-radius: var(--r3);
+  padding: var(--x4) 0;
+  font-size: var(--t5);
+  font-weight: var(--w-bold);
+  transition:
+    background var(--d3) var(--ease),
+    transform var(--d2) var(--ease-pressed);
+}
+.c-btn--primary {
+  background: var(--bg-brand-solid);
+  color: var(--c-on-fill);
+}
+.c-btn--primary:hover {
+  background: var(--bg-brand-solid-pressed);
+}
+.c-btn--primary:active {
+  transform: scale(0.985);
+}
+.c-btn--ghost {
+  background: var(--bg-layer-fill);
+  color: var(--fg-neutral-muted);
+}
+.c-btn--ghost:hover {
+  background: var(--bg-neutral-weak-pressed);
+}
+.c-btnrow {
+  padding: 0 var(--gutter);
+  display: grid;
+  gap: var(--x2);
+}
+
+/* 입력 — 라벨을 항상 띄운다 (placeholder 만 쓰지 않는다) */
+.c-field {
+  padding: 0 var(--gutter);
+  display: grid;
+  gap: var(--x1_5);
+}
+.c-field__l {
+  font-size: var(--t3);
+  font-weight: var(--w-bold);
+  color: var(--fg-neutral-muted);
+}
+.c-field__i {
+  background: var(--bg-layer-fill);
+  border: 1px solid transparent;
+  border-radius: var(--r3);
+  padding: var(--x3_5) var(--x4);
+  font-size: var(--t5);
+  color: var(--fg-neutral);
+}
+.c-field__i--empty {
+  color: var(--fg-neutral-disabled);
+}
+.c-field__i:focus-within {
+  border-color: var(--stroke-brand-weak);
+  background: var(--bg-layer-default);
+}
+
+/* 하단 탭 */
+.c-tabbar {
+  background: var(--bg-layer-floating);
+  border-top: 1px solid var(--stroke-neutral-muted);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: var(--x2) 0 var(--x4);
+  flex: 0 0 auto;
+}
+.c-tab {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  font-size: var(--t1);
+  color: var(--fg-neutral-subtle);
+  font-weight: var(--w-medium);
+}
+.c-tab[aria-current="page"] {
+  color: var(--fg-brand);
+  font-weight: var(--w-bold);
+}
+.c-tab__i {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+}
+
+/* 빈 상태 */
+.c-empty {
+  padding: var(--x10) var(--x8);
+  text-align: center;
+}
+.c-empty__t {
+  font-size: var(--t5);
+  font-weight: var(--w-bold);
+}
+.c-empty__d {
+  margin-top: var(--x2);
+  font-size: var(--t3);
+  line-height: 1.7;
+  color: var(--fg-neutral-muted);
+}
+
+/* ══ 대조 문서 레이아웃 ═══════════════════════════════════════ */
+.cmp {
+  margin-top: var(--x8);
+  display: grid;
+  gap: var(--x6);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  align-items: start;
+}
+.cmp__side {
+  display: grid;
+  gap: var(--x3);
+  justify-items: center;
+}
+.cmp__cap {
+  width: 100%;
+  max-width: 375px;
+  display: flex;
+  align-items: baseline;
+  gap: var(--x2);
+}
+.cmp__n {
+  font-size: var(--t2);
+  font-weight: var(--w-bold);
+  letter-spacing: 0.04em;
+  color: var(--fg-neutral-subtle);
+}
+.cmp__n--new {
+  color: var(--fg-brand);
+}
+.cmp__note {
+  font-size: var(--t2);
+  color: var(--fg-neutral-subtle);
+}
+/* 지금 화면은 실제 캡처다. 손으로 다시 그리지 않는다 */
+.cmp__shot {
+  width: 375px;
+  max-width: 100%;
+  border: 1px solid var(--stroke-neutral-weak);
+  border-radius: var(--r6);
+  overflow: hidden;
+  background: var(--bg-layer-default);
+}
+.cmp__shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.cmp__missing {
+  width: 375px;
+  max-width: 100%;
+  min-height: 200px;
+  display: grid;
+  place-items: center;
+  padding: var(--x8);
+  text-align: center;
+  border: 1px dashed var(--stroke-neutral-weak);
+  border-radius: var(--r6);
+  font-size: var(--t3);
+  color: var(--fg-neutral-subtle);
+  line-height: 1.7;
+}
+
+.changes {
+  margin-top: var(--x8);
+  display: grid;
+  gap: var(--x4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+.change {
+  background: var(--bg-layer-default);
+  border: 1px solid var(--stroke-neutral-weak);
+  border-radius: var(--r4);
+  padding: var(--x5);
+}
+.change h3 {
+  margin: 0;
+  font-size: var(--t2);
+  font-weight: var(--w-bold);
+  letter-spacing: 0.03em;
+  color: var(--fg-neutral-subtle);
+}
+.change p {
+  margin: var(--x2) 0 0;
+  font-size: var(--t4);
+  line-height: 1.75;
+  color: var(--fg-neutral-muted);
+}
+.change p b {
+  color: var(--fg-neutral);
+  font-weight: var(--w-bold);
+}
+.change--keep {
+  background: var(--bg-warning-weak);
+  border-color: #f0e2b4;
+}
+.change--keep h3 {
+  color: var(--fg-warning);
+}
