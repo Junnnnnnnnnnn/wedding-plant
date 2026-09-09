@@ -28,6 +28,10 @@
          border: 1px solid var(--stroke-neutral-weak); border-radius: var(--r5);
          overflow: hidden; transition: border-color var(--d3) var(--ease); }
   .opt:hover { border-color: var(--stroke-brand-weak); }
+  /* 고른 안. 나머지 둘은 왜 안 골랐는지를 남기려고 지우지 않는다 */
+  .opt--picked { border-color: var(--stroke-brand-weak); box-shadow: 0 0 0 3px #ee2b8c14; }
+  .opt--rest { opacity: .62; }
+  .opt--rest:hover { opacity: 1; }
   .opt__cap { display: block; padding: var(--x5) var(--x5) var(--x4); }
   .opt__n { display: block; font-size: var(--t2); font-weight: var(--w-bold);
             color: var(--fg-brand-contrast); }
@@ -95,6 +99,10 @@
   <p class="page__kick">자랑하기</p>
   <h1 class="page__title">시안 세 개</h1>
   <p class="page__lede">
+    <b>A안으로 정했습니다</b> — 목록 화면은
+    <a class="backlink" style="margin: 0; font-size: inherit" href="brag-list.html">별도 문서</a>에
+    실제 크기로 그려 두었습니다. 아래는 고를 때 쓴 비교입니다.
+    <br><br>
     대시보드 토글 → 안내 모달 → 목록 → 큰 모달. <b>네 걸음이 한 흐름</b>이고,
     세 안은 그 가운데 <b>목록 카드 하나</b>에서만 갈립니다. 배치는 셋 다
     <b>핀터레스트식 벽돌</b>이고, 카드마다 <b>플랜 개수 · 완료 개수</b>가
@@ -127,9 +135,9 @@
 
   <!-- 세 안 -->
   <div class="opts">
-    <a class="opt" href="brag-a.html">
+    <a class="opt opt--picked" href="brag-a.html">
       <span class="opt__cap">
-        <span class="opt__n">A안</span>
+        <span class="opt__n">A안 · 확정</span>
         <span class="opt__t">플랜 한 장</span>
         <span class="opt__d">카드가 <b>커플과 날짜</b>로 시작합니다. 앱의 참여
           플랜 카드를 그대로 키운 모양 — 한 장에 예산·진행·카테고리가 다
@@ -155,7 +163,7 @@
       </span>
     </a>
 
-    <a class="opt" href="brag-b.html">
+    <a class="opt opt--rest" href="brag-b.html">
       <span class="opt__cap">
         <span class="opt__n">B안</span>
         <span class="opt__t">숫자 벽</span>
@@ -182,7 +190,7 @@
       </span>
     </a>
 
-    <a class="opt" href="brag-c.html">
+    <a class="opt opt--rest" href="brag-c.html">
       <span class="opt__cap">
         <span class="opt__n">C안</span>
         <span class="opt__t">어디까지 왔나</span>
