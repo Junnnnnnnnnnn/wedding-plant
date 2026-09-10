@@ -70,6 +70,11 @@ const PLACES = {
   "예식장 잔금": { location: "SG 웨딩홀", lat: 37.5006, lng: 127.0364 },
   "예식장 계약금": { location: "SG 웨딩홀", lat: 37.5006, lng: 127.0364 },
   "예물 상담": { location: "종로 3가 귀금속", lat: 37.5714, lng: 126.9917 },
+  /*
+    **손으로 적은 장소.** 카카오에서 고르지 않아 좌표가 없다 — 이름은
+    보이지만 지도는 못 그린다. 좌표까지 다 채워 두면 이 분기를 못 본다.
+  */
+  "드레스 피팅": { location: "신사동 드레스샵", lat: null, lng: null },
 };
 
 const ITEMS = [
@@ -709,10 +714,57 @@ function installMocks(page) {
       hasBox: !!s.querySelector("#brag-plan-map"),
     };
   });
+  /*
+    **빈칸으로 두지 않는다.** 지도 자리가 비어 있으면 "지도가 안 떴나" 로
+    읽히는데 실제로는 그 일정에 장소가 없는 것이다. 줄도 지우면 "안 적었나"
+    와 "화면이 안 그렸나" 를 구별할 수 없다.
+  */
   check(
-    noPlace && !noPlace.hasBox && !/장소/.test(noPlace.text),
-    "장소가 없으면 지도도 장소 줄도 안 낸다",
+    noPlace && !noPlace.hasBox,
+    "장소가 없으면 지도를 안 그린다",
   );
+  check(
+    noPlace && /등록하지 않았어요/.test(noPlace.text),
+    "장소 줄에 '등록하지 않았어요' 라고 적는다",
+  );
+  check(
+    noPlace && /장소를 등록하지 않은 일정이에요/.test(noPlace.text),
+    "지도 자리에 플레이스홀더가 뜬다",
+  );
+  await page.screenshot({ path: path.join(OUT, "brag-plan-sheet-nomap.png") });
+
+  // 장소는 적었는데 좌표가 없는 경우 — 이름은 보이고 지도는 못 그린다
+  await page.keyboard.press("Escape");
+  await wait(300);
+  await page.evaluate(() => {
+    const dlg = document.querySelector('[role="dialog"]');
+    const card = [...dlg.querySelectorAll("button")].find(
+      (n) =>
+        /rounded-\[18px\]/.test(n.className) &&
+        n.offsetParent !== null &&
+        /드레스 피팅/.test(n.innerText),
+    );
+    card?.click();
+  });
+  await wait(600);
+  const typedPlace = await page.evaluate(() => {
+    const s = [...document.querySelectorAll('[role="dialog"]')].find((n) =>
+      /자세히$/.test(n.getAttribute("aria-label") || ""),
+    );
+    if (!s) return null;
+    return {
+      text: s.innerText.replace(/\s+/g, " "),
+      hasBox: !!s.querySelector("#brag-plan-map"),
+    };
+  });
+  check(
+    typedPlace &&
+      /신사동 드레스샵/.test(typedPlace.text) &&
+      !typedPlace.hasBox &&
+      /지도에 표시할 수 없는 장소예요/.test(typedPlace.text),
+    "손으로 적은 장소는 이름만 보이고 '지도에 표시할 수 없다' 고 적는다",
+  );
+  await page.screenshot({ path: path.join(OUT, "brag-plan-sheet-noplace.png") });
 
   // 카테고리에 하나뿐이면 "가운데 100%" 대신 하나뿐이라고 적는다
   await page.keyboard.press("Escape");

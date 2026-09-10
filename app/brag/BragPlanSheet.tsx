@@ -196,21 +196,24 @@ export default function BragPlanSheet({
             </dd>
           </div>
           {/*
-            장소를 안 고른 일정도 많고, 장소를 담기 전에 올라간 스냅샷에는
-            아예 없다. 없으면 **줄 자체를 내지 않는다** — "미확인" 이라고
-            크게 적지 않는다(피드의 장소 줄과 같은 규칙).
+            장소 줄은 **항상 낸다.** 피드의 목록 카드는 없으면 줄을 지우지만
+            (금액을 세로로 훑는 설계라 빈 줄이 늘면 그게 깨진다), 여기는 한
+            장을 자세히 보는 자리라 **"없다" 는 것도 정보다.** 줄이 사라지면
+            보는 사람은 "안 적었나" 와 "화면이 안 그렸나" 를 구별하지 못한다.
           */}
-          {place && (
-            <div className="flex items-baseline gap-4">
-              <dt className="w-14 shrink-0 text-[#7a6c74]">장소</dt>
-              <dd className="min-w-0 font-bold text-[#1b0d14] break-keep">
-                {place}
-              </dd>
-            </div>
-          )}
+          <div className="flex items-baseline gap-4">
+            <dt className="w-14 shrink-0 text-[#7a6c74]">장소</dt>
+            <dd className="min-w-0 break-keep">
+              {place ? (
+                <span className="font-bold text-[#1b0d14]">{place}</span>
+              ) : (
+                <span className="text-[#7a6c74]">등록하지 않았어요</span>
+              )}
+            </dd>
+          </div>
         </dl>
 
-        {hasMap && (
+        {hasMap ? (
           <div className="mt-4">
             <div
               id={MAP_ID}
@@ -230,6 +233,28 @@ export default function BragPlanSheet({
               카카오맵에서 보기
               <ExternalLink className="h-3 w-3" strokeWidth={2.2} />
             </a>
+          </div>
+        ) : (
+          /*
+            지도 자리를 비워 두지 않는다. 빈칸이면 "지도가 안 떴나" 로
+            읽히는데, 실제로는 **그 일정에 장소가 없는 것**이다.
+
+            좌표가 없는 이유는 둘이다 — 장소를 아예 안 적었거나, 적긴 했지만
+            카카오에서 고르지 않아 좌표가 안 붙었거나. 둘을 갈라 적는다.
+            높이는 지도(168px)보다 낮게 잡는다 — 없는 것을 지도만큼 크게
+            그리면 그게 더 눈에 띈다.
+          */
+          <div className="mt-4 grid h-[96px] w-full place-items-center gap-1.5 rounded-[14px] border border-dashed border-stone-200 bg-[#faf7f9] px-4 text-center">
+            <MapPin
+              className="h-4 w-4 text-[#c9bfc5]"
+              strokeWidth={2}
+              aria-hidden
+            />
+            <span className="text-[12.5px] leading-relaxed text-[#7a6c74] break-keep">
+              {place
+                ? "지도에 표시할 수 없는 장소예요"
+                : "장소를 등록하지 않은 일정이에요"}
+            </span>
           </div>
         )}
 
