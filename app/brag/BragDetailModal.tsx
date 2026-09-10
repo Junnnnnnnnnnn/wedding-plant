@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Heart, X } from "lucide-react";
 import { BragDetail, BragPlanItem } from "@/types";
 import PlanTaskCardBody from "../components/PlanTaskCard";
+import BragPlanSheet from "./BragPlanSheet";
 import { PLANNED_COLOR, STACK_COLORS } from "../components/HomeDashboard";
 
 /**
@@ -120,15 +121,32 @@ export default function BragDetailModal({
   likePending = false,
 }: BragDetailModalProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  /**
+   * 눌러서 연 플랜 한 줄. **보기 전용**이다 (`BragPlanSheet`).
+   *
+   * 카테고리 소계를 같이 들고 간다 — 시트가 "이 카테고리에서 몇 %" 를
+   * 내는데, 그게 카드에는 없던 유일한 값이라 이 시트를 여는 이유다.
+   */
+  const [planItem, setPlanItem] = useState<{
+    item: BragPlanItem;
+    subtotal: number;
+  } | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // 시트가 열려 있으면 시트를 먼저 닫는다. 한 번에 둘 다 닫히면
+      // 어디까지 보고 있었는지가 사라진다
+      if (planItem) setPlanItem(null);
+      else onClose();
     };
     window.addEventListener("keydown", onKey);
-    closeRef.current?.focus();
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, planItem]);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+  }, []);
 
   const groups = useMemo(() => toGroups(detail?.items ?? []), [detail?.items]);
 
@@ -302,18 +320,24 @@ export default function BragDetailModal({
             className={`grid gap-3 ${cols === 2 ? "grid-cols-1 @[720px]:grid-cols-2" : "grid-cols-1"}`}
           >
             {g.items.map((item) => (
-              <div
+              /*
+                카드를 누르면 **보기 전용** 시트가 열린다.
+
+                M5-C 는 "앱의 카드를 그대로 쓴다" 가 전제라 앱에서 늘 눌리던
+                그 모양이고, 그래서 사람들이 실제로 누른다. 눌러도 아무 일이
+                없는 것보다 열어 주는 편이 낫다.
+
+                체크는 여전히 `readOnly` 다 — **여는 것과 바꾸는 것은 다르다.**
+                안내 모달의 "보기와 좋아요만" 이라는 약속은 그대로다.
+              */
+              <button
                 key={item.id}
-                className="rounded-[18px] border border-[#ee2b8c0f] bg-white px-4 py-3.5 shadow-sm"
+                type="button"
+                onClick={() => setPlanItem({ item, subtotal: g.subtotal })}
+                className="rounded-[18px] border border-[#ee2b8c0f] bg-white px-4 py-3.5 text-left shadow-sm transition-colors hover:border-[#ffd0e3] hover:bg-[#fffafc]"
               >
-                {/*
-                  `readOnly` 다. 남의 플랜이라 상태를 바꿀 수 없는데 모양이
-                  같으면 눌러 보게 된다 — 그래서 체크는 그림으로만 두고
-                  커서도 바뀌지 않는다. 안내 모달의 "보기와 좋아요만" 이라는
-                  약속이 여기서 지켜진다.
-                */}
                 <PlanTaskCardBody item={item} readOnly />
-              </div>
+              </button>
             ))}
           </div>
         </section>
@@ -487,6 +511,15 @@ export default function BragDetailModal({
           </>
         )}
       </div>
+
+      {planItem && (
+        <BragPlanSheet
+          item={planItem.item}
+          categorySubtotal={planItem.subtotal}
+          categoryColor={colorOf(planItem.item.categoryName)}
+          onClose={() => setPlanItem(null)}
+        />
+      )}
     </div>
   );
 }

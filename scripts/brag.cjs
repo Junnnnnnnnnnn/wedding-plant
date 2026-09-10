@@ -528,7 +528,73 @@ function installMocks(page) {
     checkboxes && checkboxes.total > 0 && checkboxes.buttons === 0,
     `체크가 button 이 아니다 (${checkboxes ? checkboxes.total : 0}개 중 button ${checkboxes ? checkboxes.buttons : "?"}개)`,
   );
-  check(checkboxes && checkboxes.pointer === 0, "체크 위에서 커서가 안 바뀐다");
+  /*
+    카드는 **누를 수 있다**(보기 전용 시트가 열린다). 커서가 바뀌는 것은
+    이제 맞는 동작이라 여기서 보지 않는다 — 대신 아래에서 시트가 정말
+    보기 전용인지를 본다. `체크가 button 이 아니다` 는 그대로다:
+    **여는 것과 바꾸는 것은 다르다.**
+  */
+
+  // ── 4-2. 카드를 누르면 보기 전용 시트 ────────────────────────
+  await page.evaluate(() => {
+    const dlg = document.querySelector('[role="dialog"]');
+    const card = [...dlg.querySelectorAll("button")].find(
+      (n) => /rounded-\[18px\]/.test(n.className) && n.offsetParent !== null,
+    );
+    card?.click();
+  });
+  await wait(500);
+  const planSheet = await page.evaluate(() => {
+    const s = [...document.querySelectorAll('[role="dialog"]')].find((n) =>
+      /자세히$/.test(n.getAttribute("aria-label") || ""),
+    );
+    if (!s) return null;
+    return {
+      text: s.innerText.replace(/\s+/g, " "),
+      // 닫기 말고 다른 조작이 있으면 안 된다
+      buttons: [...s.querySelectorAll("button")].map((n) =>
+        (n.getAttribute("aria-label") || n.textContent || "").trim(),
+      ),
+      inputs: s.querySelectorAll("input,textarea,select,[role=checkbox]").length,
+    };
+  });
+  check(!!planSheet, "카드를 누르면 시트가 열린다");
+  check(
+    planSheet && /남의 플랜이라 보기만/.test(planSheet.text),
+    "보기 전용이라고 적혀 있다",
+  );
+  check(
+    planSheet && planSheet.buttons.length === 1 && planSheet.buttons[0] === "닫기",
+    `바꾸는 조작이 없다 (버튼: ${planSheet ? planSheet.buttons.join(",") : "?"})`,
+  );
+  check(planSheet && planSheet.inputs === 0, "입력 칸이 없다");
+  /*
+    카드에 없던 값이 하나는 있어야 이 시트를 여는 뜻이 있다 —
+    긴 날짜(요일)와 카테고리 안에서 차지하는 몫.
+  */
+  check(
+    planSheet && /요일/.test(planSheet.text),
+    "날짜가 요일까지 펴진다 (카드는 '9월 2일' 까지만)",
+  );
+  check(
+    planSheet && /%/.test(planSheet.text),
+    "이 카테고리에서 차지하는 몫이 나온다",
+  );
+  await page.screenshot({ path: path.join(OUT, "brag-plan-sheet-1440.png") });
+
+  // ESC 는 시트를 먼저 닫는다. 한 번에 둘 다 닫히면 보던 자리를 잃는다
+  await page.keyboard.press("Escape");
+  await wait(400);
+  const afterEsc = await page.evaluate(() => ({
+    planSheet: [...document.querySelectorAll('[role="dialog"]')].some((n) =>
+      /자세히$/.test(n.getAttribute("aria-label") || ""),
+    ),
+    modal: !!document.querySelector('[role="dialog"]'),
+  }));
+  check(
+    afterEsc && !afterEsc.planSheet && afterEsc.modal,
+    "ESC 는 시트만 닫고 모달은 남긴다",
+  );
 
   // ── 5. 좋아요 ────────────────────────────────────────────────
   console.log("── 좋아요 ────────────────────────────");
@@ -687,6 +753,31 @@ function installMocks(page) {
   });
   await wait(1000);
   await page.screenshot({ path: path.join(OUT, "brag-modal-375.png") });
+  // 폰에서도 카드를 눌러 시트를 본다 (375 에서 넘치면 안 된다)
+  await page.evaluate(() => {
+    const dlg = document.querySelector('[role="dialog"]');
+    const card = [...dlg.querySelectorAll("button")].find(
+      (n) => /rounded-\[18px\]/.test(n.className) && n.offsetParent !== null,
+    );
+    card?.click();
+  });
+  await wait(700);
+  await page.screenshot({ path: path.join(OUT, "brag-plan-sheet-375.png") });
+  const sheetBox = await page.evaluate(() => {
+    const s = [...document.querySelectorAll('[role="dialog"]')].find((n) =>
+      /자세히$/.test(n.getAttribute("aria-label") || ""),
+    );
+    if (!s) return null;
+    const r = s.getBoundingClientRect();
+    return {
+      w: Math.round(r.width),
+      inView: r.left >= 0 && r.right <= window.innerWidth && r.top >= 0,
+    };
+  });
+  check(
+    sheetBox && sheetBox.inView,
+    `폰에서 시트가 화면 안에 들어온다 (w=${sheetBox ? sheetBox.w : 0})`,
+  );
   const phoneBox = await page.evaluate(() => {
     const d = document.querySelector('[role="dialog"]');
     if (!d) return null;
