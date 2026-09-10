@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Globe, Heart, Lock } from "lucide-react";
+import { ChevronRight, Globe, Heart, RefreshCw } from "lucide-react";
 import { getToken } from "@/lib/api";
 import { BragMyStatus } from "@/types";
 import { useApi } from "../contexts/ApiContext";
@@ -16,6 +16,12 @@ import { useApi } from "../contexts/ApiContext";
  * 익명인데 자랑하기는 **닉네임이 그대로 공개**된다 — 두 화면의 규칙이 정반대라,
  * 무엇이 공개되는지 글자 그대로 보여 주지 않으면 사람이 착각한 채로 켠다.
  * 끄는 것은 되돌릴 수 있으므로 확인을 받지 않는다.
+ *
+ * **켜 두는 동안 지금 플랜이 그대로 보인다(라이브).** 처음에는 올리는 순간의
+ * 스냅샷으로 만들고 "올린 뒤에는 고칠 수 없어요" 라고 적었는데, 그러면 켠 뒤에
+ * 일정을 고치거나 장소를 붙여도 자랑하기가 얼어붙은 채로 남는다. 고치려면
+ * 토글을 껐다 켜야 한다는 것을 사람이 알 방법이 없었다 — 원래 규칙인
+ * "수정하지 못하고 볼 수만 있다" 는 **보는 사람** 이야기다.
  */
 
 /**
@@ -35,9 +41,9 @@ const RULES: Array<{ icon: typeof Globe; title: string; body: string }> = [
     body: "로그인한 누구나 우리 플랜 한 장을 볼 수 있어요.",
   },
   {
-    icon: Lock,
-    title: "올린 뒤에는 고칠 수 없어요",
-    body: "올리는 순간의 모습 그대로 남습니다. 고치려면 내렸다가 다시 올려요.",
+    icon: RefreshCw,
+    title: "플랜을 고치면 같이 바뀌어요",
+    body: "올린 순간이 아니라 지금 플랜이 보입니다. 일정을 더하거나 장소를 붙이면 그대로 따라와요.",
   },
   {
     icon: Heart,
