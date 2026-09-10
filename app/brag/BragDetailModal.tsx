@@ -132,11 +132,42 @@ export default function BragDetailModal({
 
   const groups = useMemo(() => toGroups(detail?.items ?? []), [detail?.items]);
 
-  /** 범례 색. 상위 4개만 색이 붙고 나머지는 무채색 — 묶음 머리와 같은 규칙 */
+  /**
+   * 막대·범례에 실제로 그릴 줄.
+   *
+   * **`STACK_COLORS` 길이로 잘라야 한다.** 서버는 카테고리를 전부 내려주는데
+   * `i % 4` 로 색을 돌리면 다섯 번째가 첫 번째와 **같은 분홍**이 된다 —
+   * 실제로 "청첩장" 이 "예식장" 과 같은 색으로 나왔다. 색이 겹치는 순간
+   * 왼쪽 패널과 오른쪽 묶음을 잇는다는 이 화면의 전제가 무너진다.
+   *
+   * 잘라 낸 나머지는 버리지 않고 **"그 외" 한 줄**로 합친다(시안과 같다).
+   * 그냥 빼면 막대 길이가 실제 지출보다 짧아진다.
+   */
+  const chartRows = useMemo(() => {
+    const chart = detail?.categoryChart ?? [];
+    const rows = chart
+      .slice(0, STACK_COLORS.length)
+      .map((c, i) => ({ ...c, color: STACK_COLORS[i] }));
+    const restSum = chart
+      .slice(STACK_COLORS.length)
+      .reduce((n, c) => n + c.usedAmount, 0);
+
+    if (restSum > 0) {
+      rows.push({
+        categoryName: "그 외",
+        usedAmount: restSum,
+        color: REST_COLOR,
+      });
+    }
+    return rows;
+  }, [detail?.categoryChart]);
+
+  /** 묶음 머리 색. 상위 4개만 색이 붙고 나머지는 "그 외" 와 같은 무채색이다 */
   const colorOf = useMemo(() => {
-    const top = (detail?.categoryChart ?? []).slice(0, STACK_COLORS.length);
     const m = new Map<string, string>();
-    top.forEach((c, i) => m.set(c.categoryName, STACK_COLORS[i]));
+    (detail?.categoryChart ?? [])
+      .slice(0, STACK_COLORS.length)
+      .forEach((c, i) => m.set(c.categoryName, STACK_COLORS[i]));
     return (name: string) => m.get(name) ?? REST_COLOR;
   }, [detail?.categoryChart]);
 
@@ -190,14 +221,14 @@ export default function BragDetailModal({
         role="img"
         aria-label="카테고리별 지출과 사용 예상 비중"
       >
-        {(detail?.categoryChart ?? []).map((c, i) => (
+        {chartRows.map((c) => (
           <i
             key={c.categoryName}
             className="block h-full shrink-0"
             style={{
               width: `${pct(c.usedAmount)}%`,
               minWidth: c.usedAmount > 0 ? 4 : 0,
-              background: STACK_COLORS[i % STACK_COLORS.length],
+              background: c.color,
             }}
           />
         ))}
@@ -214,14 +245,14 @@ export default function BragDetailModal({
       </div>
 
       <div className="grid gap-[11px]">
-        {(detail?.categoryChart ?? []).map((c, i) => (
+        {chartRows.map((c) => (
           <div
             key={c.categoryName}
             className="flex items-center gap-2.5 text-[13px]"
           >
             <span
               className="h-[9px] w-[9px] shrink-0 rounded-[3px]"
-              style={{ background: STACK_COLORS[i % STACK_COLORS.length] }}
+              style={{ background: c.color }}
             />
             <span className="min-w-0 truncate text-[#4a3f45]">
               {c.categoryName}

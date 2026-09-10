@@ -89,14 +89,19 @@ const ITEMS = [
 }));
 
 /**
- * 상위 4개만 색이 붙는다(`STACK_COLORS`). **청첩장·혼수는 일부러 빼 둔다** —
- * 색이 없는 묶음(무채색)으로 떨어지는 분기를 봐야 한다.
+ * **일부러 5개를 준다.** `STACK_COLORS` 는 4색이라, 앱이 그냥 `i % 4` 로
+ * 색을 돌리면 다섯 번째가 첫 번째와 같은 분홍이 된다 — 실제로 "청첩장" 이
+ * "예식장" 과 같은 색으로 나왔다. 4개짜리 목만 두면 이 분기를 영영 못 본다.
+ *
+ * 혼수는 지출이 없어(전부 예정) 여기 없다 — 색 없는 묶음이 무채색으로
+ * 떨어지는 분기도 같이 본다.
  */
 const CATEGORY_CHART = [
   { categoryName: "예식장", usedAmount: 1240 },
   { categoryName: "스드메", usedAmount: 760 },
   { categoryName: "예물 · 예단", usedAmount: 480 },
   { categoryName: "신혼여행", usedAmount: 240 },
+  { categoryName: "청첩장", usedAmount: 180 },
 ];
 
 const BRAGS = [
@@ -433,16 +438,21 @@ function installMocks(page) {
     const dlg = document.querySelector('[role="dialog"]');
     if (!dlg) return null;
     const bgOf = (el) => getComputedStyle(el).backgroundColor;
+    /*
+      모달은 예산 패널과 묶음 목록을 **웹용·폰용 두 벌** 들고 있다(한쪽은
+      CSS 로 숨긴다). 그냥 세면 전부 두 배로 잡히므로 **보이는 것만** 본다.
+    */
+    const shown = (n) => n.offsetParent !== null;
     // 범례: 9x9 스와치가 붙은 줄
     const legend = [...dlg.querySelectorAll("span")]
-      .filter((n) => /(^|\s)h-\[9px\]/.test(n.className))
+      .filter((n) => /(^|\s)h-\[9px\]/.test(n.className) && shown(n))
       .map((n) => {
         const row = n.parentElement;
         return { name: row.children[1].textContent.trim(), color: bgOf(n) };
       });
     // 묶음 머리: 10x10 사각 + 이름
     const groups = [...dlg.querySelectorAll("i")]
-      .filter((n) => /(^|\s)h-2\.5/.test(n.className))
+      .filter((n) => /(^|\s)h-2\.5/.test(n.className) && shown(n))
       .map((n) => {
         const head = n.parentElement;
         return {
@@ -479,6 +489,20 @@ function installMocks(page) {
       rest && !legendMap.has("청첩장"),
       "상위 4개 밖 카테고리는 범례에 없고 무채색으로 떨어진다",
     );
+    check(
+      legendMap.has("그 외"),
+      "잘라 낸 나머지는 '그 외' 한 줄로 남는다 (막대가 짧아지지 않게)",
+    );
+    /*
+      **색이 겹치면 이 화면의 전제가 무너진다.** 왼쪽 막대와 오른쪽 묶음을
+      잇는 것이 C안의 전부인데, 다섯 번째 카테고리가 첫 번째와 같은 분홍이면
+      "이 1,240만원이 이 두 장" 이 거짓말이 된다.
+    */
+    const legendColors = colors.legend.map((l) => l.color);
+    check(
+      new Set(legendColors).size === legendColors.length,
+      `범례 색이 서로 겹치지 않는다 (${legendColors.length}줄)`,
+    );
     console.log(
       `       ${colors.groups.map((g) => `${g.name} ${g.subtotal}`).join(" · ")}`,
     );
@@ -490,7 +514,9 @@ function installMocks(page) {
   const checkboxes = await page.evaluate(() => {
     const dlg = document.querySelector('[role="dialog"]');
     if (!dlg) return null;
-    const boxes = [...dlg.querySelectorAll('[class*="rounded-[7px]"]')];
+      const boxes = [
+        ...dlg.querySelectorAll('[class*="rounded-[7px]"]'),
+      ].filter((n) => n.offsetParent !== null);
     return {
       total: boxes.length,
       buttons: boxes.filter((n) => n.tagName === "BUTTON").length,

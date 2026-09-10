@@ -590,10 +590,20 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
   다시 올린다(토글이라 내리는 건 언제든 된다).
 - 다른 사람은 **보기와 좋아요**만 한다. 댓글은 없다.
 
-**백엔드는 아직 없다.** 계약은 `docs/BRAG_API.md` 에 먼저 못 박아 두었고
+**백엔드는 `~/DEV/seoul-moment-api` 의 `apps/api/src/module/plen/brag/` 다.**
+계약은 `docs/BRAG_API.md` 에 있고 양쪽이 그대로 구현돼 있다
 (`GET /plan/brag/list` · `/plan/brag/{id}` · `/plan/brag/my` ·
-`PUT`·`DELETE /plan/brag` · `POST`·`DELETE /plan/brag/like/{id}`),
-프론트는 그 모양을 가정하고 이미 구현돼 있다.
+`PUT`·`DELETE /plan/brag` · `POST`·`DELETE /plan/brag/like/{id}`).
+
+**올린 것은 참조가 아니라 스냅샷이다.** `plan_brag` 가 예산·개수·카테고리·
+플랜 목록을 통째로 복사해 들고 있다. 플랜을 참조만 하면 올린 뒤에 예산을
+고쳐도 남의 화면이 따라 바뀌어 "고칠 수 없다" 는 약속이 깨진다. 그래서
+**이미 올라가 있으면 `PUT` 이 아무것도 하지 않는다.**
+
+**내릴 때 행을 지우지 않는다** (`status = UNPUBLISHED`). 다시 올리면 같은
+행을 쓰고 스냅샷만 새로 떠서 **좋아요가 이어진다.** 한 사람이 한 장만
+갖는다(`plan_user_id` 유니크). **D-day 는 저장하지 않고 읽을 때 다시 센다** —
+스냅샷이라고 박아 두면 반년 뒤에도 D-24 라고 적힌다.
 
 **공개 범위는 `BragToggle` 의 `OPEN_FIELDS` 한 곳이 상한이다.**
 
@@ -623,6 +633,10 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 - **왼쪽 범례 색과 오른쪽 묶음 머리 색이 같아야 한다.** "이 1,240만원이 이 두
   장이다" 가 눈으로 붙는 것이 C안의 전부다. 상위 4개만 색이 붙고 나머지는
   무채색이다.
+  **`STACK_COLORS` 를 `i % 4` 로 돌리지 마라** — 서버는 카테고리를 전부
+  내려주는데 그러면 다섯 번째가 첫 번째와 같은 분홍이 된다(실제로 "청첩장"
+  이 "예식장" 과 같은 색으로 나왔다). 4개로 자르고 나머지는 **"그 외" 한
+  줄**로 합친다 — 그냥 빼면 막대가 실제 지출보다 짧아진다.
 - **묶음 소계는 지출과 예정을 함께 센다** (완료 185 + 예정 35 = 220). 묶는 일과
   소계는 **프론트가** 한다 — 서버에 두면 문구 하나 고치는 데 백엔드 배포가
   묶인다. 응답은 평평한 `items` 다.
@@ -653,7 +667,11 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 들어가는 곳이다. `pathnameToTab("/brag")` 은 보드(`/calendar`)와 같은 이유로
 "홈"에 귀속시킨다. `GuestGate` 의 막는 목록에도 들어 있다.
 
-확인은 `node scripts/brag.cjs` 다.
+확인은 **`node scripts/brag.cjs`** 다 (`LIKE_FAIL=1` 로 좋아요 실패도 본다).
+목의 카테고리를 **일부러 5개** 두어 색이 겹치는 분기를 매번 본다.
+백엔드는 그쪽 레포의 `test/plan.brag.spec.ts` 17개다 —
+`docker compose -f docker-compose.test.yml up -d` 뒤
+`npm run test:integration -- --testPathPattern plan.brag`.
 
 ### 프로필 (`app/user/page.tsx` → `app/components/SettingsPage.tsx`)
 
