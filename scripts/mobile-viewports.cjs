@@ -352,6 +352,11 @@ function installMocks(page) {
       return send({ list: FEED, total: FEED.length });
     if (/^\/plan\/room\//.test(p0))
       return send({ id: 7, name: "지수 · 현우", permission: "OWNER" });
+    // 자랑하기. 빈 목록으로 두면 벽돌 배치가 한 번도 안 그려진다
+    if (p0 === "/plan/brag/my")
+      return send({ published: true, bragId: 1, publishedAt: null, likeCount: 24 });
+    if (p0.startsWith("/plan/brag"))
+      return send({ list: BRAGS, total: BRAGS.length });
 
     // 모르는 경로는 **빈 목록**으로 답한다. `null` 로 주면 목록을 기대하는
     // 화면이 통째로 오류 상태로 떨어진다.
@@ -383,11 +388,64 @@ const SHOT_VIEWPORTS = new Set([
   "320x568-아이폰SE1",
 ]);
 
+/** 자랑하기 목록 카드. 높이가 제각각이어야 벽돌 배치가 의미가 있다 */
+const BRAGS = [
+  {
+    bragId: 1,
+    nickname: "유진 · 태호",
+    weddingDate: "2026-10-03",
+    dday: 24,
+    totalBudget: 3600,
+    usedAmount: 2900,
+    plannedAmount: 340,
+    planCount: 13,
+    doneCount: 9,
+    categories: ["예식장", "스드메", "예물 · 예단", "신혼여행", "청첩장"],
+    likeCount: 41,
+    liked: false,
+    publishedAt: "2026-09-08T00:00:00.000Z",
+    isMine: false,
+  },
+  {
+    bragId: 2,
+    nickname: "지수 · 현우",
+    weddingDate: "2026-11-14",
+    dday: 66,
+    totalBudget: 4200,
+    usedAmount: 1340,
+    plannedAmount: 1850,
+    planCount: 18,
+    doneCount: 11,
+    categories: ["예식장", "스드메"],
+    likeCount: 24,
+    liked: false,
+    publishedAt: "2026-09-05T00:00:00.000Z",
+    isMine: true,
+  },
+  {
+    bragId: 3,
+    nickname: "민서 · 도현",
+    weddingDate: "2027-03-20",
+    dday: 190,
+    totalBudget: 2800,
+    usedAmount: 300,
+    plannedAmount: 900,
+    planCount: 7,
+    doneCount: 2,
+    categories: ["예식장"],
+    likeCount: 3,
+    liked: true,
+    publishedAt: "2026-09-01T00:00:00.000Z",
+    isMine: false,
+  },
+];
+
 const SCREENS = [
   { name: "main", url: "/main", wait: 2600 },
   { name: "calendar", url: "/calendar", wait: 2600 },
   { name: "plan-list", url: "/plan-list", wait: 2400 },
   { name: "feed", url: "/feed", wait: 2400 },
+  { name: "brag", url: "/brag", wait: 2400 },
   { name: "budget", url: "/budget-detail", wait: 2600 },
   { name: "user", url: "/user", wait: 2200 },
   { name: "add-plen", url: "/add-plen?id=4", wait: 3000 },

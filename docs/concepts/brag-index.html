@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="brag-tokens.css">
 <style>
   .decided { margin-top: var(--x8); display: grid; gap: var(--x3);
-             grid-template-columns: repeat(3, minmax(0, 1fr)); }
+             grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
   @media (max-width: 820px) { .decided { grid-template-columns: minmax(0, 1fr); } }
   .dec { background: var(--bg-layer-default); border: 1px solid var(--stroke-neutral-weak);
          border-radius: var(--r4); padding: var(--x5); }
@@ -102,7 +102,8 @@
     <b>A안으로 정했습니다</b> — 확정안은 두 문서에 실제 크기로 그려 두었습니다:
     <a class="backlink" style="margin: 0; font-size: inherit" href="brag-list.html">목록 화면</a> ·
     <a class="backlink" style="margin: 0; font-size: inherit" href="brag-modal-4.html">카드를 눌렀을 때(네 안)</a> ·
-    <a class="backlink" style="margin: 0; font-size: inherit" href="brag-modal-m5.html">M5 남의 대시보드</a>.
+    <a class="backlink" style="margin: 0; font-size: inherit" href="brag-modal-m5.html">M5 남의 대시보드</a> ·
+    <a class="backlink" style="margin: 0; font-size: inherit" href="brag-modal-m5-4.html">M5 계열 네 안</a>.
     아래는 고를 때 쓴 비교입니다.
     <br><br>
     대시보드 토글 → 안내 모달 → 목록 → 큰 모달. <b>네 걸음이 한 흐름</b>이고,
@@ -125,6 +126,15 @@
       <p class="dec__d">지금 앱에는 이미지 업로드가 없습니다. 카드는
         <b>예산 막대 · 카테고리 · D-day</b> 로 만듭니다 — 새 업로드도,
         저장소도, 이미지 신고도 필요 없습니다.</p>
+    </div>
+    <div class="dec">
+      <p class="dec__q">상세 모달</p>
+      <p class="dec__a">M5-C 카테고리로 묶는다</p>
+      <p class="dec__d">카드를 누르면 <b>왼쪽 예산 패널 · 오른쪽 카테고리 묶음</b>이
+        뜹니다. 묶음 머리의 색이 왼쪽 막대와 같아 &ldquo;이 1,240만원이 이 두
+        장&rdquo;이 눈으로 붙습니다.
+        <a class="backlink" style="margin: 0; font-size: inherit"
+        href="brag-modal-m5-4.html">네 안 비교</a></p>
     </div>
     <div class="dec">
       <p class="dec__q">이름</p>
