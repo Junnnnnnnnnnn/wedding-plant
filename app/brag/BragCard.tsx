@@ -66,7 +66,13 @@ export default function BragCard({
       */
       className="mb-5 block w-full break-inside-avoid"
     >
-      <div className="rounded-[20px] border border-stone-100 bg-white p-5 transition-shadow hover:border-[#ffd0e3] hover:shadow-md">
+      {/*
+        `border-stone-100` 은 흰 카드가 `#fcfbfc` 바탕에 놓이면 거의 안
+        보인다 — 카드 경계가 사라져 벽돌이 한 덩어리로 읽혔다. 테두리를 한
+        단계 진하게 하고 얕은 그림자로 바탕에서 띄운다(홈 대시보드 패널이
+        쓰는 것과 같은 방법).
+      */}
+      <div className="rounded-[20px] border border-stone-200/80 bg-white p-5 shadow-sm transition-shadow hover:border-[#ffd0e3] hover:shadow-md">
         <button
           type="button"
           onClick={onOpen}

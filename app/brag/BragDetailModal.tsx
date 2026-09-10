@@ -302,19 +302,25 @@ export default function BragDetailModal({
     <div className="grid gap-5">
       {groups.map((g) => (
         <section key={g.categoryName}>
-          <div className="mb-2.5 flex items-center gap-2.5 border-b border-stone-100 pb-2">
+          {/*
+            **소계를 오른쪽 끝으로 날려 보내지 않는다.** 예전에는 `ml-auto`
+            였는데, 넓은 화면에서 묶음 머리가 1,100px 을 넘어가 이름과 금액이
+            화면 양 끝에 떨어져 앉았다 — 어느 카테고리의 금액인지 눈으로
+            잇지 못한다. 세로로 줄 맞추는 것보다 **붙어 있는 게 낫다.**
+          */}
+          <div className="mb-2.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 border-b border-stone-100 pb-2">
             <i
-              className="h-2.5 w-2.5 shrink-0 rounded-[3px]"
+              className="h-2.5 w-2.5 shrink-0 self-center rounded-[3px]"
               style={{ background: colorOf(g.categoryName) }}
             />
             <span className="text-[14px] font-bold tracking-tight text-[#1b0d14]">
               {g.categoryName}
             </span>
+            <span className="font-user-content text-[14px] font-bold tracking-tight text-[#1b0d14]">
+              {g.subtotal.toLocaleString("ko-KR")}만 원
+            </span>
             <span className="text-[12px] text-gray-400">
               {g.items.length}장
-            </span>
-            <span className="ml-auto font-user-content text-[14px] font-bold tracking-tight text-[#1b0d14]">
-              {g.subtotal.toLocaleString("ko-KR")}만 원
             </span>
           </div>
           <div

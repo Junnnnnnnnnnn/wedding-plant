@@ -512,11 +512,19 @@ function installMocks(page) {
     const groups = [...dlg.querySelectorAll("i")]
       .filter((n) => /(^|\s)h-2\.5/.test(n.className) && shown(n))
       .map((n) => {
+        /*
+          **자리 순서로 읽지 않는다.** 예전에는 `children[2]`·`children[3]`
+          으로 집었는데, 소계와 개수의 순서를 바꾸자 값이 서로 뒤바뀐 채로
+          검사가 통과할 뻔했다. 글자 모양으로 고른다.
+        */
         const head = n.parentElement;
+        const texts = [...head.querySelectorAll("span")].map((v) =>
+          v.textContent.trim(),
+        );
         return {
-          name: head.children[1].textContent.trim(),
-          count: head.children[2].textContent.trim(),
-          subtotal: head.children[3].textContent.trim(),
+          name: texts[0] ?? "",
+          count: texts.find((t) => /^\d+장$/.test(t)) ?? "",
+          subtotal: texts.find((t) => /만 원$/.test(t)) ?? "",
           color: bgOf(n),
         };
       });
