@@ -179,13 +179,40 @@ export function getApiBaseUrl(): string {
 /** 로그인 후 복귀할 경로 저장용 */
 export const RETURN_PATH_AFTER_LOGIN_KEY = "plan_return_path_after_login";
 
+/**
+ * 로그인 후 복귀 경로로 삼지 않는 **문** 경로.
+ *
+ * `/login` 을 복귀 경로로 저장하면 로그인을 마치고도 다시 로그인 화면으로
+ * 돌아오고, 거기서 또 로그인을 누르면 같은 값이 다시 저장돼 영영 앱 안으로
+ * 들어가지 못한다(실제로 그렇게 갇혔다). `/` · `/main` 은 기본 착지
+ * 지점이라 저장할 이유가 없고, `/setting`(온보딩)은 이미 플랜을 만든 사람을
+ * 다시 온보딩으로 끌고 간다.
+ *
+ * **판단을 호출부마다 복사하지 마세요** — 저장·조회 두 곳이 이 하나를 쓴다.
+ */
+const LOGIN_DOOR_PATHS = ["/", "/main", "/login", "/setting"];
+
+export function isLoginDoorPath(path: string): boolean {
+  let bare = path.split("?")[0].split("#")[0];
+  while (bare.length > 1 && bare.endsWith("/")) bare = bare.slice(0, -1);
+  return LOGIN_DOOR_PATHS.includes(bare === "" ? "/" : bare);
+}
+
 export function getReturnPathAfterLogin(): string | null {
   if (typeof window === "undefined") return null;
-  return sessionStorage.getItem(RETURN_PATH_AFTER_LOGIN_KEY);
+  const saved = sessionStorage.getItem(RETURN_PATH_AFTER_LOGIN_KEY);
+  if (!saved) return null;
+  // 예전 버전이 남겨 둔 문 경로가 아직 세션에 살아 있을 수 있다 — 지우고 무시한다.
+  if (isLoginDoorPath(saved)) {
+    sessionStorage.removeItem(RETURN_PATH_AFTER_LOGIN_KEY);
+    return null;
+  }
+  return saved;
 }
 
 export function setReturnPathAfterLogin(path: string): void {
   if (typeof window === "undefined") return;
+  if (!path || isLoginDoorPath(path)) return;
   sessionStorage.setItem(RETURN_PATH_AFTER_LOGIN_KEY, path);
 }
 

@@ -115,10 +115,9 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     clearToken();
     if (typeof window !== "undefined") {
       const { pathname, search } = window.location;
-      // 로그인 후 돌아올 곳을 남긴다 (랜딩/메인은 기본 경로라 제외)
-      if (pathname !== "/" && pathname !== "/main") {
-        setReturnPathAfterLogin(`${pathname}${search}`);
-      }
+      // 로그인 후 돌아올 곳을 남긴다. 랜딩·메인·로그인 같은 문 경로는
+      // setReturnPathAfterLogin 이 알아서 걸러낸다.
+      setReturnPathAfterLogin(`${pathname}${search}`);
     }
     setSessionExpired(true);
   }, []);

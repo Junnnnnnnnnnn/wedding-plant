@@ -56,13 +56,17 @@ export function useKakaoAuth() {
           : null;
       if (share?.trim()) setShareAfterLogin(share.trim());
 
-      // 현재 경로 저장 (메인/랜딩 제외하고 목록 등 특정 페이지에서 온 경우)
-      if (pathname !== "/" && pathname !== "/main") {
-        setReturnPathAfterLogin(pathname);
-      } else {
+      if (pathname === "/" || pathname === "/main") {
         // 랜딩·메인에서 시작했다면 이전에 남은 복귀 경로를 지운다.
         // 취소된 로그인이 남긴 stale 값이 다음 로그인의 분기를 가로챘다.
         clearReturnPathAfterLogin();
+      } else {
+        // 현재 경로를 복귀 지점으로 남긴다.
+        //
+        // `/login` 처럼 로그인하러 들어오는 문은 `setReturnPathAfterLogin` 이
+        // 조용히 무시한다 — 저장했다가는 로그인을 마치고 다시 로그인 화면으로
+        // 돌아오고, 세션 만료로 밀려오기 전에 보던 진짜 복귀 경로까지 덮어쓴다.
+        setReturnPathAfterLogin(pathname);
       }
     };
 

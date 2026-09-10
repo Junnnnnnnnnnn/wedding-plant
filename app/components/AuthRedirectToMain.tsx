@@ -70,6 +70,14 @@ export default function AuthRedirectToMain() {
           isPlanDataComplete(json.data)
         ) {
           router.replace("/main");
+          return;
+        }
+        // 토큰은 살아 있는데 플랜이 덜 찬 사람. `/login` 은 이미 로그인한
+        // 사람에게 **막다른 길**이라(다시 눌러도 로그인 화면으로 돌아온다)
+        // 남은 질문을 받는 온보딩으로 보낸다. 랜딩·온보딩은 그대로 둔다 —
+        // 각자 보여 줄 것이 있는 화면이다.
+        if (pathname === "/login") {
+          router.replace("/setting");
         }
       })
       .catch(() => {
