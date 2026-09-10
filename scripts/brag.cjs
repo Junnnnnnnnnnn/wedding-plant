@@ -76,14 +76,15 @@ const PLACES = {
   */
   "드레스 피팅": { location: "신사동 드레스샵", lat: null, lng: null },
   /*
-    **해외.** 좌표는 있는데 카카오에 타일이 없어서, 그대로 그리면 빈 흰
-    상자가 된다(실제로 푸꾸옥 호텔이 백지로 떴다). 신혼여행은 해외가
-    기본이라 이 분기가 드물지 않다.
+    **실제 데이터의 모양.** 장소 칸은 카카오에서 고르면 좌표가 붙고, 아니면
+    `0.00000000` 이 들어간다 — 해외 장소가 그렇게 저장된다. null 만 걸러
+    내면 기니 만(0, 0)에 마커가 찍힌 빈 지도가 그려진다(실제로 푸꾸옥
+    호텔이 백지로 떴다).
   */
   "신혼여행 숙소": {
     location: "씨쉘 푸꾸옥 호텔 앤 스파",
-    lat: 10.2107,
-    lng: 103.9646,
+    lat: 0,
+    lng: 0,
   },
 };
 
@@ -777,8 +778,8 @@ function installMocks(page) {
   await page.screenshot({ path: path.join(OUT, "brag-plan-sheet-noplace.png") });
 
   /*
-    해외 좌표. 카카오는 국내 타일만 있어서 그대로 그리면 빈 흰 상자가 된다 —
-    지도를 아예 안 내고 그렇다고 적어야 한다.
+    좌표가 `0, 0` 인 경우. **null 과 똑같이 다뤄야 한다** — 안 그러면 기니 만
+    앞바다에 마커가 찍힌 빈 지도가 그려진다.
   */
   await page.keyboard.press("Escape");
   await wait(300);
@@ -793,7 +794,7 @@ function installMocks(page) {
     card?.click();
   });
   await wait(1200);
-  const overseas = await page.evaluate(() => {
+  const zeroCoords = await page.evaluate(() => {
     const s = [...document.querySelectorAll('[role="dialog"]')].find((n) =>
       /자세히$/.test(n.getAttribute("aria-label") || ""),
     );
@@ -807,22 +808,18 @@ function installMocks(page) {
     };
   });
   check(
-    overseas && /씨쉘 푸꾸옥 호텔 앤 스파/.test(overseas.text),
-    "해외 장소도 이름은 보인다",
+    zeroCoords && /씨쉘 푸꾸옥 호텔 앤 스파/.test(zeroCoords.text),
+    "좌표가 0,0 이어도 장소 이름은 보인다",
   );
   check(
-    overseas && !overseas.hasBox,
-    "해외 좌표에는 지도를 안 그린다 (빈 흰 상자가 되므로)",
+    zeroCoords && !zeroCoords.hasBox && !zeroCoords.hasLink,
+    "좌표 0,0 에는 지도도 카카오맵 링크도 안 낸다",
   );
   check(
-    overseas && /해외라서 지도를 보여 줄 수 없어요/.test(overseas.text),
-    "해외라고 적는다",
+    zeroCoords && /지도에 표시할 수 없는 장소예요/.test(zeroCoords.text),
+    "좌표 0,0 도 '지도에 표시할 수 없다' 고 적는다",
   );
-  check(
-    overseas && !overseas.hasLink,
-    "해외에는 카카오맵 링크도 안 낸다 (열어도 빈 지도다)",
-  );
-  await page.screenshot({ path: path.join(OUT, "brag-plan-sheet-overseas.png") });
+  await page.screenshot({ path: path.join(OUT, "brag-plan-sheet-zero.png") });
 
   // 카테고리에 하나뿐이면 "가운데 100%" 대신 하나뿐이라고 적는다
   await page.keyboard.press("Escape");

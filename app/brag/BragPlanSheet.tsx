@@ -30,34 +30,6 @@ import { BragPlanItem } from "@/types";
 /** 지도를 그리는 자리. 한 번에 하나만 열리므로 id 하나로 충분하다 */
 const MAP_ID = "brag-plan-map";
 
-/**
- * 카카오 지도가 타일을 가진 범위 — **대한민국뿐이다.**
- *
- * 밖의 좌표를 주면 지도가 뜨긴 뜨는데 타일이 전부 `white.png`(데이터 없음)라
- * **빈 흰 상자**가 된다. 신혼여행처럼 해외 장소가 흔한 카테고리에서 실제로
- * 그렇게 보였다 — 푸꾸옥(베트남) 호텔이 백지로 떴다.
- *
- * 백령도(124.6)·마라도(33.06)·독도(131.87)를 감싸는 넉넉한 사각형이다.
- * 정확한 국경이 아니라 **"지도가 나올 만한 곳인가"** 를 가르는 선이라,
- * 조금 넓게 잡아도 빈 지도만 안 나오면 된다.
- */
-const KOREA_BOUNDS = {
-  minLat: 33.0,
-  maxLat: 38.7,
-  minLng: 124.5,
-  maxLng: 132.0,
-};
-
-function isMappable(lat: number | null, lng: number | null): boolean {
-  if (lat === null || lng === null) return false;
-  return (
-    lat >= KOREA_BOUNDS.minLat &&
-    lat <= KOREA_BOUNDS.maxLat &&
-    lng >= KOREA_BOUNDS.minLng &&
-    lng <= KOREA_BOUNDS.maxLng
-  );
-}
-
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 /** "2027년 1월 10일 일요일". 카드의 "1월 10일" 보다 한 겹 자세하다 */
@@ -92,9 +64,16 @@ export default function BragPlanSheet({
 
   const lat = typeof item.lat === "number" ? item.lat : null;
   const lng = typeof item.lng === "number" ? item.lng : null;
-  /** 좌표가 있어도 국외면 빈 흰 상자가 된다. 그러면 지도를 아예 안 낸다 */
-  const hasMap = isMappable(lat, lng);
-  const overseas = lat !== null && lng !== null && !hasMap;
+  /**
+   * 좌표가 쓸 만한가.
+   *
+   * **`0, 0` 은 "좌표 없음" 이다.** 일정의 장소 칸은 카카오 검색으로 고르면
+   * 좌표가 붙고, 그렇지 않으면 `0.00000000` 이 들어간다 — 해외 장소가
+   * 그렇게 저장된다("씨쉘 푸꾸옥 호텔 앤 스파  0.00000000  0.00000000").
+   * null 만 걸러 내면 기니 만(0, 0) 앞바다에 마커가 찍힌 **빈 지도**가
+   * 그려진다. 실제로 푸꾸옥 호텔이 백지로 떴다.
+   */
+  const hasMap = lat !== null && lng !== null && !(lat === 0 && lng === 0);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -269,9 +248,8 @@ export default function BragPlanSheet({
             지도 자리를 비워 두지 않는다. 빈칸이면 "지도가 안 떴나" 로
             읽히는데, 실제로는 **그 일정에 장소가 없는 것**이다.
 
-            지도를 못 내는 이유는 셋이다 — 장소를 아예 안 적었거나, 적긴
-            했지만 카카오에서 고르지 않아 좌표가 안 붙었거나, **좌표는 있는데
-            국외라 카카오에 타일이 없거나.** 셋을 갈라 적는다.
+            좌표가 없는 이유는 둘이다 — 장소를 아예 안 적었거나, 적긴 했지만
+            카카오에서 고르지 않아 좌표가 안 붙었거나. 둘을 갈라 적는다.
             높이는 지도(168px)보다 낮게 잡는다 — 없는 것을 지도만큼 크게
             그리면 그게 더 눈에 띈다.
           */
@@ -282,11 +260,9 @@ export default function BragPlanSheet({
               aria-hidden
             />
             <span className="text-[12.5px] leading-relaxed text-[#7a6c74] break-keep">
-              {overseas
-                ? "해외라서 지도를 보여 줄 수 없어요"
-                : place
-                  ? "지도에 표시할 수 없는 장소예요"
-                  : "장소를 등록하지 않은 일정이에요"}
+              {place
+                ? "지도에 표시할 수 없는 장소예요"
+                : "장소를 등록하지 않은 일정이에요"}
             </span>
           </div>
         )}
