@@ -7,6 +7,7 @@ import { getToken } from "@/lib/api";
 import { formatKoreanTime, getKstDate, parseLocalDate } from "@/lib/utils";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
+import BragToggle from "./BragToggle";
 import ActivityPanel from "./ActivityPanel";
 import CoupleChatBadge, { sortCoupleFirst } from "./CoupleChatBadge";
 import PlanTaskCardBody, { PlanTaskItem } from "./PlanTaskCard";
@@ -79,6 +80,13 @@ interface HomeDashboardProps {
   /** 아직 배우자가 없을 때 상단에 초대 띠를 낸다 (게스트·공유 뷰는 false) */
   showSoloBanner?: boolean;
   /**
+   * 자랑하기 토글을 예산 패널 안에 낼지. 남의 방을 보는 중이면 false 다.
+   * **`roomId` 유무로 판단하지 말 것** — 내 플랜에도 방이 생기므로 그
+   * 조건으로는 토글이 영영 안 뜬다 (초대 띠와 같은 규칙, `app/main/page.tsx`
+   * 의 `canBrag` 한 곳에서 낸다).
+   */
+  canBrag?: boolean;
+  /**
    * 값이 바뀌면 일정·예산을 다시 받는다. 옆 pane 에서 플랜을 저장한 뒤
    * 부모가 올린다 — 통째로 remount 하면 화면이 한 번 깜빡인다.
    */
@@ -102,12 +110,17 @@ function roomColor(id: number): string {
   return ROOM_COLORS[Math.abs(id) % ROOM_COLORS.length];
 }
 
-const STACK_COLORS = ["#ee2b8c", "#ff7ab5", "#ffa8cd", "#ffd0e3"];
+/**
+ * 카테고리 스택 막대의 색. **자랑하기 상세 모달도 이걸 그대로 쓴다** —
+ * 거기 값어치가 "남의 대시보드를 그대로 들여다본다" 는 데 있어서, 색이
+ * 갈리는 순간 다른 화면이 된다. 그래서 export 한다.
+ */
+export const STACK_COLORS = ["#ee2b8c", "#ff7ab5", "#ffa8cd", "#ffd0e3"];
 /**
  * 아직 안 쓴 "사용 예상" 몫. 실제로 나간 돈(분홍 계열)과 섞이면 안 되므로
  * 색이 아니라 무채색으로 둔다 — 눈에 띄되 지출로는 안 읽히게.
  */
-const PLANNED_COLOR = "#cdbfc7";
+export const PLANNED_COLOR = "#cdbfc7";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -149,6 +162,7 @@ export default function HomeDashboard({
   onOpenMembers,
   members = [],
   showSoloBanner = false,
+  canBrag = false,
   refreshToken = 0,
   narrow = false,
   onToggle,
@@ -733,6 +747,13 @@ export default function HomeDashboard({
                 </button>
               )}
             </div>
+
+            {/*
+              자랑하기 토글은 **내 플랜일 때만** 낸다. 조건은 부모가 초대 띠와
+              같은 규칙으로 내려 준다(`canBrag`). 게스트는 서버에 올릴 플랜
+              자체가 없어서 `BragToggle` 이 안에서 토큰을 보고 스스로 빠진다.
+            */}
+            {canBrag && <BragToggle />}
           </section>
 
           {/* 다가오는 일정 — 카드가 아니라 선 위의 마커 */}

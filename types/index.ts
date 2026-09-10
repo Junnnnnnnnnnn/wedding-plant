@@ -84,3 +84,76 @@ export interface PostableSchedule {
   locationLng: number | null;
   startDate: string | null;
 }
+
+/* ─────────────────────────────────────────────────────────────
+ * 자랑하기 (`/brag`)
+ *
+ * 단위는 **플랜 전체**다. 일정 하나를 올리는 것은 피드(견적 후기)가 이미
+ * 맡고 있고, 여기는 "내 웨딩 플랜 한 장" 이 통째로 올라간다.
+ *
+ * **피드와 규칙이 정반대다.** 피드는 `planUserId` 조차 내려보내지 않는
+ * 익명이고, 자랑하기는 **닉네임이 그대로 공개**된다. 그래서 올리기 전에
+ * 안내 모달이 무엇이 공개되는지 글자 그대로 적어 준다
+ * (`app/components/BragToggle.tsx` 의 `OPEN_FIELDS`).
+ *
+ * 금액 단위는 앱의 다른 곳과 같은 **만원**이다.
+ * 계약 전문은 `docs/BRAG_API.md`.
+ * ───────────────────────────────────────────────────────────── */
+
+/** 목록 카드 한 장. `GET /plan/brag/list` */
+export interface BragPost {
+  bragId: number;
+  /** "지수 · 현우". 방에 배우자가 있으면 두 이름, 없으면 한 이름 */
+  nickname: string;
+  weddingDate: string | null;
+  /** 남은 일수. "D-66" 문장은 프론트가 만든다 (`FeedCard` 와 같은 규칙) */
+  dday: number | null;
+  totalBudget: number;
+  /** 실제 지출 */
+  usedAmount: number;
+  /** 아직 안 쓴 예정 몫 */
+  plannedAmount: number;
+  planCount: number;
+  doneCount: number;
+  /** 카드에 칩으로 낼 카테고리 이름. 지출 큰 순 */
+  categories: string[];
+  likeCount: number;
+  liked: boolean;
+  publishedAt: string;
+  isMine: boolean;
+}
+
+/** 상세 모달(M5-C). `GET /plan/brag/{bragId}` */
+export interface BragDetail extends BragPost {
+  /** 예산 막대·범례용. 지출 큰 순, 서버가 잘라 준다 */
+  categoryChart: Array<{ categoryName: string; usedAmount: number }>;
+  /**
+   * 플랜 전체를 **평평한 목록**으로 받는다. 카테고리로 묶고 소계를 내는 것은
+   * 프론트가 한다 — 소계는 지출과 예정을 함께 세야 하는데(시안 M5-C), 그
+   * 규칙이 서버에 있으면 문구 하나 고치는 데 백엔드 배포가 묶인다.
+   */
+  items: BragPlanItem[];
+}
+
+/**
+ * 상세 모달에 뜨는 플랜 한 줄.
+ *
+ * `PlanTaskItem` 과 모양이 같지만 **시각·장소가 없다** — 남에게까지 공개할
+ * 값이 아니다. 안내 모달의 공개 목록도 여기까지만 약속한다.
+ */
+export interface BragPlanItem {
+  id: number;
+  categoryName: string;
+  title: string;
+  amount: number | null;
+  startDate: string | null;
+  status: string | null;
+}
+
+/** 내 플랜이 지금 올라가 있는지. `GET /plan/brag/my` */
+export interface BragMyStatus {
+  published: boolean;
+  bragId: number | null;
+  publishedAt: string | null;
+  likeCount: number;
+}

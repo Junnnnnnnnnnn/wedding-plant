@@ -23,6 +23,7 @@ const GUARDED = [
   "/calendar",
   "/plan-list",
   "/feed",
+  "/brag",
   "/budget-detail",
   "/user",
   "/add-plen",

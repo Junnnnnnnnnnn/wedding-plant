@@ -23,7 +23,7 @@ const p = require(path.join(__dirname, "..", "node_modules", "puppeteer-core"));
 
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const API = "https://api.seoulmoment.com.tw";
-const ORIGIN = "http://localhost:3000";
+const ORIGIN = process.env.BASE || "http://localhost:3000";
 /** true 면 목이 8월 일정을 빼서 "이번 달 할 일"이 빈 상태를 만든다 */
 let emptyThisMonth = false;
 /** true 면 방장 혼자다 — 초대 띠가 떠야 하는 상태 */

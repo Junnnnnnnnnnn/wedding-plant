@@ -4,6 +4,7 @@ import {
   MessageCircle,
   NotepadText,
   Settings,
+  Sparkles,
   Users,
 } from "lucide-react";
 
@@ -11,13 +12,15 @@ import {
 export type TabType = "home" | "feed" | "rooms" | "settings";
 
 /**
- * 데스크톱 좌측 레일의 메뉴. 하단 탭 4개에 "플랜 보드"가 추가된 5개다.
+ * 데스크톱 좌측 레일의 메뉴. 하단 탭 4개에 "플랜 보드"와 "자랑하기"가
+ * 더해진 6개다.
  *
- * 폰에서 탭 5개는 좁고, 보드는 애초에 넓은 화면 전용 뷰라 모바일에는
- * 넣지 않는다. 그래서 레일과 탭바는 항목 수가 다르고, 보드 화면(/calendar)에
- * 있을 때 모바일 탭바는 pathnameToTab 규칙대로 "홈"을 활성 표시한다.
+ * 폰에서 탭 6개는 좁다. 보드는 애초에 넓은 화면 전용 뷰이고, 자랑하기는
+ * 홈의 예산 패널에서 들어가는 곳이라 둘 다 모바일 탭을 따로 두지 않는다.
+ * 그래서 레일과 탭바는 항목 수가 다르고, 두 화면에 있을 때 모바일 탭바는
+ * pathnameToTab 규칙대로 "홈"을 활성 표시한다.
  */
-export type RailViewType = TabType | "board";
+export type RailViewType = TabType | "board" | "brag";
 
 export const TAB_ROUTES: Record<TabType, string> = {
   home: "/main",
@@ -29,6 +32,7 @@ export const TAB_ROUTES: Record<TabType, string> = {
 export const RAIL_ROUTES: Record<RailViewType, string> = {
   ...TAB_ROUTES,
   board: "/calendar",
+  brag: "/brag",
 };
 
 /**
@@ -38,7 +42,10 @@ export const RAIL_ROUTES: Record<RailViewType, string> = {
  * (보드는 폰에 없는 뷰라 홈 탭에 귀속시키는 근거가 된다).
  */
 export function pathnameToTab(pathname: string): TabType {
-  if (pathname === "/main" || pathname === "/calendar") return "home";
+  // /brag 는 폰에서 홈의 예산 패널을 통해서만 들어간다. 보드(/calendar)와
+  // 같은 이유로 탭을 따로 두지 않고 "홈"에 귀속시킨다
+  if (pathname === "/main" || pathname === "/calendar" || pathname === "/brag")
+    return "home";
   if (pathname === "/feed") return "feed";
   if (pathname === "/plan-list") return "rooms";
   if (pathname === "/user" || pathname === "/setting") return "settings";
@@ -48,6 +55,7 @@ export function pathnameToTab(pathname: string): TabType {
 /** 레일용 경로 → 메뉴 매핑. 보드와 채팅을 별도로 구분한다 */
 export function pathnameToRailView(pathname: string): RailViewType {
   if (pathname === "/calendar") return "board";
+  if (pathname === "/brag") return "brag";
   if (pathname === "/feed") return "feed";
   if (pathname === "/plan-list" || pathname.startsWith("/chat/"))
     return "rooms";
@@ -96,6 +104,12 @@ export const RAIL_GROUPS: Array<{
     label: "둘러보기",
     items: [
       { id: "feed", label: "피드", icon: NotepadText },
+      /*
+        자랑하기는 **순위가 아니라 구경거리**다. 트로피·메달을 쓰면 누가
+        더 잘했는지를 겨루는 화면으로 읽히는데, 여기는 남의 플랜 한 장을
+        그대로 들여다보는 곳이다.
+      */
+      { id: "brag", label: "자랑하기", icon: Sparkles },
       { id: "settings", label: "Settings", icon: Settings },
     ],
   },

@@ -29,6 +29,14 @@ interface PlanTaskCardBodyProps {
   toggleDisabled?: boolean;
   /** 카드 오른쪽에 붙는 것 (담당자 아바타 등) */
   trailing?: React.ReactNode;
+  /**
+   * 남의 플랜을 **보기만** 할 때 (자랑하기 상세 모달).
+   *
+   * `onToggle` 을 안 넘기는 것과는 다르다 — 그러면 체크가 `disabled` 라
+   * 흐려지고, 앱의 카드와 모양이 달라진다. 여기서는 **모양은 똑같이 두되
+   * 아예 버튼이 아니게** 만든다. 커서도 안 바뀌고 탭 순서에도 안 들어간다.
+   */
+  readOnly?: boolean;
 }
 
 /**
@@ -43,32 +51,51 @@ export default function PlanTaskCardBody({
   onToggle,
   toggleDisabled = false,
   trailing,
+  readOnly = false,
 }: PlanTaskCardBodyProps) {
   const done = item.status === "COMPLETED";
+  const boxClass = `mt-0.5 grid h-[19px] w-[19px] shrink-0 place-items-center rounded-[7px] border-2 ${
+    done ? "border-[#ffaab8] bg-[#ffaab8]" : "border-[#e6dbe2] bg-white"
+  }`;
+  const check = (
+    <Check
+      className={`h-[11px] w-[11px] text-white ${done ? "opacity-100" : "opacity-0"}`}
+      strokeWidth={4}
+    />
+  );
 
   return (
     <>
       <div className="flex items-start gap-2.5">
-        <button
-          type="button"
-          role="checkbox"
-          aria-checked={done}
-          aria-label={done ? "완료 해제" : "완료로 표시"}
-          disabled={toggleDisabled || !onToggle}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggle?.();
-          }}
-          className={`mt-0.5 grid h-[19px] w-[19px] shrink-0 place-items-center rounded-[7px] border-2 transition-colors disabled:opacity-50 ${
-            done ? "border-[#ffaab8] bg-[#ffaab8]" : "border-[#e6dbe2] bg-white"
-          }`}
-        >
-          <Check
-            className={`h-[11px] w-[11px] text-white ${done ? "opacity-100" : "opacity-0"}`}
-            strokeWidth={4}
-          />
-        </button>
+        {readOnly ? (
+          <span
+            role="img"
+            aria-label={done ? "완료" : "예정"}
+            className={boxClass}
+          >
+            {check}
+          </span>
+        ) : (
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={done}
+            aria-label={done ? "완료 해제" : "완료로 표시"}
+            disabled={toggleDisabled || !onToggle}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle?.();
+            }}
+            className={`mt-0.5 grid h-[19px] w-[19px] shrink-0 place-items-center rounded-[7px] border-2 transition-colors disabled:opacity-50 ${
+              done
+                ? "border-[#ffaab8] bg-[#ffaab8]"
+                : "border-[#e6dbe2] bg-white"
+            }`}
+          >
+            {check}
+          </button>
+        )}
         <span
           className={`text-[14.5px] font-bold leading-snug tracking-tight break-keep ${
             done

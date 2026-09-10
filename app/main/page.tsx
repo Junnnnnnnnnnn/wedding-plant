@@ -16,6 +16,7 @@ import CountUp from "@/components/CountUp";
 import AddPlanView from "../add-plen/AddPlanView";
 import AppShell from "../components/AppShell";
 import ScheduleDetailView from "../schedule-detail/ScheduleDetailView";
+import BragToggle from "../components/BragToggle";
 import HomeDashboard from "../components/HomeDashboard";
 import BottomTabBar from "../components/BottomTabBar";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
@@ -927,6 +928,20 @@ function MainPageContent() {
     apiPlanData !== "none" &&
     (!isRoomView || String(myRoomPermission ?? "").toUpperCase() === "OWNER") &&
     !hasSpouse(apiPlanData.members);
+
+  /**
+   * 자랑하기 토글을 낼지. **`showSoloBanner` 와 같은 규칙**이다 —
+   * 남의 방을 보는 중이면 자랑할 대상이 아니고, 공유 뷰도 마찬가지다.
+   *
+   * `roomId` 유무만 보면 안 된다. 로그인하면 **내 플랜에도 방이 생기므로**
+   * `isRoomView` 가 참이 되어, 그 조건만 쓰면 토글이 영영 안 뜬다
+   * (초대 띠가 같은 이유로 같은 규칙을 쓴다).
+   */
+  const canBrag =
+    !isSharedView &&
+    !!apiPlanData &&
+    apiPlanData !== "none" &&
+    (!isRoomView || String(myRoomPermission ?? "").toUpperCase() === "OWNER");
 
   const isPlanLoading = Boolean(
     !tokenChecked ||
@@ -2306,6 +2321,21 @@ function MainPageContent() {
                   </button>
                 </div>
               )}
+
+            {/*
+              자랑하기 토글. 시안(`docs/concepts/brag-a.html`)의 폰 화면은
+              이 자리 — 목록 아래 흰 면이다. 분홍 머리 면에 넣으면 얇은
+              예산 줄과 겹쳐 무엇을 누르는지 알기 어렵다.
+
+              넓은 화면은 `HomeDashboard` 의 예산 패널 안에 따로 있다.
+              모바일 트리가 `md:hidden` 이라 같은 DOM 을 쓸 수 없어서
+              두 곳에 붙지만, **노출 조건은 같다** — 내 플랜일 때만.
+            */}
+            {canBrag && (
+              <div className="mt-2 w-full">
+                <BragToggle compact />
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -2328,6 +2358,7 @@ function MainPageContent() {
         remainingBudget={remainingBudget}
         budgetUsagePercentage={budgetUsagePercentage}
         chatRooms={chatRoomsForPanel}
+        canBrag={canBrag}
         roomId={roomIdForDetail}
         canEdit={
           String(myRoomPermission ?? "").toUpperCase() !== "READ" &&
