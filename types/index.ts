@@ -138,8 +138,12 @@ export interface BragDetail extends BragPost {
 /**
  * 상세 모달에 뜨는 플랜 한 줄.
  *
- * `PlanTaskItem` 과 모양이 같지만 **시각·장소가 없다** — 남에게까지 공개할
- * 값이 아니다. 안내 모달의 공개 목록도 여기까지만 약속한다.
+ * **시각(startTime)과 메모는 없다** — 남에게까지 공개할 값이 아니다.
+ * 장소는 상세 시트의 지도 때문에 나중에 더했고, 그때 안내 모달의 공개
+ * 목록(`BragToggle` 의 `OPEN_FIELDS`)을 먼저 고쳤다.
+ *
+ * **이 목록을 늘리려면 그 문구를 먼저 고친다.** 순서를 뒤집으면 동의받지
+ * 않은 것을 공개하게 된다.
  */
 export interface BragPlanItem {
   id: number;
@@ -148,6 +152,14 @@ export interface BragPlanItem {
   amount: number | null;
   startDate: string | null;
   status: string | null;
+  /**
+   * 장소. 카카오에서 고른 경우 **주소가 아니라 업체명**이다 ("SG웨딩홀").
+   * 장소를 넓히기 전에 올라간 스냅샷에는 없어서 `undefined` 로도 온다.
+   */
+  location?: string | null;
+  /** 지도를 그릴 좌표. 카카오에서 고른 경우에만 있다 */
+  lat?: number | null;
+  lng?: number | null;
 }
 
 /** 내 플랜이 지금 올라가 있는지. `GET /plan/brag/my` */

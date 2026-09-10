@@ -26,7 +26,7 @@ import { useApi } from "../contexts/ApiContext";
  * 계약은 `docs/BRAG_API.md`.
  */
 const OPEN_FIELDS =
-  "닉네임 · 결혼식 날짜 · 총예산 · 카테고리별 지출과 소계 · 일정 제목 · 일정별 금액";
+  "닉네임 · 결혼식 날짜 · 총예산 · 카테고리별 지출과 소계 · 일정 제목 · 일정별 금액 · 일정 장소";
 
 const RULES: Array<{ icon: typeof Globe; title: string; body: string }> = [
   {

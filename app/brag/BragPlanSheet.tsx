@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { ExternalLink, MapPin, X } from "lucide-react";
 import { BragPlanItem } from "@/types";
 
 /**
@@ -14,20 +14,21 @@ import { BragPlanItem } from "@/types";
  * M5-C 는 "앱의 플랜 카드를 그대로 쓴다" 가 전제라, 카드가 앱에서 늘 눌리던
  * 그 모양이다. 시안에 "앱과 모양이 같을수록 눌러 보게 된다" 고 적어 뒀는데
  * 실제로 그렇게 됐다 — 배포 뒤 첫 피드백이 "이거 누르면 상세가 보여야 한다"
- * 였다. 눌러도 아무 일이 없는 것보다 **보기 전용으로 열어 주는 편**이 낫다.
+ * 였다. 눌러도 아무 일이 없는 것보다 보기 전용으로 열어 주는 편이 낫다.
  *
- * ── 보여 줄 수 있는 것 ───────────────────────────────────────
- * 카드가 이미 다섯 값을 다 보여 주고 있어서(제목·카테고리·날짜·금액·완료),
- * 그대로 옮기면 같은 것을 두 번 보여 주는 빈 시트가 된다. 그래서
+ * ── 보여 주는 것 ────────────────────────────────────────────
+ * 카드가 이미 다섯 값을 보여 주므로(제목·카테고리·날짜·금액·완료), 그대로
+ * 옮기면 같은 것을 두 번 보여 주는 빈 시트가 된다. 그래서 한 겹씩 더한다 —
+ * 날짜를 요일까지 펴고, 이 한 줄이 카테고리에서 차지하는 몫을 내고,
+ * **장소가 있으면 지도**를 놓는다.
  *
- *  · 날짜를 **긴 형식**으로 편다 (카드는 "1월 10일", 여기는 요일까지)
- *  · 이 한 줄이 **그 카테고리에서 차지하는 몫**을 낸다. 카드에는 없던
- *    값이고, 이미 받은 데이터로 만들 수 있다 — "신혼여행 400만 원 중 142"
- *
- * 시각·장소·메모는 **일부러 없다.** 공개 범위 밖이라 서버가 아예 안 내려
- * 준다 (`docs/BRAG_API.md`). 여기에 새 값을 붙이려면 안내 모달의
- * `OPEN_FIELDS` 를 먼저 고쳐야 한다.
+ * 시각·메모는 **일부러 없다.** 공개 범위 밖이라 서버가 아예 안 내려 준다
+ * (`docs/BRAG_API.md`). 새 값을 붙이려면 안내 모달의 `OPEN_FIELDS` 를
+ * 먼저 고쳐야 한다.
  */
+
+/** 지도를 그리는 자리. 한 번에 하나만 열리므로 id 하나로 충분하다 */
+const MAP_ID = "brag-plan-map";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -42,8 +43,10 @@ function longDate(startDate: string | null): string {
 
 interface BragPlanSheetProps {
   item: BragPlanItem;
-  /** 이 항목이 속한 카테고리의 소계 (지출 + 예정). 몫을 내는 데 쓴다 */
+  /** 이 항목이 속한 카테고리의 소계 (지출 + 예정) */
   categorySubtotal: number;
+  /** 그 카테고리에 든 플랜 수. 하나뿐이면 몫을 말해 봐야 늘 100% 다 */
+  categoryItemCount: number;
   /** 묶음 머리와 같은 색. 어느 묶음에서 열렸는지가 색으로 이어진다 */
   categoryColor: string;
   onClose: () => void;
@@ -52,17 +55,70 @@ interface BragPlanSheetProps {
 export default function BragPlanSheet({
   item,
   categorySubtotal,
+  categoryItemCount,
   categoryColor,
   onClose,
 }: BragPlanSheetProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [sdkReady, setSdkReady] = useState(false);
+
+  const lat = typeof item.lat === "number" ? item.lat : null;
+  const lng = typeof item.lng === "number" ? item.lng : null;
+  const hasMap = lat !== null && lng !== null;
 
   useEffect(() => {
     closeRef.current?.focus();
   }, []);
 
+  /* 카카오 SDK. 이미 떠 있으면 다시 안 받는다 (등록 화면과 같은 처리) */
+  useEffect(() => {
+    if (!hasMap) return undefined;
+    if (window.kakao?.maps?.LatLng) {
+      setSdkReady(true);
+      return undefined;
+    }
+    const script = document.createElement("script");
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY}&autoload=false`;
+    script.async = true;
+    script.onload = () => window.kakao?.maps?.load(() => setSdkReady(true));
+    document.head.appendChild(script);
+    return () => {
+      if (document.head.contains(script)) document.head.removeChild(script);
+    };
+  }, [hasMap]);
+
+  /*
+    지도를 그린다. **끌거나 확대하지 못하게 잠근다** — 남의 플랜을 보는
+    자리라 지도가 조작 대상이 되면 시선이 거기 묶인다. 더 보고 싶은 사람은
+    아래 카카오맵 링크로 나간다.
+  */
+  useEffect(() => {
+    if (!hasMap || !sdkReady) return undefined;
+    const timer = setTimeout(() => {
+      const container = document.getElementById(MAP_ID);
+      if (!container || !window.kakao?.maps?.LatLng) return;
+      try {
+        const coords = new window.kakao.maps.LatLng(lat, lng);
+        const map = new window.kakao.maps.Map(container, {
+          center: coords,
+          level: 4,
+          draggable: false,
+          scrollwheel: false,
+          disableDoubleClick: true,
+          disableDoubleClickZoom: true,
+        });
+        // eslint-disable-next-line no-new
+        new window.kakao.maps.Marker({ map, position: coords });
+      } catch {
+        // 지도가 안 떠도 시트의 나머지는 그대로 보인다
+      }
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [hasMap, sdkReady, lat, lng]);
+
   const done = item.status === "COMPLETED";
   const amount = item.amount ?? 0;
+  const place = item.location?.trim() || null;
   const share =
     categorySubtotal > 0 && amount > 0
       ? Math.round((amount / categorySubtotal) * 100)
@@ -84,14 +140,15 @@ export default function BragPlanSheet({
         role="dialog"
         aria-modal="true"
         aria-label={`${item.title} 자세히`}
-        className="relative w-full max-w-[360px] rounded-[24px] bg-white px-6 pb-6 pt-7 shadow-2xl"
+        /* 지도가 붙으면 세로가 길어진다. 375x553 에서도 넘치지 않게 */
+        className="no-scrollbar relative max-h-[86dvh] w-full max-w-[360px] overflow-y-auto rounded-[24px] bg-white px-6 pb-6 pt-7 shadow-2xl"
       >
         <button
           ref={closeRef}
           type="button"
           onClick={onClose}
           aria-label="닫기"
-          className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-[#7a6c74] transition-colors hover:bg-stone-100 hover:text-[#1b0d14]"
+          className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-white text-[#7a6c74] transition-colors hover:bg-stone-100 hover:text-[#1b0d14]"
         >
           <X className="h-4 w-4" strokeWidth={2.4} />
         </button>
@@ -138,21 +195,74 @@ export default function BragPlanSheet({
               )}
             </dd>
           </div>
+          {/*
+            장소를 안 고른 일정도 많고, 장소를 담기 전에 올라간 스냅샷에는
+            아예 없다. 없으면 **줄 자체를 내지 않는다** — "미확인" 이라고
+            크게 적지 않는다(피드의 장소 줄과 같은 규칙).
+          */}
+          {place && (
+            <div className="flex items-baseline gap-4">
+              <dt className="w-14 shrink-0 text-[#7a6c74]">장소</dt>
+              <dd className="min-w-0 font-bold text-[#1b0d14] break-keep">
+                {place}
+              </dd>
+            </div>
+          )}
         </dl>
 
-        {/*
-          카드에는 없던 값. 이미 받은 데이터로만 만든다 — 이 시트를 여는
-          이유가 여기 하나뿐이라, 몫을 못 내는 경우에는 줄 자체를 안 낸다.
-        */}
-        {share != null && (
-          <p className="mt-4 rounded-[14px] bg-[#faf7f9] px-4 py-3 text-[12.5px] leading-relaxed text-[#7a6c74]">
-            {item.categoryName}에 쓴{" "}
-            <b className="font-bold text-[#1b0d14]">
-              {categorySubtotal.toLocaleString("ko-KR")}만 원
-            </b>{" "}
-            가운데 <b className="font-bold text-[#ee2b8c]">{share}%</b>예요.
-          </p>
+        {hasMap && (
+          <div className="mt-4">
+            <div
+              id={MAP_ID}
+              className="h-[168px] w-full overflow-hidden rounded-[14px] bg-[#f4eff2]"
+              role="img"
+              aria-label={`${place ?? item.title} 위치`}
+            />
+            <a
+              href={`https://map.kakao.com/link/map/${encodeURIComponent(
+                place ?? item.title,
+              )},${lat},${lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-1 text-[12.5px] font-bold text-[#ee2b8c] transition-opacity hover:opacity-70"
+            >
+              <MapPin className="h-3.5 w-3.5" strokeWidth={2.2} />
+              카카오맵에서 보기
+              <ExternalLink className="h-3 w-3" strokeWidth={2.2} />
+            </a>
+          </div>
         )}
+
+        {/*
+          카드에는 없던 값. 이미 받은 데이터로만 만든다.
+
+          **카테고리에 이 하나뿐이면 몫을 말하지 않는다** — 늘 100% 라
+          "180만 원 가운데 100%" 처럼 같은 말을 두 번 하는 문장이 된다
+          (실제로 그렇게 보였다). 그때는 하나뿐이라는 사실을 적는다.
+        */}
+        <p className="mt-4 rounded-[14px] bg-[#faf7f9] px-4 py-3 text-[12.5px] leading-relaxed text-[#7a6c74] break-keep">
+          {categoryItemCount <= 1 ? (
+            <>
+              {item.categoryName} 카테고리에는 이 플랜{" "}
+              <b className="font-bold text-[#1b0d14]">하나뿐</b>이에요.
+            </>
+          ) : share != null ? (
+            <>
+              {item.categoryName} 카테고리 총{" "}
+              <b className="font-bold text-[#1b0d14]">
+                {categorySubtotal.toLocaleString("ko-KR")}만 원
+              </b>{" "}
+              중 <b className="font-bold text-[#ee2b8c]">{share}%</b>를
+              차지해요.
+            </>
+          ) : (
+            <>
+              {item.categoryName} 카테고리에 든 플랜{" "}
+              <b className="font-bold text-[#1b0d14]">{categoryItemCount}장</b>{" "}
+              가운데 하나예요.
+            </>
+          )}
+        </p>
 
         <p className="mt-4 text-[12px] leading-relaxed text-gray-400">
           남의 플랜이라 보기만 할 수 있어요.

@@ -130,6 +130,7 @@ export default function BragDetailModal({
   const [planItem, setPlanItem] = useState<{
     item: BragPlanItem;
     subtotal: number;
+    count: number;
   } | null>(null);
 
   useEffect(() => {
@@ -333,7 +334,13 @@ export default function BragDetailModal({
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setPlanItem({ item, subtotal: g.subtotal })}
+                onClick={() =>
+                  setPlanItem({
+                    item,
+                    subtotal: g.subtotal,
+                    count: g.items.length,
+                  })
+                }
                 className="rounded-[18px] border border-[#ee2b8c0f] bg-white px-4 py-3.5 text-left shadow-sm transition-colors hover:border-[#ffd0e3] hover:bg-[#fffafc]"
               >
                 <PlanTaskCardBody item={item} readOnly />
@@ -516,6 +523,7 @@ export default function BragDetailModal({
         <BragPlanSheet
           item={planItem.item}
           categorySubtotal={planItem.subtotal}
+          categoryItemCount={planItem.count}
           categoryColor={colorOf(planItem.item.categoryName)}
           onClose={() => setPlanItem(null)}
         />

@@ -65,6 +65,13 @@ const fail = () => ({
  * 예산 3,600 / 지출 2,900 / 사용 예상 340 / 남음 360 / 플랜 13장 중 9장 완료.
  * 캡처를 시안과 나란히 놓고 볼 수 있어야 어긋난 곳이 보인다.
  */
+/** 카카오에서 고른 일정만. 나머지는 장소가 없다 */
+const PLACES = {
+  "예식장 잔금": { location: "SG 웨딩홀", lat: 37.5006, lng: 127.0364 },
+  "예식장 계약금": { location: "SG 웨딩홀", lat: 37.5006, lng: 127.0364 },
+  "예물 상담": { location: "종로 3가 귀금속", lat: 37.5714, lng: 126.9917 },
+};
+
 const ITEMS = [
   ["폐백 음식", "혼수", "2026-10-01", 45, false],
   ["본식 헤어", "스드메", "2026-09-28", 35, false],
@@ -86,6 +93,12 @@ const ITEMS = [
   startDate,
   amount,
   status: done ? "COMPLETED" : "PLANNED",
+  /*
+    **장소를 전부 채우지 않는다.** 안 고른 일정이 훨씬 많고, 장소를 담기
+    전에 올라간 스냅샷에는 아예 없다. 다 채워 두면 "지도 없는 시트" 분기를
+    영영 못 본다 (피드 목이 장소를 섞어 두는 것과 같은 이유).
+  */
+  ...(PLACES[title] ?? { location: null, lat: null, lng: null }),
 }));
 
 /**
@@ -165,6 +178,21 @@ function installMocks(page) {
   page.on("request", (req) => {
     const url = req.url();
     const method = req.method();
+    /*
+      카카오 지도 SDK 는 **등록된 도메인에서만** 내려온다. 하네스는 3000 이
+      아닌 포트에서 돌 때가 많아(다른 작업 트리가 3000 을 쓰고 있으면 늘
+      그렇다) 그대로 두면 `domain mismatched` 로 거절당하고, 지도가 회색
+      상자로 남는다 — **우리 코드 문제가 아닌데 문제처럼 보인다.**
+      그래서 이 요청에만 Referer 를 등록된 주소로 바꿔 보낸다.
+    */
+    if (url.startsWith("https://dapi.kakao.com/")) {
+      req
+        .continue({
+          headers: { ...req.headers(), referer: "http://localhost:3000/" },
+        })
+        .catch(() => {});
+      return;
+    }
     if (!url.startsWith(API)) {
       req.continue().catch(() => {});
       return;
@@ -312,6 +340,20 @@ function installMocks(page) {
   const page = await browser.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e).slice(0, 160)));
+  /*
+    지도는 바깥 SDK(dapi.kakao.com)에 기댄다. 안 뜨는 이유가 우리 코드인지
+    키·도메인인지 가르려면 응답을 봐야 한다 — `MAP_DEBUG=1` 로 켠다.
+  */
+  if (process.env.MAP_DEBUG) {
+    page.on("response", (r) => {
+      if (r.url().includes("kakao"))
+        console.log(`  [map] ${r.status()} ${r.url().slice(0, 90)}`);
+    });
+    page.on("requestfailed", (r) => {
+      if (r.url().includes("kakao"))
+        console.log(`  [map] 실패 ${r.url().slice(0, 90)}`);
+    });
+  }
 
   await page.evaluateOnNewDocument(() => {
     const css = document.createElement("style");
@@ -580,7 +622,132 @@ function installMocks(page) {
     planSheet && /%/.test(planSheet.text),
     "이 카테고리에서 차지하는 몫이 나온다",
   );
+  /*
+    "180만 원 가운데 100%" 처럼 같은 말을 두 번 하는 문장이 나온 적이 있다
+    (카테고리에 플랜이 하나뿐일 때). 첫 카드는 예식장 2장이라 몫이 뜻이
+    있고, 아래에서 1장짜리 카테고리를 따로 본다.
+  */
+  check(
+    planSheet && /카테고리 총/.test(planSheet.text),
+    "몫을 '카테고리 총 N만 원 중 M%' 로 적는다",
+  );
+  check(
+    planSheet && /SG 웨딩홀/.test(planSheet.text),
+    "장소가 보인다 (카카오에서 고른 일정)",
+  );
+  const mapInfo = await page.evaluate(() => {
+    const s = [...document.querySelectorAll('[role="dialog"]')].find((n) =>
+      /자세히$/.test(n.getAttribute("aria-label") || ""),
+    );
+    if (!s) return null;
+    const box = s.querySelector("#brag-plan-map");
+    /*
+      지도가 그려지면 SDK 가 상자 안에 자기 로고 링크(map.kakao.com)를
+      끼워 넣는다. 그냥 `a[href*=map.kakao.com]` 로 찾으면 그게 먼저
+      잡힌다 — **우리가 놓은 링크**를 글자로 고른다.
+    */
+    const link = [...s.querySelectorAll("a")].find((n) =>
+      /카카오맵에서 보기/.test(n.textContent || ""),
+    );
+    return {
+      hasBox: !!box,
+      h: box ? Math.round(box.getBoundingClientRect().height) : 0,
+      href: link ? link.getAttribute("href") : null,
+      newTab: link ? link.getAttribute("target") === "_blank" : false,
+      rel: link ? link.getAttribute("rel") : null,
+    };
+  });
+  check(mapInfo && mapInfo.hasBox && mapInfo.h > 100, `지도 자리가 있다 (h=${mapInfo ? mapInfo.h : 0})`);
+  check(
+    mapInfo && /37\.5006/.test(mapInfo.href || ""),
+    `카카오맵 링크에 좌표가 실린다 (${mapInfo ? String(mapInfo.href).slice(0, 60) : "없음"})`,
+  );
+  check(
+    mapInfo && mapInfo.newTab && /noopener/.test(mapInfo.rel || ""),
+    "카카오맵은 새 탭 + noopener 로 연다",
+  );
+  // SDK 가 실제로 타일을 그렸는지. 빈 상자로 남으면 여기서 걸린다
+  await wait(2500);
+  const drawn = await page.evaluate(() => {
+    const box = document.getElementById("brag-plan-map");
+    if (!box) return null;
+    return {
+      children: box.childElementCount,
+      imgs: box.querySelectorAll("img").length,
+    };
+  });
+  check(
+    drawn && drawn.children > 0 && drawn.imgs > 0,
+    `지도가 그려진다 (자식 ${drawn ? drawn.children : 0}개 · 타일 ${drawn ? drawn.imgs : 0}장)`,
+  );
   await page.screenshot({ path: path.join(OUT, "brag-plan-sheet-1440.png") });
+
+  /*
+    장소가 없는 일정(스냅샷이 옛 범위이거나 안 고른 경우)에는 지도를 아예
+    안 낸다 — "미확인" 이라고 크게 적지 않는다.
+  */
+  await page.keyboard.press("Escape");
+  await wait(300);
+  await page.evaluate(() => {
+    const dlg = document.querySelector('[role="dialog"]');
+    const card = [...dlg.querySelectorAll("button")].find(
+      (n) =>
+        /rounded-\[18px\]/.test(n.className) &&
+        n.offsetParent !== null &&
+        /본식 촬영/.test(n.innerText),
+    );
+    card?.click();
+  });
+  await wait(600);
+  const noPlace = await page.evaluate(() => {
+    const s = [...document.querySelectorAll('[role="dialog"]')].find((n) =>
+      /자세히$/.test(n.getAttribute("aria-label") || ""),
+    );
+    if (!s) return null;
+    return {
+      text: s.innerText.replace(/\s+/g, " "),
+      hasBox: !!s.querySelector("#brag-plan-map"),
+    };
+  });
+  check(
+    noPlace && !noPlace.hasBox && !/장소/.test(noPlace.text),
+    "장소가 없으면 지도도 장소 줄도 안 낸다",
+  );
+
+  // 카테고리에 하나뿐이면 "가운데 100%" 대신 하나뿐이라고 적는다
+  await page.keyboard.press("Escape");
+  await wait(300);
+  await page.evaluate(() => {
+    const dlg = document.querySelector('[role="dialog"]');
+    const card = [...dlg.querySelectorAll("button")].find(
+      (n) =>
+        /rounded-\[18px\]/.test(n.className) &&
+        n.offsetParent !== null &&
+        /예물 상담/.test(n.innerText),
+    );
+    card?.click();
+  });
+  await wait(600);
+  const lonely = await page.evaluate(() => {
+    const s = [...document.querySelectorAll('[role="dialog"]')].find((n) =>
+      /자세히$/.test(n.getAttribute("aria-label") || ""),
+    );
+    return s ? s.innerText.replace(/\s+/g, " ") : null;
+  });
+  check(
+    lonely && /하나뿐/.test(lonely) && !/100%/.test(lonely),
+    `1장짜리 카테고리는 '하나뿐' 이라고 적는다 (100% 라고 안 한다)`,
+  );
+  await page.keyboard.press("Escape");
+  await wait(300);
+  await page.evaluate(() => {
+    const dlg = document.querySelector('[role="dialog"]');
+    const card = [...dlg.querySelectorAll("button")].find(
+      (n) => /rounded-\[18px\]/.test(n.className) && n.offsetParent !== null,
+    );
+    card?.click();
+  });
+  await wait(600);
 
   // ESC 는 시트를 먼저 닫는다. 한 번에 둘 다 닫히면 보던 자리를 잃는다
   await page.keyboard.press("Escape");
