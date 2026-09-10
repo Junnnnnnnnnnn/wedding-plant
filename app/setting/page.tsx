@@ -18,7 +18,7 @@ import {
   isPlanDataComplete,
   setGuestAgreement,
 } from "@/lib/api";
-import { getKstDateString, getDaysUntil } from "@/lib/utils";
+import { applyDigitInput, getKstDateString, getDaysUntil } from "@/lib/utils";
 import { useSpouseInvite } from "../hooks/useSpouseInvite";
 import {
   PRIVACY_CONTENT,
@@ -700,6 +700,11 @@ function SettingPageContent() {
             <div className="flex flex-col items-center mb-6 lg:mt-7">
               <div className="flex items-center justify-center gap-4">
                 <div className="flex items-center gap-2">
+                  {/*
+                    아래 예산 칸이 `type="text"` 인 이유는 프로필 예산 칸과
+                    같다 — `type="number"` 는 잘못된 입력에서 값을 빈 문자열로
+                    돌려주고 캐럿도 안 내줘서 선행 0 을 떼어 낼 수 없다.
+                  */}
                   {!isCountUpComplete ? (
                     <div className="px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 w-32 text-center flex items-center justify-center">
                       <CountUp
@@ -719,10 +724,12 @@ function SettingPageContent() {
                     </div>
                   ) : (
                     <input
-                      type="number"
+                      type="text"
                       inputMode="numeric"
                       value={weddingData.budget}
-                      onChange={(e) => setBudget(e.target.value)}
+                      onChange={(e) =>
+                        setBudget(applyDigitInput(e.currentTarget))
+                      }
                       placeholder="0"
                       className="font-user-content px-4 py-3 text-lg font-semibold text-stone-900 bg-white rounded-lg border-2 border-stone-200 focus:outline-none focus:border-[#FFAAB8] w-32 text-center"
                     />

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Calendar, Wallet } from "lucide-react";
 import { useApi } from "@/app/contexts/ApiContext";
+import { applyDigitInput } from "@/lib/utils";
 
 type RoomCreateModalProps = {
   show: boolean;
@@ -103,11 +104,11 @@ export default function RoomCreateModal({
             <div className="relative">
               <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
                 value={budget}
                 onChange={(e) => {
-                  setBudget(e.target.value);
+                  setBudget(applyDigitInput(e.currentTarget));
                   setError("");
                 }}
                 placeholder="예: 3000"

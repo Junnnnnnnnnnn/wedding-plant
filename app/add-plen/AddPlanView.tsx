@@ -19,7 +19,12 @@ import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import { getToken, getApiBaseUrl } from "@/lib/api";
-import { parseLocalDate } from "@/lib/utils";
+import {
+  applyDigitInput,
+  parseLocalDate,
+  withThousandComma,
+  normalizeDigits,
+} from "@/lib/utils";
 import {
   addGuestScheduleItem,
   getGuestScheduleList,
@@ -752,7 +757,7 @@ export default function AddPlanView({
         }
 
         if (data.amount != null && !Number.isNaN(Number(data.amount))) {
-          setAmount(String(data.amount));
+          setAmount(withThousandComma(normalizeDigits(String(data.amount))));
         }
 
         if (data.startDate?.trim()) {
@@ -843,8 +848,7 @@ export default function AddPlanView({
     }
 
     if (typeof prefill.amount === "number" && Number.isFinite(prefill.amount)) {
-      // formatNumber 는 아래에 선언돼 있어 여기서 부르지 않는다
-      setAmount(String(prefill.amount).replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+      setAmount(withThousandComma(normalizeDigits(String(prefill.amount))));
     }
 
     if (prefill.location?.trim()) setLocation(prefill.location.trim());
@@ -1060,18 +1064,8 @@ export default function AddPlanView({
     return () => clearTimeout(id);
   }, [highlightCategoryLabel]);
 
-  // 금액 포맷팅 (콤마 추가)
-  const formatNumber = (value: string) => {
-    // 숫자만 추출
-    const numbers = value.replace(/[^\d]/g, "");
-    // 콤마 추가
-    return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
-
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    const formatted = formatNumber(value);
-    setAmount(formatted);
+    setAmount(applyDigitInput(e.currentTarget, { comma: true }));
   };
 
   const handleSearchLocation = () => {

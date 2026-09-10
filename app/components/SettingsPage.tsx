@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { X, Calendar, Wallet, LogOut, Check, MapPin } from "lucide-react";
-import { parseLocalDate, getDaysUntil } from "@/lib/utils";
+import { applyDigitInput, parseLocalDate, getDaysUntil } from "@/lib/utils";
 import DatePickerModal from "./DatePickerModal";
 
 interface SettingsPageProps {
@@ -482,21 +482,32 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 <Field label="예산" suffix="만원" unit="만 원">
                   <div className="flex items-center gap-2">
                     <Wallet className="hidden h-4 w-4 shrink-0 text-gray-300 md:block" />
+                    {/*
+                      값이 0 이면 칸을 **비우고** placeholder 로 회색 0 만 둔다.
+                      검은 "0" 이 박혀 있으면 3 을 치는 순간 "03" 이 되고,
+                      지우려면 0 까지 한 번 더 지워야 했다.
+
+                      `type="text"` + `inputMode="numeric"` 인 이유: `type="number"`
+                      는 잘못된 입력에서 `value` 를 빈 문자열로 돌려주고 캐럿
+                      위치도 읽을 수 없어, 아래 선행 0 제거를 할 수 없다.
+                      폰에서는 inputMode 가 숫자 키패드를 그대로 띄운다.
+                    */}
                     <input
-                      type="number"
-                      min={0}
+                      type="text"
+                      inputMode="numeric"
                       placeholder="0"
-                      value={formData.budget}
+                      value={
+                        formData.budget === 0 ? "" : String(formData.budget)
+                      }
                       onChange={(e) => {
-                        // 빈 값은 0으로, 음수는 0으로 막는다 (0은 유효한 예산)
-                        const raw = e.target.value;
-                        const n = raw === "" ? 0 : Number(raw);
+                        const next = applyDigitInput(e.currentTarget);
                         setFormData({
                           ...formData,
-                          budget: Number.isFinite(n) ? Math.max(0, n) : 0,
+                          // 다 지우면 0 — 0 도 유효한 예산이다.
+                          budget: next === "" ? 0 : Number(next),
                         });
                       }}
-                      className={`input-no-spinner font-user-content ${INPUT_CLASS}`}
+                      className={`font-user-content ${INPUT_CLASS}`}
                     />
                   </div>
                 </Field>

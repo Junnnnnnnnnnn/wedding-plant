@@ -82,3 +82,65 @@ export function formatKoreanTime(time?: string | null): string {
   const h12 = hour % 12 === 0 ? 12 : hour % 12;
   return `${meridiem} ${h12}:${minute}`;
 }
+
+/**
+ * 숫자 칸이 허용하는 최대 자릿수.
+ *
+ * 더 길어지면 `Number` 가 정밀도를 잃고 `String()` 이 "1e+21" 같은 지수
+ * 표기를 내놓아, 칸에 사람이 친 적 없는 글자가 나타난다.
+ */
+export const MAX_INPUT_DIGITS = 12;
+
+/**
+ * 숫자 칸의 입력을 정리한다 — 숫자만 남기고 **뜻 없는 선행 0 을 떼어 낸다**.
+ *
+ * "0" 이 박힌 칸에 3 을 치면 "03" 이 되고, 지우려면 0 까지 한 번 더 지워야
+ * 했다. 뒤에 숫자가 오는 0 만 떼어 내고 **혼자 남은 "0" 은 그대로 둔다** —
+ * 0 원짜리 일정도, 0 을 눌러 보는 사람도 있다. 값이 0 이라는 사실은 칸을
+ * 비우고 placeholder 로 보여 주는 게 이 앱의 규칙이다.
+ */
+export function normalizeDigits(
+  raw: string,
+  maxDigits: number = MAX_INPUT_DIGITS,
+): string {
+  return raw
+    .replace(/[^0-9]/g, "")
+    .replace(/^0+(?=[0-9])/, "")
+    .slice(0, maxDigits);
+}
+
+/** 천 단위 콤마 */
+export function withThousandComma(digits: string): string {
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/**
+ * 숫자 칸의 `onChange` 에서 부른다. 정리한 값을 칸에 되돌려 쓰고 캐럿을
+ * 맞춘 뒤, 상태에 넣을 값을 돌려준다.
+ *
+ * **칸을 직접 고치는 이유**: 정리 결과가 이전 상태와 같으면 React 는
+ * 리렌더하지 않고, 그러면 DOM 에 "03" 이 그대로 남는다(값 "3" 인 칸의 맨
+ * 앞에 0 을 끼워 넣는 경우). controlled input 이라도 이 한 번은 우리가 쓴다.
+ */
+export function applyDigitInput(
+  el: HTMLInputElement,
+  options?: { comma?: boolean; maxDigits?: number },
+): string {
+  const digits = normalizeDigits(el.value, options?.maxDigits);
+  const next = options?.comma ? withThousandComma(digits) : digits;
+  if (el.value !== next) {
+    const caret = Math.max(
+      0,
+      (el.selectionStart ?? el.value.length) - (el.value.length - next.length),
+    );
+    // 이 함수의 목적 자체가 칸을 고치는 것이라 파라미터를 건드린다.
+    // eslint-disable-next-line no-param-reassign
+    el.value = next;
+    try {
+      el.setSelectionRange(caret, caret);
+    } catch {
+      // type="number" 는 캐럿을 내주지 않는다. 값만 맞으면 된다.
+    }
+  }
+  return next;
+}
