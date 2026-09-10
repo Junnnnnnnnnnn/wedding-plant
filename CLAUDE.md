@@ -95,6 +95,7 @@ npm run format:check # Prettier 검사만
 | --- | --- |
 | 토큰 없음 | `/` (랜딩) |
 | 토큰 살아 있고 플랜 완성 | `/main` |
+| 토큰 살아 있고 플랜 미완성 | `/login` 에서만 `/setting` (랜딩·온보딩은 그대로) |
 | 토큰 만료(401·403) | **`/login?expired=1`** |
 
 - **랜딩 위에 "세션이 만료되었습니다" 모달을 띄우지 마세요.** 앱을 처음 보는
@@ -105,7 +106,19 @@ npm run format:check # Prettier 검사만
   둘 다 로그인하러 들어오는 문이라 말이 겹칩니다. 앱 안에서 쓰다가 끊기는
   경우에는 그대로 뜹니다 — 거기서는 하던 자리를 잃지 않는 게 낫습니다.
 - `/login` 은 `GuestGate` 가 막지 않습니다. 문이니까요.
-- 확인은 `node scripts/session-entry.cjs` (백엔드를 목으로 세워 세 경우를 돕니다).
+- **로그인 후 복귀 경로에 문 경로(`/`·`/main`·`/login`·`/setting`)를 넣지
+  마세요.** `/login` 이 저장되면 로그인을 마치고 다시 로그인 화면으로 돌아오고,
+  거기서 또 누르면 같은 값이 다시 저장돼 **영영 앱 안으로 못 들어갑니다**(실제로
+  그렇게 갇혔습니다). 게다가 세션이 끊기기 전에 보던 진짜 복귀 경로까지
+  덮어씁니다. 판단은 `lib/api.ts` 의 `isLoginDoorPath` 한 곳에 있고
+  `setReturnPathAfterLogin`(저장)·`getReturnPathAfterLogin`(조회, 예전 값 청소)
+  둘 다 그것을 씁니다 — **호출부에서 `pathname !== "/"` 같은 조건을 다시 쓰지
+  마세요.**
+- **토큰이 살아 있는 사람에게 `/login` 은 막다른 길입니다.** 플랜이 덜 찼으면
+  `AuthRedirectToMain` 이 남은 질문을 받는 `/setting` 으로 보냅니다. 랜딩·온보딩은
+  각자 보여 줄 것이 있으니 그대로 둡니다.
+- 확인은 `node scripts/session-entry.cjs` (백엔드를 목으로 세워 세 경우를 돕니다)
+  와 `node scripts/login-loop.cjs` (로그인 화면에 갇히는 다섯 경우).
 
 ### 비회원(게스트) 모드
 
@@ -824,6 +837,15 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 - shadcn/ui style: `new-york`, neutral, lucide icons. `cn()` 유틸은 `@/lib/utils`의 default export
 - 타이포: 백엔드 응답 필드 `onwerName` (sic) 은 `types/index.ts:Plan`에 그대로 유지되어 있음 — 클라이언트에서도 그대로 쓰세요
 - 권한 문자열: `"OWNER" | "WRITE" | "READ"`
+- **숫자 칸은 `lib/utils.ts` 의 `applyDigitInput` 을 씁니다.** 직접
+  `type="number"` + `onChange={(e) => setX(e.target.value)}` 로 만들지 마세요 —
+  값이 0 인 칸에 3 을 치면 **"03"** 이 되고, 지우려면 0 까지 한 번 더 지워야
+  합니다. 규칙은 (1) 숫자만 남기고 (2) 뒤에 숫자가 오는 선행 0 을 떼고
+  (3) 12 자리에서 자르는 것이고, **혼자 남은 "0" 은 그대로 둡니다**(0 원짜리
+  일정이 있습니다). 값이 0 이라는 사실은 칸을 비우고 `placeholder="0"` 이
+  말합니다. `type` 은 `"text"` + `inputMode="numeric"` 입니다 —
+  `type="number"` 는 잘못된 입력에서 값을 빈 문자열로 돌려주고 캐럿도 안 내줘
+  선행 0 을 떼어 낼 수 없습니다. 확인은 `node scripts/number-inputs.cjs`.
 - 한국어 주석/문구가 기본. UI 텍스트는 한글이 표준입니다
 - ESLint에서 `no-console`, `@typescript-eslint/no-explicit-any` off — 그래도 새 코드에서는 자제
 
@@ -851,6 +873,8 @@ App Router. **주요 페이지는 의도적으로 한 파일에 거대한 `page.
 - `scripts/landing-widths.cjs` — **랜딩 폭·높이별 검사.** 15개 뷰포트(2327~320)에서 다섯 섹션을 훑으며 핀이 걸려야 할 곳에 걸렸는지, 핀 내용이 한 화면을 넘치는지(`.pin2` 의 `overflow:hidden` 이 잘라 먹습니다), 화면 한가운데인데 투명한 덩어리가 있는지, 가로 스크롤·히어로 끝 타일·D-day 중심을 봅니다
 - `scripts/session-renewal.cjs` — **세션 슬라이딩 갱신.** 백엔드를 목으로 세워 `X-Renewed-Token` 헤더가 오면 저장된 토큰이 바뀌는지, 없으면 그대로인지, **CORS 로 노출하지 않으면 갱신이 죽는지**, 비로그인에는 심지 않는지를 확인합니다. `npm run dev` 만 있으면 됩니다
 - `scripts/session-entry.cjs` — **랜딩·로그인 진입 규칙.** `/plan/user` 를 목으로 세워 토큰 없음 → 랜딩, 만료(401) → `/login?expired=1`, 살아 있음 → `/main` 세 경우를 돌고, 랜딩에 세션 만료 모달이 뜨지 않는지·만료 토큰이 지워지는지 확인합니다
+- `scripts/login-loop.cjs` — **로그인 화면에 갇히는지.** `/login` 에서 로그인을 시작해도 그 경로가 복귀 경로로 남지 않는지, 끊기기 전에 보던 자리가 `/login` 을 거치며 지워지지 않는지, 토큰이 살아 있는데 플랜이 덜 찬 사람이 `/login` 에 머물지 않는지를 봅니다. 카카오 콜백 착지(`/?kakao_login=1`)까지 목으로 태워 실제 목적지를 확인합니다. `npm run dev` 만 있으면 됩니다
+- `scripts/number-inputs.cjs` — **앱의 모든 숫자 칸.** `/user` 예산 · `/setting` 온보딩 예산 · `/add-plen` 금액 세 칸을 실제로 눌러 치며 `3` 을 쳤을 때 `03` 이 되지 않는지, 값 앞에 0 을 끼워도 선행 0 이 남지 않는지, 숫자가 아닌 글자가 들어가지 않는지, 12 자리에서 잘리는지를 봅니다. `/user` 는 다 지웠을 때 **서버로 나가는 값이 0** 인지까지 저장 요청 바디로 확인합니다
 - `scripts/guest-flow.cjs` — **게스트(로그인 없이 둘러보기) 흐름 전체.** 랜딩 → 온보딩 4단계 → `/main` 을 실제로 눌러 넘기고, 일곱 화면을 돌며 **매번 "홈" 을 눌러 랜딩으로 튕겨 나가지 않는지** 확인합니다. 온보딩을 건너뛰고 `/calendar` 로 직접 들어온 경우와 새 탭도 따로 봅니다. 일정 추가는 단계형 폼(제목 → 카테고리 → 결제 유형 → 저장)을 순서대로 몰아 sessionStorage 저장과 보드 반영까지 확인하고, **게스트인데 인증 API 를 불렀는지**도 봅니다. `npm run dev` 만 있으면 되고 `HEADED=1` 로 띄워 볼 수 있습니다
 - `scripts/mobile-screens.cjs` — **아무 하네스도 안 찍던 다섯 화면**(`/login`·`/privacy`·`/share/{code}`·`/schedule-detail`·`/chat/{id}`)을 375 에서 캡처합니다. 백엔드를 목으로 세우고 socket 을 막으며, **Next 개발 배지를 가리고** 찍습니다. `docs/concepts/c-*.html` 대조 문서의 "지금" 쪽이 이 캡처들입니다.
   **채팅 목의 필드 이름을 앱이 읽는 것과 정확히 맞추세요** — `text`(`message`
