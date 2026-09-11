@@ -86,10 +86,13 @@ interface FeedCardProps {
   onAddToPlan: (post: FeedPost) => void;
   /** 요청이 도는 동안 연타를 막는다 */
   votePending?: boolean;
+  /** 카드를 눌러 상세로. 안쪽 버튼들은 각자 stopPropagation 한다 */
+  onOpen?: (post: FeedPost) => void;
 }
 
 const FeedCard: React.FC<FeedCardProps> = ({
   post,
+  onOpen,
   onVote,
   onAddToPlan,
   votePending = false,
@@ -103,7 +106,39 @@ const FeedCard: React.FC<FeedCardProps> = ({
       금액을 위아래로 훑는 설계라 한 화면에 더 들어와야 비교가 된다.
       ≥768 은 예전 카드 언어 그대로다.
     */
-    <article className="border-b border-[#0000000c] px-1 py-5 transition-colors hover:bg-[#f7f8f9] md:flex md:gap-5 md:rounded-[24px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-[18px_20px] md:shadow-sm md:transition-shadow md:hover:bg-white md:hover:shadow-md md:hover:shadow-[#ee2b8c0f]">
+    /*
+      카드 전체가 상세로 가는 문이다. **안쪽 버튼(투표·담기·카카오맵)은
+      각자 stopPropagation 한다** — 안 그러면 투표하려다 상세로 넘어간다.
+
+      `article` 에 onClick 을 얹고 키보드는 따로 받는다. 카드를 button 으로
+      감싸면 안에 button 이 들어가 마크업이 어긋난다.
+    */
+    <article
+      onClick={onOpen ? () => onOpen(post) : undefined}
+      onKeyDown={
+        onOpen
+          ? (e) => {
+              if (e.target !== e.currentTarget) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpen(post);
+              }
+            }
+          : undefined
+      }
+      role={onOpen ? "button" : undefined}
+      /*
+        `article` 을 유지해야 한다 — 하네스가 이 선택자로 카드를 센다
+        (CLAUDE.md "목록은 article 로 그립니다"). 규칙은 article 을 늘
+        non-interactive 로 보지만, 여기는 role=button + onKeyDown 이 함께
+        있어 키보드로도 열린다.
+      */
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+      tabIndex={onOpen ? 0 : undefined}
+      className={`border-b border-[#0000000c] px-1 py-5 transition-colors hover:bg-[#f7f8f9] md:flex md:gap-5 md:rounded-[24px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-[18px_20px] md:shadow-sm md:transition-shadow md:hover:bg-white md:hover:shadow-md md:hover:shadow-[#ee2b8c0f] ${
+        onOpen ? "cursor-pointer" : ""
+      }`}
+    >
       {/* 금액 열 — 넓은 화면에서 세로로 줄이 맞아야 비교가 된다 */}
       <div className="shrink-0 md:w-[120px]">
         {post.amount === undefined ? (
@@ -178,7 +213,10 @@ const FeedCard: React.FC<FeedCardProps> = ({
           */}
             <button
               type="button"
-              onClick={() => onVote(post, "HELPFUL")}
+              onClick={(e) => {
+                e.stopPropagation();
+                onVote(post, "HELPFUL");
+              }}
               disabled={votePending}
               aria-pressed={post.myVote === "HELPFUL"}
               aria-label="도움이 돼요"
@@ -200,7 +238,10 @@ const FeedCard: React.FC<FeedCardProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onVote(post, "NOT_HELPFUL")}
+              onClick={(e) => {
+                e.stopPropagation();
+                onVote(post, "NOT_HELPFUL");
+              }}
               disabled={votePending}
               aria-pressed={post.myVote === "NOT_HELPFUL"}
               aria-label="도움이 안 돼요"
@@ -219,7 +260,10 @@ const FeedCard: React.FC<FeedCardProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onAddToPlan(post)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToPlan(post);
+              }}
               className="inline-flex items-center gap-1 rounded-full border border-[#ee2b8c33] bg-white px-3 py-1.5 text-[12.5px] font-bold text-[#ee2b8c] transition-colors hover:bg-[#fff2f6] active:bg-[#ffe2ee]"
             >
               <Plus className="h-3.5 w-3.5" />내 플랜에 담기

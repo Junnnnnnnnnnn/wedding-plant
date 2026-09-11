@@ -1,0 +1,205 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S4 R5 V5 -->
+<!-- Hallmark · 피드 상세 B안 · 영수증 (Receipt) · macrostructure: Letter · theme: C안 토큰 상속 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>피드 상세 B안 · 영수증</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  /* 후기 한 장을 영수증처럼. 금액이 주어이고, 나머지는 그 금액의 조건이다 */
+  .rc { padding: var(--x7) var(--gutter) var(--x5); }
+  .rc__cat { display: inline-block; font-size: var(--t2); font-weight: var(--w-bold);
+             color: var(--fg-brand-contrast); background: var(--bg-brand-weak);
+             border-radius: var(--r-full); padding: var(--x1_5) var(--x3); }
+  .rc__amt { margin-top: var(--x4); font-size: var(--t14); font-weight: var(--w-bold);
+             letter-spacing: -0.05em; line-height: 0.95; font-variant-numeric: tabular-nums; }
+  .rc__amt--off { font-size: var(--t8); color: var(--fg-neutral-subtle); letter-spacing: -0.02em; }
+  .rc__unit { font-size: var(--t6); font-weight: var(--w-bold); letter-spacing: -0.02em;
+              color: var(--fg-neutral-muted); margin-left: var(--x1_5); }
+
+  /* 이 금액이 시세의 어디쯤인지 — 한 줄로 */
+  .rc__where { margin-top: var(--x4); display: flex; align-items: center; gap: var(--x2);
+               font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .rc__badge { font-weight: var(--w-bold); color: var(--fg-positive);
+               background: var(--bg-positive-weak); border-radius: var(--r-full);
+               padding: var(--x1) var(--x2_5); font-size: var(--t2); }
+
+  /* 조건들 — 영수증의 품목 줄. 라벨은 왼쪽 고정폭, 값은 오른쪽 */
+  .rows { margin-top: var(--x6); }
+  .row { display: flex; align-items: baseline; gap: var(--x4);
+         padding: var(--x3_5) 0; font-size: var(--t4); }
+  .row + .row { box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .row__l { flex: 0 0 76px; font-size: var(--t3); color: var(--fg-neutral-subtle); }
+  .row__v { min-width: 0; flex: 1; font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .row__v--plain { font-weight: var(--w-regular); color: var(--fg-neutral); line-height: 1.65; }
+  .row__sub { display: block; margin-top: var(--x1); font-size: var(--t2);
+              font-weight: var(--w-regular); color: var(--fg-neutral-subtle); }
+  .stars { color: #f5a623; letter-spacing: 2px; }
+  .maplink { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-brand); }
+
+  /* 투표 — 목록과 같은 알약. 여기서도 한 표다 */
+  .acts { margin-top: var(--x6); display: flex; align-items: center; gap: var(--x2);
+          padding: 0 var(--gutter); }
+  .vote { display: inline-flex; align-items: center; gap: var(--x1_5);
+          font-size: var(--t3); font-weight: var(--w-bold); color: var(--fg-neutral-muted);
+          background: var(--bg-layer-fill); border-radius: var(--r-full);
+          padding: var(--x2) var(--x4); }
+  .vote--on { background: var(--bg-brand-weak); color: var(--fg-brand-contrast); }
+
+  .dock { position: sticky; bottom: 0; margin-top: var(--x8);
+          padding: var(--x3) var(--gutter) var(--x5);
+          background: var(--bg-layer-default);
+          box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .cta { display: flex; width: 100%; align-items: center; justify-content: center; gap: var(--x2);
+         background: var(--bg-brand-solid); color: #fff; border-radius: var(--r3);
+         padding: var(--x4) 0; font-size: var(--t5); font-weight: var(--w-bold); }
+
+  /* 같은 업체 다른 후기 — 있으면 맨 아래 한 줄 띠로만 */
+  .more { margin: var(--x7) var(--gutter) 0; background: var(--bg-layer-fill);
+          border-radius: var(--r4); padding: var(--x4);
+          display: flex; align-items: center; gap: var(--x3); }
+  .more__t { font-size: var(--t3); color: var(--fg-neutral); }
+  .more__t b { font-weight: var(--w-bold); }
+  .more__go { margin-left: auto; font-size: var(--t3); font-weight: var(--w-bold);
+              color: var(--fg-brand); white-space: nowrap; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">피드 상세 · B안</p>
+  <h1 class="page__title">영수증</h1>
+  <p class="page__lede">
+    <b>후기 한 장</b>이 주어입니다. 금액을 화면에서 가장 크게 두고, 나머지 항목은
+    전부 <b>"그 금액이 나온 조건"</b> 으로 읽히게 세웠습니다 — 별점·업체·지역·작성자가
+    영수증의 품목 줄처럼 아래로 흐릅니다. 장소가 없는 후기도 그대로 열립니다.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">B안</span><span class="cmp__note">금액이 주어</span></div>
+      <div class="c-screen c-screen--tall">
+
+        <div class="rc">
+          <span class="rc__cat">스드메</span>
+          <p class="rc__amt">230<span class="rc__unit">만원</span></p>
+
+          <p class="rc__where">
+            <span class="rc__badge">가운데</span>
+            스드메 후기 61건의 중앙값 245만원
+          </p>
+        </div>
+
+        <div class="rows" style="padding: 0 var(--gutter);">
+          <div class="row">
+            <span class="row__l">만족도</span>
+            <span class="row__v"><span class="stars">★★★★☆</span></span>
+          </div>
+          <div class="row">
+            <span class="row__l">업체</span>
+            <span class="row__v">
+              세컨드모먼트 스튜디오
+              <span class="row__sub">서울 강남구 논현로 842 · <span class="maplink">카카오맵</span></span>
+            </span>
+          </div>
+          <div class="row">
+            <span class="row__l">한 줄</span>
+            <span class="row__v row__v--plain">
+              원본 보정까지 3주 걸렸어요. 야외 촬영은 추가 20만원이고,
+              실장님 지정하면 30만원 더 붙습니다.
+            </span>
+          </div>
+          <div class="row">
+            <span class="row__l">올린 이</span>
+            <span class="row__v">
+              D-131 신부
+              <span class="row__sub">2026년 8월 · 결혼식 4개월 전에 계약</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="acts">
+          <span class="vote vote--on">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M7 11v9H4v-9zM7 11l4-8a2.4 2.4 0 0 1 3 2v4h5a2 2 0 0 1 2 2.4l-1.4 6A2 2 0 0 1 17 20H7"/>
+            </svg>
+            도움이 돼요 12
+          </span>
+          <span class="vote">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M17 13V4h3v9zM17 13l-4 8a2.4 2.4 0 0 1-3-2v-4H5a2 2 0 0 1-2-2.4l1.4-6A2 2 0 0 1 7 4h10"/>
+            </svg>
+            도움이 안 돼요
+          </span>
+        </div>
+
+        <div class="more">
+          <span class="more__t"><b>이 업체 후기 11건</b><br>중앙값 230만원</span>
+          <span class="more__go">모두 보기</span>
+        </div>
+
+        <div class="dock">
+          <span class="cta">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            내 플랜에 담기
+          </span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">뜻</span><span class="cmp__note">왜 이렇게</span></div>
+      <div class="changes">
+        <div class="change">
+          <p class="change__t">목록의 규칙을 상세까지 끌고 온다</p>
+          <p class="change__d">
+            목록에서 사람이 하는 일은 <b>금액을 위아래로 훑는 것</b>이라 금액을 왼쪽에
+            세로로 줄세웠습니다. 상세도 같은 규칙입니다 — 들어오자마자 같은 숫자가
+            같은 자리에서 더 크게 이어집니다. 화면이 바뀌었다는 느낌이 없습니다.
+          </p>
+        </div>
+        <div class="change">
+          <p class="change__t">"가운데" 한 줄</p>
+          <p class="change__d">
+            중앙값 대비 어디쯤인지를 <b>한 줄로만</b> 말합니다. 이 화면의 질문은
+            "이게 비싼 건가?" 하나이고, 그 답에 도넛이나 막대까지는 필요 없습니다.
+            표본이 적으면 이 줄을 감춥니다.
+          </p>
+        </div>
+        <div class="change">
+          <p class="change__t">장소가 없어도 열린다</p>
+          <p class="change__d">
+            업체 줄이 <b>한 행일 뿐</b>이라, 청첩장·예물처럼 지도에 없는 후기도
+            그대로 이 화면에 들어옵니다. A안이 못 받는 후기를 받습니다.
+            대신 업체를 파고들려면 맨 아래 띠로 한 번 더 들어가야 합니다.
+          </p>
+        </div>
+        <div class="change">
+          <p class="change__t">넓은 화면</p>
+          <p class="change__d">
+            폰 시트를 그대로 가운데 한 컬럼(최대 560px)으로 둡니다. 영수증은
+            넓힐수록 읽기 어려워집니다 — 옆에 무언가를 붙이지 않습니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <p class="change__t">이 안의 약점</p>
+      <p class="change__d">
+        후기 하나로 끝나서 <b>다음에 볼 것이 없습니다.</b> 맨 아래 "이 업체 후기 11건"
+        띠가 유일한 출구이고, 그 띠가 결국 A안으로 가는 문이라면 화면을 두 개 만드는
+        셈입니다. <b>A안과 B안은 합칠 수 있습니다</b> — C안이 그 방향입니다.
+      </p>
+    </div>
+  </div>
+</main>
+</body>
+</html>

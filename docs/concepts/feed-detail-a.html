@@ -1,0 +1,221 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
+<!-- Hallmark · 피드 상세 A안 · 업체 상세 (Place-led) · macrostructure: Stat-Led · theme: C안 토큰 상속 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>피드 상세 A안 · 업체 상세</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  /* 머리 — 지도가 먼저 온다. 이 화면의 주어는 "장소" 다 */
+  .dt-map { position: relative; height: 168px; background: var(--bg-layer-fill);
+            display: grid; place-items: center; overflow: hidden; }
+  .dt-map__grid { position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--stroke-neutral-subtle) 1px, transparent 1px),
+      linear-gradient(90deg, var(--stroke-neutral-subtle) 1px, transparent 1px);
+    background-size: 28px 28px; opacity: 0.65; }
+  .dt-map__pin { position: relative; width: 34px; height: 34px; border-radius: var(--r-full);
+                 background: var(--bg-brand-solid); display: grid; place-items: center;
+                 box-shadow: 0 6px 18px #ee2b8c44; }
+  .dt-map__open { position: absolute; right: var(--gutter); bottom: var(--x3);
+                  background: var(--bg-layer-default); border-radius: var(--r-full);
+                  padding: var(--x2) var(--x4); font-size: var(--t2); font-weight: var(--w-bold);
+                  color: var(--fg-neutral); box-shadow: 0 2px 8px #0000001a; }
+
+  .dt-head { padding: var(--x5) var(--gutter) var(--x4); }
+  .dt-cat { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-brand); }
+  .dt-name { margin-top: var(--x2); font-size: var(--t9); font-weight: var(--w-bold);
+             letter-spacing: -0.03em; line-height: 1.25; }
+  .dt-addr { margin-top: var(--x2); font-size: var(--t3); color: var(--fg-neutral-muted); }
+
+  /* 시세 — 이 화면이 존재하는 이유. 평균이 아니라 중앙값·사분위수다 */
+  .dt-stat { margin: 0 var(--gutter); background: var(--bg-layer-fill);
+             border-radius: var(--r5); padding: var(--x5); }
+  .dt-stat__l { font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .dt-stat__v { margin-top: var(--x1_5); font-size: var(--t12); font-weight: var(--w-bold);
+                letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .dt-stat__n { margin-top: var(--x2); font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  /* 사분위 막대 — 내 후기가 어디쯤인지 한 눈에 */
+  .dt-range { margin-top: var(--x4); }
+  .dt-range__bar { position: relative; height: 8px; border-radius: var(--r-full);
+                   background: var(--bg-neutral-weak); overflow: hidden; }
+  .dt-range__iqr { position: absolute; top: 0; bottom: 0; left: 22%; right: 26%;
+                   background: var(--bg-brand-weak); }
+  .dt-range__mid { position: absolute; top: -3px; bottom: -3px; left: 47%; width: 3px;
+                   border-radius: 2px; background: var(--bg-brand-solid); }
+  .dt-range__ends { margin-top: var(--x2); display: flex; justify-content: space-between;
+                    font-size: var(--t1); color: var(--fg-neutral-subtle);
+                    font-variant-numeric: tabular-nums; }
+
+  .dt-sec { margin-top: var(--x7); padding: 0 var(--gutter); }
+  .dt-sec__t { font-size: var(--t5); font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .dt-sec__c { font-size: var(--t3); color: var(--fg-neutral-subtle); margin-left: var(--x2); }
+
+  /* 그 업체 후기들 — 목록과 같은 한 줄 카드지만 업체명이 빠진다(이미 위에 있다) */
+  .rv { padding: var(--x4) 0; display: flex; gap: var(--x4); align-items: flex-start; }
+  .rv + .rv { box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .rv__amt { flex: 0 0 88px; font-size: var(--t7); font-weight: var(--w-bold);
+             letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .rv__amt--off { font-size: var(--t3); color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+  .rv__b { min-width: 0; flex: 1; }
+  .rv__stars { font-size: var(--t2); color: #f5a623; letter-spacing: 1px; }
+  .rv__txt { margin-top: var(--x1_5); font-size: var(--t3); line-height: 1.6; color: var(--fg-neutral); }
+  .rv__by { margin-top: var(--x2); font-size: var(--t1); color: var(--fg-neutral-subtle); }
+
+  .dt-dock { position: sticky; bottom: 0; margin-top: var(--x8);
+             padding: var(--x3) var(--gutter) var(--x5);
+             background: var(--bg-layer-default);
+             box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle); }
+  .dt-cta { display: flex; width: 100%; align-items: center; justify-content: center;
+            gap: var(--x2); background: var(--bg-brand-solid); color: #fff;
+            border-radius: var(--r3); padding: var(--x4) 0;
+            font-size: var(--t5); font-weight: var(--w-bold); }
+  .note { margin-top: var(--x3); font-size: var(--t2); color: var(--fg-neutral-subtle); line-height: 1.6; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">피드 상세 · A안</p>
+  <h1 class="page__title">업체 상세</h1>
+  <p class="page__lede">
+    주어가 <b>후기 하나</b>가 아니라 <b>업체</b>입니다. 후기 한 장에 대해 더 보여 줄 것이
+    없다는 판단(CLAUDE.md)을 그대로 따른 안입니다. 카드를 누르면 그 업체의
+    <b>시세와 후기 전부</b>가 열립니다 — "이게 비싼 건가?" 에 답하는 자리입니다.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">A안</span><span class="cmp__note">장소가 주어</span></div>
+      <div class="c-screen c-screen--tall">
+
+        <div class="dt-map">
+          <span class="dt-map__grid"></span>
+          <span class="dt-map__pin">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <path d="M12 21s-7-5.3-7-10.5A7 7 0 0 1 19 10.5C19 15.7 12 21 12 21z"/>
+              <circle cx="12" cy="10.5" r="2.4"/>
+            </svg>
+          </span>
+          <span class="dt-map__open">카카오맵에서 열기</span>
+        </div>
+
+        <div class="dt-head">
+          <p class="dt-cat">스드메</p>
+          <h2 class="dt-name">세컨드모먼트 스튜디오</h2>
+          <p class="dt-addr">서울 강남구 논현로 842</p>
+        </div>
+
+        <div class="dt-stat">
+          <p class="dt-stat__l">이 업체 중앙값</p>
+          <p class="dt-stat__v">2,300,000원</p>
+          <p class="dt-stat__n">후기 11건 · 최근 6개월</p>
+
+          <div class="dt-range">
+            <div class="dt-range__bar">
+              <span class="dt-range__iqr"></span>
+              <span class="dt-range__mid"></span>
+            </div>
+            <div class="dt-range__ends">
+              <span>150만</span>
+              <span>가운데 절반</span>
+              <span>410만</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dt-sec">
+          <p class="dt-sec__t">후기<span class="dt-sec__c">11</span></p>
+        </div>
+        <div class="dt-sec" style="margin-top: var(--x2);">
+          <div class="rv">
+            <span class="rv__amt">230만원</span>
+            <span class="rv__b">
+              <span class="rv__stars">★★★★☆</span>
+              <p class="rv__txt">원본 보정까지 3주 걸렸어요. 야외 촬영은 추가 20만원.</p>
+              <p class="rv__by">D-131 신부 · 2026.08</p>
+            </span>
+          </div>
+          <div class="rv">
+            <span class="rv__amt">180만원</span>
+            <span class="rv__b">
+              <span class="rv__stars">★★★★★</span>
+              <p class="rv__txt">평일 할인 받았습니다. 실장님 지정은 30만원 추가예요.</p>
+              <p class="rv__by">D-88 신랑 · 2026.07</p>
+            </span>
+          </div>
+          <div class="rv">
+            <span class="rv__amt rv__amt--off">금액 비공개</span>
+            <span class="rv__b">
+              <span class="rv__stars">★★★☆☆</span>
+              <p class="rv__txt">사진은 좋은데 연락이 잘 안 됐어요.</p>
+              <p class="rv__by">D-54 신부 · 2026.06</p>
+            </span>
+          </div>
+        </div>
+
+        <div class="dt-dock">
+          <span class="dt-cta">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            내 플랜에 담기
+          </span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">뜻</span><span class="cmp__note">왜 이렇게</span></div>
+      <div class="changes">
+        <div class="change">
+          <p class="change__t">지도가 맨 위</p>
+          <p class="change__d">
+            목록에는 지도를 깔지 않기로 했습니다(금액을 세로로 훑는 설계가 깨지고
+            staticmap 쿼터가 붙습니다). <b>앱 안의 지도는 여기 하나</b>가 그 약속의
+            반대쪽입니다 — 목록에서 참았으니 상세에서 제대로 냅니다.
+          </p>
+        </div>
+        <div class="change">
+          <p class="change__t">평균이 아니라 중앙값 + 사분위</p>
+          <p class="change__d">
+            자기 신고 금액이라 단위를 잘못 적은 한 건이 평균을 통째로 흔듭니다.
+            가운데 절반이 어디인지를 막대로 보여 주고, <b>표본이 적으면 이 블록을
+            통째로 감춥니다</b> — 3건으로 시세를 말하는 건 조작보다 큰 거짓말입니다.
+          </p>
+        </div>
+        <div class="change">
+          <p class="change__t">묶는 열쇠는 placeId</p>
+          <p class="change__d">
+            업체명은 자유 문자열이라 <code>SG웨딩홀</code> 과 <code>sg 웨딩홀</code> 이
+            서로 다른 업체가 됩니다. 이 화면은 <b>placeId 로만</b> 묶습니다 —
+            장소를 안 고른 후기는 여기 못 옵니다(그건 B안이 받습니다).
+          </p>
+        </div>
+        <div class="change">
+          <p class="change__t">넓은 화면</p>
+          <p class="change__d">
+            왼쪽 지도 + 시세 고정, 오른쪽 후기 목록 스크롤의 2열입니다.
+            목록에서 다음 후기를 눌러도 지도는 그대로 있습니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <p class="change__t">이 안의 약점</p>
+      <p class="change__d">
+        <b>장소가 없는 후기는 갈 곳이 없습니다.</b> 청첩장·예물·신혼여행처럼 지도에
+        없는 게 정상인 카테고리가 있고, 장소를 필수로 만들면 공급이 죽습니다.
+        그 후기를 눌렀을 때 무엇을 보여줄지 따로 정해야 합니다.
+      </p>
+    </div>
+  </div>
+</main>
+</body>
+</html>

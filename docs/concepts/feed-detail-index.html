@@ -1,0 +1,196 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V5 -->
+<!-- Hallmark · 피드 상세 시안 인덱스 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>피드 상세 시안 — 네 안</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  .three { margin-top: var(--x8); display: grid; gap: var(--x6);
+           grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 980px) { .three { grid-template-columns: minmax(0, 1fr); } }
+  /* 다시 구성한 안을 먼저 읽게 한다 */
+  .opt--pick { border-color: var(--stroke-brand-weak);
+               box-shadow: 0 0 0 3px var(--bg-brand-weak); }
+  .opt { display: block; background: var(--bg-layer-default); border-radius: var(--r5);
+         padding: var(--x6); box-shadow: 0 1px 0 var(--stroke-neutral-subtle);
+         border: 1px solid var(--stroke-neutral-subtle); }
+  .opt__k { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-brand); }
+  .opt__t { margin-top: var(--x2); font-size: var(--t8); font-weight: var(--w-bold);
+            letter-spacing: -0.025em; }
+  .opt__sub { margin-top: var(--x2); font-size: var(--t3); color: var(--fg-neutral-subtle); }
+  .opt__d { margin-top: var(--x4); font-size: var(--t3); line-height: 1.7; color: var(--fg-neutral); }
+  .opt__list { margin-top: var(--x4); display: grid; gap: var(--x2); }
+  .li { display: flex; gap: var(--x2); font-size: var(--t2); line-height: 1.6; }
+  .li__m { flex: 0 0 auto; font-weight: var(--w-bold); }
+  .li--y .li__m { color: var(--fg-positive); }
+  .li--n .li__m { color: var(--fg-critical); }
+  .opt__go { margin-top: var(--x5); display: inline-block; font-size: var(--t3);
+             font-weight: var(--w-bold); color: var(--fg-brand); }
+
+  .matrix { margin-top: var(--x10); width: 100%; border-collapse: collapse; font-size: var(--t3); }
+  .matrix th, .matrix td { text-align: left; padding: var(--x3) var(--x3);
+                           border-bottom: 1px solid var(--stroke-neutral-subtle); }
+  .matrix th { font-size: var(--t2); color: var(--fg-neutral-subtle); font-weight: var(--w-medium); }
+  .matrix td:first-child { font-weight: var(--w-bold); white-space: nowrap; }
+  .yes { color: var(--fg-positive); font-weight: var(--w-bold); }
+  .no { color: var(--fg-critical); font-weight: var(--w-bold); }
+  .mid { color: var(--fg-warning); font-weight: var(--w-bold); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">피드 상세</p>
+  <h1 class="page__title">카드를 누르면 무엇이 열리나</h1>
+  <p class="page__lede">
+    지금은 후기 카드를 눌러도 아무 일도 나지 않습니다. 세 안은 <b>주어가 다릅니다</b> —
+    A안은 <b>업체</b>, B안은 <b>후기 한 장</b>, C안은 <b>내 예산과의 차이</b>.
+    무엇을 주어로 삼느냐에 따라 다음 행동이 달라집니다.
+  </p>
+
+  <div class="three">
+    <a class="opt opt--pick" href="feed-detail-a2.html">
+      <p class="opt__k">A2안 · 다시 구성</p>
+      <p class="opt__t">A안 레이아웃 · 후기 한 건</p>
+      <p class="opt__sub">주어 · 후기 한 장 (A안의 짜임)</p>
+      <p class="opt__d">
+        A안의 지도 머리 · 회색 통계 카드 · 바닥 버튼을 그대로 두고 내용만
+        한 건으로. 회색 카드의 주인공이 업체 중앙값 → <b>이 후기의 지출</b>.
+      </p>
+      <div class="opt__list">
+        <span class="li li--y"><span class="li__m">+</span><span>A안의 생김새를 그대로 가져간다</span></span>
+        <span class="li li--y"><span class="li__m">+</span><span>백엔드 추가가 사실상 없다 (단건 조회 1개)</span></span>
+        <span class="li li--y"><span class="li__m">+</span><span>장소 없는 후기도 열린다 (카테고리 면으로 대체)</span></span>
+        <span class="li li--n"><span class="li__m">−</span><span>막대가 업체가 아니라 카테고리 단위다</span></span>
+      </div>
+      <span class="opt__go">A2안 보기 →</span>
+    </a>
+
+    <a class="opt" href="feed-detail-a.html">
+      <p class="opt__k">A안</p>
+      <p class="opt__t">업체 상세</p>
+      <p class="opt__sub">주어 · 장소</p>
+      <p class="opt__d">
+        지도 → 업체 중앙값 → 그 업체 후기 전부. CLAUDE.md 가 적어 둔 방향
+        그대로입니다 — "후기 하나에 대해 더 보여 줄 게 없다".
+      </p>
+      <div class="opt__list">
+        <span class="li li--y"><span class="li__m">+</span><span>시세가 가장 정확하게 선다 (같은 업체끼리)</span></span>
+        <span class="li li--y"><span class="li__m">+</span><span>목록에서 참았던 지도를 여기서 제대로 쓴다</span></span>
+        <span class="li li--n"><span class="li__m">−</span><span>장소 없는 후기(청첩장·예물)는 갈 곳이 없다</span></span>
+        <span class="li li--n"><span class="li__m">−</span><span>placeId 가 쌓이기 전에는 대부분 후기 1건짜리 화면</span></span>
+      </div>
+      <span class="opt__go">A안 보기 →</span>
+    </a>
+
+    <a class="opt" href="feed-detail-b.html">
+      <p class="opt__k">B안</p>
+      <p class="opt__t">영수증</p>
+      <p class="opt__sub">주어 · 후기 한 장</p>
+      <p class="opt__d">
+        금액을 가장 크게 두고 별점·업체·지역·작성자를 그 금액의 조건으로
+        아래에 흘립니다. 목록의 읽기 규칙이 상세까지 이어집니다.
+      </p>
+      <div class="opt__list">
+        <span class="li li--y"><span class="li__m">+</span><span>모든 후기가 열린다 (장소 없어도)</span></span>
+        <span class="li li--y"><span class="li__m">+</span><span>목록 → 상세가 같은 화면처럼 이어진다</span></span>
+        <span class="li li--y"><span class="li__m">+</span><span>지금 있는 데이터만으로 바로 만들 수 있다</span></span>
+        <span class="li li--n"><span class="li__m">−</span><span>다음에 볼 것이 없다 — 출구가 한 줄 띠뿐</span></span>
+      </div>
+      <span class="opt__go">B안 보기 →</span>
+    </a>
+
+    <a class="opt" href="feed-detail-c.html">
+      <p class="opt__k">C안</p>
+      <p class="opt__t">내 예산과 나란히</p>
+      <p class="opt__sub">주어 · 차이</p>
+      <p class="opt__d">
+        후기와 내가 잡아 둔 금액을 같은 자 위에 놓습니다. 첫 버튼이
+        <b>내 금액을 고치는 것</b>이라 코어로 되돌아가는 거리가 가장 짧습니다.
+      </p>
+      <div class="opt__list">
+        <span class="li li--y"><span class="li__m">+</span><span>리텐션 축(코어로 되돌리기)에 가장 가깝다</span></span>
+        <span class="li li--y"><span class="li__m">+</span><span>"비싼가?" 를 내 숫자로 답한다</span></span>
+        <span class="li li--n"><span class="li__m">−</span><span>내 플랜에 그 카테고리가 없으면 절반이 빈다</span></span>
+        <span class="li li--n"><span class="li__m">−</span><span>덮어쓰는 버튼이라 Undo 를 반드시 함께 내야 한다</span></span>
+      </div>
+      <span class="opt__go">C안 보기 →</span>
+    </a>
+  </div>
+
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th>견주는 축</th>
+        <th>A안 · 업체</th>
+        <th>B안 · 영수증</th>
+        <th>C안 · 나란히</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>장소 없는 후기</td>
+        <td class="no">못 연다</td>
+        <td class="yes">열린다</td>
+        <td class="yes">열린다</td>
+      </tr>
+      <tr>
+        <td>지금 데이터로 가능</td>
+        <td class="mid">placeId 쌓인 뒤</td>
+        <td class="yes">바로</td>
+        <td class="yes">바로</td>
+      </tr>
+      <tr>
+        <td>시세의 정확도</td>
+        <td class="yes">업체 단위</td>
+        <td class="mid">카테고리 단위</td>
+        <td class="mid">카테고리 단위</td>
+      </tr>
+      <tr>
+        <td>다음 행동까지의 거리</td>
+        <td class="mid">담기</td>
+        <td class="mid">담기</td>
+        <td class="yes">내 금액 고치기</td>
+      </tr>
+      <tr>
+        <td>새 API 필요</td>
+        <td class="no">업체별 후기·통계</td>
+        <td class="yes">없음</td>
+        <td class="mid">내 카테고리 금액</td>
+      </tr>
+      <tr>
+        <td>A2안은</td>
+        <td colspan="3">
+          A안의 <b>생김새</b>와 B안의 <b>데이터 무게</b>를 합친 것입니다 —
+          지도·통계 카드·바닥 버튼은 A안, 필요한 값은 목록이 이미 주는 것뿐.
+          장소 없는 후기도 받습니다.
+        </td>
+      </tr>
+      <tr>
+        <td>빈 상태 위험</td>
+        <td class="no">후기 1건짜리 화면</td>
+        <td class="yes">없음</td>
+        <td class="no">내 금액 없을 때</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="changes">
+    <div class="change">
+      <p class="change__t">고를 때 참고</p>
+      <p class="change__d">
+        세 안은 배타적이지 않습니다. <b>B안이 상세의 뼈대</b>가 되고, 거기서
+        업체 줄을 누르면 A안이 열리는 2단 구성이 가장 자연스럽습니다.
+        C안의 비교 블록은 <b>B안 안에 한 덩어리로 얹을 수도</b> 있습니다 —
+        그 경우 "내 금액 고치기" 버튼만 조건부로 내면 됩니다.
+        <b>A2안</b>은 그 물음에 대한 답으로 다시 구성한 것입니다 — A안의 짜임을
+        쓰되 업체 단위 집계를 요구하지 않습니다.
+      </p>
+    </div>
+  </div>
+</main>
+</body>
+</html>

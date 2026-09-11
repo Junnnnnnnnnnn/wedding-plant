@@ -12,6 +12,7 @@ import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { useOwnRoomId } from "../hooks/useOwnRoomId";
 import FeedCard from "./FeedCard";
+import { putFeedDetail } from "@/lib/feedDetail";
 
 const ALL = "전체";
 const PAGE_COUNT = 20;
@@ -210,6 +211,17 @@ const FeedPageContent: React.FC = () => {
    * 피드에서 코어로 돌려보내는 길.
    * 후기 값을 그대로 채운 등록 화면으로 보낸다 — 사용자는 날짜만 정하면 된다.
    */
+  /**
+   * 카드를 눌러 상세로.
+   *
+   * **이미 받아 둔 항목을 그대로 넘긴다** — 백엔드에 단건 조회가 없기도 하고,
+   * 넘기면 상세가 요청 하나 없이 바로 그린다(`lib/feedDetail.ts`).
+   */
+  const handleOpenDetail = (post: FeedPost) => {
+    putFeedDetail(post);
+    router.push(`/feed/${post.id}`);
+  };
+
   const handleAddToPlan = (post: FeedPost) => {
     const params = new URLSearchParams({
       title: post.title,
@@ -476,6 +488,7 @@ const FeedPageContent: React.FC = () => {
                         post={post}
                         onVote={handleVote}
                         onAddToPlan={handleAddToPlan}
+                        onOpen={handleOpenDetail}
                         votePending={votePendingId === post.id}
                       />
                     ))}

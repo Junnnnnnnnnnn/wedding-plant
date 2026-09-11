@@ -1,0 +1,199 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V5 -->
+<!-- Hallmark · 피드 상세 C안 · 내 예산과 나란히 (Split) · macrostructure: Split Compare · theme: C안 토큰 상속 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>피드 상세 C안 · 내 예산과 나란히</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<style>
+  /* 머리 — 후기와 내 플랜을 같은 단위로 나란히 놓는다 */
+  .cp { padding: var(--x6) var(--gutter) var(--x5); }
+  .cp__cat { font-size: var(--t2); font-weight: var(--w-bold); color: var(--fg-brand); }
+  .cp__name { margin-top: var(--x2); font-size: var(--t7); font-weight: var(--w-bold);
+              letter-spacing: -0.025em; line-height: 1.3; }
+  .cp__stars { margin-top: var(--x2); font-size: var(--t3); color: #f5a623; letter-spacing: 1.5px; }
+
+  /* 두 기둥 — 왼쪽 이 후기, 오른쪽 내 플랜 */
+  .duo { margin-top: var(--x6); display: grid; grid-template-columns: 1fr 1fr;
+         gap: var(--x1); background: var(--stroke-neutral-subtle);
+         border-radius: var(--r5); overflow: hidden; }
+  .duo__c { background: var(--bg-layer-default); padding: var(--x5) var(--x4); }
+  .duo__c--mine { background: var(--bg-brand-weak); }
+  .duo__l { font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .duo__c--mine .duo__l { color: var(--fg-brand-contrast); }
+  .duo__v { margin-top: var(--x2); font-size: var(--t10); font-weight: var(--w-bold);
+            letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .duo__c--mine .duo__v { color: var(--fg-brand-contrast); }
+  .duo__s { margin-top: var(--x2); font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .duo__c--mine .duo__s { color: var(--fg-brand-contrast); opacity: 0.75; }
+
+  /* 차이 한 줄 — 이 화면의 결론 */
+  .gap { margin-top: var(--x4); padding: var(--x4);
+         background: var(--bg-layer-fill); border-radius: var(--r4);
+         font-size: var(--t4); line-height: 1.6; color: var(--fg-neutral); }
+  .gap b { font-weight: var(--w-bold); }
+  .gap--over { background: var(--bg-warning-weak); }
+
+  /* 시세 눈금 — 내 예정 금액과 이 후기를 같은 자 위에 */
+  .scale { margin-top: var(--x6); }
+  .scale__t { font-size: var(--t3); font-weight: var(--w-bold); }
+  .scale__bar { position: relative; margin-top: var(--x5); height: 6px;
+                border-radius: var(--r-full); background: var(--bg-neutral-weak); }
+  .scale__iqr { position: absolute; top: 0; bottom: 0; left: 24%; right: 28%;
+                background: var(--bg-neutral-weak-pressed); border-radius: var(--r-full); }
+  .tick { position: absolute; top: -22px; transform: translateX(-50%);
+          font-size: var(--t1); font-weight: var(--w-bold); white-space: nowrap; }
+  .tick::after { content: ""; position: absolute; left: 50%; top: 16px; width: 2px; height: 14px;
+                 transform: translateX(-50%); border-radius: 1px; background: currentColor; }
+  .tick--post { left: 46%; color: var(--fg-neutral); }
+  .tick--mine { left: 72%; color: var(--fg-brand); }
+  .scale__ends { margin-top: var(--x4); display: flex; justify-content: space-between;
+                 font-size: var(--t1); color: var(--fg-neutral-subtle);
+                 font-variant-numeric: tabular-nums; }
+
+  .sec { margin-top: var(--x7); }
+  .sec__t { font-size: var(--t5); font-weight: var(--w-bold); letter-spacing: -0.01em; }
+  .body { margin-top: var(--x3); font-size: var(--t4); line-height: 1.7; color: var(--fg-neutral); }
+  .by { margin-top: var(--x3); font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .where { margin-top: var(--x4); font-size: var(--t3); color: var(--fg-neutral-muted); }
+  .maplink { font-weight: var(--w-bold); color: var(--fg-brand); }
+
+  .dock { position: sticky; bottom: 0; margin-top: var(--x8);
+          padding: var(--x3) var(--gutter) var(--x5);
+          background: var(--bg-layer-default);
+          box-shadow: inset 0 1px 0 var(--stroke-neutral-subtle);
+          display: flex; gap: var(--x2); }
+  .cta { flex: 1; display: flex; align-items: center; justify-content: center; gap: var(--x2);
+         background: var(--bg-brand-solid); color: #fff; border-radius: var(--r3);
+         padding: var(--x4) 0; font-size: var(--t4); font-weight: var(--w-bold); }
+  .cta--ghost { flex: 0 0 auto; padding: var(--x4) var(--x5);
+                background: var(--bg-layer-fill); color: var(--fg-neutral); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">피드 상세 · C안</p>
+  <h1 class="page__title">내 예산과 나란히</h1>
+  <p class="page__lede">
+    후기를 <b>내 플랜 옆에 놓고</b> 봅니다. 이 화면의 질문은 "이게 비싼 건가?" 가 아니라
+    <b>"내가 잡아 둔 금액과 얼마나 다른가?"</b> 입니다 — 답이 곧 다음 행동(담기·고치기)이라
+    리텐션 축인 <b>코어로 되돌리기</b>에 가장 가깝습니다.
+  </p>
+
+  <div class="cmp">
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n cmp__n--new">C안</span><span class="cmp__note">차이가 주어</span></div>
+      <div class="c-screen c-screen--tall">
+
+        <div class="cp">
+          <p class="cp__cat">스드메</p>
+          <h2 class="cp__name">세컨드모먼트 스튜디오</h2>
+          <p class="cp__stars">★★★★☆</p>
+
+          <div class="duo">
+            <div class="duo__c">
+              <p class="duo__l">이 후기</p>
+              <p class="duo__v">230</p>
+              <p class="duo__s">만원 · 실제 지출</p>
+            </div>
+            <div class="duo__c duo__c--mine">
+              <p class="duo__l">내 스드메</p>
+              <p class="duo__v">300</p>
+              <p class="duo__s">만원 · 아직 예정</p>
+            </div>
+          </div>
+
+          <p class="gap">
+            내가 잡아 둔 것보다 <b>70만원 적습니다.</b>
+            이 금액으로 바꾸면 남은 예산이 <b>1,484만원</b>이 돼요.
+          </p>
+
+          <div class="scale">
+            <p class="scale__t">스드메 후기 61건 안에서</p>
+            <div class="scale__bar">
+              <span class="scale__iqr"></span>
+              <span class="tick tick--post">이 후기</span>
+              <span class="tick tick--mine">내 예정</span>
+            </div>
+            <div class="scale__ends">
+              <span>90만</span>
+              <span>중앙값 245만</span>
+              <span>520만</span>
+            </div>
+          </div>
+
+          <div class="sec">
+            <p class="sec__t">남긴 말</p>
+            <p class="body">
+              원본 보정까지 3주 걸렸어요. 야외 촬영은 추가 20만원이고,
+              실장님 지정하면 30만원 더 붙습니다.
+            </p>
+            <p class="by">D-131 신부 · 2026년 8월</p>
+            <p class="where">서울 강남구 논현로 842 · <span class="maplink">카카오맵</span></p>
+          </div>
+        </div>
+
+        <div class="dock">
+          <span class="cta">내 스드메를 230만원으로</span>
+          <span class="cta cta--ghost">담기</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="cmp__side">
+      <div class="cmp__cap"><span class="cmp__n">뜻</span><span class="cmp__note">왜 이렇게</span></div>
+      <div class="changes">
+        <div class="change">
+          <p class="change__t">피드가 코어로 되돌린다</p>
+          <p class="change__d">
+            이 피드는 무한 스크롤로 시간을 뺏는 화면이 아니라 <b>내 플랜으로 돌아오게
+            하는 장치</b>입니다. A·B안의 담기는 새 일정을 만들지만, 여기서는
+            <b>이미 잡아 둔 내 금액을 고치는 것</b>이 첫 번째 버튼입니다 — 되돌아가는
+            거리가 가장 짧습니다.
+          </p>
+        </div>
+        <div class="change">
+          <p class="change__t">같은 자 위의 두 눈금</p>
+          <p class="change__d">
+            "이 후기" 와 "내 예정" 을 <b>같은 막대</b>에 찍습니다. 숫자 두 개를 나란히
+            놓는 것만으로는 61건 안에서 둘 다 비싼 쪽인지 알 수 없습니다.
+            홈 예산 막대·예산 상세 도넛과 색의 뜻이 같습니다.
+          </p>
+        </div>
+        <div class="change">
+          <p class="change__t">내 금액이 없으면</p>
+          <p class="change__d">
+            그 카테고리에 잡아 둔 게 없으면 오른쪽 기둥이 <b>"아직 안 잡음"</b> 이 되고,
+            첫 버튼이 <b>"스드메 300만원으로 잡기"</b> 로 바뀝니다. 빈 칸을 채우는
+            자리가 되지 한 줄을 지어내지는 않습니다.
+          </p>
+        </div>
+        <div class="change">
+          <p class="change__t">넓은 화면</p>
+          <p class="change__d">
+            두 기둥이 좌우로 더 벌어지고 오른쪽에 "같은 업체 후기" 목록이 붙습니다 —
+            A안이 상세로 하던 일을 <b>이 화면의 옆 컬럼</b>이 대신합니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <p class="change__t">이 안의 약점</p>
+      <p class="change__d">
+        <b>비교가 성립하려면 내 플랜에 그 카테고리가 있어야 합니다.</b> 로그인 전이거나
+        막 시작한 사람에게는 오른쪽 기둥이 계속 비어 있어, 화면의 절반이 빈 상태로
+        읽힙니다. 또 첫 버튼이 <b>기존 금액을 덮어쓰는 동작</b>이라 되돌리기(Undo)를
+        반드시 함께 내야 합니다.
+      </p>
+    </div>
+  </div>
+</main>
+</body>
+</html>
