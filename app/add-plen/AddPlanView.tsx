@@ -1780,7 +1780,7 @@ export default function AddPlanView({
                           </span>
                           <span className="min-w-0">
                             <span
-                              className={`block text-[13.5px] font-bold ${isPaidNow ? "text-[#079171]" : "text-[#555d6d]"}`}
+                              className={`block text-[13.5px] font-bold ${isPaidNow ? "text-[#05795f]" : "text-[#555d6d]"}`}
                             >
                               이미 결제했어요
                             </span>

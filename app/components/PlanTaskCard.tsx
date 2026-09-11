@@ -152,8 +152,8 @@ export default function PlanTaskCardBody({
           <span
             className={`rounded px-1.5 py-px text-[11px] font-bold ${
               mismatch === "PAID_AHEAD"
-                ? "bg-[#eef6f2] text-[#079171]"
-                : "bg-[#fff3e8] text-[#b06a1f]"
+                ? "bg-[#eef6f2] text-[#05795f]"
+                : "bg-[#fff3e8] text-[#96540e]"
             }`}
           >
             {PAYMENT_MISMATCH_LABEL[mismatch]}

@@ -197,7 +197,7 @@ export default function BragPlanSheet({
           <span
             className={`inline-block rounded-full px-2.5 py-1 text-[12px] font-bold ${
               paid
-                ? "bg-[#eef6f2] text-[#079171]"
+                ? "bg-[#eef6f2] text-[#05795f]"
                 : "bg-[#f7f5f6] text-[#7a6c74]"
             }`}
           >

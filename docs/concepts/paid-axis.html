@@ -1,0 +1,341 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 -->
+<!-- Hallmark · 결제 축 · 앱의 잠긴 시스템을 그대로 잇는다 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>결제 축 — 무엇이 바뀌었나</title>
+<link rel="stylesheet" href="main-mobile-tokens.css">
+<link rel="stylesheet" href="c-tokens.css">
+<link rel="stylesheet" href="brag-tokens.css">
+<style>
+  .lede-2 { margin-top: var(--x4); max-width: 62ch; font-size: var(--t4);
+            line-height: 1.75; color: var(--fg-neutral-muted); }
+  .lede-2 b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+
+  /* ══ 2 x 2 ══════════════════════════════════════════════════ */
+  .mx { margin-top: var(--x6); display: grid; gap: var(--x3);
+        grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 760px) { .mx { grid-template-columns: minmax(0, 1fr); } }
+  .mx__c { border: 1px solid var(--stroke-neutral-weak); border-radius: var(--r4);
+           padding: var(--x5); background: var(--bg-layer-default); }
+  /* 새로 생긴 칸만 눈에 띄게. 나머지 둘은 예전에도 있던 자리다 */
+  .mx__c--new { border-color: #a7d9c8; background: #f5fbf8; }
+  .mx__k { display: flex; align-items: center; gap: var(--x2);
+           font-size: var(--t2); font-weight: var(--w-bold);
+           color: var(--fg-neutral-subtle); }
+  .mx__c--new .mx__k { color: #05795f; }
+  .mx__new { margin-left: auto; font-size: 10px; font-weight: var(--w-bold);
+             color: #fff; background: #05795f; border-radius: var(--r1);
+             padding: 2px 6px; font-style: normal; }
+  .mx__t { margin-top: var(--x2); font-size: var(--t6); font-weight: var(--w-bold);
+           letter-spacing: -0.02em; }
+  .mx__d { margin-top: var(--x2); font-size: var(--t3); line-height: 1.65;
+           color: var(--fg-neutral-muted); }
+  .mx__d b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+
+  /* ══ 앱의 플랜 카드 그대로 ═══════════════════════════════════ */
+  .pc { background: var(--bg-layer-default); border: 1px solid #ee2b8c0f;
+        border-radius: 18px; padding: 14px 16px; box-shadow: var(--s1); }
+  .pc + .pc { margin-top: var(--x3); }
+  .pc-top { display: flex; align-items: flex-start; gap: 10px; }
+  .pc-ck { margin-top: 2px; width: 19px; height: 19px; flex: 0 0 auto;
+           border-radius: 7px; border: 2px solid #e6dbe2; background: #fff;
+           display: grid; place-items: center; }
+  .pc-ck svg { opacity: 0; }
+  .pc-ck--done { border-color: #ffaab8; background: #ffaab8; }
+  .pc-ck--done svg { opacity: 1; }
+  .pc-t { font-size: 14.5px; font-weight: var(--w-bold); line-height: 1.35;
+          letter-spacing: -0.01em; color: #1b0d14; }
+  .pc-t--done { color: #a79ba3; text-decoration: line-through;
+                text-decoration-color: #d9cdd4; }
+  .pc-meta { margin-top: 8px; padding-left: 29px; display: flex; flex-wrap: wrap;
+             align-items: center; gap: 6px; font-size: 12px; color: #7a6c74; }
+  .pc-cat { border-radius: var(--r-full); padding: 2px 8px; font-size: 11px;
+            background: #fff2f6; color: #ee2b8c; font-style: normal; }
+  .pc-cat--done { background: #f2eef0; color: #a79ba3; }
+  .pc-a { font-weight: var(--w-bold); letter-spacing: -0.01em; color: #1b0d14; }
+  .pc-a--done { color: #a79ba3; }
+  /*
+    **어긋날 때만 붙는다.** 예정+미결제, 완료+결제는 예전과 같은 모습이라
+    아무 말도 하지 않는다 — 대부분의 일정이 거기다.
+    글자색은 연한 면 위에서 4.5:1 을 넘기려고 한 단계 진하게 잡았다
+    (#079171 은 3.5:1 밖에 안 나왔다).
+  */
+  .pc-badge { border-radius: var(--r1); padding: 1px 6px; font-size: 11px;
+              font-weight: var(--w-bold); font-style: normal; }
+  .pc-badge--paid { background: #eef6f2; color: #05795f; }
+  .pc-badge--unpaid { background: #fff3e8; color: #96540e; }
+
+  /* ══ 등록 폼의 체크 ═════════════════════════════════════════ */
+  .fm { background: var(--bg-layer-default); border-radius: var(--r4);
+        border: 1px solid var(--stroke-neutral-weak); padding: var(--x5); }
+  .fm__l { font-size: var(--t3); font-weight: var(--w-bold); color: #1a1c20; }
+  .fm__amt { margin-top: var(--x2); display: flex; align-items: baseline;
+             justify-content: flex-end; gap: 6px; background: #f7f8f9;
+             border-radius: var(--r3); padding: 12px 16px; }
+  .fm__num { font-size: 24px; font-weight: var(--w-bold); letter-spacing: -0.03em;
+             color: #1a1c20; font-variant-numeric: tabular-nums; }
+  .fm__unit { font-size: 14px; color: #555d6d; }
+  .fm__pay { margin-top: 10px; display: flex; align-items: center; gap: 10px;
+             border-radius: var(--r3); padding: 10px 12px; background: #f7f8f9; }
+  .fm__pay--on { background: #eef6f2; }
+  .fm__box { width: 18px; height: 18px; flex: 0 0 auto; border-radius: 6px;
+             border: 2px solid #d4d7dc; background: #fff; display: grid;
+             place-items: center; }
+  .fm__box svg { opacity: 0; }
+  .fm__pay--on .fm__box { border-color: #079171; background: #079171; }
+  .fm__pay--on .fm__box svg { opacity: 1; }
+  .fm__t { font-size: 13.5px; font-weight: var(--w-bold); color: #555d6d; }
+  .fm__pay--on .fm__t { color: #05795f; }
+  .fm__d { margin-top: 2px; font-size: 12px; color: #868b94; }
+
+  /* ══ 자랑하기 시트의 두 알약 ════════════════════════════════ */
+  .pill { display: inline-block; border-radius: var(--r-full); padding: 4px 10px;
+          font-size: 12px; font-weight: var(--w-bold); }
+  .pill--todo { background: #fff2f6; color: #ee2b8c; }
+  .pill--done { background: #f2eef0; color: #7a6c74; }
+  .pill--paid { background: #eef6f2; color: #05795f; }
+  .pill--unpaid { background: #f7f5f6; color: #7a6c74; }
+
+  /* ══ 전 / 후 표 ═════════════════════════════════════════════ */
+  .tbl-wrap { margin-top: var(--x6); overflow-x: auto; }
+  .tbl { width: 100%; min-width: 720px; border-collapse: collapse;
+         font-size: var(--t3); }
+  .tbl th, .tbl td { text-align: left; vertical-align: top; padding: var(--x3);
+                     border-bottom: 1px solid var(--stroke-neutral-weak);
+                     line-height: 1.65; }
+  .tbl thead th { border-bottom: 2px solid var(--stroke-neutral-contrast);
+                  font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .tbl td { color: var(--fg-neutral-muted); }
+  .tbl td b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+  .tbl .where { white-space: nowrap; font-weight: var(--w-bold);
+                color: var(--fg-neutral-subtle); }
+  .tbl col.after { background: #f5fbf8; }
+  .tbl thead th.after { color: #05795f; }
+  .tbl td code, .mx__d code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+         font-size: var(--t2); background: var(--bg-layer-fill);
+         border: 1px solid var(--stroke-neutral-muted); border-radius: var(--r1);
+         padding: 1px 5px; }
+
+  /* ══ 나란히 두는 자리 ═══════════════════════════════════════ */
+  .duo { margin-top: var(--x6); display: grid; gap: var(--x6);
+         grid-template-columns: 360px minmax(0, 1fr); align-items: start; }
+  @media (max-width: 900px) { .duo { grid-template-columns: minmax(0, 1fr); } }
+  .cap { font-size: var(--t2); font-weight: var(--w-bold);
+         color: var(--fg-neutral-subtle); margin-bottom: var(--x2_5); }
+  .note { margin-top: var(--x4); font-size: var(--t3); line-height: 1.75;
+          color: var(--fg-neutral-muted); }
+  .note b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="page__kick">일정 · 결제</p>
+  <h1 class="page__title">결제는 일정 완료와 다른 축이다</h1>
+  <p class="page__lede">
+    예식장 계약금을 미리 내고 예식은 내년인 경우가 흔합니다. 예전에는 축이
+    하나뿐이라 <b>그 돈이 &lsquo;아직 안 쓴 예정&rsquo;으로 잡혔습니다</b> —
+    통장에서는 이미 빠져나갔는데 예산에 안 보였습니다.
+  </p>
+  <p class="lede-2">
+    <b>일정 상태</b>는 일이 끝났는지, <b>결제</b>는 돈이 나갔는지입니다.
+    둘을 갈라 놓으면 없던 칸 두 개가 생깁니다.
+  </p>
+
+  <div class="mx"><div class="mx__c"><p class="mx__k">일정 예정 · 미결제</p><p class="mx__t">아직 아무것도</p><p class="mx__d">예전에도 있던 칸</p></div><div class="mx__c mx__c--new"><p class="mx__k">일정 예정 · 결제<i class="mx__new">새로 생긴 칸</i></p><p class="mx__t">미리 낸 계약금</p><p class="mx__d">예식장 계약금을 냈는데 예식은 내년. <b>이미 나간 돈</b>인데 예전에는 &lsquo;아직 안 쓴 예정&rsquo;에 잡혔다</p></div><div class="mx__c mx__c--new"><p class="mx__k">일정 완료 · 미결제<i class="mx__new">새로 생긴 칸</i></p><p class="mx__t">끝났는데 정산 전</p><p class="mx__d">식사하고 나중에 정산하는 경우. <b>아직 안 나간 돈</b>인데 예전에는 &lsquo;썼다&rsquo;고 세었다</p></div><div class="mx__c"><p class="mx__k">일정 완료 · 결제</p><p class="mx__t">끝났고 냈다</p><p class="mx__d">예전의 &lsquo;완료&rsquo;. 대부분의 일정이 여기다</p></div></div>
+
+  <!-- ① 새로 생긴 UI -->
+  <section class="step">
+    <p class="step__n">새로 생긴 것 ①</p>
+    <h2 class="step__t">등록 폼 — 금액 바로 아래</h2>
+    <p class="step__d">
+      <b>돈 이야기라 금액 옆이 맞습니다.</b> 완료 토글(보드·상세)과는 다른
+      축이라 거기 섞지 않았습니다. 기본은 꺼짐입니다 — 대부분은 잡아만 두고
+      나중에 냅니다.
+    </p>
+    <div class="duo">
+      <div>
+        <p class="cap">끄면 (기본)</p>
+        <div class="fm">
+          <p class="fm__l">금액</p>
+          <div class="fm__amt"><span class="fm__num">620</span><span class="fm__unit">만 원</span></div>
+          <div class="fm__pay">
+            <span class="fm__box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="m5 13 5 5L20 7"/></svg></span>
+            <span><span class="fm__t">이미 결제했어요</span>
+              <span class="fm__d">일정이 남아 있어도 쓴 돈으로 잡혀요</span></span>
+          </div>
+        </div>
+        <p class="cap" style="margin-top: var(--x5)">켜면</p>
+        <div class="fm">
+          <p class="fm__l">금액</p>
+          <div class="fm__amt"><span class="fm__num">620</span><span class="fm__unit">만 원</span></div>
+          <div class="fm__pay fm__pay--on">
+            <span class="fm__box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="m5 13 5 5L20 7"/></svg></span>
+            <span><span class="fm__t">이미 결제했어요</span>
+              <span class="fm__d">일정이 남아 있어도 쓴 돈으로 잡혀요</span></span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="note">
+          부제가 <b>무슨 일이 일어나는지</b>를 말합니다 &mdash;
+          &ldquo;일정이 남아 있어도 쓴 돈으로 잡혀요&rdquo;. 체크 이름만으로는
+          예산이 움직인다는 걸 알 수 없습니다.
+        </p>
+        <p class="note">
+          켜진 상태의 초록은 앱의 완료 색(<code>#079171</code>)입니다. 다만
+          <b>글자는 한 단계 진하게</b>(<code>#05795f</code>) 잡았습니다 &mdash;
+          원래 색은 연한 초록 면 위에서 3.5:1 밖에 안 나왔습니다.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② 카드 배지 -->
+  <section class="step">
+    <p class="step__n">새로 생긴 것 ②</p>
+    <h2 class="step__t">플랜 카드 — 어긋날 때만 말한다</h2>
+    <p class="step__d">
+      <b>대부분의 일정에는 아무것도 안 붙습니다.</b> 예정이면 아직 안 냈고
+      완료면 냈다 &mdash; 그게 예전과 같은 모습입니다. <b>둘이 어긋날 때만</b>
+      한 마디 붙입니다. 늘 붙이면 배지가 배경이 되어 정작 중요한 두 경우가
+      묻힙니다.
+    </p>
+    <div class="duo">
+      <div>
+        <p class="cap">아무것도 안 붙는 경우</p>
+        <div class="pc"><div class="pc-top"><span class="pc-ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="m5 13 5 5L20 7"/></svg></span><span class="pc-t">드레스 투어</span></div><div class="pc-meta"><i class="pc-cat">스드메</i><span>9월 28일</span><b class="pc-a">35만 원</b></div></div>
+        <div class="pc"><div class="pc-top"><span class="pc-ck pc-ck--done"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="m5 13 5 5L20 7"/></svg></span><span class="pc-t pc-t--done">본식 촬영</span></div><div class="pc-meta"><i class="pc-cat pc-cat--done">스드메</i><span>8월 12일</span><b class="pc-a pc-a--done">185만 원</b></div></div>
+        <p class="cap" style="margin-top: var(--x5)">어긋나는 경우</p>
+        <div class="pc"><div class="pc-top"><span class="pc-ck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="m5 13 5 5L20 7"/></svg></span><span class="pc-t">예식장 계약금</span></div><div class="pc-meta"><i class="pc-cat">예식장</i><span>10월 3일</span><b class="pc-a">620만 원</b><i class="pc-badge pc-badge--paid">결제함</i></div></div>
+        <div class="pc"><div class="pc-top"><span class="pc-ck pc-ck--done"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4"><path d="m5 13 5 5L20 7"/></svg></span><span class="pc-t pc-t--done">드레스 피팅</span></div><div class="pc-meta"><i class="pc-cat pc-cat--done">스드메</i><span>8월 5일</span><b class="pc-a pc-a--done">90만 원</b><i class="pc-badge pc-badge--unpaid">미결제</i></div></div>
+      </div>
+      <div>
+        <p class="note">
+          카드는 <b>홈 스트립 · 플랜 보드 · 자랑하기 상세</b>가 함께 쓰는
+          <code>PlanTaskCardBody</code> 하나입니다. 여기 한 번 붙이면 세 화면에
+          같이 나옵니다.
+        </p>
+        <p class="note">
+          <b>취소선과 회색은 그대로 일정 이야기입니다.</b> &ldquo;드레스
+          피팅&rdquo;은 끝나서 취소선이 그어져 있지만 돈은 아직 안 나갔습니다 &mdash;
+          그래서 <i class="pc-badge pc-badge--unpaid">미결제</i>가 붙습니다.
+          거꾸로 &ldquo;예식장 계약금&rdquo;은 일정이 남아 있어 멀쩡한 글씨인데
+          돈은 이미 나갔습니다.
+        </p>
+        <p class="note">
+          색은 <b>결제=초록 / 미결제=주황</b>입니다. 분홍은 이 앱에서 &ldquo;누를
+          것&rdquo;에만 쓰므로 배지에 쓰지 않았습니다.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ 자랑하기 시트 -->
+  <section class="step">
+    <p class="step__n">새로 생긴 것 ③</p>
+    <h2 class="step__t">자랑하기 상세 — 두 축을 따로 말한다</h2>
+    <p class="step__d">
+      남의 플랜을 보는 자리라 <b>왜 예산 막대가 그렇게 생겼는지</b>를 설명할 수
+      있어야 합니다. 하나로 뭉치면 &ldquo;예정인데 지출에 잡힌&rdquo; 금액을
+      설명할 방법이 없습니다.
+    </p>
+    <div class="duo">
+      <div>
+        <p class="cap">전</p>
+        <p><span class="pill pill--todo">아직 예정이에요</span></p>
+        <p class="cap" style="margin-top: var(--x5)">후</p>
+        <p>
+          <span class="pill pill--todo">아직 예정이에요</span>
+          <span class="pill pill--paid">결제했어요</span>
+        </p>
+        <p style="margin-top: var(--x2)">
+          <span class="pill pill--done">완료했어요</span>
+          <span class="pill pill--unpaid">아직 안 냈어요</span>
+        </p>
+      </div>
+      <div>
+        <p class="note">
+          공개 범위가 넓어지는 변경이라 <b>안내 모달 문구를 먼저 고쳤습니다</b> &mdash;
+          공개 목록의 &ldquo;일정별 금액&rdquo;이 &ldquo;일정별 금액과 결제
+          여부&rdquo;가 됐습니다. 순서를 뒤집으면 동의받지 않은 것을 공개하게
+          됩니다.
+        </p>
+        <p class="note">
+          백엔드 테스트가 자랑하기 응답의 <b>필드 목록을 통째로</b> 검사해서,
+          문구를 안 고치고 필드만 더하면 거기서 먼저 걸립니다.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ 계산 -->
+  <section class="step">
+    <p class="step__n">조용히 바뀐 것</p>
+    <h2 class="step__t">돈을 세는 곳은 전부 결제 기준으로</h2>
+    <p class="step__d">
+      화면 생김새는 그대로인데 <b>숫자의 뜻이 바뀐</b> 자리들입니다. 눈에 안
+      보이는 변경이라 여기 적어 둡니다.
+    </p>
+    <div class="tbl-wrap"><table class="tbl">
+<colgroup><col><col><col><col class="after"></colgroup>
+<thead><tr><th>어디</th><th>무엇</th><th>전</th><th class="after">후</th></tr></thead>
+<tbody><tr><td class="where">홈</td><td>이번 달 지출</td><td>완료한 일정의 합</td><td><b>결제한</b> 일정의 합</td></tr><tr><td class="where">홈</td><td>예산 막대 분홍/회색</td><td>완료 / 예정</td><td><b>결제 / 미결제</b></td></tr><tr><td class="where">예산 상세</td><td>도넛 · 카테고리 표</td><td>완료 기준</td><td><b>결제 기준</b></td></tr><tr><td class="where">예산 상세</td><td>예정 · 사용 탭</td><td>서버에 <code>status</code> 로 걸러 받음</td><td><b>전부 받아서 앱이 가른다</b> — 미리 낸 계약금은 <code>status=NORMAL</code> 인데 &lsquo;사용&rsquo;이라 서버 필터로는 못 가른다</td></tr><tr><td class="where">캘린더</td><td>이번 달 지출 / 예정</td><td>완료 / 예정</td><td><b>결제 / 미결제</b></td></tr><tr><td class="where">캘린더</td><td>셀의 &lsquo;620만 원 씀&rsquo;</td><td>완료면 &lsquo;씀&rsquo;</td><td><b>결제했으면</b> &lsquo;씀&rsquo;</td></tr><tr><td class="where">플랜 보드</td><td>완료 묶음의 &lsquo;N만 원 씀&rsquo;</td><td>완료한 것의 합</td><td><b>완료한 것 중 결제한</b> 것의 합</td></tr><tr><td class="where">자랑하기</td><td>예산 막대 · 카테고리 소계 정렬</td><td>완료 기준</td><td><b>결제 기준</b></td></tr></tbody></table></div>
+  </section>
+
+  <section class="step">
+    <p class="step__n">그대로인 것</p>
+    <h2 class="step__t">개수를 세는 곳은 완료 기준</h2>
+    <p class="step__d">
+      <b>두 줄이 서로 다른 것을 셉니다.</b> 캘린더의 &ldquo;이번 달 지출&rdquo;은
+      돈이고 &ldquo;완료 N&rdquo;은 일정입니다 &mdash; 같이 움직이지 않는 것이
+      맞습니다.
+    </p>
+    <div class="tbl-wrap"><table class="tbl" style="min-width: 560px">
+<thead><tr><th>어디</th><th>무엇</th><th>왜 그대로인가</th></tr></thead>
+<tbody><tr><td class="where">캘린더</td><td>&lsquo;완료 N&rsquo;</td><td>일정이 몇 개 끝났나 — 돈 이야기가 아니다</td></tr><tr><td class="where">플랜 보드</td><td>예정 / 완료 묶음 가르기</td><td>보드는 일정을 옮기는 화면이다</td></tr><tr><td class="where">자랑하기</td><td>진행 눈금 · &lsquo;완료 9개&rsquo;</td><td>얼마나 했나를 센다</td></tr><tr><td class="where">피드</td><td>후기로 올릴 수 있는 일정</td><td>겪어 봤는지가 기준이라 결제와 무관하다</td></tr><tr><td class="where">카드</td><td>취소선 · 회색</td><td>일정이 끝났다는 표시 그대로</td></tr></tbody></table></div>
+  </section>
+
+  <div class="changes">
+    <div class="change change--keep">
+      <h3>null 은 false 가 아니다</h3>
+      <p>이 값이 생기기 전 일정은 결제 여부가 <b>비어 있습니다.</b> 그때는
+        완료가 곧 결제였으므로, 없으면 <code>status === COMPLETED</code> 로
+        읽습니다.
+        <br><br>
+        덕분에 <b>마이그레이션 없이</b> 쌓여 있는 데이터가 예전과 똑같이
+        나옵니다. 둘을 같게 다뤘다면 완료 일정이 통째로 미결제가 되어
+        <b>지출이 0 이 됐을 것</b>입니다.</p>
+    </div>
+    <div class="change">
+      <h3>규칙은 한 곳에</h3>
+      <p>앱은 <code>lib/schedulePaid.ts</code>, 백엔드는
+        <code>isSchedulePaid()</code> 와 집계 쿼리가 쓰는
+        <code>paidSql()</code> 입니다. <b>한쪽만 고치면</b> 화면의 숫자와
+        합계가 어긋납니다.</p>
+    </div>
+    <div class="change">
+      <h3>백엔드에 더한 것</h3>
+      <p><code>plan_schedule.is_paid</code> (nullable) ·
+        <code>PATCH /plan/schedule/paid/{id}</code>.
+        <br><br>
+        결제만 뒤집고 <b>일정 상태는 건드리지 않습니다.</b> 반대도
+        마찬가지입니다 &mdash; 완료로 표시했다고 결제가 풀리면 안 됩니다.
+        테스트가 두 방향을 다 봅니다.</p>
+    </div>
+    <div class="change">
+      <h3>아직 없는 것</h3>
+      <p>· 목록에서 <b>결제만 빠르게 뒤집는</b> 자리 (지금은 일정을 열어
+        고칩니다)<br>
+        · 결제일(언제 냈는지). 지금은 <b>냈다/안 냈다</b>만 있습니다<br>
+        · 부분 결제 &mdash; 계약금·잔금을 <b>일정 두 개</b>로 적는 지금 방식이
+        이미 그 일을 합니다</p>
+    </div>
+  </div>
+
+  <a class="backlink" href="brag-index.html">← 자랑하기 목차</a>
+</main>
+</body>
+</html>
