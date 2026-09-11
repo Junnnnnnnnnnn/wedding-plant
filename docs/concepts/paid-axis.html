@@ -128,6 +128,92 @@
   .note { margin-top: var(--x4); font-size: var(--t3); line-height: 1.75;
           color: var(--fg-neutral-muted); }
   .note b { color: var(--fg-neutral); font-weight: var(--w-bold); }
+
+  /* ══ 홈 예산 패널 — 앱 값 그대로 ════════════════════════════ */
+  .dash { background: var(--bg-layer-default); border: 1px solid #ee2b8c0f;
+          border-radius: 28px; padding: 26px; box-shadow: var(--s1); }
+  .dash__t { display: flex; align-items: baseline; gap: var(--x3);
+             font-size: 15px; font-weight: var(--w-bold); color: #1b0d14; }
+  .dash__t em { font-style: normal; margin-left: auto; font-size: 12px;
+                font-weight: var(--w-bold); color: #ee2b8c; background: #fff2f6;
+                border-radius: var(--r-full); padding: 4px 12px; }
+  .dash__row { margin-top: var(--x4); display: flex; align-items: flex-end;
+               justify-content: space-between; gap: var(--x4); }
+  .dash__num { font-size: 36px; font-weight: var(--w-bold); line-height: 1;
+               letter-spacing: -0.045em; color: #1b0d14;
+               font-variant-numeric: tabular-nums; }
+  .dash__sub { margin-top: var(--x2); font-size: 13px; color: #9ca3af; }
+  .dash__side { text-align: right; font-size: 13px; color: #9ca3af; }
+  .dash__side b { display: block; font-size: 16px; font-weight: var(--w-bold);
+                  color: #1b0d14; font-variant-numeric: tabular-nums; }
+  .dash__bar { display: flex; height: 12px; margin: 18px 0;
+               border-radius: var(--r-full); background: #f4eff2; overflow: hidden; }
+  .dash__bar i { display: block; height: 100%; flex: 0 0 auto; }
+  .dl { display: grid; gap: 11px; }
+  .dl__i { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .dl__sw { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
+  .dl__n { min-width: 0; color: #4a3f45; }
+  .dl__v { margin-left: auto; font-weight: var(--w-bold); color: #1b0d14;
+           font-variant-numeric: tabular-nums; }
+
+  /* ══ 도넛 — 앱 값 그대로 (r 15.9 · 두께 6 · pathLength 100) ══ */
+  .dn { border-radius: 28px; border: 1px solid #ee2b8c0f;
+        background: var(--bg-layer-default); padding: var(--x6);
+        box-shadow: var(--s1); }
+  .dn__ring { position: relative; width: 190px; height: 190px; margin: 0 auto; }
+  .dn__ring svg { width: 100%; height: 100%; }
+  .dn__mid { position: absolute; inset: 30px; display: flex; flex-direction: column;
+             align-items: center; justify-content: center; text-align: center; }
+  .dn__k { font-size: 12px; color: #9ca3af; }
+  .dn__v { margin-top: 2px; font-size: 26px; font-weight: var(--w-bold);
+           line-height: 1; letter-spacing: -0.03em; color: #1b0d14;
+           font-variant-numeric: tabular-nums; }
+  .dn__u { margin-top: 2px; font-size: 11.5px; color: #868b94; }
+  .dn__lg { margin-top: var(--x5); display: flex; flex-wrap: wrap;
+            justify-content: center; gap: 8px 16px; font-size: 12.5px;
+            color: #7a6c74; }
+  .dn__lg span { display: inline-flex; align-items: center; gap: 6px; }
+  .dn__lg i { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* ══ 카테고리 표 ════════════════════════════════════════════ */
+  .ct { width: 100%; border-collapse: collapse; font-size: var(--t3); }
+  .ct th, .ct td { padding: var(--x2_5) var(--x2);
+                   border-bottom: 1px solid var(--stroke-neutral-weak); }
+  .ct thead th { font-size: var(--t2); color: var(--fg-neutral-subtle);
+                 font-weight: var(--w-bold); text-align: left; }
+  .ct .n { text-align: right; font-variant-numeric: tabular-nums; }
+  .ct td { color: var(--fg-neutral-muted); }
+  /* 전/후에서 값이 움직인 칸만 표시한다 */
+  .ct td.moved { color: #05795f; font-weight: var(--w-bold);
+                 background: #f1faf6; border-radius: var(--r1); }
+
+  /* ══ 예정 · 사용 탭 ═════════════════════════════════════════ */
+  .tl { border: 1px solid var(--stroke-neutral-weak); border-radius: var(--r4);
+        padding: var(--x4); background: var(--bg-layer-default); }
+  .tl__h { display: flex; align-items: baseline; gap: var(--x2);
+           font-size: var(--t4); font-weight: var(--w-bold); margin-bottom: var(--x3); }
+  .tl__h em { font-style: normal; font-size: var(--t2); font-weight: var(--w-regular);
+              color: var(--fg-neutral-subtle); }
+  .tl__r { display: flex; align-items: center; gap: var(--x2);
+           padding: var(--x2_5) 0; border-top: 1px solid var(--stroke-neutral-subtle);
+           font-size: var(--t3); }
+  .tl__r:first-of-type { border-top: 0; }
+  .tl__t { font-weight: var(--w-bold); color: var(--fg-neutral); }
+  .tl__c { font-size: var(--t2); color: var(--fg-neutral-subtle); }
+  .tl__a { margin-left: auto; font-weight: var(--w-bold);
+           font-variant-numeric: tabular-nums; }
+  .tl__m { font-size: 10px; font-weight: var(--w-bold); font-style: normal;
+           color: #fff; background: #05795f; border-radius: var(--r1);
+           padding: 2px 6px; }
+  .tl__e { font-size: var(--t3); color: var(--fg-neutral-subtle); }
+
+  .ba { margin-top: var(--x6); display: grid; gap: var(--x5);
+        grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  @media (max-width: 860px) { .ba { grid-template-columns: minmax(0, 1fr); } }
+  .ba__k { font-size: var(--t2); font-weight: var(--w-bold);
+           color: var(--fg-neutral-subtle); margin-bottom: var(--x2_5); }
+  .ba__k--after { color: #05795f; }
+
 </style>
 </head>
 <body>
@@ -296,6 +382,149 @@
     <div class="tbl-wrap"><table class="tbl" style="min-width: 560px">
 <thead><tr><th>어디</th><th>무엇</th><th>왜 그대로인가</th></tr></thead>
 <tbody><tr><td class="where">캘린더</td><td>&lsquo;완료 N&rsquo;</td><td>일정이 몇 개 끝났나 — 돈 이야기가 아니다</td></tr><tr><td class="where">플랜 보드</td><td>예정 / 완료 묶음 가르기</td><td>보드는 일정을 옮기는 화면이다</td></tr><tr><td class="where">자랑하기</td><td>진행 눈금 · &lsquo;완료 9개&rsquo;</td><td>얼마나 했나를 센다</td></tr><tr><td class="where">피드</td><td>후기로 올릴 수 있는 일정</td><td>겪어 봤는지가 기준이라 결제와 무관하다</td></tr><tr><td class="where">카드</td><td>취소선 · 회색</td><td>일정이 끝났다는 표시 그대로</td></tr></tbody></table></div>
+  </section>
+
+
+  <!-- ⑤ 예산 -->
+  <section class="step">
+    <p class="step__n">예산 · 막대</p>
+    <h2 class="step__t">모양은 그대로, 경계만 움직인다</h2>
+    <p class="step__d">
+      막대에 새 색이 생기지 않습니다. <b>분홍은 실제 지출, 회색은 아직 안 쓴
+      예정</b>이라는 뜻이 그대로고, 미리 낸 계약금이 회색에서 분홍으로 자리를
+      옮길 뿐입니다. 색을 하나 더 만들면 &ldquo;미리 낸 것도 쓴 돈&rdquo;이라는
+      전제 자체가 흐려집니다.
+    </p>
+    <p class="step__d" style="margin-top: var(--x3)">
+      아래는 <b>같은 일정 여섯 개</b>입니다. 예식장 계약금 620만 원은 미리 냈고,
+      드레스 피팅 90만 원은 끝났는데 아직 정산 전입니다.
+      <b>남은 돈 2,145만 원은 전후가 같습니다</b> &mdash; 움직인 것은 분홍과
+      회색의 경계뿐입니다.
+    </p>
+    <div class="ba">
+      <div><p class="ba__k">전 &mdash; 완료 기준</p><div class="dash">
+  <p class="dash__t">예산 <em>총 4,200만원</em></p>
+  <div class="dash__row"><div>
+    <p class="dash__num">2,145만원</p>
+    <p class="dash__sub">4,200만원 중 남음</p></div>
+    <p class="dash__side">지출<b>575만원</b></p>
+  </div>
+  <div class="dash__bar"><i style="width:13.69%;background:#ee2b8c"></i><i style="width:35.24%;background:#cdbfc7"></i></div>
+  <div class="dl"><span class="dl__i"><i class="dl__sw" style="background:#ee2b8c"></i><span class="dl__n">스드메</span><span class="dl__v">575만원</span></span><span class="dl__i"><i class="dl__sw" style="background:#cdbfc7"></i><span class="dl__n" style="color:#7a6c74">사용 예상</span><span class="dl__v" style="color:#7a6c74">1,480만원</span></span></div>
+</div></div>
+      <div><p class="ba__k ba__k--after">후 &mdash; 결제 기준</p><div class="dash">
+  <p class="dash__t">예산 <em>총 4,200만원</em></p>
+  <div class="dash__row"><div>
+    <p class="dash__num">2,145만원</p>
+    <p class="dash__sub">4,200만원 중 남음</p></div>
+    <p class="dash__side">지출<b>1,105만원</b></p>
+  </div>
+  <div class="dash__bar"><i style="width:14.76%;background:#ee2b8c"></i><i style="width:11.55%;background:#ff7ab5"></i><i style="width:22.62%;background:#cdbfc7"></i></div>
+  <div class="dl"><span class="dl__i"><i class="dl__sw" style="background:#ee2b8c"></i><span class="dl__n">예식장</span><span class="dl__v">620만원</span></span><span class="dl__i"><i class="dl__sw" style="background:#ff7ab5"></i><span class="dl__n">스드메</span><span class="dl__v">485만원</span></span><span class="dl__i"><i class="dl__sw" style="background:#cdbfc7"></i><span class="dl__n" style="color:#7a6c74">사용 예상</span><span class="dl__v" style="color:#7a6c74">950만원</span></span></div>
+</div></div>
+    </div>
+    <p class="note">
+      범례가 늘어난 것이 눈에 띕니다. 전에는 예식장이 <b>한 푼도 안 쓴</b>
+      것으로 보였는데(둘 다 일정이 남아서), 실제로는 계약금 620만 원이 이미
+      나간 상태였습니다.
+    </p>
+  </section>
+
+  <section class="step">
+    <p class="step__n">예산 상세 · 도넛</p>
+    <h2 class="step__t">가운데 숫자는 안 바뀐다</h2>
+    <p class="step__d">
+      도넛도 같습니다. <b>가운데 &lsquo;남은 금액&rsquo;은 자본에서 사용과 예정을
+      모두 뺀 값</b>이라, 둘 사이에서 자리만 옮기는 이번 변경에는 꿈쩍하지
+      않습니다. 분홍 구간이 커지고 회색이 그만큼 줄어듭니다.
+    </p>
+    <div class="ba">
+      <div><p class="ba__k">전 &mdash; 완료 기준</p><div class="dn">
+  <div class="dn__ring">
+    <svg viewBox="0 0 42 42" style="transform:rotate(-90deg)">
+      <circle cx="21" cy="21" r="15.9" fill="none" stroke="#f4eff2" stroke-width="6" pathLength="100"/>
+      <circle cx="21" cy="21" r="15.9" fill="none" stroke="#ee2b8c" stroke-width="6" pathLength="100" stroke-dasharray="13.69 86.31" stroke-dashoffset="-0.00"/><circle cx="21" cy="21" r="15.9" fill="none" stroke="#cdbfc7" stroke-width="6" pathLength="100" stroke-dasharray="35.24 64.76" stroke-dashoffset="-13.69"/>
+    </svg>
+    <div class="dn__mid"><span class="dn__k">남은 금액</span>
+      <span class="dn__v">2,145</span><span class="dn__u">만 원</span></div>
+  </div>
+  <div class="dn__lg">
+    <span><i style="background:#ee2b8c"></i>사용 575</span>
+    <span><i style="background:#cdbfc7"></i>예정 1,480</span>
+    <span><i style="background:#f4eff2"></i>여유 2,145</span>
+  </div>
+</div></div>
+      <div><p class="ba__k ba__k--after">후 &mdash; 결제 기준</p><div class="dn">
+  <div class="dn__ring">
+    <svg viewBox="0 0 42 42" style="transform:rotate(-90deg)">
+      <circle cx="21" cy="21" r="15.9" fill="none" stroke="#f4eff2" stroke-width="6" pathLength="100"/>
+      <circle cx="21" cy="21" r="15.9" fill="none" stroke="#ee2b8c" stroke-width="6" pathLength="100" stroke-dasharray="26.31 73.69" stroke-dashoffset="-0.00"/><circle cx="21" cy="21" r="15.9" fill="none" stroke="#cdbfc7" stroke-width="6" pathLength="100" stroke-dasharray="22.62 77.38" stroke-dashoffset="-26.31"/>
+    </svg>
+    <div class="dn__mid"><span class="dn__k">남은 금액</span>
+      <span class="dn__v">2,145</span><span class="dn__u">만 원</span></div>
+  </div>
+  <div class="dn__lg">
+    <span><i style="background:#ee2b8c"></i>사용 1,105</span>
+    <span><i style="background:#cdbfc7"></i>예정 950</span>
+    <span><i style="background:#f4eff2"></i>여유 2,145</span>
+  </div>
+</div></div>
+    </div>
+    <p class="note">
+      <b>자본 눈금과 빨간 초과 구간은 그대로입니다.</b> 그건 &ldquo;자본을
+      넘겼나&rdquo; 를 말하는 표시라 결제와 무관합니다 &mdash; 사용+예정의 합이
+      바뀌지 않으므로 넘기는 시점도 그대로입니다.
+    </p>
+  </section>
+
+  <section class="step">
+    <p class="step__n">예산 상세 · 카테고리 표</p>
+    <h2 class="step__t">&ldquo;사용&rdquo; 칸이 움직인다</h2>
+    <p class="step__d">
+      예산·남음은 그대로고 <b>사용</b>만 바뀝니다. 초록으로 표시한 두 칸이
+      움직인 자리입니다.
+    </p>
+    <div class="ba">
+      <div><p class="ba__k">전 &mdash; 완료 기준</p><table class="ct">
+<thead><tr><th>카테고리</th><th class="n">예산</th><th class="n">사용</th><th class="n">남음</th></tr></thead>
+<tbody><tr><td>스드메</td><td class="n">575</td><td class="n moved">575</td><td class="n">0</td></tr><tr><td>예식장</td><td class="n">1,240</td><td class="n moved">0</td><td class="n">1,240</td></tr><tr><td>신혼여행</td><td class="n">240</td><td class="n">0</td><td class="n">240</td></tr></tbody></table></div>
+      <div><p class="ba__k ba__k--after">후 &mdash; 결제 기준</p><table class="ct">
+<thead><tr><th>카테고리</th><th class="n">예산</th><th class="n">사용</th><th class="n">남음</th></tr></thead>
+<tbody><tr><td>예식장</td><td class="n">1,240</td><td class="n moved">620</td><td class="n">620</td></tr><tr><td>스드메</td><td class="n">575</td><td class="n moved">485</td><td class="n">90</td></tr><tr><td>신혼여행</td><td class="n">240</td><td class="n">0</td><td class="n">240</td></tr></tbody></table></div>
+    </div>
+    <p class="note">
+      예식장은 <b>0 → 620</b>(계약금을 미리 냈다), 스드메는
+      <b>575 → 485</b>(드레스 피팅 90만 원이 아직 안 나갔다). <b>한 방향으로만
+      움직이지 않는다</b>는 게 중요합니다 &mdash; 지출이 늘기만 하는 변경이
+      아닙니다.
+    </p>
+  </section>
+
+  <section class="step">
+    <p class="step__n">예산 상세 · 예정 · 사용 탭</p>
+    <h2 class="step__t">같은 일정이 자리를 옮긴다</h2>
+    <p class="step__d">
+      목록에서 가장 눈에 띄는 변화입니다. <b>예식장 계약금이 &lsquo;사용&rsquo;
+      으로, 드레스 피팅이 &lsquo;예정&rsquo;으로</b> 옮겨 갑니다. 일정 자체는
+      아무것도 안 바뀌었는데 말입니다.
+    </p>
+    <div class="ba">
+      <div>
+        <p class="ba__k">전 &mdash; 완료 기준</p>
+        <div class="tl"><p class="tl__h">사용 <em>완료한 일정</em></p><div class="tl__r"><span class="tl__t">본식 촬영</span><span class="tl__c">스드메</span><b class="tl__a">185만 원</b></div><div class="tl__r"><span class="tl__t">드레스 피팅</span><span class="tl__c">스드메</span><b class="tl__a">90만 원</b></div><div class="tl__r"><span class="tl__t">스튜디오 계약</span><span class="tl__c">스드메</span><b class="tl__a">300만 원</b></div></div>
+        <div class="tl" style="margin-top: var(--x3)"><p class="tl__h">예정 <em>아직 안 한 일정</em></p><div class="tl__r"><span class="tl__t">예식장 계약금</span><span class="tl__c">예식장</span><b class="tl__a">620만 원</b></div><div class="tl__r"><span class="tl__t">예식장 잔금</span><span class="tl__c">예식장</span><b class="tl__a">620만 원</b></div><div class="tl__r"><span class="tl__t">신혼여행 숙소</span><span class="tl__c">신혼여행</span><b class="tl__a">240만 원</b></div></div>
+      </div>
+      <div>
+        <p class="ba__k ba__k--after">후 &mdash; 결제 기준</p>
+        <div class="tl"><p class="tl__h">사용 <em>돈이 나간 일정</em></p><div class="tl__r"><span class="tl__t">예식장 계약금</span><span class="tl__c">예식장</span><b class="tl__a">620만 원</b><i class="tl__m">자리가 바뀜</i></div><div class="tl__r"><span class="tl__t">본식 촬영</span><span class="tl__c">스드메</span><b class="tl__a">185만 원</b></div><div class="tl__r"><span class="tl__t">스튜디오 계약</span><span class="tl__c">스드메</span><b class="tl__a">300만 원</b></div></div>
+        <div class="tl" style="margin-top: var(--x3)"><p class="tl__h">예정 <em>아직 안 낸 일정</em></p><div class="tl__r"><span class="tl__t">예식장 잔금</span><span class="tl__c">예식장</span><b class="tl__a">620만 원</b></div><div class="tl__r"><span class="tl__t">드레스 피팅</span><span class="tl__c">스드메</span><b class="tl__a">90만 원</b><i class="tl__m">자리가 바뀜</i></div><div class="tl__r"><span class="tl__t">신혼여행 숙소</span><span class="tl__c">신혼여행</span><b class="tl__a">240만 원</b></div></div>
+      </div>
+    </div>
+    <p class="note">
+      그래서 이 탭은 <b>서버에 <code>status</code> 로 걸러 받을 수 없습니다.</b>
+      예식장 계약금은 <code>status=NORMAL</code> 인데 &lsquo;사용&rsquo;에 있어야
+      하니까요 &mdash; 전부 받아서 앱이 가릅니다.
+    </p>
   </section>
 
   <div class="changes">
