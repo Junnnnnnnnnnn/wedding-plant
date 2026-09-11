@@ -14,6 +14,7 @@ import ApiLoadingOverlay from "./components/ApiLoadingOverlay";
 import SessionExpiredModal from "./components/SessionExpiredModal";
 import AuthRedirectToMain from "./components/AuthRedirectToMain";
 import GuestGate from "./components/GuestGate";
+import BoundRoomRedirect from "./components/BoundRoomRedirect";
 
 const hakgyoansim = localFont({
   src: [
@@ -181,6 +182,13 @@ export default function RootLayout({
           <AuthRedirectToMain />
           <Suspense fallback={null}>
             <GuestGate />
+          </Suspense>
+          {/*
+            신랑·신부로 초대받은 사람의 홈을 그 방으로 돌린다.
+            `GuestGate` 와 같은 자리 — 라우팅을 정하는 것들을 한군데 둔다.
+          */}
+          <Suspense fallback={null}>
+            <BoundRoomRedirect />
           </Suspense>
           <NotificationProvider>
             <WeddingProvider>

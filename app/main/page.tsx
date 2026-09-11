@@ -42,6 +42,11 @@ import {
 } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
 import { parseLocalDate, getKstDate, getDaysUntil } from "@/lib/utils";
+import {
+  isCachedNotBound,
+  readBoundRoomCache,
+  withBoundRoom,
+} from "@/lib/boundRoom";
 import { useIsDesktop } from "../hooks/useMediaQuery";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 
@@ -930,18 +935,26 @@ function MainPageContent() {
     !hasSpouse(apiPlanData.members);
 
   /**
-   * 자랑하기 토글을 낼지. **`showSoloBanner` 와 같은 규칙**이다 —
-   * 남의 방을 보는 중이면 자랑할 대상이 아니고, 공유 뷰도 마찬가지다.
+   * 자랑하기 토글을 낼지. 남의 방을 구경하는 중이면 자랑할 대상이 아니고,
+   * 공유 뷰도 마찬가지다.
    *
    * `roomId` 유무만 보면 안 된다. 로그인하면 **내 플랜에도 방이 생기므로**
    * `isRoomView` 가 참이 되어, 그 조건만 쓰면 토글이 영영 안 뜬다
    * (초대 띠가 같은 이유로 같은 규칙을 쓴다).
+   *
+   * **배우자(`SPOUSE`)도 자랑할 수 있다.** 귀속된 뒤에는 이 플랜이 둘의
+   * 것이라, 방장만 허용하면 들어온 사람에게는 대시보드에서 그 칸이 통째로
+   * 사라진다. 초대 띠(`showSoloBanner`)와 규칙이 갈리는 지점이다 — 배우자를
+   * 지정하는 일은 방장만 할 수 있지만, 자기 결혼을 자랑하는 건 둘 다 한다.
    */
   const canBrag =
     !isSharedView &&
     !!apiPlanData &&
     apiPlanData !== "none" &&
-    (!isRoomView || String(myRoomPermission ?? "").toUpperCase() === "OWNER");
+    (!isRoomView ||
+      ["OWNER", "SPOUSE"].includes(
+        String(myRoomPermission ?? "").toUpperCase(),
+      ));
 
   const isPlanLoading = Boolean(
     !tokenChecked ||
@@ -979,20 +992,71 @@ function MainPageContent() {
    * 배지는 달지 않는다 — 26px 위에서 읽히지 않고, 누가 방장인지는 멤버
    * 목록이 말한다.
    */
+  /**
+   * 머리글에 낼 이름.
+   *
+   * **커플 플랜이면 두 사람을 함께 적는다** — `방장 · 배우자`. 귀속된 뒤에는
+   * 이 플랜이 둘의 것이라, 방장 이름만 띄우면 들어온 사람은 계속 남의
+   * 플랜에 얹혀 있는 것처럼 읽힌다.
+   *
+   * 배우자가 아직 없거나(조언자만 있는 방) 내 플랜이면 예전처럼 한 사람이다.
+   * 아래 `headerAvatars` 가 이 문자열을 `·` 로 쪼개 이니셜을 만들므로,
+   * 아바타도 자동으로 두 개가 된다.
+   */
+  const coupleDisplayName = useMemo(() => {
+    const base = (displayData.name ?? "").trim();
+    if (!isRoomView) return base;
+    const members =
+      apiPlanData && apiPlanData !== "none" ? (apiPlanData.members ?? []) : [];
+    const pick = (permission: string) =>
+      members
+        .find((m) => String(m.permission ?? "").toUpperCase() === permission)
+        ?.name?.trim();
+    const owner = pick("OWNER");
+    const spouse = pick("SPOUSE");
+    if (owner && spouse) return `${owner} · ${spouse}`;
+    return base;
+  }, [isRoomView, apiPlanData, displayData.name]);
+
+  /**
+   * 지금 보는 방이 **내가 귀속된 방**인지. 배우자로 들어온 사람에게 이 방은
+   * 남의 플랜이 아니라 자기 플랜이라, 레일·탭바가 "홈" 을 켜야 한다.
+   */
+  const isBoundRoomView = useMemo(() => {
+    const current = roomId?.trim();
+    if (!current) return false;
+    const cached = readBoundRoomCache();
+    if (cached && !isCachedNotBound(cached)) return cached === current;
+    // 캐시를 아직 모르면 멤버 구성으로 본다 — 내가 이 방의 배우자인가
+    const members =
+      apiPlanData && apiPlanData !== "none" ? (apiPlanData.members ?? []) : [];
+    const myId = String(getPlanUserIdFromToken() ?? "")
+      .trim()
+      .toLowerCase();
+    if (!myId) return false;
+    return members.some(
+      (m) =>
+        String(m.planUserId ?? "")
+          .trim()
+          .toLowerCase() === myId &&
+        String(m.permission ?? "").toUpperCase() === "SPOUSE",
+    );
+  }, [roomId, apiPlanData]);
+
   const headerAvatars = useMemo(() => {
     if (isSharedView && roomMembers.length > 0) {
       return roomMembers
         .slice(0, 2)
         .map((m) => (m.name ?? "?").trim().charAt(0) || "?");
     }
-    const name = (displayData.name ?? "").trim();
+    const name = coupleDisplayName;
     if (!name) return [];
     return name
       .split(/\s*[·・,]\s*/)
       .filter(Boolean)
       .slice(0, 2)
       .map((part) => part.charAt(0));
-  }, [isSharedView, roomMembers, displayData.name]);
+  }, [isSharedView, roomMembers, coupleDisplayName]);
 
   const effectiveScheduleList = isSharedView
     ? sharedRoomScheduleList
@@ -1696,13 +1760,21 @@ function MainPageContent() {
 
   return (
     <AppShell
-      activeTab={roomId || shareCode ? "rooms" : "home"}
-      activeRailView={roomId || shareCode ? "rooms" : "home"}
+      /*
+        **귀속된 방은 내 홈이다.** 예전에는 `roomId` 만 보고 "참여 플랜" 을
+        켰는데, 배우자로 들어온 사람에게 이 방은 남의 플랜이 아니라 자기
+        플랜이라 레일에서 홈이 아닌 곳이 켜져 있는 게 어긋나 보였다.
+        남의 방을 구경하는 중(조언자)이면 예전 그대로 "참여 플랜" 이다.
+      */
+      activeTab={shareCode || (roomId && !isBoundRoomView) ? "rooms" : "home"}
+      activeRailView={
+        shareCode || (roomId && !isBoundRoomView) ? "rooms" : "home"
+      }
       unreadCount={unreadCount}
       railUser={
-        displayData.name
+        coupleDisplayName
           ? {
-              name: displayData.name,
+              name: coupleDisplayName,
               caption: weddingDateText
                 ? `${dDayLabel} · ${weddingDateText.replace(/^\d{4}년 /, "").replace(/ \(.\)$/, "")}`
                 : null,
@@ -1759,19 +1831,28 @@ function MainPageContent() {
       }
       bottomBarSlot={
         <BottomTabBar
-          activeTab={roomId || shareCode ? "rooms" : undefined}
+          activeTab={
+            shareCode || (roomId && !isBoundRoomView) ? "rooms" : undefined
+          }
           showLoginButton={false}
           scrollDirection={scrollDirection}
           onTabClick={(tab) => {
             if (tab === "home") {
-              // /main?roomId= 또는 /main?share= 일 때는 /main으로 이동(쿼리 제거), 그 외 /main이면 새로고침
-              if (
-                window.location.pathname === "/main" &&
-                !window.location.search
-              ) {
+              /*
+                귀속된 사람의 홈은 **그 방**이다(`lib/boundRoom`). 예전에는
+                무조건 쿼리를 떼어 `/main` 으로 보냈는데, 그러면 방을 보다가
+                홈을 눌렀을 때 내 개인 플랜(빈 화면)으로 떨어졌다가
+                `BoundRoomRedirect` 가 다시 방으로 돌리느라 한 번 더 깜빡였다.
+
+                귀속이 아니면 `withBoundRoom` 이 `/main` 을 그대로 돌려주므로
+                예전 동작 그대로다 — 공유 뷰(`?share=`)도 쿼리가 떨어진다.
+              */
+              const homeHref = withBoundRoom("/main");
+              const here = window.location.pathname + window.location.search;
+              if (here === homeHref) {
                 router.refresh();
               } else {
-                router.push("/main");
+                router.push(homeHref);
               }
             } else {
               router.push(
@@ -1860,7 +1941,7 @@ function MainPageContent() {
                 />
               ) : (
                 <span className="font-user-content min-w-0 truncate text-[18px] font-bold tracking-[-0.02em] text-white">
-                  {displayData.name || "이름"}
+                  {coupleDisplayName || "이름"}
                 </span>
               )}
 
@@ -2346,7 +2427,7 @@ function MainPageContent() {
       {/* 태블릿 이상(≥768) — D 시안의 홈 대시보드 */}
       <HomeDashboard
         onOpenGuide={openGuide}
-        coupleName={displayData.name}
+        coupleName={coupleDisplayName}
         weddingDateText={weddingDateText}
         venue={displayData.venue}
         planLoading={isPlanLoading}

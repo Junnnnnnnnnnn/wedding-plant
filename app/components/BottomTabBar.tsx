@@ -3,6 +3,7 @@
 import { Home } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { TAB_ITEMS, TAB_ROUTES, TabType, pathnameToTab } from "./tabs";
+import { withBoundRoom } from "@/lib/boundRoom";
 
 // 탭 정의는 tabs.ts 로 옮겼다. 좌측 레일(SideNavRail)과 같은 소스를 봐야
 // 탭 구성이 갈라지지 않는다. 기존 import 경로를 깨지 않도록 재export 한다.
@@ -42,7 +43,8 @@ export default function BottomTabBar({
     if (onTabClick) {
       onTabClick(tab);
     } else {
-      router.push(TAB_ROUTES[tab]);
+      // 귀속된 사람의 홈은 그 방이다 (lib/boundRoom)
+      router.push(withBoundRoom(TAB_ROUTES[tab]));
     }
   };
 

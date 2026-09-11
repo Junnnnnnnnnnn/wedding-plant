@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { withBoundRoom } from "@/lib/boundRoom";
 import {
   NAV_ACTIVE_COLOR,
   NAV_INACTIVE_COLOR,
@@ -43,7 +44,8 @@ export default function SideNavRail({
     if (onViewClick) {
       onViewClick(view);
     } else {
-      router.push(RAIL_ROUTES[view]);
+      // 귀속된 사람의 홈·보드는 그 방이다 (lib/boundRoom)
+      router.push(withBoundRoom(RAIL_ROUTES[view]));
     }
   };
 

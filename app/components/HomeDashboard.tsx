@@ -244,7 +244,15 @@ export default function HomeDashboard({
   const today = useMemo(() => getKstDate(), []);
   const thisMonth = monthKey(today);
 
-  /** 이번 달 할 일 — 보드의 이번 달 컬럼과 같은 데이터다 */
+  /**
+   * 이번 달 할 일 — 보드의 이번 달 컬럼과 같은 데이터다.
+   *
+   * **지난 일과 날짜 미정도 낸다.** 폰 트리가 예전부터 그렇게 묶어 왔고
+   * (지난 일은 아직 안 끝났으므로 여전히 할 일이고 가장 급하다), 넓은
+   * 화면에는 폰의 "그 다음" 묶음이 없어서 여기서 빼면 **날짜를 안 정한
+   * 일정이 대시보드 어디에도 안 보인다.** 옆 "다가오는 일정" 은 타임라인이라
+   * 날짜 없는 것을 놓을 자리가 없다.
+   */
   const thisMonthTasks = useMemo(
     () =>
       schedules
@@ -253,9 +261,15 @@ export default function HomeDashboard({
           // 무엇을 언제 얼마에 끝냈는지는 플랜 보드의 완료 묶음에 남는다.
           if (s.status === "COMPLETED") return false;
           const d = s.startDate ? parseLocalDate(s.startDate) : null;
-          return d ? monthKey(d) === thisMonth : false;
+          if (!d) return true;
+          return monthKey(d) <= thisMonth;
         })
-        .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? "")),
+        // 날짜 미정은 맨 뒤로 — 언제 할지 정해진 일이 먼저 읽혀야 한다
+        .sort((a, b) =>
+          (a.startDate || "9999-99-99").localeCompare(
+            b.startDate || "9999-99-99",
+          ),
+        ),
     [schedules, thisMonth],
   );
 
@@ -578,30 +592,60 @@ export default function HomeDashboard({
               </button>
             </div>
 
-            <div className="flex items-end justify-between gap-4">
-              <div className="min-w-0">
-                <div className="font-user-content text-[36px] font-bold leading-none tracking-[-0.045em] text-[#1b0d14]">
-                  {remainingBudget.toLocaleString("ko-KR")}만원
+            {/*
+              **금액도 `planLoading` 동안 가린다.** 머리글 이름·날짜만 가리고
+              여기를 열어 두었더니, 방을 보는 중에도 `WeddingContext` 가
+              sessionStorage 에서 읽은 **내 개인 예산**이 먼저 그려졌다가
+              방 예산으로 바뀌었다 — 새로고침할 때마다 1,000(컨텍스트 기본값)
+              → 3,000(내 예산) → 방 예산 순으로 숫자가 깜빡였다.
+
+              폰 트리는 예전부터 `main-budget-card` 를 통째로 스켈레톤과
+              갈라 놓고 있었다. 넓은 화면만 빠져 있던 자리다.
+            */}
+            {planLoading ? (
+              <div className="flex items-end justify-between gap-4">
+                <div className="min-w-0">
+                  <span
+                    className="skeleton-shimmer block h-9 w-[168px] rounded-lg"
+                    aria-hidden
+                  />
+                  <span
+                    className="skeleton-shimmer mt-2.5 block h-3.5 w-[124px] rounded"
+                    aria-hidden
+                  />
                 </div>
-                <div className="mt-2 text-[13px] text-gray-400">
-                  {totalBudget.toLocaleString("ko-KR")}만원 중 남음
+                <span
+                  className="skeleton-shimmer h-9 w-[84px] shrink-0 rounded-lg"
+                  aria-hidden
+                />
+              </div>
+            ) : (
+              <div className="flex items-end justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="font-user-content text-[36px] font-bold leading-none tracking-[-0.045em] text-[#1b0d14]">
+                    {remainingBudget.toLocaleString("ko-KR")}만원
+                  </div>
+                  <div className="mt-2 text-[13px] text-gray-400">
+                    {totalBudget.toLocaleString("ko-KR")}만원 중 남음
+                  </div>
+                </div>
+                <div className="shrink-0 text-right text-[13px] text-gray-400">
+                  이번 달 지출
+                  <br />
+                  <b className="font-user-content text-[16px] font-bold tracking-tight text-[#1b0d14]">
+                    {thisMonthSpent.toLocaleString("ko-KR")}만원
+                  </b>
                 </div>
               </div>
-              <div className="shrink-0 text-right text-[13px] text-gray-400">
-                이번 달 지출
-                <br />
-                <b className="font-user-content text-[16px] font-bold tracking-tight text-[#1b0d14]">
-                  {thisMonthSpent.toLocaleString("ko-KR")}만원
-                </b>
-              </div>
-            </div>
+            )}
 
             <div
               className="my-[18px] flex h-3 overflow-hidden rounded-full bg-[#f4eff2]"
               role="img"
               aria-label="카테고리별 지출과 사용 예상 비중"
             >
-              {topCategories.length > 0 ? (
+              {/* 막대도 같은 개인 데이터로 그려진다. 받기 전에는 빈 트랙만 둔다 */}
+              {planLoading ? null : topCategories.length > 0 ? (
                 topCategories.map((c, i) => (
                   <i
                     key={c.categoryName}
@@ -623,7 +667,7 @@ export default function HomeDashboard({
                 />
               )}
               {/* 아직 안 쓴 예정 몫. 지출 뒤에 이어 붙여 "여기까지 잡혀 있다"를 보여준다 */}
-              {hasPlanned && (
+              {!planLoading && hasPlanned && (
                 <i
                   className="block h-full shrink-0"
                   style={{
@@ -635,7 +679,17 @@ export default function HomeDashboard({
               )}
             </div>
 
-            {topCategories.length > 0 || hasPlanned ? (
+            {planLoading ? (
+              <div className="grid gap-[11px]" aria-hidden>
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="skeleton-shimmer block h-[13px] rounded"
+                    style={{ width: `${[82, 68, 74][i]}%` }}
+                  />
+                ))}
+              </div>
+            ) : topCategories.length > 0 || hasPlanned ? (
               <div className="grid gap-[11px]">
                 {topCategories.map((c, i) => (
                   <div
@@ -685,7 +739,17 @@ export default function HomeDashboard({
 
             <div className="mt-5 flex items-center gap-3 border-t border-dashed border-[#f2eaee] pt-[18px]">
               <p className="m-0 flex-1 text-[12.5px] leading-relaxed text-[#7a6c74] break-keep">
-                {plannedUseAmount != null ? (
+                {/*
+                  **이 문장도 금액을 말한다.** 위 큰 숫자만 가리고 여기를 열어
+                  두었더니 "3,000만원 중 1,000만원을 예정으로 잡아 뒀어요" 가
+                  그대로 남아, 방을 보는 중에 개인 예산이 문장으로 새어 나왔다.
+                */}
+                {planLoading ? (
+                  <span
+                    className="skeleton-shimmer block h-3.5 w-[86%] rounded"
+                    aria-hidden
+                  />
+                ) : plannedUseAmount != null ? (
                   /*
                     **여기서 예정을 다시 빼지 말 것.** `remainingBudget` 은
                     `/plan/user/total-amount` 의 `remainingAmount` 이고, 그
