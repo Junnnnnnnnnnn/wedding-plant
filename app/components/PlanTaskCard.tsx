@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import { formatKoreanTime, parseLocalDate } from "@/lib/utils";
+import { PAYMENT_MISMATCH_LABEL, paymentMismatch } from "@/lib/schedulePaid";
 
 export interface PlanTaskItem {
   id: number;
@@ -12,6 +13,12 @@ export interface PlanTaskItem {
   /** 시작 시각 "HH:mm". 안 정했으면 비어 있다 */
   startTime?: string | null;
   status?: string | null;
+  /**
+   * 돈이 나갔는지. **`status` 와 다른 축이다** — 계약금을 미리 낸 일정은
+   * 예정이어도 이미 쓴 돈이다. 없으면 완료 여부를 따라간다
+   * (`lib/schedulePaid.ts`).
+   */
+  isPaid?: boolean | null;
   /** 일정 장소. 홈의 "다가오는 일정"에서 쓴다 */
   location?: string | null;
 }
@@ -54,6 +61,7 @@ export default function PlanTaskCardBody({
   readOnly = false,
 }: PlanTaskCardBodyProps) {
   const done = item.status === "COMPLETED";
+  const mismatch = paymentMismatch(item);
   const boxClass = `mt-0.5 grid h-[19px] w-[19px] shrink-0 place-items-center rounded-[7px] border-2 ${
     done ? "border-[#ffaab8] bg-[#ffaab8]" : "border-[#e6dbe2] bg-white"
   }`;
@@ -134,6 +142,23 @@ export default function PlanTaskCardBody({
             {item.amount.toLocaleString("ko-KR")}만 원
           </span>
         ) : null}
+        {/*
+          **어긋날 때만 붙인다.** 예정+미결제, 완료+결제는 예전과 같은
+          모습이라 아무 말도 하지 않는다 — 대부분의 일정이 거기다.
+          미리 낸 계약금(예정인데 결제함)과 아직 정산 안 한 것(완료인데
+          미결제)만 눈에 띄면 된다.
+        */}
+        {mismatch && (
+          <span
+            className={`rounded px-1.5 py-px text-[11px] font-bold ${
+              mismatch === "PAID_AHEAD"
+                ? "bg-[#eef6f2] text-[#05795f]"
+                : "bg-[#fff3e8] text-[#96540e]"
+            }`}
+          >
+            {PAYMENT_MISMATCH_LABEL[mismatch]}
+          </span>
+        )}
         {trailing}
       </div>
     </>

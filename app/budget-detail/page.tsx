@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import AppShell from "../components/AppShell";
 import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
 
+import { isPaid } from "@/lib/schedulePaid";
 import { useApi } from "../contexts/ApiContext";
 import { getToken } from "@/lib/api";
 import { getGuestScheduleList } from "@/lib/guestSchedule";
@@ -53,6 +54,8 @@ interface ScheduleListItem {
   amount: number | null;
   startDate: string | null;
   status?: string | null;
+  /** 돈이 나갔는지. 일정 완료와 다른 축이다 (`lib/schedulePaid.ts`) */
+  isPaid?: boolean | null;
 }
 
 function mapCategoryListToExpenses(list: CategoryChartItem[]): Expense[] {
@@ -67,17 +70,24 @@ function mapCategoryListToExpenses(list: CategoryChartItem[]): Expense[] {
   }));
 }
 
+/**
+ * 이 화면의 `PAID` 는 **돈이 나갔다**는 뜻이지 일정이 끝났다는 뜻이 아니다.
+ * 미리 낸 계약금은 일정이 예정이어도 여기서는 사용으로 잡혀야 한다
+ * (`lib/schedulePaid.ts`).
+ */
 function mapScheduleListToExpenses(list: ScheduleListItem[]): Expense[] {
-  return list.map((item) => ({
-    id: String(item.id),
-    title: item.title,
-    description: item.categoryName,
-    amount: item.status === "COMPLETED" ? (item.amount ?? 0) : 0,
-    plannedAmount: item.amount ?? 0,
-    status:
-      item.status === "COMPLETED" ? ExpenseStatus.PAID : ExpenseStatus.PLANNED,
-    category: item.categoryName,
-  }));
+  return list.map((item) => {
+    const paid = isPaid(item);
+    return {
+      id: String(item.id),
+      title: item.title,
+      description: item.categoryName,
+      amount: paid ? (item.amount ?? 0) : 0,
+      plannedAmount: item.amount ?? 0,
+      status: paid ? ExpenseStatus.PAID : ExpenseStatus.PLANNED,
+      category: item.categoryName,
+    };
+  });
 }
 
 function BudgetDetailsPage() {
@@ -180,8 +190,12 @@ function BudgetDetailsPage() {
         sort: SCHEDULE_SORT,
         sortColumn: SCHEDULE_SORT_COLUMN,
       });
-      if (statusFilter === "예정") params.set("status", "NORMAL");
-      else params.set("status", "COMPLETED");
+      /*
+        **서버에 status 로 거르지 않는다.** 예정/사용은 이제 결제 기준이라
+        일정 상태로는 못 가른다 — 미리 낸 계약금은 status=NORMAL 인데
+        "사용" 에 있어야 한다. 전부 받아서 앱이 가른다(`statusFilter` 는
+        아래 필터가 쓴다).
+      */
       if (category) params.set("categoryName", category);
       return params;
     },
@@ -209,7 +223,13 @@ function BudgetDetailsPage() {
         data?: { list?: ScheduleListItem[] } & Record<string, unknown>;
       };
       if (res.ok && json.result === true && json.data) {
-        const list = json.data.list ?? [];
+        /*
+          서버는 전부 준다. 예정/사용은 **결제 기준**이라 status 쿼리로는
+          못 가르기 때문이다 — 여기서 앱이 가른다.
+        */
+        const list = (json.data.list ?? []).filter((x) =>
+          activeTab === "사용" ? isPaid(x) : !isPaid(x),
+        );
         scheduleCacheRef.current.set(cacheKey, list);
         setScheduleList(list);
       } else {
@@ -229,14 +249,16 @@ function BudgetDetailsPage() {
         amount: p.amount ?? 0,
         startDate: p.startDate,
         status: p.status ?? "NORMAL",
+        isPaid: p.isPaid,
       })) as ScheduleListItem[];
 
       const initialCapital = Number(weddingData.budget) || 1000;
+      // 게스트도 같은 규칙으로 센다 — 결제했으면 사용, 아니면 예정
       const plannedUseAmount = guestList
-        .filter((x) => x.status !== "COMPLETED")
+        .filter((x) => !isPaid(x))
         .reduce((sum, x) => sum + (x.amount ?? 0), 0);
       const usedAmount = guestList
-        .filter((x) => x.status === "COMPLETED")
+        .filter((x) => isPaid(x))
         .reduce((sum, x) => sum + (x.amount ?? 0), 0);
 
       const byCategory = new Map<string, { total: number; used: number }>();
@@ -247,7 +269,7 @@ function BudgetDetailsPage() {
         const amt = item.amount ?? 0;
         prev.total += amt;
 
-        if (item.status === "COMPLETED") prev.used += amt;
+        if (isPaid(item)) prev.used += amt;
         byCategory.set(key, prev);
       });
 
@@ -430,10 +452,12 @@ function BudgetDetailsPage() {
         amount: p.amount ?? 0,
         startDate: p.startDate,
         status: p.status ?? "NORMAL",
+        isPaid: p.isPaid,
       })) as ScheduleListItem[];
       const filtered = guestList.filter((x) => {
-        if (activeTab === "예정" && x.status === "COMPLETED") return false;
-        if (activeTab === "사용" && x.status !== "COMPLETED") return false;
+        // 탭도 결제 기준이다. 미리 낸 계약금은 "사용" 에 있어야 한다
+        if (activeTab === "예정" && isPaid(x)) return false;
+        if (activeTab === "사용" && !isPaid(x)) return false;
         if (selectedCategory && x.categoryName !== selectedCategory)
           return false;
         return true;

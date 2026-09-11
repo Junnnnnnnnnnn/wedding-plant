@@ -7,6 +7,7 @@ import { getToken } from "@/lib/api";
 import { formatKoreanTime, getKstDate, parseLocalDate } from "@/lib/utils";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
+import { isPaid } from "@/lib/schedulePaid";
 import BragToggle from "./BragToggle";
 import ActivityPanel from "./ActivityPanel";
 import CoupleChatBadge, { sortCoupleFirst } from "./CoupleChatBadge";
@@ -296,11 +297,16 @@ export default function HomeDashboard({
     [categories],
   );
 
-  /** 이번 달에 완료로 잡힌 지출 합 (만원) */
+  /**
+   * 이번 달에 **실제로 나간** 돈 (만원).
+   *
+   * 완료가 아니라 **결제** 기준이다 — 미리 낸 계약금도 이번 달에 통장에서
+   * 빠져나갔으면 이번 달 지출이다 (`lib/schedulePaid.ts`).
+   */
   const thisMonthSpent = useMemo(
     () =>
       schedules.reduce((sum, item) => {
-        if (item.status !== "COMPLETED") return sum;
+        if (!isPaid(item)) return sum;
         const d = item.startDate ? parseLocalDate(item.startDate) : null;
         if (!d || monthKey(d) !== thisMonth) return sum;
         return sum + (item.amount ?? 0);

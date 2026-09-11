@@ -88,6 +88,12 @@ const PLACES = {
   },
 };
 
+/** 일정 완료와 어긋나는 것만 적는다. 나머지는 완료 여부를 따라간다 */
+const PAID = {
+  "신혼여행 항공": true, // 예정인데 미리 결제 — 이미 쓴 돈이다
+  "드레스 피팅": false, // 끝났는데 아직 정산 안 함 — 아직 안 쓴 돈이다
+};
+
 const ITEMS = [
   ["폐백 음식", "혼수", "2026-10-01", 45, false],
   ["본식 헤어", "스드메", "2026-09-28", 35, false],
@@ -109,6 +115,12 @@ const ITEMS = [
   startDate,
   amount,
   status: done ? "COMPLETED" : "PLANNED",
+  /*
+    **결제는 일정 완료와 다른 축이다.** 둘을 똑같이 채워 두면 "미리 낸
+    계약금"(예정+결제)과 "끝났는데 아직 정산 안 함"(완료+미결제) 분기를
+    영영 못 본다 — 그 둘이 이 기능이 생긴 이유다.
+  */
+  isPaid: PAID[title] ?? done,
   /*
     **장소를 전부 채우지 않는다.** 안 고른 일정이 훨씬 많고, 장소를 담기
     전에 올라간 스냅샷에는 아예 없다. 다 채워 두면 "지도 없는 시트" 분기를
@@ -628,6 +640,10 @@ function installMocks(page) {
   check(
     planSheet && /남의 플랜이라 보기만/.test(planSheet.text),
     "보기 전용이라고 적혀 있다",
+  );
+  check(
+    planSheet && /결제했어요|아직 안 냈어요/.test(planSheet.text),
+    "일정 상태와 결제 상태를 따로 적는다",
   );
   check(
     planSheet && planSheet.buttons.length === 1 && planSheet.buttons[0] === "닫기",

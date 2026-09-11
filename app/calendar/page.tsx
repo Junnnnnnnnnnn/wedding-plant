@@ -11,6 +11,7 @@ import {
 import { ChevronLeft, ChevronRight, Plus, Check, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { isPaid } from "@/lib/schedulePaid";
 import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
 import CustomAlertModal from "../components/CustomAlertModal";
@@ -397,12 +398,14 @@ function CalendarPageContent() {
       list.forEach((item) => {
         const amount = item.amount ?? 0;
         count += 1;
-        if (item.status === "COMPLETED") {
-          spent += amount;
-          doneCount += 1;
-        } else {
-          planned += amount;
-        }
+        /*
+          **돈은 결제 기준, 개수는 완료 기준이다.** "이번 달 지출" 은 통장에서
+          빠져나간 돈이라 미리 낸 계약금도 들어가고, "완료 N" 은 일정이 몇 개
+          끝났는지라 결제와 무관하다 — 두 줄이 서로 다른 것을 센다.
+        */
+        if (isPaid(item)) spent += amount;
+        else planned += amount;
+        if (item.status === "COMPLETED") doneCount += 1;
       });
     });
     return { spent, planned, doneCount, count };
@@ -1062,7 +1065,7 @@ function CalendarPageContent() {
                                 }
                               >
                                 {plan.amount.toLocaleString("ko-KR")}만 원
-                                {plan.status === "COMPLETED" ? " 씀" : ""}
+                                {isPaid(plan) ? " 씀" : ""}
                               </span>
                             </>
                           ) : null}
