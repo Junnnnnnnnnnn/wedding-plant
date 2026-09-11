@@ -157,6 +157,11 @@ export interface BragPlanItem {
   startDate: string | null;
   status: string | null;
   /**
+   * 돈이 나갔는지. **`status` 와 다른 축이다** — 계약금을 미리 낸 일정은
+   * 예정이어도 이미 쓴 돈이고, 예산 막대의 분홍이 이 기준이다.
+   */
+  isPaid?: boolean | null;
+  /**
    * 장소. 카카오에서 고른 경우 **주소가 아니라 업체명**이다 ("SG웨딩홀").
    * 안 고른 일정에는 없다 — 그때는 지도도 장소 줄도 내지 않는다.
    */

@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Heart, X } from "lucide-react";
 import { BragDetail, BragPlanItem } from "@/types";
+import { isPaid } from "@/lib/schedulePaid";
 import PlanTaskCardBody from "../components/PlanTaskCard";
 import BragPlanSheet from "./BragPlanSheet";
 import { PLANNED_COLOR, STACK_COLORS } from "../components/HomeDashboard";
@@ -46,7 +47,8 @@ function toGroups(items: BragPlanItem[]): BragGroup[] {
     };
     g.items.push(item);
     g.subtotal += item.amount ?? 0;
-    if (item.status === "COMPLETED") g.used += item.amount ?? 0;
+    // 순서용 기준값도 **결제** 기준이다 — 왼쪽 범례가 그 기준으로 정렬된다
+    if (isPaid(item)) g.used += item.amount ?? 0;
     map.set(key, g);
   });
   return [...map.values()].sort(

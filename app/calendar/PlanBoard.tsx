@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Plus } from "lucide-react";
 import { parseLocalDate } from "@/lib/utils";
+import { isPaid } from "@/lib/schedulePaid";
 import PlanTaskCardBody from "../components/PlanTaskCard";
 import {
   useScheduleDateMove,
@@ -125,6 +126,15 @@ export default function PlanBoard({
       const done = list.filter((i) => i.status === "COMPLETED");
       const sumOf = (arr: BoardItem[]) =>
         arr.reduce((acc, i) => acc + (i.amount ?? 0), 0);
+      /*
+        묶음은 **일정 완료**로 가르고(보드는 일정을 옮기는 화면이다), 금액은
+        **결제**로 센다 — 완료 묶음 머리의 "N만 원 씀" 은 돈 이야기라
+        아직 정산 안 한 것을 "썼다" 고 말하면 안 된다.
+      */
+      const paidSum = (arr: BoardItem[]) =>
+        arr
+          .filter((i) => isPaid(i))
+          .reduce((acc, i) => acc + (i.amount ?? 0), 0);
       return {
         key,
         label: monthLabel(key),
@@ -132,7 +142,8 @@ export default function PlanBoard({
         todo,
         done,
         sum: sumOf(list),
-        doneSum: sumOf(done),
+        // "썼다" 는 결제 기준이다 — 완료했어도 아직 안 냈으면 안 센다
+        doneSum: paidSum(done),
       };
     });
   }, [items]);

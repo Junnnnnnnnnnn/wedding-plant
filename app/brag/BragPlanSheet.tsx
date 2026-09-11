@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ExternalLink, MapPin, X } from "lucide-react";
 import { BragPlanItem } from "@/types";
+import { isPaid } from "@/lib/schedulePaid";
 
 /**
  * 자랑하기 상세 안에서 플랜 한 줄을 눌렀을 때 뜨는 **보기 전용** 시트.
@@ -126,6 +127,7 @@ export default function BragPlanSheet({
   }, [hasMap, sdkReady, lat, lng]);
 
   const done = item.status === "COMPLETED";
+  const paid = isPaid(item);
   const amount = item.amount ?? 0;
   const place = item.location?.trim() || null;
   const share =
@@ -177,12 +179,30 @@ export default function BragPlanSheet({
         </h3>
 
         {/* 상태는 색·취소선이 아니라 말로 적는다. 시트는 훑는 자리가 아니다 */}
-        <span
-          className={`mt-3 inline-block rounded-full px-2.5 py-1 text-[12px] font-bold ${
-            done ? "bg-[#f2eef0] text-[#7a6c74]" : "bg-[#fff2f6] text-[#ee2b8c]"
-          }`}
-        >
-          {done ? "완료했어요" : "아직 예정이에요"}
+        {/*
+          **두 축을 따로 말한다.** 일정이 끝났는지와 돈이 나갔는지가 다른
+          축이라(계약금을 미리 낸 경우), 하나로 뭉치면 "예정인데 지출에
+          잡힌" 금액을 설명할 수 없다.
+        */}
+        <span className="mt-3 flex flex-wrap gap-1.5">
+          <span
+            className={`inline-block rounded-full px-2.5 py-1 text-[12px] font-bold ${
+              done
+                ? "bg-[#f2eef0] text-[#7a6c74]"
+                : "bg-[#fff2f6] text-[#ee2b8c]"
+            }`}
+          >
+            {done ? "완료했어요" : "아직 예정이에요"}
+          </span>
+          <span
+            className={`inline-block rounded-full px-2.5 py-1 text-[12px] font-bold ${
+              paid
+                ? "bg-[#eef6f2] text-[#079171]"
+                : "bg-[#f7f5f6] text-[#7a6c74]"
+            }`}
+          >
+            {paid ? "결제했어요" : "아직 안 냈어요"}
+          </span>
         </span>
 
         <dl className="mt-5 grid gap-3 border-t border-stone-100 pt-5 text-[13.5px]">

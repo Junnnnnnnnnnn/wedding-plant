@@ -224,6 +224,12 @@ export default function AddPlanView({
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [amount, setAmount] = useState("");
+  /**
+   * 벌써 돈을 냈는지. **일정 완료와 다른 축이다** — 계약금을 미리 내고
+   * 예식은 내년인 경우가 흔한데, 예전에는 그 돈이 "아직 안 쓴 예정" 으로
+   * 잡혀 예산에 안 보였다 (`lib/schedulePaid.ts`).
+   */
+  const [isPaidNow, setIsPaidNow] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isDateUndecided, setIsDateUndecided] = useState(false);
@@ -724,6 +730,7 @@ export default function AddPlanView({
             title?: string;
             categoryName?: string;
             amount?: number;
+            isPaid?: boolean;
             startDate?: string | null;
             startTime?: string | null;
             payType?: string;
@@ -751,6 +758,7 @@ export default function AddPlanView({
           );
         }
 
+        if (typeof data.isPaid === "boolean") setIsPaidNow(data.isPaid);
         if (data.amount != null && !Number.isNaN(Number(data.amount))) {
           setAmount(String(data.amount));
         }
@@ -1291,6 +1299,7 @@ export default function AddPlanView({
         locationLng: mapCoords?.lng ?? 0,
         memo: memo.trim() || "",
         payType: paymentType ? PAY_TYPE_MAP[paymentType] : "OTHER",
+        isPaid: isPaidNow,
         addCategoryNameList: userAddedCategories.map((c) => c.label),
       };
       guestSavedRef.current = true;
@@ -1306,6 +1315,7 @@ export default function AddPlanView({
       title: inputValue.trim(),
       payType: paymentType ? PAY_TYPE_MAP[paymentType] : "OTHER",
       amount: amountValue ? parseInt(amountValue, 10) : 0,
+      isPaid: isPaidNow,
       location: location.trim() || "",
       locationLat: mapCoords?.lat ?? 0,
       locationLng: mapCoords?.lng ?? 0,
@@ -1738,6 +1748,47 @@ export default function AddPlanView({
                             만 원
                           </span>
                         </div>
+                        {/*
+                          **금액 바로 아래에 둔다.** 돈 이야기라 금액 옆이
+                          맞고, 일정 완료 토글(보드·상세)과는 다른 축이라
+                          거기 섞지 않는다. 기본은 꺼짐 — 대부분은 잡아만
+                          두고 나중에 낸다.
+                        */}
+                        <button
+                          type="button"
+                          data-paid-toggle
+                          role="switch"
+                          aria-checked={isPaidNow}
+                          onClick={() => setIsPaidNow((v) => !v)}
+                          className={`mt-2.5 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                            isPaidNow
+                              ? "bg-[#eef6f2]"
+                              : "bg-[#f7f8f9] hover:bg-[#eeeff1]"
+                          }`}
+                        >
+                          <span
+                            className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[6px] border-2 transition-colors ${
+                              isPaidNow
+                                ? "border-[#079171] bg-[#079171]"
+                                : "border-[#d4d7dc] bg-white"
+                            }`}
+                          >
+                            <Check
+                              className={`h-[10px] w-[10px] text-white ${isPaidNow ? "opacity-100" : "opacity-0"}`}
+                              strokeWidth={4}
+                            />
+                          </span>
+                          <span className="min-w-0">
+                            <span
+                              className={`block text-[13.5px] font-bold ${isPaidNow ? "text-[#079171]" : "text-[#555d6d]"}`}
+                            >
+                              이미 결제했어요
+                            </span>
+                            <span className="mt-0.5 block text-[12px] text-[#868b94]">
+                              일정이 남아 있어도 쓴 돈으로 잡혀요
+                            </span>
+                          </span>
+                        </button>
                       </div>
                       {/* 일자 */}
                       <div className={rowClass}>

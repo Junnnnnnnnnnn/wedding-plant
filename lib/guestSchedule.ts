@@ -7,6 +7,11 @@ export interface GuestScheduleItem {
   /** 시작 시각 "HH:mm". 날짜만 정하고 시간은 비워 둘 수 있다 */
   startTime?: string | null;
   status?: string | null;
+  /**
+   * 돈이 나갔는지. 일정 완료와 다른 축이다 (`lib/schedulePaid.ts`).
+   * 없으면 완료 여부를 따라가므로 예전에 만든 게스트 일정도 그대로 읽힌다.
+   */
+  isPaid?: boolean | null;
   /** client-only marker */
   _guest?: true;
   createdAt: number;
