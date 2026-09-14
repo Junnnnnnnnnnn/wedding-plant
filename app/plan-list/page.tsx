@@ -536,16 +536,20 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
         에서 보이는 목록이 그만큼 줄어든다. 넓은 화면은 흰 머리글 띠라
         `md:sticky` 로 자리를 지킨다.
       */}
+        {/*
+          **목록 화면 세 곳(피드 · 자랑하기 · 여기)은 머리 면이 같다.** 한쪽만
+          고치지 말 것 — 예전에는 여기만 `pt-12` 에 제목 18px · 부제 14px 라,
+          탭을 오갈 때 같은 자리의 제목이 위아래로 뛰고 크기도 달랐다.
+        */}
         <header
           data-mobile-head
-          className="md:sticky md:top-0 md:z-20 relative z-10 flex shrink-0 items-center justify-between gap-4 rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 pb-5 pt-12 md:mb-0 md:rounded-none md:border-b md:border-stone-100 md:bg-white md:bg-none md:px-8 md:py-5"
+          className="md:sticky md:top-0 md:z-20 relative z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-b-[24px] bg-gradient-to-br from-[#ee2b8c] to-[#ff5c95] px-6 py-5 md:rounded-none md:border-b md:border-stone-100 md:bg-white md:bg-none md:px-8 md:py-5"
         >
           <div id="plan-list-header" className="min-w-0">
-            {/* 시안 .c-head__title 18px bold · .c-head__sub 14px 보통 굵기 */}
-            <h2 className="text-[18px] font-bold tracking-[-0.02em] text-white md:text-[26px] md:font-semibold md:text-[#1b0d14]">
+            <h1 className="truncate text-[20px] font-bold leading-tight tracking-[-0.02em] text-white md:text-[22px] md:text-[#1b0d14]">
               참여 플랜
-            </h2>
-            <p className="mt-2 text-[14px] font-normal text-white/80 md:mt-1.5 md:text-[13px] md:text-[#7a6c74]">
+            </h1>
+            <p className="mt-1 text-[12.5px] text-white/80 md:text-[#7a6c74]">
               <span className="md:hidden">
                 {/* 받는 동안 '0개' 라고 먼저 말하지 않는다 */}
                 {listLoading ? (
@@ -562,10 +566,10 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
           <button
             type="button"
             onClick={() => setShowGuide(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center text-white transition-colors hover:text-white/70 md:h-10 md:w-10 md:text-stone-400 md:hover:text-stone-600"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white transition-colors hover:bg-white/20 md:text-stone-400 md:hover:bg-stone-100 md:hover:text-stone-600"
             aria-label="가이드 보기"
           >
-            <CircleHelp className="h-6 w-6" strokeWidth={2} />
+            <CircleHelp className="h-5 w-5" strokeWidth={2} />
           </button>
         </header>
         <div className="pb-tabbar px-6 pt-5 md:px-8 md:pb-8 md:pt-6 lg:px-8">
