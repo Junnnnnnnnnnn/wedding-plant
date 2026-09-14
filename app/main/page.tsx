@@ -21,7 +21,6 @@ import ScheduleDetailView from "../schedule-detail/ScheduleDetailView";
 import BragToggle from "../components/BragToggle";
 import HomeDashboard from "../components/HomeDashboard";
 import BottomTabBar from "../components/BottomTabBar";
-import { TAB_ROUTES } from "../components/tabs";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import CustomAlertModal from "../components/CustomAlertModal";
@@ -50,6 +49,7 @@ import {
   readBoundRoomCache,
   withBoundRoom,
 } from "@/lib/boundRoom";
+import { TAB_ROUTES } from "@/app/components/tabs";
 import { useIsDesktop } from "../hooks/useMediaQuery";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 
@@ -1840,32 +1840,22 @@ function MainPageContent() {
           showLoginButton={false}
           scrollDirection={scrollDirection}
           onTabClick={(tab) => {
-            if (tab === "home") {
-              /*
-                귀속된 사람의 홈은 **그 방**이다(`lib/boundRoom`). 예전에는
-                무조건 쿼리를 떼어 `/main` 으로 보냈는데, 그러면 방을 보다가
-                홈을 눌렀을 때 내 개인 플랜(빈 화면)으로 떨어졌다가
-                `BoundRoomRedirect` 가 다시 방으로 돌리느라 한 번 더 깜빡였다.
+            /*
+              **목적지는 `tabs.ts` 한 곳에서 온다.** 예전에는 여기서 경로를
+              다시 적었고, 피드가 "준비중" 모달이던 시절의 잔재로 `feed` 가
+              `/main` 으로 떨어져 **홈에서 피드를 눌러도 아무 일도 일어나지
+              않았다.** 목록을 두 벌 두면 새 탭이 생길 때마다 같은 일이 난다.
 
-                귀속이 아니면 `withBoundRoom` 이 `/main` 을 그대로 돌려주므로
-                예전 동작 그대로다 — 공유 뷰(`?share=`)도 쿼리가 떨어진다.
-              */
-              const homeHref = withBoundRoom("/main");
-              const here = window.location.pathname + window.location.search;
-              if (here === homeHref) {
-                router.refresh();
-              } else {
-                router.push(homeHref);
-              }
-            } else {
-              /*
-                경로는 `tabs.ts` 한 곳에서 가져온다. 예전에는 여기서
-                rooms·settings 만 따로 적고 나머지를 `/main` 으로 보내서,
-                피드 탭이 생긴 뒤에도 홈에서 "피드" 를 누르면 제자리였다
-                (피드가 "준비중" 이던 시절의 분기가 남아 있었다).
-              */
-              router.push(TAB_ROUTES[tab]);
+              귀속된 사람의 홈은 그 방이다(`withBoundRoom`) — 방 화면이 아닌
+              탭(`/feed`·`/plan-list`·`/user`)은 그대로 돌려준다.
+            */
+            const href = withBoundRoom(TAB_ROUTES[tab]);
+            const here = window.location.pathname + window.location.search;
+            if (here === href) {
+              router.refresh();
+              return;
             }
+            router.push(href);
           }}
           unreadCount={unreadCount}
         />

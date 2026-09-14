@@ -13,10 +13,11 @@ import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useAppRouter } from "@/app/hooks/useAppRouter";
 import RouteSkeletonScreen from "@/app/components/RouteSkeleton";
+import { TAB_ROUTES } from "@/app/components/tabs";
+import { withBoundRoom } from "@/lib/boundRoom";
 import { isPaid } from "@/lib/schedulePaid";
 import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
-import { TAB_ROUTES } from "../components/tabs";
 import CustomAlertModal from "../components/CustomAlertModal";
 import AddPlanView from "../add-plen/AddPlanView";
 import ScheduleDetailView from "../schedule-detail/ScheduleDetailView";
@@ -575,13 +576,12 @@ function CalendarPageContent() {
         <BottomTabBar
           activeTab="home"
           onTabClick={(tab) => {
-            if (tab === "home") {
-              if (roomId) router.push(`/main?roomId=${roomId}`);
-              else router.push("/main");
-            } else {
-              // 피드가 빠져 있어 보드·달력에서 "피드" 를 누르면 아무 일도 없었다
-              router.push(TAB_ROUTES[tab]);
-            }
+            /*
+              `tabs.ts` 한 곳에서 목적지를 가져온다. 예전에는 여기서 세 탭만
+              적어 두어서 **피드를 누르면 아무 분기도 안 타고 아무 일도
+              일어나지 않았다.**
+            */
+            router.push(withBoundRoom(TAB_ROUTES[tab]));
           }}
           unreadCount={unreadCount}
         />
