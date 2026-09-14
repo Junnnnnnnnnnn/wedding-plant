@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
 import {
   Tag,
   X,
@@ -15,6 +14,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { io, Socket } from "socket.io-client";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
 import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
 import LoginRequiredModal from "../components/LoginRequiredModal";
@@ -154,7 +154,7 @@ export default function AddPlanView({
   onClose,
   onSaved,
 }: AddPlanViewProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const { fetchWithAuth, setLoading: setGlobalLoading } = useApi();
   const { unreadCount } = useNotification();
   const isPane = variant === "pane";
@@ -1521,13 +1521,20 @@ export default function AddPlanView({
               }
             >
               {/* 제목은 위 분홍 머리 면이 가져갔다 — 같은 말을 두 번 하지 않는다 */}
+              {/*
+                수정할 일정을 받는 동안. 폼과 같은 "라벨 | 값" 줄 모양으로 낸다.
+                예전 뼈대는 `bg-stone-50` 상자라 흰 바탕에서 거의 보이지 않았다.
+              */}
               {editId && isLoadingDetail && (
-                <div className="mt-6 w-full animate-pulse space-y-5 px-4 md:px-0">
+                <div aria-hidden className="w-full px-4 md:px-0">
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="h-24 bg-stone-50 rounded-2xl border border-stone-100"
-                    />
+                      className="grid grid-cols-[84px_minmax(0,1fr)] items-center gap-3 border-b border-stone-100 py-5"
+                    >
+                      <span className="skeleton-shimmer block h-4 w-14 rounded" />
+                      <span className="skeleton-shimmer block h-11 w-full rounded-xl" />
+                    </div>
                   ))}
                 </div>
               )}

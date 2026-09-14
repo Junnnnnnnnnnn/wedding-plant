@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronRight, CircleHelp, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
 import { getToken } from "@/lib/api";
 import { formatKoreanTime, getKstDate, parseLocalDate } from "@/lib/utils";
 import { useApi } from "../contexts/ApiContext";
@@ -171,7 +171,7 @@ export default function HomeDashboard({
   onOpenBudgetDetail,
   onOpenBoard,
 }: HomeDashboardProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const { fetchWithAuth } = useApi();
   const { getRoomUnreadCount } = useNotification();
   const [categories, setCategories] = useState<CategoryChartItem[]>([]);
@@ -844,7 +844,23 @@ export default function HomeDashboard({
               </button>
             </div>
 
-            {upcoming.length === 0 ? (
+            {/*
+              받는 동안 "예정된 일정이 없어요" 를 먼저 보여 주면, 일정이 있는
+              사람에게 잠깐 "없다" 고 말했다가 뒤집는 셈이다. 위 이번 달 스트립과
+              같은 `scheduleLoading` 으로 뼈대를 낸다.
+            */}
+            {scheduleLoading ? (
+              <div aria-hidden className="relative pl-[26px]">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="mb-6 last:mb-0">
+                    <span className="skeleton-shimmer absolute left-0 mt-0.5 block h-3 w-3 rounded-full" />
+                    <span className="skeleton-shimmer block h-3.5 w-32 rounded" />
+                    <span className="skeleton-shimmer mt-2.5 block h-[18px] w-40 rounded" />
+                    <span className="skeleton-shimmer mt-2.5 block h-5 w-16 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            ) : upcoming.length === 0 ? (
               <p className="py-6 text-center text-[13px] text-gray-400">
                 예정된 일정이 없어요.
               </p>

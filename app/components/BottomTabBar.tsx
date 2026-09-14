@@ -1,7 +1,8 @@
 "use client";
 
 import { Home } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
 import { TAB_ITEMS, TAB_ROUTES, TabType, pathnameToTab } from "./tabs";
 import { withBoundRoom } from "@/lib/boundRoom";
 
@@ -31,7 +32,7 @@ export default function BottomTabBar({
   unreadCount,
 }: BottomTabBarProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const router = useAppRouter();
   const resolvedActiveTab = activeTab ?? pathnameToTab(pathname);
   const tabs: Array<{
     id: TabType;

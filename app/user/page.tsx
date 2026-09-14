@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import RouteSkeletonScreen from "@/app/components/RouteSkeleton";
 import SettingsPage from "../components/SettingsPage";
 import AppShell from "../components/AppShell";
 import { useWedding } from "../contexts/WeddingContext";
@@ -74,7 +75,7 @@ export default function UserPage() {
     }
     setIsMember(true);
     try {
-      const res = await fetchWithAuth("/plan/user");
+      const res = await fetchWithAuth("/plan/user", { skipLoading: true });
       const json = (await res.json()) as {
         result?: boolean;
         data?: PlanUserData;
@@ -190,12 +191,13 @@ export default function UserPage() {
     return true;
   };
 
+  /*
+    받는 동안 셸째로 뼈대를 낸다. 예전에는 흰 화면 가운데 스피너만 돌아서
+    레일·탭바까지 사라졌다 — 메뉴를 누르면 앱이 한 번 꺼졌다 켜지는 것처럼
+    보였다. 전역 오버레이도 덮지 않게 요청에 `skipLoading` 을 준다.
+  */
   if (loading || !userData) {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[#fcfbfc]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ee2b8c] border-t-transparent" />
-      </div>
-    );
+    return <RouteSkeletonScreen pathname="/user" />;
   }
 
   return (

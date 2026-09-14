@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import {
   ChevronLeft,
@@ -12,6 +11,7 @@ import {
   CheckCheck,
   User,
 } from "lucide-react";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
 import { useApi } from "../../contexts/ApiContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import CoupleChatBadge from "../../components/CoupleChatBadge";
@@ -489,7 +489,7 @@ export default function ChatRoomView({
   variant = "standalone",
 }: ChatRoomViewProps) {
   const isPane = variant === "pane";
-  const router = useRouter();
+  const router = useAppRouter();
   const { fetchWithAuth } = useApi();
   const { subscribeToChatRooms, resetUnreadCount, setActiveRoomId } =
     useNotification();

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { Suspense, useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ChevronRight, Plus, ThumbsUp } from "lucide-react";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
+import RouteSkeletonScreen from "@/app/components/RouteSkeleton";
 import { FeedMyStatus, FeedPost, FeedVote, PostableSchedule } from "@/types";
 import { getToken } from "@/lib/api";
 import AppShell from "../components/AppShell";
@@ -26,7 +27,7 @@ const SORTS: Array<{ key: SortKey; label: string }> = [
 ];
 
 const FeedPageContent: React.FC = () => {
-  const router = useRouter();
+  const router = useAppRouter();
   const { fetchWithAuth } = useApi();
   const { unreadCount } = useNotification();
   /** 담은 일정을 저장할 방. 안 붙이면 방 밖으로 떨어져 배우자가 못 본다 */
@@ -454,12 +455,33 @@ const FeedPageContent: React.FC = () => {
           <div className="grid gap-4 @[900px]:grid-cols-[minmax(0,1fr)_300px] @[900px]:items-start @[900px]:gap-5">
             <div>
               {listLoading ? (
-                <div className="space-y-3">
+                /*
+                  `FeedCard` 와 같은 짜임(왼쪽 금액 열 → 업체·주소·한 줄 → 버튼)의
+                  뼈대. 예전에는 흰 바탕에 `bg-white/70` 상자라 **보이지 않아서**
+                  받는 동안 목록 자리가 그냥 비어 있었다.
+                  `article` 로 그리지 않는다 — 하네스가 그 선택자로 카드를 센다.
+                */
+                <div aria-hidden className="md:space-y-3">
                   {[1, 2, 3].map((n) => (
                     <div
                       key={n}
-                      className="h-[120px] animate-pulse rounded-[24px] bg-white/70"
-                    />
+                      className="border-b border-[#0000000c] px-1 py-5 md:flex md:gap-5 md:rounded-[24px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-[18px_20px] md:shadow-sm"
+                    >
+                      <div className="shrink-0 md:w-[120px]">
+                        <span className="skeleton-shimmer block h-[23px] w-24 rounded" />
+                        <span className="skeleton-shimmer mt-1.5 block h-3 w-12 rounded" />
+                      </div>
+                      <div className="mt-3 min-w-0 flex-1 md:mt-0">
+                        <span className="skeleton-shimmer block h-4 w-32 rounded" />
+                        <span className="skeleton-shimmer mt-2.5 block h-3.5 w-48 rounded" />
+                        <span className="skeleton-shimmer mt-2.5 block h-3.5 w-full max-w-[320px] rounded" />
+                        <span className="mt-4 flex gap-2">
+                          <span className="skeleton-shimmer block h-9 w-28 rounded-full" />
+                          <span className="skeleton-shimmer block h-9 w-9 rounded-full" />
+                          <span className="skeleton-shimmer block h-9 w-32 rounded-full" />
+                        </span>
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : posts.length === 0 ? (
@@ -616,7 +638,7 @@ const FeedPageContent: React.FC = () => {
 };
 
 const FeedPage: React.FC = () => (
-  <Suspense fallback={<div className="h-[100dvh] bg-[#fcfbfc]" />}>
+  <Suspense fallback={<RouteSkeletonScreen pathname="/feed" />}>
     <FeedPageContent />
   </Suspense>
 );

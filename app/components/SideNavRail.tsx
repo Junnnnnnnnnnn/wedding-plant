@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
 import { withBoundRoom } from "@/lib/boundRoom";
 import {
   NAV_ACTIVE_COLOR,
@@ -37,7 +38,7 @@ export default function SideNavRail({
   unreadCount,
 }: SideNavRailProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const router = useAppRouter();
   const resolvedActive = activeView ?? pathnameToRailView(pathname);
 
   const handleClick = (view: RailViewType) => {

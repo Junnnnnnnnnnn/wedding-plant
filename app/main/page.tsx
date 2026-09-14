@@ -2,7 +2,7 @@
 
 import { Check, CircleHelp, ChevronRight, LogOut } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   Suspense,
   useState,
@@ -12,6 +12,8 @@ import {
   useCallback,
 } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "motion/react";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
+import RouteSkeletonScreen from "@/app/components/RouteSkeleton";
 import CountUp from "@/components/CountUp";
 import AddPlanView from "../add-plen/AddPlanView";
 import AppShell from "../components/AppShell";
@@ -19,6 +21,7 @@ import ScheduleDetailView from "../schedule-detail/ScheduleDetailView";
 import BragToggle from "../components/BragToggle";
 import HomeDashboard from "../components/HomeDashboard";
 import BottomTabBar from "../components/BottomTabBar";
+import { TAB_ROUTES } from "../components/tabs";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import LoginRequiredModal from "../components/LoginRequiredModal";
 import CustomAlertModal from "../components/CustomAlertModal";
@@ -287,7 +290,7 @@ interface RoomMember {
 }
 
 function MainPageContent() {
-  const router = useRouter();
+  const router = useAppRouter();
   const searchParams = useSearchParams();
   const shareCode = searchParams.get("share");
   const roomId = searchParams.get("roomId");
@@ -1855,13 +1858,13 @@ function MainPageContent() {
                 router.push(homeHref);
               }
             } else {
-              router.push(
-                tab === "rooms"
-                  ? "/plan-list"
-                  : tab === "settings"
-                    ? "/user"
-                    : "/main",
-              );
+              /*
+                경로는 `tabs.ts` 한 곳에서 가져온다. 예전에는 여기서
+                rooms·settings 만 따로 적고 나머지를 `/main` 으로 보내서,
+                피드 탭이 생긴 뒤에도 홈에서 "피드" 를 누르면 제자리였다
+                (피드가 "준비중" 이던 시절의 분기가 남아 있었다).
+              */
+              router.push(TAB_ROUTES[tab]);
             }
           }}
           unreadCount={unreadCount}
@@ -1936,7 +1939,7 @@ function MainPageContent() {
             <div className="flex items-center gap-2">
               {isPlanLoading ? (
                 <span
-                  className="skeleton-shimmer h-[22px] w-[110px] shrink-0 rounded"
+                  className="skeleton-on-brand h-[22px] w-[110px] shrink-0 rounded"
                   aria-hidden
                 />
               ) : (
@@ -1983,11 +1986,11 @@ function MainPageContent() {
             {isPlanLoading ? (
               <div className="mt-4 space-y-2">
                 <span
-                  className="skeleton-shimmer block h-[74px] w-[240px] rounded"
+                  className="skeleton-on-brand block h-[74px] w-[240px] rounded"
                   aria-hidden
                 />
                 <span
-                  className="skeleton-shimmer block h-4 w-[190px] rounded"
+                  className="skeleton-on-brand block h-4 w-[190px] rounded"
                   aria-hidden
                 />
               </div>
@@ -2019,37 +2022,23 @@ function MainPageContent() {
           {/* TodayFocus - 로딩 시 요소별 스켈레톤 */}
           <div className="mt-4 w-full">
             {isPlanLoading ? (
-              <div className="flex w-full flex-col rounded-[24px] border-2 border-stone-200/50 bg-white/50 p-6">
-                <div className="flex items-start gap-3">
+              /*
+                아래 실제 요약 상자와 **같은 크기**다. 예전 뼈대는 요약 상자가
+                아이콘·큰 숫자·막대를 다 담던 시절의 190px 짜리라, 받고 나면
+                60px 로 줄면서 아래 목록이 통째로 위로 튀었다.
+                분홍 면 위라 회색이 아니라 흰 뼈(`skeleton-on-brand`)를 쓴다.
+              */
+              <div className="flex w-full items-center gap-3 rounded-[12px] bg-white/20 px-4 py-3">
+                <span className="min-w-0 flex-1">
                   <span
-                    className="skeleton-shimmer h-10 w-10 shrink-0 rounded-full"
-                    aria-hidden
-                  />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <span
-                      className="skeleton-shimmer block h-5 w-20 rounded"
-                      aria-hidden
-                    />
-                    <span
-                      className="skeleton-shimmer block h-[42px] w-28 rounded"
-                      aria-hidden
-                    />
-                  </div>
-                </div>
-                <span
-                  className="skeleton-shimmer mt-4 block h-6 w-48 rounded"
-                  aria-hidden
-                />
-                <div className="mt-4 flex items-center gap-2">
-                  <span
-                    className="skeleton-shimmer h-2 flex-1 rounded-full"
+                    className="skeleton-on-brand block h-[18px] w-40 rounded"
                     aria-hidden
                   />
                   <span
-                    className="skeleton-shimmer h-4 w-8 shrink-0 rounded"
+                    className="skeleton-on-brand mt-1 block h-[15px] w-52 rounded"
                     aria-hidden
                   />
-                </div>
+                </span>
               </div>
             ) : (
               <div
@@ -2153,22 +2142,24 @@ function MainPageContent() {
                 */}
               {!isListLoaded || isPlanLoading || isSharedLoading ? (
                 Array.from({ length: 5 }).map((_, idx) => (
+                  /*
+                    아래 실제 카드(시안 C안 01의 회색 채움 카드)와 같은 짜임이다.
+                    예전 뼈대는 56px 아이콘 타일 + 그림자 흰 카드라는 **걷어낸
+                    옛 카드 모양**이어서, 받는 순간 카드 모양·높이가 통째로 바뀌었다.
+                  */
                   <li
                     key={`skeleton-plan-${idx}`}
-                    className="flex items-center gap-4 rounded-3xl border border-[#ee2b8c0a] bg-white p-4 shadow-sm animate-pulse"
+                    className="flex w-full items-start gap-3 rounded-2xl bg-[#f7f8f9] p-4"
+                    aria-hidden
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-stone-50 shrink-0" />
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <div className="h-5 w-3/4 bg-stone-50 rounded" />
-                      <div className="space-y-1">
-                        <div className="h-3 w-1/2 bg-stone-50 rounded" />
-                        <div className="h-3 w-1/3 bg-stone-50 rounded" />
-                      </div>
-                    </div>
-                    <div className="text-right space-y-2">
-                      <div className="h-5 w-16 bg-stone-50 rounded ml-auto" />
-                      <div className="h-4 w-10 bg-stone-50 rounded-lg ml-auto" />
-                    </div>
+                    <span className="skeleton-shimmer mt-0.5 block h-[22px] w-[22px] shrink-0 rounded-full" />
+                    <span className="min-w-0 flex-1">
+                      <span className="skeleton-shimmer block h-[18px] w-3/5 rounded" />
+                      <span className="mt-2.5 flex items-center justify-between gap-3">
+                        <span className="skeleton-shimmer block h-[18px] w-2/5 rounded" />
+                        <span className="skeleton-shimmer block h-[18px] w-14 shrink-0 rounded" />
+                      </span>
+                    </span>
                   </li>
                 ))
               ) : isListLoaded && effectiveScheduleList.length === 0 ? (
@@ -2538,11 +2529,7 @@ function MainPageContent() {
 
 export default function MainPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-[100dvh] items-center justify-center bg-[#FFF5F2]" />
-      }
-    >
+    <Suspense fallback={<RouteSkeletonScreen pathname="/main" />}>
       <MainPageContent />
     </Suspense>
   );

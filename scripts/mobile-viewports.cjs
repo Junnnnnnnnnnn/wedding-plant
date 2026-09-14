@@ -575,7 +575,9 @@ function scrollBottom() {
   else window.scrollTo(0, document.body.scrollHeight);
 }
 
-(async () => {
+// 다른 하네스(`nav-skeleton.cjs`)가 같은 목을 쓴다. require 로 불리면 돌지 않는다
+module.exports = { installMocks, JWT, API, CORS, ok };
+if (require.main === module) (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const only = process.env.ONLY
     ? new Set(process.env.ONLY.split(",").map((x) => x.trim()))

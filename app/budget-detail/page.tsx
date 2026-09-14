@@ -9,7 +9,11 @@ import React, {
   Suspense,
 } from "react";
 import { ArrowLeft, CircleHelp } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
+import RouteSkeletonScreen, {
+  BudgetBodySkeleton,
+} from "@/app/components/RouteSkeleton";
 
 import AppShell from "../components/AppShell";
 import GuideOverlay, { GuideStep } from "../components/GuideOverlay";
@@ -91,7 +95,7 @@ function mapScheduleListToExpenses(list: ScheduleListItem[]): Expense[] {
 }
 
 function BudgetDetailsPage() {
-  const router = useRouter();
+  const router = useAppRouter();
   const searchParams = useSearchParams();
   const roomIdFromUrl = searchParams.get("roomId")?.trim() || null;
   const { fetchWithAuth, setLoading } = useApi();
@@ -572,13 +576,25 @@ function BudgetDetailsPage() {
             있을 때 내 플랜 값이라, 아래 도넛·표와 다른 숫자가 같은 화면에
             둘 뜬 적이 있다.
           */}
-          <p className="mt-1 text-[40px] font-bold leading-none tracking-[-0.04em] text-white [font-variant-numeric:tabular-nums]">
-            {(stats
-              ? stats.initialCapital
-              : Number(weddingData.budget) || 0
-            ).toLocaleString()}
-            <span className="ml-1 text-[18px] tracking-[-0.02em]">만 원</span>
-          </p>
+          {/*
+            받는 동안은 숫자를 내지 않는다. `weddingData.budget` 은 컨텍스트
+            기본값(1,000)이나 내 개인 예산이라, 먼저 그렸다가 방 예산으로
+            바뀌며 숫자가 깜빡였다(홈 대시보드 금액과 같은 문제).
+          */}
+          {detailLoading ? (
+            <span
+              aria-hidden
+              className="skeleton-on-brand mt-1 block h-10 w-44 rounded-lg"
+            />
+          ) : (
+            <p className="mt-1 text-[40px] font-bold leading-none tracking-[-0.04em] text-white [font-variant-numeric:tabular-nums]">
+              {(stats
+                ? stats.initialCapital
+                : Number(weddingData.budget) || 0
+              ).toLocaleString()}
+              <span className="ml-1 text-[18px] tracking-[-0.02em]">만 원</span>
+            </p>
+          )}
         </div>
         {/*
             @container: 아래 2열 분기를 뷰포트가 아니라 이 영역이 실제로
@@ -587,40 +603,12 @@ function BudgetDetailsPage() {
           */}
         <div className="@container pb-tabbar pt-0 md:mx-auto md:max-w-[1500px] md:pb-10">
           {detailLoading ? (
-            <div className="px-4 py-4 space-y-6 animate-pulse">
-              {/* Stats Skeleton */}
-              <div className="space-y-3">
-                <div className="w-full h-32 bg-stone-50 rounded-[24px]" />
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="h-24 bg-stone-50 rounded-[20px]" />
-                  <div className="h-24 bg-stone-50 rounded-[20px]" />
-                </div>
-              </div>
-
-              {/* AI Button Skeleton */}
-              <div className="h-14 bg-stone-50 rounded-2xl" />
-
-              {/* Analysis Skeleton */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div className="w-24 h-6 bg-stone-50 rounded" />
-                </div>
-                <div className="h-48 bg-stone-50 rounded-3xl" />
-              </div>
-
-              {/* Tabs Skeleton */}
-              <div className="flex border-b border-gray-100">
-                <div className="flex-1 h-12 bg-stone-50/50" />
-                <div className="flex-1 h-12 bg-stone-50/50" />
-              </div>
-
-              {/* List Skeleton */}
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 bg-stone-50 rounded-2xl mx-2" />
-                ))}
-              </div>
-            </div>
+            /*
+              실제 화면(도넛 | 표·항목)과 같은 짜임의 뼈대. 예전 뼈대는
+              `bg-stone-50` 이라 바탕(#fcfbfc)과 거의 같아 **보이지 않았고**,
+              없앤 AI 버튼 자리까지 남아 있었다.
+            */
+            <BudgetBodySkeleton />
           ) : error ? (
             <div className="px-4 py-8 text-center">
               <p className="text-[#ee2b8c] font-semibold">{error}</p>
@@ -750,11 +738,7 @@ function BudgetDetailsPage() {
 
 export default function BudgetDetailPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#fcfbfc]" />
-      }
-    >
+    <Suspense fallback={<RouteSkeletonScreen pathname="/budget-detail" />}>
       <BudgetDetailsPage />
     </Suspense>
   );

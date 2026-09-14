@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, MapPin, Plus, ThumbsDown, ThumbsUp } from "lucide-react";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
 import { useApi } from "@/app/contexts/ApiContext";
+import { FeedDetailSkeleton } from "@/app/components/RouteSkeleton";
 import { takeFeedDetail } from "@/lib/feedDetail";
 import type { FeedPost, FeedVote } from "@/types";
 import { describeAuthor, describeWhen } from "./FeedCard";
@@ -84,7 +85,7 @@ function scalePct(value: number, stats: CategoryStats): number {
 }
 
 export default function FeedDetailView({ postId }: FeedDetailViewProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const { fetchWithAuth } = useApi();
 
   /* 목록에서 누른 경우 이미 받아 둔 항목이 있다 — 그러면 요청이 0 개다 */
@@ -265,10 +266,15 @@ export default function FeedDetailView({ postId }: FeedDetailViewProps) {
     router.push(`/add-plen?${params.toString()}`);
   }, [post, router]);
 
+  /*
+    받는 동안은 아래 실제 상세와 같은 짜임(머리글 → 회색 금액 카드 → 본문)의
+    뼈대를 낸다. 화면 전환 뼈대와 같은 것을 써서 넘어오는 순간 튀지 않는다.
+  */
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#ee2b8c] border-t-transparent" />
+      <div aria-busy>
+        <span className="sr-only">후기를 불러오는 중입니다</span>
+        <FeedDetailSkeleton />
       </div>
     );
   }

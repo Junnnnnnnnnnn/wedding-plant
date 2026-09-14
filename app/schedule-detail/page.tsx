@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import RouteSkeletonScreen from "@/app/components/RouteSkeleton";
 import ScheduleDetailView from "./ScheduleDetailView";
 
 /**
@@ -34,16 +34,7 @@ function ScheduleDetailPageContent() {
 
 export default function ScheduleDetailPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-[100dvh] w-full items-center justify-center bg-[#fcfbfc]">
-          <div className="flex items-center gap-3 text-[#ee2b8c]">
-            <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
-            <span className="text-base font-semibold">불러오는 중...</span>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<RouteSkeletonScreen pathname="/schedule-detail" />}>
       <ScheduleDetailPageContent />
     </Suspense>
   );

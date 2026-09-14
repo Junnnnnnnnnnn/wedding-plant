@@ -9,11 +9,14 @@ import {
   Suspense,
 } from "react";
 import { ChevronLeft, ChevronRight, Plus, Check, X } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
+import RouteSkeletonScreen from "@/app/components/RouteSkeleton";
 import { isPaid } from "@/lib/schedulePaid";
 import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
+import { TAB_ROUTES } from "../components/tabs";
 import CustomAlertModal from "../components/CustomAlertModal";
 import AddPlanView from "../add-plen/AddPlanView";
 import ScheduleDetailView from "../schedule-detail/ScheduleDetailView";
@@ -51,7 +54,7 @@ interface CalendarPlanItem {
 }
 
 function CalendarPageContent() {
-  const router = useRouter();
+  const router = useAppRouter();
   const searchParams = useSearchParams();
   const roomId = searchParams.get("roomId");
   const { fetchWithAuth } = useApi();
@@ -77,6 +80,12 @@ function CalendarPageContent() {
   const [calendarData, setCalendarData] = useState<
     Record<string, CalendarPlanItem[]>
   >({});
+  /**
+   * 첫 응답을 받았는지. 받기 전에는 머리 면 합계를 뼈대로 둔다 — 그냥 그리면
+   * 일정이 있는 사람에게도 "이번 달 예정 0만 원 · 일정 0개" 가 먼저 떴다.
+   * 달을 넘길 때는 켜 두어, 넘길 때마다 합계가 깜빡이지 않게 한다.
+   */
+  const [calendarLoaded, setCalendarLoaded] = useState(false);
   // Modal state
   /**
    * 폰의 달력 ↔ 목록 (시안 C안 02).
@@ -127,6 +136,7 @@ function CalendarPageContent() {
         });
       });
       setCalendarData(byDay);
+      setCalendarLoaded(true);
       return;
     }
 
@@ -178,10 +188,12 @@ function CalendarPageContent() {
         });
       });
       setCalendarData(byDay);
+      setCalendarLoaded(true);
     } catch (error) {
       if (fetchSeqRef.current !== seq) return;
       console.error("Failed to fetch schedules:", error);
       setCalendarData({});
+      setCalendarLoaded(true);
     }
   }, [fetchWithAuth, roomId, year, month]);
 
@@ -566,8 +578,10 @@ function CalendarPageContent() {
             if (tab === "home") {
               if (roomId) router.push(`/main?roomId=${roomId}`);
               else router.push("/main");
-            } else if (tab === "rooms") router.push("/plan-list");
-            else if (tab === "settings") router.push("/user");
+            } else {
+              // 피드가 빠져 있어 보드·달력에서 "피드" 를 누르면 아무 일도 없었다
+              router.push(TAB_ROUTES[tab]);
+            }
           }}
           unreadCount={unreadCount}
         />
@@ -704,14 +718,23 @@ function CalendarPageContent() {
                 }`}
               >
                 <div className="rounded-xl bg-white/20 px-4 py-3 md:bg-transparent md:p-0">
-                  <p className="text-[14px] font-bold text-white md:text-[13.5px] md:text-[#1b0d14]">
-                    이번 달 예정 {monthTotals.planned.toLocaleString("ko-KR")}만
-                    원
-                  </p>
-                  <p className="mt-0.5 text-[12px] text-white/75 md:text-[12.5px] md:text-[#7a6c74]">
-                    지출 {monthTotals.spent.toLocaleString("ko-KR")}만 원 · 일정{" "}
-                    {monthTotals.count}개
-                  </p>
+                  {calendarLoaded ? (
+                    <>
+                      <p className="text-[14px] font-bold text-white md:text-[13.5px] md:text-[#1b0d14]">
+                        이번 달 예정{" "}
+                        {monthTotals.planned.toLocaleString("ko-KR")}만 원
+                      </p>
+                      <p className="mt-0.5 text-[12px] text-white/75 md:text-[12.5px] md:text-[#7a6c74]">
+                        지출 {monthTotals.spent.toLocaleString("ko-KR")}만 원 ·
+                        일정 {monthTotals.count}개
+                      </p>
+                    </>
+                  ) : (
+                    <span aria-hidden className="block">
+                      <span className="skeleton-on-brand block h-[21px] w-36 rounded" />
+                      <span className="skeleton-on-brand mt-0.5 block h-[17px] w-44 rounded" />
+                    </span>
+                  )}
                 </div>
 
                 {/* 달력 ↔ 목록 — 폰 전용. ≥768 은 위의 보드↔캘린더가 맡는다 */}
@@ -1112,15 +1135,7 @@ function CalendarPageContent() {
 
 export default function CalendarPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="h-[100dvh] bg-[#fcfbfc] flex items-center justify-center">
-          <div className="animate-pulse text-gray-400 font-bold">
-            로딩 중...
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<RouteSkeletonScreen pathname="/calendar" />}>
       <CalendarPageContent />
     </Suspense>
   );

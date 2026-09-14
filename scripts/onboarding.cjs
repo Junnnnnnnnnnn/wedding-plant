@@ -32,7 +32,10 @@ try {
 
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const API = "https://api.seoulmoment.com.tw";
-const ORIGIN = `http://localhost:${process.env.PORT || 3000}`;
+// 다른 하네스처럼 `BASE` 를 먼저 본다. 예전에는 PORT 만 읽어서 `BASE` 를 줘도
+// 3000 번(남의 작업 트리일 수 있다)을 검사했다
+const ORIGIN =
+  process.env.BASE || `http://localhost:${process.env.PORT || 3000}`;
 const OUT = process.env.SHOT_DIR || __dirname;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

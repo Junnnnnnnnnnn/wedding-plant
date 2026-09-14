@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, MessageCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
 
 interface NotificationToastProps {
   show: boolean;
@@ -22,7 +22,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
   senderImage,
   roomId,
 }) => {
-  const router = useRouter();
+  const router = useAppRouter();
 
   const handleNavigate = () => {
     router.push(`/chat/${roomId}`);

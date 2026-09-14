@@ -15,6 +15,7 @@ import SessionExpiredModal from "./components/SessionExpiredModal";
 import AuthRedirectToMain from "./components/AuthRedirectToMain";
 import GuestGate from "./components/GuestGate";
 import BoundRoomRedirect from "./components/BoundRoomRedirect";
+import NavigationSkeleton from "./components/NavigationSkeleton";
 
 const hakgyoansim = localFont({
   src: [
@@ -193,6 +194,11 @@ export default function RootLayout({
           <NotificationProvider>
             <WeddingProvider>
               {children}
+              {/*
+                메뉴를 누른 순간 목적지 뼈대를 덮는다. 없으면 다음 화면 코드가
+                도착할 때까지 이전 화면이 멈춰 있다 (`lib/navPending`).
+              */}
+              <NavigationSkeleton />
               <SpeedInsights />
               <ApiLoadingOverlay />
               <SessionExpiredModal />

@@ -2,6 +2,7 @@
 
 import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import RouteSkeletonScreen from "@/app/components/RouteSkeleton";
 import AddPlanView from "./AddPlanView";
 
 /**
@@ -60,13 +61,7 @@ function AddPlanPageContent() {
 
 export default function AddPlanPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-[100dvh] w-full items-center justify-center bg-[#FFF5F2]">
-          <div className="text-[#FF8FA3]">불러오는 중...</div>
-        </div>
-      }
-    >
+    <Suspense fallback={<RouteSkeletonScreen pathname="/add-plen" />}>
       <AddPlanPageContent />
     </Suspense>
   );

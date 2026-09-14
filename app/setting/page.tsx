@@ -2,8 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { Suspense, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Check, Heart, Plus } from "lucide-react";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
 import KakaoLoginAlert from "../components/KakaoLoginAlert";
 import CustomAlertModal from "../components/CustomAlertModal";
 import LandingHero from "../components/LandingHero";
@@ -63,7 +64,7 @@ const Lanyard = dynamic(() => import("../../components/Lanyard"), {
 });
 
 function SettingPageContent() {
-  const router = useRouter();
+  const router = useAppRouter();
   const searchParams = useSearchParams();
   const { weddingData, setBudget, setName, setDate } = useWedding();
   const { fetchWithAuth } = useApi();

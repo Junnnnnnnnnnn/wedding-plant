@@ -460,6 +460,28 @@ main {
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
+/*
+  분홍 머리 면 위의 뼈. 회색 시머를 그대로 얹으면 분홍 위에서 때가 탄
+  얼룩처럼 보여, 흰색을 옅게 깔고 같은 박자로 빛을 흘린다.
+*/
+.skeleton-on-brand {
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.2) 0%,
+    rgb(255 255 255 / 0.38) 50%,
+    rgb(255 255 255 / 0.2) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer,
+  .skeleton-on-brand {
+    animation: none;
+  }
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

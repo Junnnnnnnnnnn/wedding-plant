@@ -14,7 +14,6 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -23,6 +22,8 @@ import {
   useState,
   type ReactElement,
 } from "react";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
+import RouteSkeletonScreen from "@/app/components/RouteSkeleton";
 import FeedbackModal from "../components/FeedbackModal";
 import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
@@ -140,7 +141,7 @@ export default function ScheduleDetailView({
   onDeleted,
 }: ScheduleDetailViewProps) {
   const isInspector = variant === "inspector";
-  const router = useRouter();
+  const router = useAppRouter();
   const { fetchWithAuth } = useApi();
   const { unreadCount } = useNotification();
   const mainScrollRef = useRef<HTMLElement>(null);
@@ -290,6 +291,8 @@ export default function ScheduleDetailView({
       try {
         const res = await fetchWithAuth(`/plan/schedule/${scheduleId}`, {
           method: "GET",
+          // 전역 스피너 대신 뼈대를 낸다 (위 `loading` 분기)
+          skipLoading: true,
           signal: controller.signal,
         });
 
@@ -520,13 +523,22 @@ export default function ScheduleDetailView({
 
   let content: ReactElement | null = null;
 
-  if (loading) {
+  if (loading || (!detail && !error)) {
+    // 인스펙터 자리의 뼈대. 단독 라우트는 아래에서 셸째로 뼈대를 낸다
     content = (
-      <section className="flex flex-1 items-center justify-center rounded-3xl bg-white p-10 shadow-md">
-        <div className="flex items-center gap-3 text-[#ee2b8c]">
-          <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
-          <span className="text-base font-semibold">불러오는 중...</span>
+      <section
+        aria-busy
+        className="rounded-[24px] border border-[#ee2b8c0f] bg-white p-5 shadow-sm"
+      >
+        <span className="sr-only">플랜을 불러오는 중입니다</span>
+        <div className="flex justify-between">
+          <span className="skeleton-shimmer block h-6 w-16 rounded-full" />
+          <span className="skeleton-shimmer block h-6 w-14 rounded-full" />
         </div>
+        <span className="skeleton-shimmer mt-4 block h-6 w-3/4 rounded-lg" />
+        <span className="skeleton-shimmer mt-2.5 block h-3.5 w-1/2 rounded" />
+        <span className="skeleton-shimmer mt-5 block h-8 w-28 rounded-lg" />
+        <span className="skeleton-shimmer mt-6 block h-[140px] w-full rounded-2xl" />
       </section>
     );
   } else if (error) {
@@ -1177,6 +1189,14 @@ export default function ScheduleDetailView({
   );
 
   if (isInspector) return body;
+
+  /*
+    단독 라우트는 받는 동안 **셸째로** 뼈대를 낸다. 예전에는 요청이 전역
+    오버레이를 켜서 스피너가 화면 전체를 덮었다.
+  */
+  if (loading || (!detail && !error)) {
+    return <RouteSkeletonScreen pathname="/schedule-detail" />;
+  }
 
   /*
     단독 라우트(/schedule-detail)도 셸을 쓴다. 예전에는 max-w-md 폰 프레임

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ChevronRight, Globe, Heart, RefreshCw } from "lucide-react";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
 import { getToken } from "@/lib/api";
 import { BragMyStatus } from "@/types";
 import { useApi } from "../contexts/ApiContext";
@@ -81,7 +81,7 @@ function publishStatus(next: BragMyStatus | null) {
 }
 
 export default function BragToggle({ compact = false }: BragToggleProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const { fetchWithAuth } = useApi();
 
   const [status, setStatus] = useState<BragMyStatus | null>(store.status);

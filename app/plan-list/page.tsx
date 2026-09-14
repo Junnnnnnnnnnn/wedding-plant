@@ -2,7 +2,9 @@
 
 import React, { Suspense, useEffect, useState, useCallback } from "react";
 import { MessageCircle, CircleHelp } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useAppRouter } from "@/app/hooks/useAppRouter";
+import RouteSkeletonScreen from "@/app/components/RouteSkeleton";
 import { Plan, ChatRoom, Member } from "@/types";
 import { getDaysUntil, parseLocalDate } from "@/lib/utils";
 import { useApi } from "../contexts/ApiContext";
@@ -262,7 +264,7 @@ const CardBudget: React.FC<CardBudgetProps> = ({
 };
 
 const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
-  const router = useRouter();
+  const router = useAppRouter();
   const searchParams = useSearchParams();
   const isDesktop = useIsDesktop();
   const { fetchWithAuth, setLoading: setGlobalLoading } = useApi();
@@ -545,7 +547,12 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
             </h2>
             <p className="mt-2 text-[14px] font-normal text-white/80 md:mt-1.5 md:text-[13px] md:text-[#7a6c74]">
               <span className="md:hidden">
-                함께 준비하는 플랜 {plans.length}개
+                {/* 받는 동안 '0개' 라고 먼저 말하지 않는다 */}
+                {listLoading ? (
+                  <span className="skeleton-on-brand inline-block h-3.5 w-36 rounded align-middle" />
+                ) : (
+                  <>함께 준비하는 플랜 {plans.length}개</>
+                )}
               </span>
               <span className="hidden md:inline">
                 함께 가꾸는 소중한 결혼 준비 계획들
@@ -565,31 +572,30 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
           <div className="space-y-6 md:grid md:grid-cols-1 md:gap-6 md:space-y-0 md:content-start @[680px]:md:grid-cols-2 @[1060px]:md:grid-cols-3">
             {listLoading ? (
               <div className="space-y-6 md:col-span-full md:grid md:grid-cols-1 md:gap-6 md:space-y-0 @[680px]:md:grid-cols-2 @[1060px]:md:grid-cols-3">
-                {/* Skeleton Cards */}
+                {/*
+                  실제 플랜 카드(이름·D-day → 남은 예산 → 대화)와 같은 짜임의 뼈대.
+                  예전 뼈대는 `bg-stone-50` 이라 흰 카드 위에서 **보이지 않았고**,
+                  지금은 없앤 멤버 줄·옛 32px 모서리가 남아 있었다.
+                */}
                 {[1, 2].map((i) => (
                   <div
                     key={i}
-                    className="w-full bg-white rounded-[32px] p-6 border border-[#ee2b8c05] shadow-sm relative overflow-hidden animate-pulse"
+                    aria-hidden
+                    className="w-full rounded-[20px] bg-[#f7f8f9] p-5 md:rounded-[28px] md:border md:border-[#ee2b8c0f] md:bg-white md:p-6 md:shadow-sm"
                   >
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="space-y-2">
-                        <div className="w-20 h-4 bg-stone-50 rounded-full" />
-                        <div className="w-40 h-8 bg-stone-50 rounded-xl" />
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <span className="skeleton-shimmer block h-6 w-40 rounded-lg" />
+                        <span className="skeleton-shimmer mt-2.5 block h-3.5 w-32 rounded" />
                       </div>
-                      <div className="w-10 h-10 bg-stone-50 rounded-2xl" />
+                      <span className="skeleton-shimmer block h-9 w-9 shrink-0 rounded-full" />
                     </div>
-                    <div className="space-y-3 mb-6">
-                      <div className="w-12 h-3 bg-stone-50 rounded-full" />
-                      <div className="flex gap-2">
-                        <div className="w-10 h-10 rounded-full bg-stone-50" />
-                        <div className="w-10 h-10 rounded-full bg-stone-50" />
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between mb-1">
-                        <div className="w-24 h-3 bg-stone-50 rounded-full" />
-                      </div>
-                      <div className="w-full h-2 bg-stone-50 rounded-full" />
+                    <span className="skeleton-shimmer mt-6 block h-8 w-32 rounded-lg" />
+                    <span className="skeleton-shimmer mt-2.5 block h-3.5 w-28 rounded" />
+                    <span className="skeleton-shimmer mt-5 block h-3 w-full rounded-full" />
+                    <div className="mt-6 border-t border-dashed border-stone-100 pt-5">
+                      <span className="skeleton-shimmer block h-3.5 w-14 rounded" />
+                      <span className="skeleton-shimmer mt-3 block h-12 w-full rounded-2xl" />
                     </div>
                   </div>
                 ))}
@@ -702,7 +708,7 @@ const PlanListPageContent: React.FC<PlanListPageProps> = ({ onSelectPlan }) => {
 // useSearchParams 는 Suspense 경계가 필요하다 (main·add-plen·budget-detail 과
 // 같은 패턴).
 const PlanListPage: React.FC<PlanListPageProps> = ({ onSelectPlan }) => (
-  <Suspense fallback={<div className="h-[100dvh] bg-[#fcfbfc]" />}>
+  <Suspense fallback={<RouteSkeletonScreen pathname="/plan-list" />}>
     <PlanListPageContent onSelectPlan={onSelectPlan} />
   </Suspense>
 );
