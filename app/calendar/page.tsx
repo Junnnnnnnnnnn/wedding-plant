@@ -11,6 +11,8 @@ import {
 import { ChevronLeft, ChevronRight, Plus, Check, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { TAB_ROUTES } from "@/app/components/tabs";
+import { withBoundRoom } from "@/lib/boundRoom";
 import { isPaid } from "@/lib/schedulePaid";
 import AppShell from "../components/AppShell";
 import BottomTabBar from "../components/BottomTabBar";
@@ -563,11 +565,12 @@ function CalendarPageContent() {
         <BottomTabBar
           activeTab="home"
           onTabClick={(tab) => {
-            if (tab === "home") {
-              if (roomId) router.push(`/main?roomId=${roomId}`);
-              else router.push("/main");
-            } else if (tab === "rooms") router.push("/plan-list");
-            else if (tab === "settings") router.push("/user");
+            /*
+              `tabs.ts` 한 곳에서 목적지를 가져온다. 예전에는 여기서 세 탭만
+              적어 두어서 **피드를 누르면 아무 분기도 안 타고 아무 일도
+              일어나지 않았다.**
+            */
+            router.push(withBoundRoom(TAB_ROUTES[tab]));
           }}
           unreadCount={unreadCount}
         />
