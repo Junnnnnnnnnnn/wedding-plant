@@ -1507,7 +1507,7 @@ export default function AddPlanView({
                   className="font-user-content mt-3 w-full bg-transparent text-[24px] font-bold leading-tight tracking-[-0.03em] text-white outline-none placeholder:text-white/50"
                 />
                 <p className="mt-1 text-[14px] text-white/80">
-                  제목을 누르면 고칠 수 있어요
+                  제목을 누르면 입력할 수 있어요
                 </p>
               </div>
             )}
