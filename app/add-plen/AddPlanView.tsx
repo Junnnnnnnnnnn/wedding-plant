@@ -31,7 +31,7 @@ import {
 } from "@/lib/guestSchedule";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { useIsTabletUp } from "../hooks/useMediaQuery";
-import AddPlanSheet from "./AddPlanSheet";
+import AddPlanSheet, { sharedCategoryLabel } from "./AddPlanSheet";
 import DatePickerModal from "../components/DatePickerModal";
 import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
@@ -642,6 +642,8 @@ export default function AddPlanView({
     color: string;
     label: string;
     type?: "SYSTEM" | "USER" | "ROOM";
+    /** 방에서 공유된 것(ROOM)에만 온다. 없으면 예전 배포의 응답이다 */
+    createdByName?: string;
   };
 
   const [allCategories, setAllCategories] = useState<CategoryItem[]>([]);
@@ -669,6 +671,7 @@ export default function AddPlanView({
               name: string;
               color: string;
               type: "SYSTEM" | "USER" | "ROOM";
+              createdByName?: string;
             }>;
           };
         } | null;
@@ -682,6 +685,7 @@ export default function AddPlanView({
             color: getColorByLabel(item.name),
             label: item.name,
             type: item.type,
+            createdByName: item.createdByName,
           }))
           .sort((a, b) => a.label.localeCompare(b.label, "ko"));
         setAllCategories(list);
@@ -2294,10 +2298,12 @@ export default function AddPlanView({
                         )}
                         {"type" in category && category.type === "ROOM" && (
                           <span
-                            className="rounded-full bg-stone-600 text-white text-xs font-bold px-2 py-0.5"
-                            aria-label="공유 카테고리"
+                            className="max-w-[120px] truncate rounded-full bg-stone-600 text-white text-xs font-bold px-2 py-0.5"
+                            aria-label={sharedCategoryLabel(
+                              category as CategoryItem,
+                            )}
                           >
-                            room
+                            {sharedCategoryLabel(category as CategoryItem)}
                           </span>
                         )}
                       </span>

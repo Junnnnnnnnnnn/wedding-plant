@@ -25,6 +25,15 @@ interface SettingsPageProps {
     adAgreementDate?: string | null;
   }) => Promise<boolean> | boolean | void;
   onClose: () => void;
+  /**
+   * 배우자로 귀속된 방의 방장 이름. 있으면 **결혼식 날짜·예식장·예산을 그
+   * 사람 것으로** 보여 주고 고칠 수 없게 한다 — 홈·보드·예산이 이미 그
+   * 방을 보고 있어서(`lib/boundRoom.ts`) 여기만 내 기록을 고치게 두면
+   * 고쳐도 아무 데도 안 바뀌는 칸이 된다. 결혼식은 한 번이다.
+   *
+   * 이름은 그대로 고친다. 방 안에서 나를 가리키는 값이다.
+   */
+  boundOwnerName?: string | null;
   onSignOut?: () => void;
   /**
    * 회원 탈퇴. 성공 여부를 반환한다.
@@ -100,6 +109,13 @@ const Field: React.FC<{
   </div>
 );
 
+/**
+ * 고칠 수 없는 값(귀속된 사람의 날짜·예식장·예산). 입력 칸과 같은 자리·같은
+ * 크기로 두되 색을 한 단계 낮춰 **눌러도 안 되는 자리임을 보이게** 한다.
+ */
+const READ_ONLY_CLASS =
+  "flex w-full items-center gap-2 text-[16px] font-medium tracking-[-0.01em] text-[#555d6d] md:text-[15px] md:font-bold";
+
 const INPUT_CLASS =
   "w-full bg-transparent text-[16px] font-medium tracking-[-0.01em] text-[#1a1c20] outline-none placeholder:font-normal placeholder:text-[#b0b4bb] md:text-[15px] md:font-bold md:text-[#1b0d14] md:placeholder:text-[#c8bfc4]";
 
@@ -107,6 +123,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   user,
   onSave,
   onClose,
+  boundOwnerName,
   onSignOut,
   onWithdraw,
 }) => {
@@ -426,6 +443,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 정보 수정
               </p>
 
+              {boundOwnerName && (
+                <p className="mb-4 rounded-2xl bg-[#fff5fa] px-4 py-3 text-[12.5px] leading-relaxed text-[#96296a]">
+                  <b className="font-bold">{boundOwnerName}</b> 님과 함께
+                  준비하고 있어요. 결혼식 날짜 · 예식장 · 예산은{" "}
+                  <b className="font-bold">{boundOwnerName}</b> 님의 플랜을
+                  따라가고, 여기서는 바꿀 수 없어요.
+                </p>
+              )}
+
               <div className="grid gap-4 md:gap-3">
                 <Field label="이름">
                   <input
@@ -444,45 +470,73 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 예전에는 칸 옆에 보라색 달력 버튼이 따로 있었는데, 칸 자체가
                 이미 눌리므로 하는 일이 같았고 앱에 없는 색이었다.
               */}
-                <Field label="결혼식 날짜" suffix="눌러서 바꾸기">
-                  <button
-                    type="button"
-                    onClick={() => setIsDatePickerOpen(true)}
-                    className="flex w-full items-center gap-2 text-left text-[16px] font-medium tracking-[-0.01em] text-[#1a1c20] md:text-[15px] md:font-bold md:text-[#1b0d14]"
-                  >
-                    {/* 아이콘은 넓은 화면에만. 폰은 라벨이 이미 밖에 있어
+                <Field
+                  label="결혼식 날짜"
+                  suffix={boundOwnerName ? undefined : "눌러서 바꾸기"}
+                >
+                  {boundOwnerName ? (
+                    <p className={READ_ONLY_CLASS}>
+                      <Calendar className="hidden h-4 w-4 shrink-0 text-[#ee2b8c] md:block" />
+                      {formatKoreanDate(formData.weddingDate) || "미정"}
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsDatePickerOpen(true)}
+                      className="flex w-full items-center gap-2 text-left text-[16px] font-medium tracking-[-0.01em] text-[#1a1c20] md:text-[15px] md:font-bold md:text-[#1b0d14]"
+                    >
+                      {/* 아이콘은 넓은 화면에만. 폰은 라벨이 이미 밖에 있어
                       무슨 칸인지 두 번 말할 필요가 없다 */}
-                    <Calendar className="hidden h-4 w-4 shrink-0 text-[#ee2b8c] md:block" />
-                    {formatKoreanDate(formData.weddingDate) || "날짜 선택"}
-                  </button>
+                      <Calendar className="hidden h-4 w-4 shrink-0 text-[#ee2b8c] md:block" />
+                      {formatKoreanDate(formData.weddingDate) || "날짜 선택"}
+                    </button>
+                  )}
                 </Field>
 
                 {/*
                 예식장 이름. 비워 둘 수 있다 — 아직 안 정한 사람이 대부분이고,
                 넣어 두면 홈 상단에 결혼식 날짜와 나란히 붙는다.
               */}
-                <Field label="예식장" labelHint="(선택)">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="hidden h-4 w-4 shrink-0 text-gray-300 md:block" />
-                    <input
-                      type="text"
-                      placeholder="아직 안 정했어요"
-                      value={formData.weddingVenue ?? ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          weddingVenue: e.target.value,
-                        })
-                      }
-                      className={INPUT_CLASS}
-                    />
-                  </div>
+                <Field
+                  label="예식장"
+                  labelHint={boundOwnerName ? undefined : "(선택)"}
+                >
+                  {boundOwnerName ? (
+                    <p className={READ_ONLY_CLASS}>
+                      <MapPin className="hidden h-4 w-4 shrink-0 text-gray-300 md:block" />
+                      {formData.weddingVenue?.trim() || "아직 안 정했어요"}
+                    </p>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="hidden h-4 w-4 shrink-0 text-gray-300 md:block" />
+                      <input
+                        type="text"
+                        placeholder="아직 안 정했어요"
+                        value={formData.weddingVenue ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            weddingVenue: e.target.value,
+                          })
+                        }
+                        className={INPUT_CLASS}
+                      />
+                    </div>
+                  )}
                 </Field>
 
+                {/* `만원` 은 조작 안내가 아니라 단위다. 못 고치는 상태에서도
+                    단위는 그대로 둔다 — 빼면 넓은 화면에서 숫자만 남는다 */}
                 <Field label="예산" suffix="만원" unit="만 원">
-                  <div className="flex items-center gap-2">
-                    <Wallet className="hidden h-4 w-4 shrink-0 text-gray-300 md:block" />
-                    {/*
+                  {boundOwnerName ? (
+                    <p className={`font-user-content ${READ_ONLY_CLASS}`}>
+                      <Wallet className="hidden h-4 w-4 shrink-0 text-gray-300 md:block" />
+                      {formData.budget.toLocaleString("ko-KR")}
+                    </p>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Wallet className="hidden h-4 w-4 shrink-0 text-gray-300 md:block" />
+                      {/*
                       값이 0 이면 칸을 **비우고** placeholder 로 회색 0 만 둔다.
                       검은 "0" 이 박혀 있으면 3 을 치는 순간 "03" 이 되고,
                       지우려면 0 까지 한 번 더 지워야 했다.
@@ -492,24 +546,25 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                       위치도 읽을 수 없어, 아래 선행 0 제거를 할 수 없다.
                       폰에서는 inputMode 가 숫자 키패드를 그대로 띄운다.
                     */}
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="0"
-                      value={
-                        formData.budget === 0 ? "" : String(formData.budget)
-                      }
-                      onChange={(e) => {
-                        const next = applyDigitInput(e.currentTarget);
-                        setFormData({
-                          ...formData,
-                          // 다 지우면 0 — 0 도 유효한 예산이다.
-                          budget: next === "" ? 0 : Number(next),
-                        });
-                      }}
-                      className={`font-user-content ${INPUT_CLASS}`}
-                    />
-                  </div>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="0"
+                        value={
+                          formData.budget === 0 ? "" : String(formData.budget)
+                        }
+                        onChange={(e) => {
+                          const next = applyDigitInput(e.currentTarget);
+                          setFormData({
+                            ...formData,
+                            // 다 지우면 0 — 0 도 유효한 예산이다.
+                            budget: next === "" ? 0 : Number(next),
+                          });
+                        }}
+                        className={`font-user-content ${INPUT_CLASS}`}
+                      />
+                    </div>
+                  )}
                 </Field>
               </div>
 

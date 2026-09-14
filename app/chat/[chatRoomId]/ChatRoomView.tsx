@@ -1246,7 +1246,12 @@ export default function ChatRoomView({
                       }
                     }, 400);
                   }}
-                  placeholder="메시지를 입력하세요..."
+                  /*
+                    320px 에서는 입력 칸의 글자 자리가 128px 뿐이라
+                    "메시지를 입력하세요..." 가 두 줄로 접혔다. 칸이 한 줄
+                    높이(min-h-[44px])라 둘째 줄이 잘려 보였다.
+                  */
+                  placeholder="메시지 입력"
                   className="w-full bg-gray-50 text-stone-800 text-base font-normal leading-relaxed rounded-2xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-[#ee2b8c33] transition-all resize-none overflow-y-auto no-scrollbar min-h-[44px]"
                   style={{
                     maxHeight: "120px",

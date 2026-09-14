@@ -10,6 +10,7 @@ import { useApi } from "../contexts/ApiContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { getToken, clearAllStoredData } from "@/lib/api";
 import { getKstDateString } from "@/lib/utils";
+import { findBoundRoom } from "@/lib/boundRoom";
 
 /** 예산은 0도 유효한 값이므로 `|| 1000` 대신 빈 값/NaN일 때만 기본값을 쓴다 */
 function toBudget(raw: unknown, fallback = 1000): number {
@@ -48,9 +49,79 @@ export default function UserPage() {
     adAgreementDate?: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  /*
+    배우자로 귀속된 방의 방장 이름. 있으면 **결혼식 날짜·예식장·예산이 내
+    기록이 아니라 방장 것**이다 — 홈·보드·예산이 이미 그 방을 보고 있는데
+    (`lib/boundRoom.ts`) 이 화면만 내 기록을 보여 주면, 같은 사람에게 서로
+    다른 예산과 D-day 가 동시에 뜬다. 결혼식은 한 번이라 날짜도 예식장도
+    예산도 하나다.
+
+    이름만 내 것이다. 방 안에서 나를 가리키는 값이라 각자 다른 게 맞다.
+  */
+  const [boundOwnerName, setBoundOwnerName] = useState<string | null>(null);
+  /*
+    내 기록의 원래 값. 귀속되어 화면에는 방장 값이 떠도 저장할 때는 이걸
+    그대로 돌려보낸다 — 안 그러면 이름만 바꿔 저장해도 내 예산·날짜가
+    방장 값으로 덮어써진다(귀속이 풀리면 그 값이 다시 내 플랜이 된다).
+  */
+  const [ownRecord, setOwnRecord] = useState<{
+    weddingDate: string;
+    weddingVenue?: string | null;
+    budget: number;
+  } | null>(null);
   /* 게스트에게는 지울 계정이 없다. 렌더 중에 getToken() 을 읽으면 서버
      렌더와 값이 달라 하이드레이션이 어긋나므로 상태로 들고 있는다. */
   const [isMember, setIsMember] = useState(false);
+
+  /**
+   * 배우자로 귀속된 방의 플랜. 귀속이 아니면 `null`.
+   *
+   * 판단 근거는 `/plan/room/list` 의 권한 하나뿐이고(`findBoundRoom`),
+   * 값은 `GET /plan/room/{roomId}` — 방장의 날짜·예산·예식장이다.
+   * **실패하면 조용히 `null`** 이다. 내 기록을 그대로 보여 주는 쪽이,
+   * 아무것도 못 보여 주는 것보다 낫다.
+   */
+  const fetchBoundPlan = useCallback(async (): Promise<{
+    ownerName: string;
+    weddingDate: string;
+    weddingVenue: string | null;
+    budget: number;
+  } | null> => {
+    try {
+      const listRes = await fetchWithAuth("/plan/room/list", {
+        skipLoading: true,
+      });
+      if (!listRes.ok) return null;
+      const listJson = (await listRes.json().catch(() => null)) as {
+        data?: { list?: Array<{ roomId?: number | null }> };
+      } | null;
+      const bound = findBoundRoom(listJson?.data?.list);
+      if (bound?.roomId == null) return null;
+
+      const roomRes = await fetchWithAuth(`/plan/room/${bound.roomId}`, {
+        skipLoading: true,
+      });
+      if (!roomRes.ok) return null;
+      const roomJson = (await roomRes.json().catch(() => null)) as {
+        result?: boolean;
+        data?: {
+          name?: string | null;
+          weddingDate?: string | null;
+          weddingVenue?: string | null;
+          budget?: number | null;
+        };
+      } | null;
+      if (roomJson?.result !== true || !roomJson.data) return null;
+      return {
+        ownerName: (roomJson.data.name ?? "").trim(),
+        weddingDate: roomJson.data.weddingDate ?? "",
+        weddingVenue: roomJson.data.weddingVenue ?? null,
+        budget: toBudget(roomJson.data.budget),
+      };
+    } catch {
+      return null;
+    }
+  }, [fetchWithAuth]);
 
   const fetchUser = useCallback(async () => {
     // 게스트/실패 시 사용할 로컬 기준값 (날짜는 KST 기준)
@@ -80,25 +151,41 @@ export default function UserPage() {
         result?: boolean;
         data?: PlanUserData;
       };
-      if (json.result === true && json.data) {
-        const d = json.data;
-        setUserData({
-          name: d.name ?? "",
-          weddingDate: d.weddingDate ?? getKstDateString(),
-          weddingVenue: d.weddingVenue ?? null,
-          budget: toBudget(d.budget),
-          requiredAgreementDate: d.requiredAgreementDate ?? null,
-          adAgreementDate: d.adAgreementDate ?? null,
-        });
-      } else {
-        setUserData(localFallback());
-      }
+      const mine =
+        json.result === true && json.data
+          ? {
+              name: json.data.name ?? "",
+              weddingDate: json.data.weddingDate ?? getKstDateString(),
+              weddingVenue: json.data.weddingVenue ?? null,
+              budget: toBudget(json.data.budget),
+              requiredAgreementDate: json.data.requiredAgreementDate ?? null,
+              adAgreementDate: json.data.adAgreementDate ?? null,
+            }
+          : localFallback();
+      setOwnRecord({
+        weddingDate: mine.weddingDate,
+        weddingVenue: mine.weddingVenue,
+        budget: mine.budget,
+      });
+
+      const bound = await fetchBoundPlan();
+      setBoundOwnerName(bound?.ownerName ?? null);
+      setUserData(
+        bound
+          ? {
+              ...mine,
+              weddingDate: bound.weddingDate || mine.weddingDate,
+              weddingVenue: bound.weddingVenue,
+              budget: bound.budget,
+            }
+          : mine,
+      );
     } catch {
       setUserData(localFallback());
     } finally {
       setLoading(false);
     }
-  }, [fetchWithAuth, weddingData]);
+  }, [fetchWithAuth, fetchBoundPlan, weddingData]);
 
   useEffect(() => {
     fetchUser();
@@ -112,12 +199,20 @@ export default function UserPage() {
     requiredAgreementDate?: string | null;
     adAgreementDate?: string | null;
   }): Promise<boolean> => {
-    const dateStr = user.weddingDate;
+    /*
+      귀속된 사람의 화면에는 방장의 날짜·예식장·예산이 떠 있다. 그대로
+      저장하면 **내 기록이 방장 값으로 덮어써진다** — 함께하기를 그만두면
+      그 값이 내 플랜이 되므로, 보이기만 할 뿐 저장은 원래 내 값으로 한다.
+    */
+    const toSave =
+      boundOwnerName && ownRecord ? { ...user, ...ownRecord } : user;
+
+    const dateStr = toSave.weddingDate;
     const [y, m, d] = dateStr.split("-").map(Number);
     const date = { year: y, month: m, day: d };
-    setName(user.name.trim());
+    setName(toSave.name.trim());
     setDate(date);
-    setBudget(String(user.budget));
+    setBudget(String(toSave.budget));
 
     if (!getToken()) return true; // 게스트는 로컬 저장으로 끝
 
@@ -134,15 +229,15 @@ export default function UserPage() {
         method: "POST",
         body: JSON.stringify({
           weddingDate: dateStr,
-          budget: user.budget,
-          name: user.name.trim(),
+          budget: toSave.budget,
+          name: toSave.name.trim(),
           // 항상 보낸다. 빈 문자열이면 백엔드가 지운다 — 지우기를 표현할
           // 방법이 없으면 한 번 넣은 예식장을 못 빼게 된다.
-          weddingVenue: (user.weddingVenue ?? "").trim(),
+          weddingVenue: (toSave.weddingVenue ?? "").trim(),
           requiredAgreementDate:
-            user.requiredAgreementDate ?? getKstDateString(),
-          ...(user.adAgreementDate
-            ? { adAgreementDate: user.adAgreementDate }
+            toSave.requiredAgreementDate ?? getKstDateString(),
+          ...(toSave.adAgreementDate
+            ? { adAgreementDate: toSave.adAgreementDate }
             : {}),
         }),
       });
@@ -208,6 +303,7 @@ export default function UserPage() {
     >
       <SettingsPage
         user={userData}
+        boundOwnerName={boundOwnerName}
         onSave={handleSave}
         onClose={handleClose}
         onSignOut={handleSignOut}

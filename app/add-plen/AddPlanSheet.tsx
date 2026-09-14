@@ -26,6 +26,21 @@ export interface SheetCategory {
   color: string;
   label: string;
   type?: "SYSTEM" | "USER" | "ROOM";
+  /** 방에서 공유된 것(ROOM)에만 온다. 없으면 예전 배포의 응답이다 */
+  createdByName?: string;
+}
+
+/**
+ * 방에서 공유된 카테고리에 붙는 배지 문구.
+ *
+ * 예전에는 `room` 이라는 영어 한 단어였는데, 그 말로는 **누가 만든 것인지**
+ * 알 수 없다. 같은 방을 쓰는 사람이 더한 칸이라는 게 이 배지의 뜻이므로
+ * 이름을 적는다. 이름이 없는 건 이 필드가 생기기 전 배포의 응답뿐이라
+ * 그때만 `공유` 로 떨어진다 (`room` 으로 되돌리지 말 것 — 앱의 다른
+ * 어디에도 영어 라벨이 없다).
+ */
+export function sharedCategoryLabel(c: { createdByName?: string }): string {
+  return c.createdByName ? `${c.createdByName} 추가!` : "공유";
 }
 
 export interface SheetLocationResult {
@@ -289,10 +304,10 @@ export default function AddPlanSheet({
                           )}
                           {c.type === "ROOM" && (
                             <span
-                              aria-label="공유 카테고리"
-                              className="rounded-full bg-[#57534e] px-[5px] py-px text-[10px] font-extrabold leading-[1.4] text-white"
+                              aria-label={sharedCategoryLabel(c)}
+                              className="max-w-[96px] truncate rounded-full bg-[#57534e] px-[5px] py-px text-[10px] font-extrabold leading-[1.4] text-white"
                             >
-                              room
+                              {sharedCategoryLabel(c)}
                             </span>
                           )}
                         </button>
