@@ -193,6 +193,7 @@ export default function ScheduleDetailView({
   // 참여 방이면 내 권한을 확인해 READ일 때 수정·삭제를 감춘다.
   // 서버도 권한을 검사하지만, 누를 수 없는 버튼을 보여주지 않는 편이 낫다.
   useEffect(() => {
+    setMyPermission(null);
     const trimmedRoomId = roomId?.trim();
     if (!trimmedRoomId) {
       setMyPermission("OWN"); // 개인 플랜 — 방 권한 개념 없음
@@ -246,6 +247,7 @@ export default function ScheduleDetailView({
   const canEdit =
     myPermission === "OWN" ||
     myPermission === "OWNER" ||
+    myPermission === "SPOUSE" ||
     myPermission === "WRITE";
 
   useEffect(() => {
@@ -268,6 +270,7 @@ export default function ScheduleDetailView({
         title: guest.title,
         categoryName: guest.categoryName,
         amount: guest.amount ?? 0,
+        payType: guest.payType ?? null,
         startDate: guest.startDate,
         startTime: guest.startTime ?? null,
         status:
@@ -1079,7 +1082,7 @@ export default function ScheduleDetailView({
                 <span className="mt-0.5 block text-[12px] text-[#868b94]">
                   {isCompleted
                     ? "아직 안 끝난 일이면 되돌릴 수 있어요"
-                    : "끝난 일이면 눌러 주세요 · 예산의 지출로 잡힙니다"}
+                    : "끝난 일이면 눌러 주세요 · 결제 여부는 따로 관리해요"}
                 </span>
               </span>
             </button>

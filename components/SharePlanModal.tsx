@@ -70,11 +70,12 @@ const SharePlanModal: React.FC<SharePlanModalProps> = ({ isOpen, onClose }) => {
   const setSpouse = async (planUserId: string | null) => {
     setSpouseSaving(planUserId ?? "clear");
     try {
-      await fetchWithAuth("/plan/room/spouse", {
+      const res = await fetchWithAuth("/plan/room/spouse", {
         method: "PATCH",
         body: JSON.stringify({ planUserId }),
         skipLoading: true,
       });
+      if (!res.ok) throw new Error("배우자 변경에 실패했습니다.");
       await loadMembers();
     } catch {
       setShareError("변경에 실패했습니다. 잠시 후 다시 시도해 주세요.");

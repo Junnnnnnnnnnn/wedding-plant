@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { getToken, setShareAfterLogin, clearToken } from "@/lib/api";
+import { BOUND_ROOM_CACHE_KEY } from "@/lib/boundRoom";
 import { useApi } from "@/app/contexts/ApiContext";
 import LoginRequiredModal from "@/app/components/LoginRequiredModal";
 import SpouseJoinWarningModal from "@/app/components/SpouseJoinWarningModal";
@@ -56,6 +57,7 @@ export default function SharePage() {
         return;
       }
       if (res.ok) {
+        sessionStorage.removeItem(BOUND_ROOM_CACHE_KEY);
         router.replace("/plan-list");
         return;
       }

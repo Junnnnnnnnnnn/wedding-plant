@@ -14,7 +14,6 @@ import {
 import { motion, useScroll, useTransform, AnimatePresence } from "motion/react";
 import { useAppRouter } from "@/app/hooks/useAppRouter";
 import RouteSkeletonScreen from "@/app/components/RouteSkeleton";
-import CountUp from "@/components/CountUp";
 import AddPlanView from "../add-plen/AddPlanView";
 import AppShell from "../components/AppShell";
 import ScheduleDetailView from "../schedule-detail/ScheduleDetailView";
@@ -2051,14 +2050,7 @@ function MainPageContent() {
               >
                 <span className="min-w-0 flex-1">
                   <span className="block text-[14px] font-bold text-white">
-                    남은 예산{" "}
-                    <CountUp
-                      to={remainingBudget}
-                      separator=","
-                      duration={0.1}
-                      className="inline"
-                    />
-                    만 원
+                    남은 예산 {remainingBudget.toLocaleString("ko-KR")}만 원
                   </span>
                   <span className="mt-0.5 block text-[12px] text-white/75">
                     {initialBudget.toLocaleString("ko-KR")}만 원 중{" "}

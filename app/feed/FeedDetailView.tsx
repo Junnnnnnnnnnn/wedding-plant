@@ -102,11 +102,10 @@ export default function FeedDetailView({ postId }: FeedDetailViewProps) {
     if (handed) {
       setPost(handed);
       setLoading(false);
-      return;
     }
 
     /*
-      직접 주소를 열었거나 새로고침한 경우. 백엔드에 단건 조회가 없어
+      캐시가 있어도 최신 평가를 다시 확인한다. 백엔드에 단건 조회가 없어
       목록을 한 번 부르고 같은 id 를 찾는다. 첫 장에 없으면 거기서 멈춘다 —
       페이지를 끝까지 뒤지면 요청이 몇 번이고 나간다.
     */
@@ -120,10 +119,10 @@ export default function FeedDetailView({ postId }: FeedDetailViewProps) {
         const list = json?.data?.list as FeedPost[] | undefined;
         const found = list?.find((p) => p.id === postId) ?? null;
         if (found) setPost(found);
-        else setNotFound(true);
+        else if (!handed) setNotFound(true);
       })
       .catch(() => {
-        if (alive) setNotFound(true);
+        if (alive && !handed) setNotFound(true);
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -237,12 +236,18 @@ export default function FeedDetailView({ postId }: FeedDetailViewProps) {
         const res = await fetchWithAuth(`/plan/feed/${post.id}/vote`, {
           method: isCancel ? "DELETE" : "POST",
           skipLoading: true,
-          ...(isCancel ? {} : { body: JSON.stringify({ vote: next }) }),
+          ...(isCancel ? {} : { body: JSON.stringify({ value: next }) }),
         });
         const json = await res.json().catch(() => null);
+        if (!res.ok || json?.result !== true)
+          throw new Error("후기 평가 저장 실패");
         const count = json?.data?.helpfulCount;
         if (typeof count === "number") {
-          setPost((cur) => (cur ? { ...cur, helpfulCount: count } : cur));
+          setPost((cur) =>
+            cur
+              ? { ...cur, helpfulCount: count, myVote: json.data.myVote }
+              : cur,
+          );
         }
       } catch {
         setPost(before);

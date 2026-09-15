@@ -59,6 +59,7 @@ interface RoomMember {
 
 interface ChatInfo {
   id: number;
+  planUserRoomId?: number;
   name: string;
   /** 신랑·신부 방. 방장과 배우자 둘만 있는 방이다 */
   isCouple?: boolean;
@@ -496,6 +497,7 @@ export default function ChatRoomView({
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [planRoomId, setPlanRoomId] = useState<number | null>(null);
   const [roomName, setRoomName] = useState("플랜톡");
   /** 신랑·신부 방이면 머리글에 표식을 단다 */
   const [isCoupleRoom, setIsCoupleRoom] = useState(false);
@@ -750,6 +752,7 @@ export default function ChatRoomView({
         const json: ChatInfoResponse = await res.json();
         if (json.result && json.data) {
           setRoomName(json.data.name);
+          setPlanRoomId(json.data.planUserRoomId ?? null);
           setIsCoupleRoom(json.data.isCouple === true);
           const memberList = json.data.memberList ?? [];
           setMembers(memberList);
@@ -1197,7 +1200,7 @@ export default function ChatRoomView({
               scrollToBottom={scrollToBottomIfNearBottom}
               onScheduleClick={(scheduleId) => {
                 router.push(
-                  `/schedule-detail?id=${scheduleId}&roomId=${chatRoomId}`,
+                  `/schedule-detail?id=${scheduleId}${planRoomId == null ? "" : `&roomId=${planRoomId}`}`,
                 );
               }}
             />
