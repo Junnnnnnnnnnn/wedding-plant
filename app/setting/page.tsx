@@ -15,6 +15,7 @@ import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
 import {
   getToken,
+  getShareAfterLogin,
   HAS_COMPLETED_GUEST_SETTING_KEY,
   isPlanDataComplete,
   setGuestAgreement,
@@ -67,8 +68,10 @@ function SettingPageContent() {
   const router = useAppRouter();
   const searchParams = useSearchParams();
   const { weddingData, setBudget, setName, setDate } = useWedding();
-  const { fetchWithAuth } = useApi();
+  const { fetchWithAuth, sessionExpired } = useApi();
   const showKakaoLogin = searchParams.get("kakao_login") === "1";
+  // 토큰 교환 중 URL 쿼리를 지워도 다음 목적지가 정해질 때까지 유지합니다.
+  const [handlingLoginCallback] = useState(showKakaoLogin);
   const [showFirst, setShowFirst] = useState(true);
   const [showSecond, setShowSecond] = useState(false);
   const [showThird, setShowThird] = useState(false);
@@ -185,9 +188,20 @@ function SettingPageContent() {
     }
   }, [weddingData.date, weddingData.budget, weddingData.name, router]);
 
-  // 토큰 있으면 GET /plan/user 조회. weddingDate·budget 없으면 setting 플로우 진행
+  // 초대와 로그인 콜백이 온보딩보다 먼저 목적지를 결정합니다.
   useEffect(() => {
+    if (handlingLoginCallback) return;
     const token = getToken();
+    const directShare = searchParams.get("share")?.trim();
+    const pendingInvite = directShare
+      ? `${encodeURIComponent(directShare)}${searchParams.get("as") === "spouse" ? "?as=spouse" : ""}`
+      : token
+        ? getShareAfterLogin()
+        : null;
+    if (pendingInvite) {
+      router.replace(`/share/${pendingInvite}`);
+      return;
+    }
     if (!token) {
       setUserCheckDone(true);
       return;
@@ -198,6 +212,7 @@ function SettingPageContent() {
     const check = async () => {
       try {
         const res = await fetchWithAuth("/plan/user");
+        if (res.status === 401 || res.status === 403) return;
         const json = (await res.json()) as {
           result?: boolean;
           data?: {
@@ -245,16 +260,24 @@ function SettingPageContent() {
         } else {
           setNextStep("fourth");
         }
+        setUserCheckDone(true);
       } catch {
-        // fetch 실패 시 날짜 단계부터 진행
+        // 초대·인증 분기가 없는 일반 온보딩만 날짜 단계부터 진행합니다.
         setNextStep("second");
-      } finally {
         setUserCheckDone(true);
       }
     };
 
     check();
-  }, [fetchWithAuth, router, setName, setBudget, setDate]);
+  }, [
+    fetchWithAuth,
+    router,
+    setName,
+    setBudget,
+    setDate,
+    handlingLoginCallback,
+    searchParams,
+  ]);
 
   useEffect(() => {
     // 페이지 전체 스크롤 방지 및 오버스크롤 방지
@@ -497,6 +520,21 @@ function SettingPageContent() {
       setCountUpKey((prev) => prev + 1); // CountUp 재시작을 위한 key 변경
     }
   };
+
+  // 확인 전에는 축하 연출을 마운트하지 않습니다. 이름/초대/인증 알림이
+  // 먼저 열려야 하는 사람에게 온보딩 화면이 잠깐이라도 보이면 안 됩니다.
+  if (
+    !userCheckDone ||
+    handlingLoginCallback ||
+    showKakaoLogin ||
+    sessionExpired
+  ) {
+    return (
+      <div className="h-[100dvh] bg-[#fcfbfc]">
+        <KakaoLoginAlert show={handlingLoginCallback || showKakaoLogin} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[100dvh] justify-center bg-[#fcfbfc] px-0 text-stone-900 overflow-hidden overscroll-none lg:px-0">

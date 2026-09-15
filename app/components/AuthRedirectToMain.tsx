@@ -3,7 +3,12 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useApi } from "@/app/contexts/ApiContext";
-import { clearToken, getToken, isPlanDataComplete } from "@/lib/api";
+import {
+  clearToken,
+  getToken,
+  getShareAfterLogin,
+  isPlanDataComplete,
+} from "@/lib/api";
 
 /** JWT + 플랜 정보가 있으면 /main으로 보낼 진입 경로 (상세·추가 등은 제외).
     `/login` 도 문이라 여기 든다 — 이미 로그인된 사람이 주소로 들어오면 통과시킨다. */
@@ -41,6 +46,11 @@ export default function AuthRedirectToMain() {
     const token = getToken();
     // JWT 없을 때(예: 로그인 없이 둘러보기 후 setting → main) /plan/user 요청 금지
     if (!token || !ENTRY_PATHS.includes(pathname)) return;
+    const invite = getShareAfterLogin();
+    if (invite) {
+      router.replace(`/share/${invite}`);
+      return;
+    }
     // 동일 path 내 중복 요청 방지
     if (checkedRef.current) return;
     checkedRef.current = true;

@@ -8,7 +8,6 @@ import {
   clearToken,
   setToken,
   getShareAfterLogin,
-  clearShareAfterLogin,
   getReturnPathAfterLogin,
   clearReturnPathAfterLogin,
   HAS_COMPLETED_GUEST_SETTING_KEY,
@@ -377,20 +376,10 @@ export default function KakaoLoginAlert({
               } catch {
                 // name check 실패 시 무시
               }
-              try {
-                // 방 참여 API 호출
-                await fetchWithAuth(`/plan/room/${shareCode}`, {
-                  method: "POST",
-                });
-              } catch (err) {
-                console.error("Failed to join room after login:", err);
-              } finally {
-                clearShareAfterLogin();
-                // useKakaoAuth 가 /share/CODE 를 returnPath 로도 저장해 두는데
-                // 여기서 지우지 않으면 다음 로그인이 그 공유 페이지로 끌려간다.
-                clearReturnPathAfterLogin();
-              }
-              return { path: "/plan-list" };
+              // 참여 전 확인은 초대 화면 한 곳에서 처리합니다. 여기서 POST 하면
+              // 신랑·신부 경고를 건너뛰고, 오류 알림보다 온보딩이 먼저 보일 수 있습니다.
+              clearReturnPathAfterLogin();
+              return { path: `/share/${shareCode}` };
             }
 
             const returnPath = getReturnPathAfterLogin();

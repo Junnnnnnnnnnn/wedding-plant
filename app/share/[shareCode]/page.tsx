@@ -3,7 +3,12 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { getToken, setShareAfterLogin, clearToken } from "@/lib/api";
+import {
+  getToken,
+  setShareAfterLogin,
+  clearShareAfterLogin,
+  clearToken,
+} from "@/lib/api";
 import { BOUND_ROOM_CACHE_KEY } from "@/lib/boundRoom";
 import { useApi } from "@/app/contexts/ApiContext";
 import LoginRequiredModal from "@/app/components/LoginRequiredModal";
@@ -57,6 +62,7 @@ export default function SharePage() {
         return;
       }
       if (res.ok) {
+        clearShareAfterLogin();
         sessionStorage.removeItem(BOUND_ROOM_CACHE_KEY);
         router.replace("/plan-list");
         return;
@@ -132,11 +138,13 @@ export default function SharePage() {
   const handleSpouseCancel = () => {
     if (joining) return;
     setShowSpouseWarning(false);
+    clearShareAfterLogin();
     router.replace("/main");
   };
 
   const handleCloseModal = () => {
     setShowLoginModal(false);
+    clearShareAfterLogin();
     router.replace("/");
   };
 
@@ -263,7 +271,7 @@ export default function SharePage() {
           <div className="mt-5 flex gap-2">
             <button
               type="button"
-              onClick={() => router.replace("/")}
+              onClick={handleCloseModal}
               className="flex-1 h-12 rounded-2xl border border-gray-200 bg-white font-bold text-sm text-[#1b0d14] hover:bg-gray-50 transition-all"
             >
               홈으로
