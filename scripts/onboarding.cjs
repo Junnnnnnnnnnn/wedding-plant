@@ -5,16 +5,15 @@
  * 그보다 좁으면 예전 그대로 한 화면에 하나씩이다.
  * 단계를 실제로 눌러 넘기며 찍는다.
  *
- * **단계 수가 로그인 여부에 따라 다르다.**
- *   게스트  날짜 → 예산 → 이름 → 약관               (4단계)
- *   회원    날짜 → 예산 → 이름 → 약관 → 함께할 사람  (5단계)
- * 게스트는 방이 없어 공유 코드가 안 나오므로 초대 단계를 내지 않는다.
+ * **온보딩은 로그인한 사람만 온다**(`GuestGate`). 단계는 하나뿐이다 —
+ *   날짜 → 예산 → 이름 → 약관 → 함께할 사람  (5단계)
+ * 예전에는 게스트 4단계를 함께 돌았다. 게스트 모드를 없애면서 같이 걷어냈고,
+ * 토큰 없이 `/setting` 에 가면 랜딩으로 밀려나는지는
+ * `scripts/auth-required.cjs` 가 본다.
  *
  * **초대는 반드시 저장 뒤에 온다.** `POST /plan/setting` 이 먼저 나가지 않으면
  * 초대받은 사람이 날짜·예산·이름이 빈 플랜에 들어오고, 필수·제3자 제공 동의
  * 전에 접근 권한을 주는 링크가 나간다. 요청 순서(`seen`)로 확인한다.
- * 두 모드를 모두 돈다 (회원 모드는 기본 375·1280 두 폭만 — 초대 단계
- * 마크업은 폭과 무관하고, 좌우 분할은 게스트 모드에서 이미 다 본다).
  *
  * 준비:  npm run dev / npm install --no-save puppeteer-core
  * 실행:  node scripts/onboarding.cjs
@@ -53,9 +52,9 @@ const ok = (d) => ({
 });
 
 /**
- * 게스트는 백엔드가 전부 빈 응답이면 된다. 회원 모드는 세 가지를 진짜처럼
- * 준다 — `/plan/user`, `/plan/room/share-code`(초대 단계가 링크를 받아 오는
- * 곳), `POST /plan/setting`(약관 단계의 저장).
+ * 세 가지를 진짜처럼 준다 — `/plan/user`, `/plan/room/share-code`(초대 단계가
+ * 링크를 받아 오는 곳), `POST /plan/setting`(약관 단계의 저장). 나머지는 빈
+ * 응답이면 된다.
  *
  * **`/plan/user` 는 상태를 갖는다.** 저장 전에는 날짜·예산·이름이 비어 있어야
  * 온보딩이 계속 진행되고, 저장 뒤에는 채워져 있어야 재진입 시 `/main` 으로
@@ -163,15 +162,16 @@ const clickNext = (label) => {
     : [375, 768, 1280, 1686, 2327];
   const HEIGHT = Number(process.env.HEIGHT || 900);
 
-  // 회원 모드는 폭을 좁혀 돈다 — 초대 단계 마크업은 폭과 무관하고,
-  // 좌우 분할 자체는 게스트 모드에서 다섯 폭 전부 확인한다.
-  const MEMBER_WIDTHS = process.env.WIDTHS ? WIDTHS : [375, 1280];
-
-  for (const member of [false, true]) {
-    const widths = member ? MEMBER_WIDTHS : WIDTHS;
-    const tagOf = (t) => (member ? `회원-${t}` : t);
-    // 회원은 이름 다음에 초대 단계가 끼어 약관이 5단계가 된다
-    const totalSteps = member ? 5 : 4;
+  /*
+    예전에는 게스트(4단계)와 회원(5단계) 두 모드를 돌았다. 게스트 모드를
+    없애면서 회원 하나만 남았다 — `member` 는 목 응답을 진짜처럼 주는
+    스위치라 이름 그대로 두고 항상 켠다.
+  */
+  for (const member of [true]) {
+    const widths = WIDTHS;
+    const tagOf = (t) => t;
+    // 이름 다음에 초대 단계가 끼어 약관이 5단계 중 4번째가 된다
+    const totalSteps = 5;
     for (const w of widths) {
       const page = await browser.newPage();
       const seen = [];
@@ -379,9 +379,8 @@ const clickNext = (label) => {
         );
 
       /*
-        회원은 약관 다음에 초대 단계가 하나 더 있다. 전체 동의 후 넘어간다.
-        약관 버튼 문구도 갈린다 — 게스트는 "계획 짜러 가기"(끝), 회원은
-        "다음"(초대 단계가 남았다).
+        약관 다음에 초대 단계가 하나 더 있다. 전체 동의 후 넘어간다.
+        그래서 약관 버튼은 "계획 짜러 가기" 가 아니라 "다음" 이다.
       */
       if (member) {
         const termsLabel = await page.evaluate(() => {
@@ -414,7 +413,7 @@ const clickNext = (label) => {
       }
 
       /*
-      회원 모드에만 있는 초대 단계. 두 카드 중 하나를 고르기 전에는 기본
+      초대 단계. 두 카드 중 하나를 고르기 전에는 기본
       버튼이 잠겨 있어야 하고, "신랑 · 신부를 부를게요" 를 고르면 버튼이
       "초대장 보내기" 로 바뀐다. 헤드리스에는 navigator.share 가 없어
       클립보드 경로를 탄다 — 그쪽이 데스크톱에서 실제로 도는 길이다.

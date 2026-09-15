@@ -13,13 +13,7 @@ import CelebrationEffects from "../components/CelebrationEffects";
 import DatePickerWheel from "../components/DatePickerWheel";
 import { useWedding } from "../contexts/WeddingContext";
 import { useApi } from "../contexts/ApiContext";
-import {
-  getToken,
-  getShareAfterLogin,
-  HAS_COMPLETED_GUEST_SETTING_KEY,
-  isPlanDataComplete,
-  setGuestAgreement,
-} from "@/lib/api";
+import { getToken, getShareAfterLogin, isPlanDataComplete } from "@/lib/api";
 import { applyDigitInput, getKstDateString, getDaysUntil } from "@/lib/utils";
 import { useSpouseInvite } from "../hooks/useSpouseInvite";
 import {
@@ -37,12 +31,9 @@ import { track } from "@/lib/analytics";
  * 축하·환영·출입증(Lanyard)은 전체 화면 연출이라 단계로 세지 않는다.
  * (패널만 안 붙을 뿐, 그 화면들도 폭은 전부 쓴다)
  *
- * **게스트는 `함께할 사람` 단계가 없다.** 방이 없으면 공유 코드도 없어서
- * 보낼 링크 자체가 만들어지지 않는다. 못 쓰는 단계를 보여 주는 건
- * 안 보여 주는 것보다 나쁘다.
+ * 온보딩은 로그인한 사람만 온다(`GuestGate`). 예전의 게스트 4단계는 없앴다.
  */
-const ONBOARDING_STEPS_GUEST = ["결혼 날짜", "예산", "이름", "약관 동의"];
-const ONBOARDING_STEPS_MEMBER = [
+const ONBOARDING_STEPS = [
   "결혼 날짜",
   "예산",
   "이름",
@@ -109,11 +100,6 @@ function SettingPageContent() {
   })();
   const [isFifthFadingOut, setIsFifthFadingOut] = useState(false);
   const [isSixthFadingOut, setIsSixthFadingOut] = useState(false);
-  /**
-   * 초대 단계를 낼 수 있는지. 게스트는 방이 없어 공유 코드를 못 만든다.
-   * 하이드레이션 직후 서버 렌더와 어긋나지 않도록 effect 에서만 켠다.
-   */
-  const [canInvite, setCanInvite] = useState(false);
   /** 초대 단계에서 고른 값. null 이면 아직 안 고름 */
   const [inviteChoice, setInviteChoice] = useState<"invite" | "solo" | null>(
     null,
@@ -162,32 +148,6 @@ function SettingPageContent() {
     setAgreeMarketing(newValue);
   };
 
-  // 비로그인 + 이미 setting 완료(플래그 있음) + weddingDate 등 데이터 다 찼으면 → main으로 리다이렉트
-  // (다시 setting 접근 시 차단. 플로우 중에는 플래그가 없으므로 리다이렉트 안 함)
-  useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      const hasCompleted =
-        typeof window !== "undefined" &&
-        sessionStorage.getItem(HAS_COMPLETED_GUEST_SETTING_KEY) === "1";
-      if (!hasCompleted) return;
-
-      const d = weddingData.date;
-      const hasDate =
-        d &&
-        typeof d.year === "number" &&
-        typeof d.month === "number" &&
-        typeof d.day === "number";
-      const hasBudget =
-        weddingData.budget != null && String(weddingData.budget).trim() !== "";
-      const hasName =
-        typeof weddingData.name === "string" && weddingData.name.trim() !== "";
-      if (hasDate && hasBudget && hasName) {
-        router.replace("/main");
-      }
-    }
-  }, [weddingData.date, weddingData.budget, weddingData.name, router]);
-
   // 초대와 로그인 콜백이 온보딩보다 먼저 목적지를 결정합니다.
   useEffect(() => {
     if (handlingLoginCallback) return;
@@ -202,12 +162,8 @@ function SettingPageContent() {
       router.replace(`/share/${pendingInvite}`);
       return;
     }
-    if (!token) {
-      setUserCheckDone(true);
-      return;
-    }
-
-    setCanInvite(true);
+    // 토큰이 없으면 GuestGate 가 랜딩으로 돌려보낸다. 온보딩을 시작하지 않는다.
+    if (!token) return;
 
     const check = async () => {
       try {
@@ -409,18 +365,10 @@ function SettingPageContent() {
     }, 500); // fade-out 애니메이션 시간과 동일
   };
 
-  // 로그인되어 있을 때만 API 사용. 비로그인(로그인 없이 둘러보기) 시 API 호출 없이 /main으로만 이동
   const handleGoToMain = async () => {
+    // 온보딩 도중 로그인이 풀린 경우. 저장할 곳이 없으니 다시 로그인시킨다.
     if (!getToken()) {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(HAS_COMPLETED_GUEST_SETTING_KEY, "1");
-        const agreementDate = getKstDateString();
-        setGuestAgreement({
-          requiredAgreementDate: agreementDate,
-          ...(agreeMarketing && { adAgreementDate: agreementDate }),
-        });
-      }
-      router.push("/main");
+      router.replace("/login?expired=1");
       return;
     }
     if (weddingData.date) {
@@ -463,17 +411,11 @@ function SettingPageContent() {
       사람이 날짜·예산·이름이 비어 있는 플랜에 들어오고, 필수·제3자 제공
       동의 전에 남에게 접근 권한을 주는 링크가 나간다.
     */
-    if (canInvite) {
-      setShowSeventh(false);
-      setShowSixth(true);
-      return;
-    }
-    router.push("/main");
+    setShowSeventh(false);
+    setShowSixth(true);
   };
 
-  const onboardingSteps = canInvite
-    ? ONBOARDING_STEPS_MEMBER
-    : ONBOARDING_STEPS_GUEST;
+  const onboardingSteps = ONBOARDING_STEPS;
 
   /** 좌측 패널에 표시할 현재 단계. 0이면 연출 화면이라 패널을 내지 않는다 */
   const stepIndex = showSecond
@@ -1200,8 +1142,8 @@ function SettingPageContent() {
                 disabled={!isAllRequiredAgreed}
                 className="w-full max-w-[340px] rounded-xl bg-[#ee2b8c] px-8 py-4 text-[16px] font-bold text-white transition-colors hover:bg-[#d4237b] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-[#e8eaed] disabled:text-[#b0b4bb] disabled:hover:bg-[#e8eaed]"
               >
-                {/* 회원은 뒤에 초대 단계가 하나 더 남아 있다 */}
-                {canInvite ? "다음" : "계획 짜러 가기"}
+                {/* 뒤에 초대 단계가 하나 더 남아 있다 */}
+                다음
               </button>
             </div>
 

@@ -1,6 +1,6 @@
 # wedding-plant
 
-결혼 준비 일정·예산·업체를 함께 관리하는 웨딩 플래너 웹앱입니다. 모바일 웹 기준으로 설계되어 있고, 카카오 로그인 없이 게스트 모드로도 사용할 수 있습니다.
+결혼 준비 일정·예산·업체를 함께 관리하는 웨딩 플래너 웹앱입니다. 모바일 웹 기준으로 설계되어 있고, 카카오 로그인을 마쳐야 쓸 수 있습니다.
 
 Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4
 
@@ -94,11 +94,11 @@ docs/            3D_AND_STASH.md · OPENSEARCH_INTEGRATION.md
 
 ### 인증
 
-카카오 OAuth로 받은 access_token을 백엔드에 넘겨 **앱 자체 JWT**를 발급받는 구조입니다. 토큰 키는 `plan_auth_token`. 상세한 플로우와 게스트 → 로그인 데이터 마이그레이션 분기는 [CLAUDE.md](./CLAUDE.md)에 정리되어 있습니다.
+카카오 OAuth로 받은 access_token을 백엔드에 넘겨 **앱 자체 JWT**를 발급받는 구조입니다. 토큰 키는 `plan_auth_token`. 상세한 플로우와 로그인 후 목적지 분기는 [CLAUDE.md](./CLAUDE.md)에 정리되어 있습니다.
 
-### 게스트 모드
+### 로그인 필수
 
-로그인 없이도 사용 가능하며 게스트 데이터는 모두 `sessionStorage`에 보관됩니다. 로그인 시 `KakaoLoginAlert`가 백엔드로 마이그레이션합니다.
+**들어오는 길은 카카오 로그인 하나입니다.** 앱 화면도 온보딩(`/setting`)도 토큰이 있어야 열리고, 판단은 `app/components/GuestGate.tsx` 한 곳에서 합니다. 예전에 있던 "로그인 없이 둘러보기"(게스트 모드)는 없앴습니다. 확인은 `node scripts/auth-required.cjs`.
 
 ## 코드 컨벤션
 

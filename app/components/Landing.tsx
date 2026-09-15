@@ -1702,9 +1702,6 @@ export default function Landing() {
             >
               {loading ? "확인 중..." : "카카오로 시작하기"}
             </button>
-            <Link className="sub-cta" href="/setting">
-              로그인 없이 둘러보기
-            </Link>
           </div>
         </section>
       </main>
