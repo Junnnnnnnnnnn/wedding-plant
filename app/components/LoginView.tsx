@@ -63,16 +63,21 @@ export default function LoginView() {
             </p>
           </>
         ) : (
+          /*
+            **처음 오는 사람 기준의 문구다.** 랜딩의 "시작하기" 가 이 화면으로
+            바로 오므로, 예전의 "다시 오셨네요" 는 앱을 처음 보는 사람에게
+            어긋났다. 돌아온 사람에게는 `?expired=1` 쪽 문구가 뜬다.
+          */
           <>
             <h1 className="text-[32px] font-black leading-tight tracking-[-0.045em] text-white md:text-[44px]">
-              다시
+              결혼 준비
               <br />
-              오셨네요
+              같이 시작해요
             </h1>
             <p className="mt-3 text-base font-bold leading-snug text-white/80 md:mt-4 md:text-lg">
-              카카오로 로그인하면
+              카카오로 시작하면
               <br />
-              이어서 준비할 수 있어요.
+              일정과 예산이 한곳에 모여요.
             </p>
           </>
         )}
