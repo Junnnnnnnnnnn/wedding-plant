@@ -76,6 +76,18 @@ export default function Landing() {
           <symbol id="i-check" viewBox="0 0 24 24">
             <path d="M20 6 9 17l-5-5" />
           </symbol>
+          <symbol id="i-pin" viewBox="0 0 24 24">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+            <circle cx="12" cy="10" r="3" />
+          </symbol>
+          <symbol id="i-help" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" />
+            <path d="M12 17h.01" />
+          </symbol>
+          <symbol id="i-right" viewBox="0 0 24 24">
+            <path d="m9 18 6-6-6-6" />
+          </symbol>
           <symbol id="i-home" viewBox="0 0 24 24">
             <path d="M3 10.5 12 3l9 7.5" />
             <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
@@ -578,124 +590,93 @@ export default function Landing() {
                         <i aria-hidden="true" />
                       </p>
                       <div className="sbody">
-                        <p className="apphead">
-                          <span className="nm">지현 · 민수</span>
-                          <span className="av">지</span>
-                          <span className="av" style={{ marginLeft: "-6px" }}>
-                            민
-                          </span>
-                          <span className="dday">D-129</span>
-                        </p>
-                        <p className="appdate">결혼식: 2026년 12월 31일 (목)</p>
-
-                        <div className="appbudget">
-                          <span className="top">
-                            <span className="coin">
+                        <div className="apphead">
+                          <p className="who">
+                            <span className="nm">지현 · 민수</span>
+                            <span className="av">지</span>
+                            <span className="av">민</span>
+                            <span className="q">
                               <svg className="ic">
-                                <use href="#i-coin" />
+                                <use href="#i-help" />
                               </svg>
                             </span>
+                          </p>
+                          <p className="dday">
+                            결혼식까지
+                            <br />
+                            129일 남았어요
+                          </p>
+                          <p className="appdate">
+                            2026년 12월 31일 (목) · 그랜드하얏트 서울
+                          </p>
+                          <span className="appbudget">
                             <span>
-                              <span className="k">남은 예산</span>
-                              <span className="v" style={{ display: "block" }}>
-                                1,400만 원
+                              <span className="k">남은 예산 1,400만 원</span>
+                              <span className="u">
+                                4,200만 원 중 2,800만 원 지출·예정
                               </span>
                             </span>
-                          </span>
-                          <span className="u" style={{ display: "block" }}>
-                            2,800만 원 지출/예정
-                          </span>
-                          <span className="track">
-                            <span className="t">
-                              <i style={{ width: "67%" }} />
+                            <span className="go">
+                              <svg className="ic">
+                                <use href="#i-right" />
+                              </svg>
                             </span>
-                            <span className="p">67%</span>
                           </span>
                         </div>
 
-                        <p className="apptabs">
-                          <span className="on">
-                            계획 중 <em>5</em>
-                          </span>
-                          <span>
-                            완료 <em>1</em>
-                          </span>
-                        </p>
+                        <div className="applist">
+                          <p className="seclabel">
+                            <b>이번 달에 할 일</b>
+                            <em>3</em>
+                            <span className="add">추가</span>
+                          </p>
 
-                        <span className="appcard">
-                          <span
-                            className="tile2"
-                            style={{ background: "var(--cat-1)" }}
-                          >
+                          <span className="appcard">
                             <span className="ck" />
-                          </span>
-                          <span className="mid">
-                            <span className="t" style={{ display: "block" }}>
-                              청첩장 발송
+                            <span className="mid">
+                              <span className="t" style={{ display: "block" }}>
+                                청첩장 발송
+                              </span>
+                              <span className="l2">
+                                <span className="cat">청첩장</span>
+                                <span className="d">10월 10일 (토)</span>
+                                <span className="m none">미정</span>
+                              </span>
                             </span>
-                            <span className="c" style={{ display: "block" }}>
-                              청첩장
-                            </span>
-                            <span className="d">2026년 10월 10일 (토)</span>
                           </span>
-                          <span className="right">
-                            <span className="m" style={{ display: "block" }}>
-                              미정
-                            </span>
-                            <span className="st">예정</span>
-                          </span>
-                        </span>
 
-                        <span className="appcard">
-                          <span
-                            className="tile2"
-                            style={{ background: "var(--cat-2)" }}
-                          >
+                          <span className="appcard">
                             <span className="ck" />
-                          </span>
-                          <span className="mid">
-                            <span className="t" style={{ display: "block" }}>
-                              예물 상담
+                            <span className="mid">
+                              <span className="t" style={{ display: "block" }}>
+                                예물 상담
+                              </span>
+                              <span className="l2">
+                                <span className="cat">예물</span>
+                                <span className="d">9월 27일 (일)</span>
+                                <span className="m">340만 원</span>
+                              </span>
                             </span>
-                            <span className="c" style={{ display: "block" }}>
-                              예물
-                            </span>
-                            <span className="d">2026년 9월 27일 (일)</span>
                           </span>
-                          <span className="right">
-                            <span className="m" style={{ display: "block" }}>
-                              340만 원
-                            </span>
-                            <span className="st">예정</span>
-                          </span>
-                        </span>
 
-                        <span className="appcard done">
-                          <span
-                            className="tile2"
-                            style={{ background: "var(--cat-3)" }}
-                          >
+                          <span className="appcard done">
                             <span className="ck">
                               <svg className="ic">
                                 <use href="#i-check" />
                               </svg>
                             </span>
-                          </span>
-                          <span className="mid">
-                            <span className="t" style={{ display: "block" }}>
-                              상견례
-                            </span>
-                            <span className="c" style={{ display: "block" }}>
-                              상견례
-                            </span>
-                            <span className="d">2026년 7월 4일 (토)</span>
-                          </span>
-                          <span className="right">
-                            <span className="m" style={{ display: "block" }}>
-                              62만 원
+                            <span className="mid">
+                              <span className="t" style={{ display: "block" }}>
+                                상견례
+                              </span>
+                              <span className="l2">
+                                <span className="cat">상견례</span>
+                                <span className="d">7월 4일 (토)</span>
+                                <span className="m">62만 원</span>
+                              </span>
                             </span>
                           </span>
-                        </span>
+                        </div>
                       </div>
                       <p className="appnav">
                         <span className="on">
@@ -787,99 +768,89 @@ export default function Landing() {
                       <i aria-hidden="true" />
                     </p>
                     <div className="sbody">
-                      <p className="apphead">
-                        <span className="nm">지현 · 민수</span>
-                        <span className="dday">D-129</span>
-                      </p>
-                      <span className="appcard" data-k="hall">
-                        <span
-                          className="tile2"
-                          style={{ background: "var(--cat-1)" }}
-                        >
+                      <div className="apphead">
+                        <p className="who">
+                          <span className="nm">지현 · 민수</span>
+                          <span className="av">지</span>
+                          <span className="av">민</span>
+                        </p>
+                        <p className="dday">결혼식까지 129일</p>
+                      </div>
+                      <div className="applist">
+                        <span className="appcard" data-k="hall">
                           <span className="ck" />
-                        </span>
-                        <span className="mid">
-                          <span className="t" style={{ display: "block" }}>
-                            예식장
+                          <span className="mid">
+                            <span className="t" style={{ display: "block" }}>
+                              예식장
+                            </span>
+                            <span className="l2">
+                              <span className="cat">예식장</span>
+                              <span className="d">아모르하우스</span>
+                              <span className="m">1,200만 원</span>
+                            </span>
                           </span>
-                          <span className="c">아모르하우스</span>
                         </span>
-                        <span className="right">
-                          <span className="m">1,200만 원</span>
-                        </span>
-                      </span>
-                      <span className="appcard" data-k="sdm">
-                        <span
-                          className="tile2"
-                          style={{ background: "var(--cat-2)" }}
-                        >
+                        <span className="appcard" data-k="sdm">
                           <span className="ck" />
-                        </span>
-                        <span className="mid">
-                          <span className="t" style={{ display: "block" }}>
-                            스드메
+                          <span className="mid">
+                            <span className="t" style={{ display: "block" }}>
+                              스드메
+                            </span>
+                            <span className="l2">
+                              <span className="cat">스드메</span>
+                              <span className="d">아모레 스튜디오</span>
+                              <span className="m">580만 원</span>
+                            </span>
                           </span>
-                          <span className="c">아모레 스튜디오</span>
                         </span>
-                        <span className="right">
-                          <span className="m">580만 원</span>
-                        </span>
-                      </span>
-                      <span className="appcard" data-k="ring">
-                        <span
-                          className="tile2"
-                          style={{ background: "var(--cat-4)" }}
-                        >
+                        <span className="appcard" data-k="ring">
                           <span className="ck" />
-                        </span>
-                        <span className="mid">
-                          <span className="t" style={{ display: "block" }}>
-                            예물
+                          <span className="mid">
+                            <span className="t" style={{ display: "block" }}>
+                              예물
+                            </span>
+                            <span className="l2">
+                              <span className="cat">예물</span>
+                              <span className="d">종로 귀금속</span>
+                              <span className="m">340만 원</span>
+                            </span>
                           </span>
-                          <span className="c">종로 귀금속</span>
                         </span>
-                        <span className="right">
-                          <span className="m">340만 원</span>
-                        </span>
-                      </span>
-                      <span className="appcard" data-k="trip">
-                        <span
-                          className="tile2"
-                          style={{ background: "var(--cat-5)" }}
-                        >
+                        <span className="appcard" data-k="trip">
                           <span className="ck" />
-                        </span>
-                        <span className="mid">
-                          <span className="t" style={{ display: "block" }}>
-                            신혼여행
+                          <span className="mid">
+                            <span className="t" style={{ display: "block" }}>
+                              신혼여행
+                            </span>
+                            <span className="l2">
+                              <span className="cat">신혼여행</span>
+                              <span className="d">발리 6박</span>
+                              <span className="m">480만 원</span>
+                            </span>
                           </span>
-                          <span className="c">발리 6박</span>
                         </span>
-                        <span className="right">
-                          <span className="m">480만 원</span>
-                        </span>
-                      </span>
-                      <p className="push">
-                        <svg className="ic">
-                          <use href="#i-bell" />
-                        </svg>
-                        <span className="t">
-                          웹에서
-                          <b className="nm" data-k="hall">
-                            예식장
-                          </b>
-                          <b className="nm" data-k="sdm">
-                            스드메
-                          </b>
-                          <b className="nm" data-k="ring">
-                            예물
-                          </b>
-                          <b className="nm" data-k="trip">
-                            신혼여행
-                          </b>
-                          을 보고 있어요
-                        </span>
-                      </p>
+                        <p className="push">
+                          <svg className="ic">
+                            <use href="#i-bell" />
+                          </svg>
+                          <span className="t">
+                            웹에서
+                            <b className="nm" data-k="hall">
+                              예식장
+                            </b>
+                            <b className="nm" data-k="sdm">
+                              스드메
+                            </b>
+                            <b className="nm" data-k="ring">
+                              예물
+                            </b>
+                            <b className="nm" data-k="trip">
+                              신혼여행
+                            </b>
+                            을 보고 있어요
+                          </span>
+                        </p>
+                      </div>
                     </div>
                     <p className="appnav">
                       <span className="on">
@@ -921,87 +892,143 @@ export default function Landing() {
                       웹 · 큰 화면
                     </span>
                   </p>
+                  <div className="wbar">
+                    <span className="cpl">
+                      <b>지현 · 민수</b>
+                      <span className="sub">
+                        2026년 12월 31일 (목) · 그랜드하얏트 서울
+                      </span>
+                    </span>
+                    <span className="wdday">
+                      129<small>일 남음</small>
+                    </span>
+                    <span className="acts">
+                      <span className="avs" aria-hidden="true">
+                        <i>지</i>
+                        <i>민</i>
+                        <i>엄</i>
+                      </span>
+                      <span className="ghost">플랜 보드</span>
+                      <span className="cta">＋ 플랜 추가</span>
+                    </span>
+                  </div>
+                  <p className="wsec">
+                    <b>이번 달 할 일 · 12월</b>
+                    <span className="more">보드에서 전체 보기</span>
+                  </p>
                   <div className="wcards">
                     <label className="wcard" htmlFor="k-hall">
-                      <span
-                        className="badge"
-                        style={{ background: "var(--cat-1)" }}
-                      >
-                        <svg className="ic">
-                          <use href="#i-hall" />
-                        </svg>
+                      <span className="ck" aria-hidden="true" />
+                      <span className="mid">
+                        <span className="n">예식장 계약</span>
+                        <span className="l2">
+                          <span className="cat">예식장</span>
+                          <span className="dt">12월 4일</span>
+                        </span>
+                        <span className="m">1,200만 원</span>
                       </span>
-                      <span className="n">예식장</span>
-                      <span className="m">
-                        1,200<span style={{ fontSize: ".5em" }}>만</span>
-                      </span>
-                      <span className="s">6월 12일 확정</span>
                     </label>
                     <label className="wcard" htmlFor="k-sdm">
-                      <span
-                        className="badge"
-                        style={{ background: "var(--cat-2)" }}
-                      >
-                        <svg className="ic">
-                          <use href="#i-cam" />
-                        </svg>
+                      <span className="ck" aria-hidden="true" />
+                      <span className="mid">
+                        <span className="n">본식 촬영</span>
+                        <span className="l2">
+                          <span className="cat">스드메</span>
+                          <span className="dt">12월 14일</span>
+                        </span>
+                        <span className="m">580만 원</span>
                       </span>
-                      <span className="n">스드메</span>
-                      <span className="m">
-                        580<span style={{ fontSize: ".5em" }}>만</span>
-                      </span>
-                      <span className="s">아모레 스튜디오</span>
                     </label>
                     <label className="wcard" htmlFor="k-ring">
-                      <span
-                        className="badge"
-                        style={{ background: "var(--cat-4)" }}
-                      >
-                        <svg className="ic">
-                          <use href="#i-ring" />
-                        </svg>
+                      <span className="ck" aria-hidden="true" />
+                      <span className="mid">
+                        <span className="n">예물 상담</span>
+                        <span className="l2">
+                          <span className="cat">예물</span>
+                          <span className="dt">12월 20일</span>
+                        </span>
+                        <span className="m">340만 원</span>
                       </span>
-                      <span className="n">예물</span>
-                      <span className="m">
-                        340<span style={{ fontSize: ".5em" }}>만</span>
-                      </span>
-                      <span className="s">9월 27일 상담</span>
                     </label>
                     <label className="wcard" htmlFor="k-trip">
-                      <span
-                        className="badge"
-                        style={{ background: "var(--cat-5)" }}
-                      >
-                        <svg className="ic">
-                          <use href="#i-plane" />
-                        </svg>
+                      <span className="ck" aria-hidden="true" />
+                      <span className="mid">
+                        <span className="n">신혼여행 예약</span>
+                        <span className="l2">
+                          <span className="cat">신혼여행</span>
+                          <span className="dt">12월 27일</span>
+                        </span>
+                        <span className="m">480만 원</span>
                       </span>
-                      <span className="n">신혼여행</span>
-                      <span className="m">
-                        480<span style={{ fontSize: ".5em" }}>만</span>
-                      </span>
-                      <span className="s">발리 6박</span>
                     </label>
                   </div>
-                  <div className="web-foot">
-                    <span className="lbl">4,200만원 중 남음</span>
-                    <span className="v">
-                      1,400<small>만원</small>
-                    </span>
-                    <span className="bar" aria-hidden="true">
-                      <i
-                        style={{
-                          width: "38.1%",
-                          background: "var(--color-accent)",
-                        }}
-                      />
-                      <i
-                        style={{
-                          width: "28.6%",
-                          background: "var(--color-plan)",
-                        }}
-                      />
-                    </span>
+                  <div className="wcols">
+                    <div className="wpanel">
+                      <p className="ph">
+                        <b>예산</b>
+                        <span className="more">상세 분석 ›</span>
+                      </p>
+                      <p className="wbig">
+                        1,400<small>만원</small>
+                      </p>
+                      <p className="wsub">4,200만원 중 남음</p>
+                      <p className="wtrack" aria-hidden="true">
+                        <i style={{ width: "26.2%", background: "#ee2b8c" }} />
+                        <i style={{ width: "7.1%", background: "#ff7ab5" }} />
+                        <i style={{ width: "4.8%", background: "#ffa8cd" }} />
+                        <i style={{ width: "28.6%", background: "#cdbfc7" }} />
+                      </p>
+                      <div className="wlegend">
+                        <p>
+                          <span
+                            className="sw"
+                            style={{ background: "#ee2b8c" }}
+                          />
+                          <span className="nm">예식장</span>
+                          <span className="v">1,100만원</span>
+                        </p>
+                        <p>
+                          <span
+                            className="sw"
+                            style={{ background: "#ff7ab5" }}
+                          />
+                          <span className="nm">스드메</span>
+                          <span className="v">300만원</span>
+                        </p>
+                        <p className="muted">
+                          <span
+                            className="sw"
+                            style={{ background: "#cdbfc7" }}
+                          />
+                          <span className="nm">사용 예상</span>
+                          <span className="v">1,200만원</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="wpanel">
+                      <p className="ph">
+                        <b>다가오는 일정</b>
+                        <span className="more">캘린더</span>
+                      </p>
+                      <div className="wtime">
+                        <p className="it">
+                          <span className="dot" aria-hidden="true" />
+                          <span className="tx">
+                            <span className="dt">12월 20일 일요일</span>
+                            <span className="ttl">예물 상담</span>
+                            <span className="cat">예물</span>
+                          </span>
+                        </p>
+                        <p className="it">
+                          <span className="dot" aria-hidden="true" />
+                          <span className="tx">
+                            <span className="dt">12월 27일 일요일</span>
+                            <span className="ttl">신혼여행 예약</span>
+                            <span className="cat">신혼여행</span>
+                          </span>
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1490,6 +1517,9 @@ export default function Landing() {
                       <div className="pbody">
                         <div className="pane" data-c="1">
                           <p className="chead">
+                            <span className="bk" aria-hidden="true">
+                              ‹
+                            </span>
                             <span>
                               <span className="nm">
                                 우리 플랜
@@ -1501,6 +1531,10 @@ export default function Landing() {
                                 </span>
                               </span>
                               <span className="mem">현진, 미주</span>
+                            </span>
+                            <span className="avs" aria-hidden="true">
+                              <i>현</i>
+                              <i>미</i>
                             </span>
                             <span className="dots" aria-hidden="true">
                               ⋮
@@ -1530,27 +1564,19 @@ export default function Landing() {
                         </div>
 
                         <div className="pane" data-c="2">
-                          <p className="chead">
-                            <span>
-                              <span className="nm">플랜 상세</span>
-                              <span className="mem">대화에서 열었어요</span>
-                            </span>
-                            <span className="dots" aria-hidden="true">
-                              ✕
-                            </span>
-                          </p>
-                          <div className="insp">
-                            <p>
-                              <span className="chip">스튜디오</span>
-                              <span className="pill">예정</span>
+                          <div className="phero">
+                            <p className="top">
+                              <span className="bk" aria-hidden="true">
+                                ‹
+                              </span>
+                              <span>스튜디오</span>
+                              <span className="pill">• 예정</span>
                             </p>
                             <p className="ttl">A스튜디오 본식 촬영</p>
                             <p className="meta">
-                              2026년 3월 14일 · 오전 11:00
-                              <br />
-                              A스튜디오 강남점
+                              2026년 3월 14일 (토) · 오전 11:00
                             </p>
-                            <p className="foot">
+                            <p className="money">
                               <span>
                                 <span className="k">지출 금액</span>
                                 <span className="amt">180만 원</span>
@@ -1561,10 +1587,41 @@ export default function Landing() {
                               </span>
                             </p>
                           </div>
+                          <div className="pdetail">
+                            <p className="row">
+                              <span className="ptile">
+                                <svg className="ic">
+                                  <use href="#i-pin" />
+                                </svg>
+                              </span>
+                              <span>
+                                <span className="k">장소</span>
+                                <span className="v">A스튜디오 강남점</span>
+                              </span>
+                            </p>
+                            <p className="row">
+                              <span className="ptile">
+                                <svg className="ic">
+                                  <use href="#i-note" />
+                                </svg>
+                              </span>
+                              <span>
+                                <span className="k">메모</span>
+                                <span className="v">드레스 2벌 포함</span>
+                              </span>
+                            </p>
+                            <p className="doneline">
+                              <span className="ck" aria-hidden="true" />
+                              <b>완료로 표시</b>
+                            </p>
+                          </div>
                         </div>
 
                         <div className="pane" data-c="3">
                           <p className="chead">
+                            <span className="bk" aria-hidden="true">
+                              ‹
+                            </span>
                             <span>
                               <span className="nm">
                                 우리 플랜
@@ -1578,6 +1635,10 @@ export default function Landing() {
                               <span className="mem">
                                 현진, 미주 — 둘뿐이에요
                               </span>
+                            </span>
+                            <span className="avs" aria-hidden="true">
+                              <i>현</i>
+                              <i>미</i>
                             </span>
                             <span className="dots" aria-hidden="true">
                               ⋮

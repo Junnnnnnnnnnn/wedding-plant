@@ -58,6 +58,15 @@
         /* 앱에서 그대로 가져온 값 */
         --app-grad: linear-gradient(135deg, #ee2b8c 0%, #ff5c95 100%);
         --app-card-line: #ee2b8c0a;
+        /* 지금 앱의 카드·글자 색. 목업이 앱과 어긋나면 여기부터 본다 */
+        --app-fill: #f7f8f9;
+        --app-ink-1: #1a1c20;
+        --app-ink-2: #555d6d;
+        --app-ink-3: #868b94;
+        --app-chip-bg: #fff1f7;
+        --app-chip-ink: #cc1873;
+        --app-check: #ffc9e0;
+        --app-done: #079171;
         --nav-on: #ffaab8;
         --nav-off: #99a1af;
         --cat-1: #ffe4e9;
@@ -890,195 +899,177 @@
         flex: 1;
         min-height: 0;
         overflow: hidden;
-        padding: 10px 12px;
         display: grid;
-        gap: 9px;
         align-content: start;
       }
 
-      /* 앱 헤더 (실제 /main 상단) */
+      /* 앱 머리 면 — 실제 /main 의 분홍 면이다.
+         화면 폭을 가득 채우고 아래 모서리만 둥글다. 여백은 면이 직접 갖는다
+         (`.sbody` 에 패딩을 주면 면이 카드처럼 떠서 앱과 달라진다). */
       #lp .apphead {
+        background: var(--app-grad);
+        color: #fff;
+        border-radius: 0 0 20px 20px;
+        padding: 10px 11px 12px;
+      }
+      #lp .apphead .who {
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: 5px;
       }
       #lp .apphead .nm {
         font-family: var(--font-display);
         font-weight: 700;
-        font-size: 0.88rem;
-        letter-spacing: -0.03em;
-      }
-      #lp .apphead .dday {
-        margin-left: auto;
-        padding: 3px 9px;
-        border-radius: 999px;
-        background: var(--color-accent);
-        color: var(--color-card);
-        font-family: var(--font-num);
-        font-size: 10px;
+        font-size: 0.72rem;
         letter-spacing: -0.02em;
-          font-weight: 700;
-        }
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
       #lp .apphead .av {
-        width: 19px;
-        height: 19px;
+        width: 17px;
+        height: 17px;
         border-radius: 50%;
-        background: var(--color-accent-soft);
-        color: var(--color-accent);
-        display: grid;
-        place-items: center;
-        font-size: 8px;
-        font-weight: 700;
-        border: 1.5px solid var(--color-card);
-      }
-      #lp .appdate {
-        font-size: 9px;
-        color: var(--color-ink-3);
-      }
-
-      /* 앱 예산 카드 — 실제 값 그대로 */
-      #lp .appbudget {
-        border-radius: 20px;
-        padding: 14px;
-        background: var(--app-grad);
+        background: #ffffff33;
+        border: 1.5px solid #ffffff80;
         color: #fff;
-      }
-      #lp .appbudget .top {
-        display: flex;
-        align-items: flex-start;
-        gap: 9px;
-      }
-      #lp .appbudget .coin {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: #ffffff4d;
         display: grid;
         place-items: center;
+        font-size: 7.5px;
+        font-weight: 700;
         flex: none;
       }
-      #lp .appbudget .coin .ic {
-        font-size: 15px;
+      #lp .apphead .av + .av {
+        margin-left: -5px;
+      }
+      #lp .apphead .q {
+        margin-left: auto;
+        flex: none;
+        display: grid;
+        place-items: center;
+      }
+      #lp .apphead .q .ic {
+        font-size: 14px;
+        color: #ffffffe6;
+      }
+      /* 이 화면에서 사람이 실제로 보는 값은 남은 날이다 — 이름보다 크다 */
+      #lp .apphead .dday {
+        margin-top: 8px;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1rem;
+        line-height: 1.16;
+        letter-spacing: -0.045em;
+      }
+      #lp .appdate {
+        margin-top: 5px;
+        font-size: 8.5px;
+        color: #ffffffcc;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* 머리 면 안의 얇은 예산 줄.
+         앱도 여기서는 한 줄 요약 + 부연만 낸다 — 면이 이미 분홍이라
+         큰 숫자와 막대까지 넣으면 면 위에 또 하나의 덩어리가 생긴다. */
+      #lp .appbudget {
+        margin-top: 9px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 9px;
+        padding: 7px 9px;
+        background: #ffffff33;
         color: #fff;
       }
       #lp .appbudget .k {
-        font-size: 10px;
-        font-weight: 700;
-      }
-      #lp .appbudget .v {
-        font-family: var(--font-num);
-        font-size: 1.45rem;
-        letter-spacing: -0.05em;
-        margin: 5px 0;
-        line-height: 1;
-          font-weight: 700;
-        }
-      #lp .appbudget .u {
-        padding-left: 37px;
-        font-size: 11px;
-        font-weight: 700;
-        line-height: 1;
-      }
-      #lp .appbudget .track {
-        margin-top: 11px;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-      }
-      #lp .appbudget .track .t {
-        height: 6px;
-        flex: 1;
-        border-radius: 999px;
-        background: #ffffff4d;
-        overflow: hidden;
-      }
-      #lp .appbudget .track .t i {
         display: block;
-        height: 100%;
-        background: #fff;
-        border-radius: 999px;
-      }
-      #lp .appbudget .track .p {
-        font-size: 10px;
-      }
-
-      /* 앱 탭(계획 중 / 완료) */
-      #lp .apptabs {
-        display: flex;
-        gap: 4px;
-        padding: 4px;
-        border-radius: 14px;
-        background: oklch(96% 0.002 340);
-        border: var(--rule-hair) solid oklch(94% 0.002 340);
-      }
-      #lp .apptabs span {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-        padding: 7px 0;
-        border-radius: 10px;
-        font-family: var(--font-display);
+        font-size: 9.5px;
         font-weight: 700;
-        font-size: 10px;
-        color: var(--color-ink-4);
       }
-      #lp .apptabs span.on {
-        background: var(--color-card);
-        color: var(--color-accent);
-        box-shadow: 0 1px 2px oklch(0% 0 0 / 0.06);
+      #lp .appbudget .u {
+        display: block;
+        margin-top: 2px;
+        font-size: 8px;
+        color: #ffffffbf;
       }
-      #lp .apptabs em {
-        font-style: normal;
-        padding: 1px 5px;
-        border-radius: 5px;
-        font-size: 8.5px;
-        background: oklch(93% 0.002 340);
-        color: var(--color-ink-3);
+      #lp .appbudget .go {
+        margin-left: auto;
+        flex: none;
+        line-height: 1;
       }
-      #lp .apptabs span.on em {
-        background: var(--color-accent-soft);
-        color: var(--color-accent);
+      #lp .appbudget .go .ic {
+        font-size: 11px;
+        color: #fff;
+        stroke-width: 2.6;
       }
 
-      /* 앱 일정 카드 — 실제 마크업 그대로 */
-      #lp .appcard {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: var(--color-card);
-        padding: 10px;
-        border-radius: 19px;
-        border: var(--rule-hair) solid var(--app-card-line);
-        box-shadow: 0 1px 3px oklch(0% 0 0 / 0.05);
+      /* 머리 면 아래 흰 면 — 목록이 사는 자리 */
+      #lp .applist {
+        padding: 10px 11px;
+        display: grid;
+        gap: 7px;
+        align-content: start;
         min-width: 0;
       }
-      #lp .appcard .tile2 {
-        width: 34px;
-        height: 34px;
-        border-radius: 12px;
-        flex: none;
-        display: grid;
-        place-items: center;
+      #lp .seclabel {
+        display: flex;
+        align-items: baseline;
+        gap: 5px;
+      }
+      #lp .seclabel b {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.78rem;
+        letter-spacing: -0.02em;
+        color: var(--app-ink-1);
+      }
+      #lp .seclabel em {
+        font-style: normal;
+        font-family: var(--font-num);
+        font-size: 8.5px;
+        color: var(--app-ink-3);
+      }
+      #lp .seclabel .add {
+        margin-left: auto;
+        font-size: 9px;
+        font-weight: 700;
+        color: var(--color-accent);
+      }
+
+      /* 앱 일정 카드 — 지금 앱 그대로다.
+         회색 채움 + 그림자 없음, 카테고리는 분홍 칩이 말한다.
+         걷어낸 것: 파스텔 아이콘 타일, "예정" 배지 (앱에서 먼저 걷어냈다). */
+      #lp .appcard {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        background: var(--app-fill);
+        padding: 8px 9px;
+        border-radius: 13px;
+        min-width: 0;
       }
       #lp .appcard .ck {
-        width: 16px;
-        height: 16px;
+        width: 15px;
+        height: 15px;
+        margin-top: 1px;
         border-radius: 50%;
-        border: 2px solid var(--color-accent);
-        background: #ffffffcc;
+        border: 1.5px solid var(--app-check);
+        background: var(--color-card);
+        flex: none;
         display: grid;
         place-items: center;
       }
       #lp .appcard.done .ck {
-        background: var(--color-accent);
-        border-color: var(--color-accent);
+        background: var(--app-done);
+        border-color: var(--app-done);
         color: #fff;
       }
       #lp .appcard .ck .ic {
-        font-size: 9px;
-        stroke-width: 3.4;
+        font-size: 8px;
+        stroke-width: 3.6;
       }
       #lp .appcard .mid {
         min-width: 0;
@@ -1087,46 +1078,57 @@
       #lp .appcard .t {
         font-family: var(--font-display);
         font-weight: 700;
-        font-size: 0.73rem;
-        letter-spacing: -0.02em;
+        font-size: 0.7rem;
+        letter-spacing: -0.01em;
+        color: var(--app-ink-1);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      #lp .appcard .c {
-        font-size: 8.5px;
-        color: var(--color-ink-3);
+      #lp .appcard .l2 {
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
       }
-      #lp .appcard .d {
-        font-size: 8.5px;
-        color: var(--color-ink-3);
-      }
-      #lp .appcard .right {
-        text-align: right;
+      #lp .appcard .cat {
         flex: none;
-      }
-      #lp .appcard .m {
-        font-family: var(--font-num);
-        font-size: 0.8rem;
-        letter-spacing: -0.03em;
-          font-weight: 700;
-        }
-      #lp .appcard .st {
-        margin-top: 3px;
-        display: inline-block;
-        padding: 1.5px 6px;
-        border-radius: 6px;
-        font-size: 8px;
-        background: var(--color-accent-soft);
-        color: var(--color-accent);
+        border-radius: 4px;
+        padding: 1px 4px;
+        background: var(--app-chip-bg);
+        color: var(--app-chip-ink);
+        font-size: 7.5px;
         font-weight: 700;
       }
+      #lp .appcard .d {
+        font-size: 8px;
+        color: var(--app-ink-2);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #lp .appcard .m {
+        margin-left: auto;
+        flex: none;
+        font-family: var(--font-num);
+        font-weight: 700;
+        font-size: 9px;
+        letter-spacing: -0.02em;
+        color: var(--app-ink-1);
+      }
+      /* 금액을 아직 안 정한 일정. 앱도 여기만 글씨를 낮춘다 */
+      #lp .appcard .m.none {
+        font-family: var(--font-body);
+        font-weight: 400;
+        color: var(--app-ink-3);
+      }
       #lp .appcard.done {
-        opacity: 0.75;
+        opacity: 0.7;
       }
       #lp .appcard.done .t {
+        color: var(--app-ink-3);
         text-decoration: line-through;
-        text-decoration-color: var(--color-ink-4);
       }
 
       /* 앱 하단 탭바 — 실제 4탭 */
@@ -1423,16 +1425,16 @@
         background: var(--color-card);
         border: var(--rule-hair) solid var(--color-rule);
         border-radius: var(--radius-xl);
-        padding: var(--space-lg);
+        padding: 13px 14px 11px;
         box-shadow: 0 28px 60px -50px var(--color-shade);
       }
       #lp .web-top {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding-bottom: var(--space-md);
+        padding-bottom: 9px;
         border-bottom: var(--rule-hair) solid var(--color-rule);
-        margin-bottom: var(--space-md);
+        margin-bottom: 9px;
       }
       #lp .web-top i {
         width: 22px;
@@ -1457,9 +1459,104 @@
       #lp .web-top .tag .ic {
         font-size: 14px;
       }
+      /* 웹 대시보드 머리 줄 — 앱의 `/main` 상단 바 그대로다
+         (커플 · 날짜 · 남은 날 · 멤버 · 플랜 보드 · 플랜 추가) */
+      #lp .wbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      #lp .wbar .cpl b {
+        display: block;
+        font-family: var(--font-display);
+        font-size: 1rem;
+        letter-spacing: -0.03em;
+      }
+      #lp .wbar .cpl .sub {
+        display: block;
+        margin-top: 2px;
+        font-size: var(--text-2xs);
+        color: var(--color-ink-3);
+      }
+      #lp .wbar .wdday {
+        padding-left: 12px;
+        border-left: var(--rule-hair) solid var(--color-rule);
+        color: var(--color-accent);
+        font-family: var(--font-num);
+        font-weight: 700;
+        font-size: 1.35rem;
+        letter-spacing: -0.04em;
+        line-height: 1;
+      }
+      #lp .wbar .wdday small {
+        margin-left: 3px;
+        font-family: var(--font-body);
+        font-weight: 400;
+        font-size: 0.6rem;
+        color: var(--color-ink-3);
+      }
+      #lp .wbar .acts {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #lp .wbar .avs {
+        display: flex;
+      }
+      #lp .wbar .avs i {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--color-accent-soft);
+        color: var(--color-accent);
+        border: 1.5px solid var(--color-card);
+        font-style: normal;
+        font-size: 9px;
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+      }
+      #lp .wbar .avs i + i {
+        margin-left: -6px;
+      }
+      #lp .wbar .ghost,
+#lp .wbar .cta {
+        border-radius: 999px;
+        padding: 7px 13px;
+        font-size: var(--text-2xs);
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      #lp .wbar .ghost {
+        border: 1.5px solid var(--color-rule);
+        color: var(--color-ink-2);
+      }
+      #lp .wbar .cta {
+        background: var(--color-accent);
+        color: var(--color-card);
+      }
+      #lp .wsec {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 7px;
+      }
+      #lp .wsec b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.02em;
+      }
+      #lp .wsec .more {
+        margin-left: auto;
+        font-size: var(--text-2xs);
+        color: var(--color-accent);
+        font-weight: 700;
+      }
       #lp .wcards {
         display: grid;
-        gap: 10px;
+        gap: 7px;
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       @media (min-width: 660px) {
@@ -1467,13 +1564,15 @@
           grid-template-columns: repeat(4, minmax(0, 1fr));
         }
       }
+      /* 이번 달 할 일 카드 — 앱 대시보드의 스트립과 같은 짜임 */
       #lp .wcard {
         display: flex;
-        flex-direction: column;
-        gap: 6px;
-        padding: 13px;
+        align-items: flex-start;
+        gap: 7px;
+        padding: 8px 9px;
         border-radius: var(--radius-md);
         border: 1.5px solid var(--color-rule);
+        background: var(--color-card);
         cursor: pointer;
         min-width: 0;
         transition:
@@ -1485,32 +1584,188 @@
         border-color: var(--color-accent-line);
         transform: translateY(-2px);
       }
-      #lp .wcard .badge {
-        width: 32px;
-        height: 32px;
-        border-radius: 10px;
-        display: grid;
-        place-items: center;
+      #lp .wcard .ck {
+        width: 15px;
+        height: 15px;
+        margin-top: 2px;
+        border-radius: 50%;
+        border: 1.5px solid var(--app-check);
+        flex: none;
       }
-      #lp .wcard .badge .ic {
-        font-size: 17px;
-        color: var(--color-ink-2);
+      #lp .wcard .mid {
+        min-width: 0;
       }
       #lp .wcard .n {
+        display: block;
         font-family: var(--font-display);
         font-weight: 700;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         letter-spacing: -0.02em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #lp .wcard .l2 {
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      }
+      #lp .wcard .cat {
+        flex: none;
+        border-radius: 5px;
+        padding: 1px 5px;
+        background: var(--app-chip-bg);
+        color: var(--app-chip-ink);
+        font-size: 0.62rem;
+        font-weight: 700;
+      }
+      #lp .wcard .dt {
+        font-size: 0.62rem;
+        color: var(--color-ink-2);
+        white-space: nowrap;
       }
       #lp .wcard .m {
+        display: block;
+        margin-top: 3px;
         font-family: var(--font-num);
-        font-size: 1.05rem;
-        letter-spacing: -0.04em;
-          font-weight: 700;
+        font-size: 0.86rem;
+        letter-spacing: -0.03em;
+        font-weight: 700;
+      }
+
+      /* 아래 두 패널 — 앱 대시보드의 예산 · 다가오는 일정 */
+      #lp .wcols {
+        margin-top: 9px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: minmax(0, 1fr);
+      }
+      @media (min-width: 660px) {
+        #lp .wcols {
+          grid-template-columns: 1.3fr 1fr;
         }
-      #lp .wcard .s {
+      }
+      #lp .wpanel {
+        border: var(--rule-hair) solid var(--color-rule);
+        border-radius: var(--radius-lg);
+        padding: 11px;
+        min-width: 0;
+      }
+      #lp .wpanel .ph {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 7px;
+      }
+      #lp .wpanel .ph b {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        letter-spacing: -0.02em;
+      }
+      #lp .wpanel .ph .more {
+        margin-left: auto;
+        font-size: var(--text-2xs);
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+      #lp .wbig {
+        font-family: var(--font-num);
+        font-size: clamp(1.15rem, 2.1vw, 1.4rem);
+        letter-spacing: -0.05em;
+        font-weight: 700;
+        line-height: 1;
+      }
+      #lp .wbig small {
+        font-size: 0.42em;
+        font-family: var(--font-body);
+        font-weight: 400;
+        color: var(--color-ink-3);
+      }
+      #lp .wsub {
+        margin-top: 4px;
         font-size: var(--text-2xs);
         color: var(--color-ink-3);
+      }
+      /* 분홍 = 실제 지출, 회색 = 아직 안 쓴 예정, 남은 트랙 = 여유.
+         앱의 막대와 뜻이 같아야 한다 */
+      #lp .wtrack {
+        margin-top: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--color-tint);
+        overflow: hidden;
+        display: flex;
+      }
+      #lp .wtrack i {
+        display: block;
+        height: 100%;
+      }
+      #lp .wlegend {
+        margin-top: 8px;
+        display: grid;
+        gap: 4px;
+      }
+      #lp .wlegend p {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: var(--text-2xs);
+      }
+      #lp .wlegend .sw {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex: none;
+      }
+      #lp .wlegend .v {
+        margin-left: auto;
+        font-family: var(--font-num);
+        font-weight: 700;
+      }
+      #lp .wlegend .muted {
+        color: var(--color-ink-3);
+      }
+      #lp .wtime {
+        display: grid;
+        gap: 8px;
+      }
+      #lp .wtime .it {
+        display: flex;
+        gap: 9px;
+      }
+      #lp .wtime .dot {
+        width: 9px;
+        height: 9px;
+        margin-top: 4px;
+        border-radius: 50%;
+        border: 2px solid var(--color-accent);
+        flex: none;
+      }
+      #lp .wtime .dt {
+        display: block;
+        font-size: var(--text-2xs);
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+      #lp .wtime .ttl {
+        display: block;
+        margin-top: 2px;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: -0.02em;
+      }
+      #lp .wtime .cat {
+        display: inline-block;
+        margin-top: 4px;
+        border-radius: 5px;
+        padding: 1px 5px;
+        background: var(--app-chip-bg);
+        color: var(--app-chip-ink);
+        font-size: 0.62rem;
+        font-weight: 700;
       }
       #lp .sync:has(#k-hall:checked) label[for="k-hall"],
 #lp .sync:has(#k-sdm:checked) label[for="k-sdm"],
@@ -1519,48 +1774,14 @@
         border-color: var(--color-accent);
         background: var(--color-accent-soft);
       }
-      #lp .web-foot {
-        margin-top: var(--space-md);
-        padding-top: var(--space-md);
-        border-top: var(--rule-hair) solid var(--color-rule);
-        display: grid;
-        gap: 8px;
-      }
-      #lp .web-foot .lbl {
-        font-size: var(--text-2xs);
-        color: var(--color-ink-3);
-      }
-      #lp .web-foot .v {
-        font-family: var(--font-num);
-        font-size: clamp(1.5rem, 3.4vw, 2rem);
-        letter-spacing: -0.05em;
-          font-weight: 700;
-        }
-      #lp .web-foot .v small {
-        font-size: 0.42em;
-        color: var(--color-ink-3);
-        font-family: var(--font-body);
-          /* 위 컨테이너의 700 을 물려받지 않게 (숫자만 굵고 단위는 아니다) */
-          font-weight: 400;
-      }
-      #lp .web-foot .bar {
-        height: 10px;
-        border-radius: 999px;
-        background: var(--color-tint);
-        overflow: hidden;
-        display: flex;
-      }
-      #lp .web-foot .bar i {
-        display: block;
-        height: 100%;
-      }
       /* 웹에서 고른 항목이 폰 카드에서도 켜진다 */
+      /* 카드에 테두리가 없으므로(앱과 같다) 켜진 카드는 링으로 표시한다 */
       #lp .sync:has(#k-hall:checked) .appcard[data-k="hall"],
 #lp .sync:has(#k-sdm:checked) .appcard[data-k="sdm"],
 #lp .sync:has(#k-ring:checked) .appcard[data-k="ring"],
 #lp .sync:has(#k-trip:checked) .appcard[data-k="trip"] {
-        border-color: var(--color-accent);
-        box-shadow: 0 0 0 2px var(--color-accent-soft);
+        background: var(--color-accent-soft);
+        box-shadow: 0 0 0 1.5px var(--color-accent);
       }
       #lp .push {
         display: flex;
@@ -1605,7 +1826,8 @@
           background: var(--color-accent-soft);
         }
         #lp .appcard[data-k="hall"] {
-          border-color: var(--color-accent);
+          background: var(--color-accent-soft);
+          box-shadow: 0 0 0 1.5px var(--color-accent);
         }
         #lp .push .nm[data-k="hall"] {
           display: inline;
@@ -2492,15 +2714,23 @@
         justify-content: space-between;
         gap: 8px;
         flex: none;
-        padding: 5px 12px 8px;
-        border-bottom: 1px solid #f3f4f6;
+        padding: 7px 11px 10px;
+        background: var(--app-grad);
+        color: #fff;
+        border-radius: 0 0 16px 16px;
+      }
+      #lp .chead .bk {
+        flex: none;
+        font-size: 14px;
+        line-height: 1;
+        color: #fff;
       }
       #lp .chead .nm {
         display: flex;
         align-items: center;
         gap: 6px;
         font-size: 13px;
-        color: #1b0d14;
+        color: #fff;
         letter-spacing: -0.02em;
         min-width: 0;
         font-family: var(--font-display);
@@ -2509,7 +2739,33 @@
         display: block;
         margin-top: 2px;
         font-size: 9px;
-        color: #a8a29e;
+        color: #ffffffb3;
+      }
+      /* 머리 면이 분홍이라 배지도 흰 반투명이다 */
+      #lp .chead .cbadge {
+        background: #ffffff33;
+        color: #fff;
+      }
+      #lp .chead .avs {
+        display: flex;
+        flex: none;
+        margin-left: auto;
+      }
+      #lp .chead .avs i {
+        width: 17px;
+        height: 17px;
+        border-radius: 50%;
+        background: #ffffff33;
+        border: 1.5px solid #ffffff80;
+        color: #fff;
+        font-style: normal;
+        font-size: 7.5px;
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+      }
+      #lp .chead .avs i + i {
+        margin-left: -5px;
       }
       #lp .cbadge {
         display: inline-flex;
@@ -2528,7 +2784,7 @@
         font-size: 9px;
       }
       #lp .chead .dots {
-        color: #d6d3d1;
+        color: #ffffffcc;
         font-size: 13px;
         flex: none;
       }
@@ -2573,6 +2829,136 @@
         border-color: transparent;
         border-top-left-radius: 15px;
         border-top-right-radius: 2px;
+      }
+
+      /* 폰의 일정 상세(`/schedule-detail`) — 분홍 히어로 + 흰 본문.
+         넓은 화면의 인스펙터(`.insp`, 노션 대조 섹션)와 생김새가 다르다.
+         두 변형을 하나로 합치지 말 것 — 앱에서도 갈라 둔 자리다. */
+      #lp .phero {
+        background: var(--app-grad);
+        color: #fff;
+        border-radius: 0 0 18px 18px;
+        padding: 9px 12px 13px;
+      }
+      #lp .phero .top {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-display);
+        font-size: 11px;
+      }
+      #lp .phero .bk {
+        font-size: 13px;
+        line-height: 1;
+      }
+      #lp .phero .pill {
+        margin-left: 2px;
+        border-radius: 999px;
+        background: #ffffff33;
+        padding: 2px 7px;
+        font-size: 8.5px;
+        font-weight: 700;
+      }
+      #lp .phero .ttl {
+        margin-top: 8px;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.05rem;
+        letter-spacing: -0.04em;
+      }
+      #lp .phero .meta {
+        margin-top: 4px;
+        font-size: 9px;
+        color: #ffffffcc;
+      }
+      #lp .phero .money {
+        margin-top: 10px;
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        border-radius: 11px;
+        background: #ffffff33;
+        padding: 9px 10px;
+      }
+      #lp .phero .money .k {
+        display: block;
+        font-size: 8px;
+        color: #ffffffcc;
+      }
+      #lp .phero .money .amt {
+        display: block;
+        margin-top: 2px;
+        font-family: var(--font-num);
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: -0.03em;
+      }
+      #lp .phero .money .pay {
+        margin-left: auto;
+        text-align: right;
+      }
+      #lp .phero .money .pay b {
+        display: block;
+        margin-top: 2px;
+        font-family: var(--font-display);
+        font-size: 10px;
+      }
+      /* 히어로 아래 흰 본문 — 장소·메모는 아이콘 타일과 함께 줄로 선다 */
+      #lp .pdetail {
+        padding: 11px 12px;
+        display: grid;
+        gap: 10px;
+      }
+      #lp .pdetail .row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      #lp .pdetail .row .ptile {
+        width: 22px;
+        height: 22px;
+        border-radius: 8px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        background: var(--app-fill);
+        color: var(--app-ink-2);
+      }
+      #lp .pdetail .row .ptile .ic {
+        font-size: 12px;
+      }
+      #lp .pdetail .row .k {
+        display: block;
+        font-size: 8px;
+        color: var(--app-ink-3);
+      }
+      #lp .pdetail .row .v {
+        display: block;
+        margin-top: 2px;
+        font-family: var(--font-display);
+        font-size: 11px;
+        color: var(--app-ink-1);
+      }
+      #lp .pdetail .doneline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 12px;
+        background: var(--app-fill);
+        padding: 9px 10px;
+      }
+      #lp .pdetail .doneline .ck {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        border: 1.5px solid var(--app-check);
+        background: var(--color-card);
+        flex: none;
+      }
+      #lp .pdetail .doneline b {
+        font-family: var(--font-display);
+        font-size: 10.5px;
+        color: var(--app-ink-1);
       }
 
       /* 대화에 뜨는 일정 카드 — 이 섹션의 요지 */
@@ -3167,50 +3553,92 @@
           display: none;
         }
 
-        /* 웹 카드가 폰보다 두 배 높아 한 화면을 넘겼다 — 카드 속을 낮춘다 */
+        /* 웹 대시보드가 폰보다 두 배 높아 한 화면을 넘겼다 — 속을 낮춘다.
+           머리 줄의 멤버·버튼과 아래 두 패널은 이 폭에서 접는다 */
         #lp .sec.sync .wcard {
           padding: 8px;
-          gap: 3px;
+          gap: 6px;
         }
-        #lp .sec.sync .wcard .badge {
-          width: 22px;
-          height: 22px;
-        }
-        #lp .sec.sync .wcard .badge .ic {
-          font-size: 13px;
-        }
-        #lp .sec.sync .wcard .s {
+        /* 칸이 80px 남짓이라 칩·날짜까지 넣으면 금액이 두 줄로 꺾인다.
+           이 폭에서는 제목과 금액만 남긴다 */
+        #lp .sec.sync .wcard .ck,
+#lp .sec.sync .wcard .dt,
+#lp .sec.sync .wcard .cat {
           display: none;
         }
+        #lp .sec.sync .wcard .n {
+          font-size: 0.72rem;
+        }
+        #lp .sec.sync .wcard .l2 {
+          margin-top: 0;
+        }
         #lp .sec.sync .wcard .m {
-          font-size: 0.9rem;
+          margin-top: 4px;
+          font-size: 0.82rem;
+          white-space: nowrap;
         }
-        #lp .sec.sync .web-foot {
-          gap: 4px;
+        #lp .sec.sync .wbar {
+          gap: 8px;
+          margin-bottom: 10px;
         }
-        #lp .sec.sync .web-foot .v {
-          font-size: 1.25rem;
+        #lp .sec.sync .wbar .cpl .sub,
+#lp .sec.sync .wbar .acts,
+#lp .sec.sync .wcols {
+          display: none;
+        }
+        #lp .sec.sync .wbar .cpl b {
+          font-size: 0.78rem;
+          white-space: nowrap;
+        }
+        #lp .sec.sync .wbar .wdday {
+          padding-left: 9px;
+          font-size: 1rem;
+          white-space: nowrap;
+        }
+        #lp .sec.sync .wbar .wdday small {
+          display: none;
+        }
+        #lp .sec.sync .wsec {
+          margin-bottom: 7px;
+        }
+        #lp .sec.sync .wsec b {
+          font-size: 0.78rem;
+        }
+        #lp .sec.sync .wsec .more {
+          display: none;
         }
 
         /* 연동 섹션 폰은 칸 폭이 170px 밖에 안 돼, 카드 글자가 한 글자씩
            줄바꿈됐다. 부제·타일을 빼고 제목 한 줄 + 금액 한 줄로 낮춘다. */
         #lp .sec.sync .apphead {
-          padding: 8px 9px;
+          padding: 8px 9px 9px;
+          border-radius: 0 0 14px 14px;
         }
         #lp .sec.sync .apphead .nm {
-          font-size: 10px;
+          font-size: 9.5px;
           white-space: nowrap;
         }
+        #lp .sec.sync .apphead .av {
+          width: 14px;
+          height: 14px;
+          font-size: 6.5px;
+        }
         #lp .sec.sync .apphead .dday {
-          padding: 2px 6px;
-          font-size: 8.5px;
+          margin-top: 5px;
+          font-size: 11px;
+        }
+        #lp .sec.sync .applist {
+          padding: 8px;
+          gap: 6px;
         }
         #lp .sec.sync .appcard {
           display: block;
           padding: 7px 8px;
         }
-        #lp .sec.sync .appcard .tile2,
-#lp .sec.sync .appcard .c,
+        /* 칸이 170px 밖에 안 돼 칩·업체명까지 넣으면 한 글자씩 줄바꿈된다 */
+        #lp .sec.sync .appcard .ck,
+#lp .sec.sync .appcard .cat,
+#lp .sec.sync .appcard .d,
 #lp .sec.sync .push {
           display: none;
         }
@@ -3221,8 +3649,7 @@
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        #lp .sec.sync .appcard .right {
-          display: block;
+        #lp .sec.sync .appcard .l2 {
           margin-top: 2px;
         }
         #lp .sec.sync .appcard .m {
@@ -3261,36 +3688,27 @@
           font-size: 7px;
         }
 
-        /* 폰이 좁아져 앱 화면 안이 오른쪽으로 넘쳤다 (완료 탭이 잘리고 줄이 어긋남) */
-        /* 폰이 좁아 탭 줄이 화면 오른쪽으로 넘쳐 "완료 1" 이 잘렸다 */
-        #lp .sec.vs .sbody {
-          padding: 8px 9px;
-          gap: 7px;
+        /* 폰이 좁아져 앱 화면 안이 오른쪽으로 넘쳤다 */
+        #lp .sec.vs .apphead {
+          padding: 9px 9px 10px;
         }
-        #lp .sec.vs .apptabs {
-          gap: 3px;
-          padding: 3px;
-        }
-        #lp .sec.vs .apptabs span {
-          min-width: 0;
-          padding: 3px 4px;
-          font-size: 8.5px;
-          white-space: nowrap;
+        #lp .sec.vs .applist {
+          padding: 9px;
+          gap: 6px;
         }
         #lp .sec.vs .appcard {
           padding: 8px;
-          gap: 8px;
+          gap: 7px;
         }
         #lp .sec.vs .appcard .t {
           font-size: 10.5px;
         }
-        #lp .sec.vs .appcard .c,
+        #lp .sec.vs .appcard .d,
 #lp .sec.vs .appcard .m {
           font-size: 9px;
         }
-        #lp .sec.vs .appcard .tile2 {
-          width: 26px;
-          height: 26px;
+        #lp .sec.vs .appcard .l2 {
+          gap: 4px;
         }
 
         /* 웹 카드가 "웹" 으로 읽혀야 한다 — 창 신호등을 붙인다 */
@@ -3422,14 +3840,15 @@
         }
         /* 폰이 좁아져 목업 안 글자가 줄바꿈됐다 — 한 줄로 묶고 한 단계 줄인다 */
         #lp .sec.vs .apphead .nm,
-#lp .sec.vs .appbudget .v {
+#lp .sec.vs .apphead .dday {
           white-space: nowrap;
         }
         #lp .sec.vs .apphead .nm {
           font-size: 12px;
         }
-        #lp .sec.vs .appbudget .v {
-          font-size: 1.5rem;
+        #lp .sec.vs .apphead .dday {
+          font-size: 1.1rem;
+          white-space: normal;
         }
         #lp .drift {
           display: none;
@@ -3442,9 +3861,8 @@
         #lp .sec.sync .plats {
           margin-top: var(--space-sm);
         }
-        #lp .sec.sync .web-foot {
+        #lp .sec.sync .wcols {
           margin-top: var(--space-sm);
-          padding-top: var(--space-sm);
         }
       }
 
