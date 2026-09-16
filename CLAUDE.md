@@ -2,6 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 이 레포를 베이스로 안드로이드 앱을 만듭니다
+
+`C:\Users\zipshow_backend\PERSONAL\wedding-plant-android` (Kotlin + Jetpack Compose) 가
+이 웹앱의 **네이티브 포팅**입니다. 동작·문구·색·백엔드 계약의 **정답은 이 레포**이고,
+앱이 여기를 보고 따라옵니다.
+
+그래서 여기서 화면 흐름·문구·API 계약을 바꾸면 **앱에도 같은 변경이 필요합니다.**
+커밋 메시지에 "왜" 를 남겨 주세요 — 앱 쪽에서 그것을 읽고 포팅합니다.
+
+- **앱에 옮기지 않는 것**: 랜딩(`app/components/Landing.tsx`·`app/landing.css`)과
+  **≥768 전용 레이아웃**. 앱은 폰 트리(`md:hidden`)만 따라갑니다.
+- **웹에만 있는 것**: Next 서버 라우트를 거치는 카카오 OAuth — 앱은 카카오 SDK 가
+  access_token 을 직접 받아 `POST /plan/auth/kakao/login` 으로 바꿉니다.
+  sessionStorage + localStorage 이중 저장도 앱에서는 한 곳(`TokenStore`)입니다.
+- **앱이 먼저 맞았던 것도 있습니다** — 후기 평가 요청 바디 `value`, `SPOUSE` 를 빠뜨리지
+  않는 권한 판정, 공유 참여 뒤 귀속 캐시 비우기는 앱 구현이 정답이었고 웹이 따라왔습니다.
+  앱과 어긋나는 것을 발견하면 어느 쪽이 맞는지 먼저 정하세요.
+- 앱 쪽 지침은 그 레포의 `CLAUDE.md`, 웹↔앱 차이 정리는 그 레포
+  `docs/WEB_ANDROID_PARITY_2026-09-15.md` 입니다.
+
 ## Commands
 
 ```bash
