@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { mountBeatSync, mountShaders } from "./landingFx";
 import { useKakaoAuth } from "../hooks/useKakaoAuth";
 import "../landing.css";
@@ -21,11 +21,6 @@ import "../landing.css";
 export default function Landing() {
   const { handleKakaoAuth, loading } = useKakaoAuth();
   const rootRef = useRef<HTMLDivElement>(null);
-  const startRef = useRef<HTMLElement>(null);
-
-  const goStart = useCallback(() => {
-    startRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
 
   // 셰이더와 비트 동기화. 둘 다 없어도 화면은 정상이다 (landingFx.ts 참고)
   useEffect(mountShaders, []);
@@ -148,9 +143,15 @@ export default function Landing() {
 
       <nav className="nav">
         <b>웨딩 플랜트</b>
-        <button type="button" className="go" onClick={goStart}>
+        {/*
+          내비의 "시작하기" 는 **로그인으로 바로 보냅니다.** 예전에는 맨 아래
+          CTA 로 스크롤만 했는데, 이미 시작하기로 마음먹은 사람에게 화면 다섯
+          개를 더 지나가게 하는 셈이었습니다. 랜딩을 읽고 내려온 사람은 맨
+          아래 CTA(`#start`)가 그대로 받습니다.
+        */}
+        <Link className="go" href="/login">
           시작하기
-        </button>
+        </Link>
         <span className="progress" aria-hidden="true" />
       </nav>
 
@@ -1751,7 +1752,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="finale" id="start" ref={startRef}>
+        <section className="finale" id="start">
           <div className="wrap">
             <p className="z">D-0</p>
             <h2>🎉&nbsp;결혼 축하드립니다&nbsp;🎉</h2>
